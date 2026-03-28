@@ -1,0 +1,20 @@
+# GitHub Codespaces Configuration
+# https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration
+
+# Prebuild configuration
+{
+  "prebuild": {
+    "enabled": true,
+    "branches": ["main", "develop"],
+    "machine_types": ["standardLinux32gb"]
+  },
+
+  # Default machine type for new codespaces
+  "default_machine_type": "standardLinux32gb",
+
+  # Idle timeout (minutes)
+  "idle_timeout_minutes": 30,
+
+  # Retention period (days)
+  "retention_period_days": 30
+}

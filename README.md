@@ -20,6 +20,7 @@ A comprehensive, production-ready AI chat application stack with modern best-in-
 
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
+- [GitHub Codespaces](#-github-codespaces)
 - [Installation](#-installation)
 - [Usage](#-usage)
 - [Configuration](#-configuration)
@@ -101,6 +102,47 @@ docker exec ollama ollama pull nomic-embed-text
 ```
 
 **Setup time:** 5-15 minutes depending on your internet speed.
+
+## ☁️ GitHub Codespaces
+
+### One-Click Cloud Development
+
+Get started instantly in a fully configured cloud development environment with zero local setup required.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=rachit0412/agentic-platform)
+
+### Features
+- ✅ **Zero Installation** - No Docker, Python, or dependencies needed locally
+- ✅ **Full Stack Running** - All 12 services pre-configured and ready
+- ✅ **Pre-installed Tools** - Python 3.11, Node.js 20, Docker, Git, VS Code extensions
+- ✅ **Automated Setup** - Models and dependencies install automatically
+- ✅ **Persistent Storage** - Your work is saved between sessions
+- ✅ **Access Anywhere** - Code from browser or VS Code desktop
+
+### Quick Start in Codespaces
+
+1. **Launch Codespace**
+   - Click the badge above or go to: Code → Codespaces → Create codespace
+   - Wait 3-5 minutes for initial build (cached afterwards)
+
+2. **Access Services**
+   - Check the **PORTS** tab in VS Code
+   - Click port URLs to access:
+     - Port 3000: OpenWebUI (Chat Interface)
+     - Port 5678: n8n (Workflows)
+     - Port 8000: LangGraph API
+     - Port 3002: Grafana (Monitoring)
+
+3. **Start Coding**
+   - All services auto-start via docker-compose
+   - Python environment ready in `services/langgraph-api`
+   - Changes hot-reload automatically
+
+### Recommended Machine Type
+- **Minimum**: 4-core (for basic usage)
+- **Recommended**: 8-core, 16GB RAM (for full performance)
+
+📖 See [.devcontainer/README.md](.devcontainer/README.md) for complete Codespaces documentation.
 
 ### Access Your Services
 

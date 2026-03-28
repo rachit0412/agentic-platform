@@ -1,0 +1,58 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: LangGraph API",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/services/langgraph-api/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/services/langgraph-api",
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DB": "agentic_platform",
+        "POSTGRES_USER": "agentic",
+        "POSTGRES_PASSWORD": "agentic123",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
+      }
+    },
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Attach to Container",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/services/langgraph-api",
+          "remoteRoot": "/app"
+        }
+      ]
+    },
+    {
+      "name": "Docker: Attach to LangGraph API",
+      "type": "docker",
+      "request": "attach",
+      "platform": "python",
+      "containerName": "langgraph-api",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/services/langgraph-api",
+          "remoteRoot": "/app"
+        }
+      ]
+    }
+  ]
+}

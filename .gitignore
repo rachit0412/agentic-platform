@@ -27,11 +27,18 @@ dist/
 build/
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
+
+# Codespaces
+.devcontainer/.env
 
 # OS
 .DS_Store

@@ -1,0 +1,95 @@
+# Tasks Configuration for VS Code
+# Provides quick access to common commands
+
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚀 Start All Services",
+      "type": "shell",
+      "command": "docker-compose up -d",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "🛑 Stop All Services",
+      "type": "shell",
+      "command": "docker-compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Restart Services",
+      "type": "shell",
+      "command": "docker-compose restart",
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 View Service Status",
+      "type": "shell",
+      "command": "docker-compose ps",
+      "problemMatcher": []
+    },
+    {
+      "label": "📝 View All Logs",
+      "type": "shell",
+      "command": "docker-compose logs -f",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "📝 View LangGraph Logs",
+      "type": "shell",
+      "command": "docker-compose logs -f langgraph-api",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "🤖 Pull Ollama Models",
+      "type": "shell",
+      "command": "docker exec ollama ollama pull llama3 && docker exec ollama ollama pull nomic-embed-text",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "🤖 List Ollama Models",
+      "type": "shell",
+      "command": "docker exec ollama ollama list",
+      "problemMatcher": []
+    },
+    {
+      "label": "🗄️ Connect to PostgreSQL",
+      "type": "shell",
+      "command": "docker exec -it postgres psql -U agentic -d agentic_platform",
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Clean Docker Resources",
+      "type": "shell",
+      "command": "docker system prune -f",
+      "problemMatcher": []
+    },
+    {
+      "label": "🔧 Install Python Dependencies",
+      "type": "shell",
+      "command": "pip install -r services/langgraph-api/requirements.txt",
+      "problemMatcher": []
+    },
+    {
+      "label": "🧪 Run Python Tests",
+      "type": "shell",
+      "command": "cd services/langgraph-api && pytest -v",
+      "problemMatcher": []
+    },
+    {
+      "label": "🔍 Check Service Health",
+      "type": "shell",
+      "command": "curl -f http://localhost:8000/health || echo 'LangGraph API not ready'",
+      "problemMatcher": []
+    }
+  ]
+}

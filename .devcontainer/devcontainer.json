@@ -1,0 +1,167 @@
+{
+  "name": "Agentic Platform",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "langgraph-api",
+  "workspaceFolder": "/workspace",
+
+  // Configure which services to start
+  "runServices": [
+    "postgres",
+    "redis",
+    "ollama",
+    "langgraph-api",
+    "open-webui",
+    "n8n",
+    "keycloak",
+    "opa",
+    "langfuse",
+    "prometheus",
+    "grafana"
+  ],
+
+  // Features to add to the dev container
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+
+  // VS Code extensions to install
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "redhat.vscode-yaml",
+        "ms-vscode.makefile-tools",
+        "github.copilot",
+        "github.copilot-chat",
+        "ms-toolsai.jupyter",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        },
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/*.pyc": true
+        }
+      }
+    }
+  },
+
+  // Port forwarding for all services
+  "forwardPorts": [
+    3000,  // OpenWebUI
+    5678,  // n8n
+    8000,  // LangGraph API
+    11434, // Ollama
+    5432,  // PostgreSQL
+    6379,  // Redis
+    8080,  // Keycloak
+    8181,  // OPA
+    3001,  // Langfuse
+    9090,  // Prometheus
+    3002,  // Grafana
+    3100   // Loki
+  ],
+
+  // Port visibility and labels
+  "portsAttributes": {
+    "3000": {
+      "label": "OpenWebUI",
+      "onAutoForward": "notify"
+    },
+    "5678": {
+      "label": "n8n Workflows",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "LangGraph API",
+      "onAutoForward": "silent"
+    },
+    "11434": {
+      "label": "Ollama",
+      "onAutoForward": "silent"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "silent"
+    },
+    "8080": {
+      "label": "Keycloak",
+      "onAutoForward": "notify"
+    },
+    "8181": {
+      "label": "OPA",
+      "onAutoForward": "silent"
+    },
+    "3001": {
+      "label": "Langfuse",
+      "onAutoForward": "notify"
+    },
+    "9090": {
+      "label": "Prometheus",
+      "onAutoForward": "silent"
+    },
+    "3002": {
+      "label": "Grafana",
+      "onAutoForward": "notify"
+    },
+    "3100": {
+      "label": "Loki",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Post-create command to set up the environment
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  // User to run as
+  "remoteUser": "vscode",
+
+  // Environment variables
+  "remoteEnv": {
+    "WORKSPACE_FOLDER": "${containerWorkspaceFolder}"
+  },
+
+  // Mount the Docker socket for docker-compose commands
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ]
+}
