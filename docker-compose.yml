@@ -81,6 +81,7 @@ services:
       context: ./services/langgraph-api
       dockerfile: Dockerfile
     container_name: langgraph-api
+    privileged: true
     ports:
       - "8000:8000"
     environment:

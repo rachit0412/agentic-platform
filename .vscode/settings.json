@@ -85,5 +85,7 @@
     "**/build": true,
     "**/__pycache__": true,
     "**/.pytest_cache": true
-  }
+  },
+  "containers.composeBuild": true,
+  "containers.composeDetached": true
 }
