@@ -1,0 +1,132 @@
+<%- include('layout', { title: 'Overview', page: 'overview', body: `
+
+<h1 class="text-glow-cyan">Platform Overview</h1>
+
+<!-- Stats Row -->
+<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+    </div>
+    <div class="stat-label">Models</div>
+    <div class="stat-number" id="stat-models">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div class="stat-label">Tools</div>
+    <div class="stat-number" id="stat-tools">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div class="stat-label">Sessions</div>
+    <div class="stat-number" id="stat-sessions">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon stat-icon-amber">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="stat-label">Documents</div>
+    <div class="stat-number" id="stat-docs">-</div>
+  </div>
+</div>
+
+<!-- Service Health -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+  <div class="section-header">
+    <h3>Service Health</h3>
+    <button class="btn btn-secondary btn-sm" onclick="loadHealth()">Refresh</button>
+  </div>
+  <div id="health-grid" class="grid mt-1">
+    <div class="health-item"><span style="color:var(--text-3)">Checking services...</span> <span class="badge badge-warning">loading</span></div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<div class="card animate-fade-up delay-200">
+  <h3 style="margin-bottom:1rem">Quick Links</h3>
+  <div class="grid">
+    <a href="/run-agent" class="quick-link">
+      <div class="quick-link-icon stat-icon-cyan" style="border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(6,182,212,0.1)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#06b6d4" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </div>
+      <strong>Run Agent</strong>
+      <p>Send prompts to the AI agent</p>
+    </a>
+    <a href="/documents" class="quick-link">
+      <div class="quick-link-icon" style="border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(139,92,246,0.1)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <strong>Documents</strong>
+      <p>RAG document management</p>
+    </a>
+    <a href="${urls.n8n}" target="_blank" class="quick-link">
+      <div class="quick-link-icon" style="border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,0.1)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+      </div>
+      <strong>n8n Workflows</strong>
+      <p>Visual workflow automation</p>
+    </a>
+    <a href="${urls.grafana}" target="_blank" class="quick-link">
+      <div class="quick-link-icon" style="border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(16,185,129,0.1)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <strong>Grafana</strong>
+      <p>Metrics &amp; dashboards</p>
+    </a>
+    <a href="${urls.langfuse}" target="_blank" class="quick-link">
+      <div class="quick-link-icon" style="border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(244,63,94,0.1)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f43f5e" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9c0 3.9-3.1 7.1-5 8.9a13 13 0 0 1-4 2.1 13 13 0 0 1-4-2.1C6.1 18.1 3 14.9 3 11a9 9 0 0 1 9-9z"/><circle cx="12" cy="11" r="3"/></svg>
+      </div>
+      <strong>Langfuse</strong>
+      <p>LLM tracing &amp; observability</p>
+    </a>
+    <a href="/marketplace" class="quick-link">
+      <div class="quick-link-icon" style="border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(6,182,212,0.1)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      </div>
+      <strong>Marketplace</strong>
+      <p>Templates &amp; tools</p>
+    </a>
+  </div>
+</div>
+
+<script>
+function loadHealth() {
+  fetch('/api/health-check').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('health-grid');
+    el.innerHTML=d.services.map(s=>\`
+      <div class="health-item">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="pulse-dot-\${s.status==='healthy'?'emerald':'rose'}"></span>
+          <strong style="font-size:0.875rem">\${s.name}</strong>
+        </div>
+        <span class="badge \${s.status==='healthy'?'badge-success':'badge-error'}">\${s.status}</span>
+      </div>
+    \`).join('');
+  }).catch(()=>{
+    document.getElementById('health-grid').innerHTML='<div class="health-item"><span style="color:var(--text-3)">Failed to load health status</span></div>';
+  });
+}
+loadHealth();
+
+async function loadPlatformStats() {
+  try {
+    const [models, tools, sessions, docs] = await Promise.all([
+      fetch('/api/models').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/tools').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/sessions').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/documents/stats').then(r=>r.json()).catch(()=>({})),
+    ]);
+    document.getElementById('stat-models').textContent = (models.models||[]).length;
+    document.getElementById('stat-tools').textContent = (tools.tools||[]).length;
+    document.getElementById('stat-sessions').textContent = (sessions.sessions||[]).length;
+    document.getElementById('stat-docs').textContent = (docs.total_chunks||0);
+  } catch(e) {}
+}
+loadPlatformStats();
+</script>
+` }) %>

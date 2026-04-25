@@ -1,0 +1,19 @@
+{
+  "name": "ui-console",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ejs": "^3.1.10",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0"
+  }
+}

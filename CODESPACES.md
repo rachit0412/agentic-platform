@@ -9,32 +9,35 @@ Welcome to the Agentic Platform on GitHub Codespaces! This guide will help you g
    - Initial setup takes 3-5 minutes (automatic after first time)
 
 2. **Check Service Status**
+
    ```bash
    docker-compose ps
    ```
 
 3. **Access the UI**
    - Go to the **PORTS** tab (bottom panel)
-   - Click the 🌐 icon next to port **3000** (OpenWebUI)
-   - Create your account and start chatting!
+   - Click the 🌐 icon next to port **3000** (Dashboard)
+   - Start exploring the platform!
 
 ## 🎯 Main Services
 
-| Service | Port | Access | Purpose |
-|---------|------|--------|---------|
-| **OpenWebUI** | 3000 | [Open](http://localhost:3000) | Chat interface |
+| Service           | Port | Access                             | Purpose             |
+| ----------------- | ---- | ---------------------------------- | ------------------- |
+| **Dashboard**     | 3000 | [Open](http://localhost:3000)      | Platform dashboard  |
 | **LangGraph API** | 8000 | [Docs](http://localhost:8000/docs) | Agent orchestration |
-| **n8n** | 5678 | [Open](http://localhost:5678) | Workflows |
-| **Grafana** | 3002 | [Open](http://localhost:3002) | Monitoring |
-| **Langfuse** | 3001 | [Open](http://localhost:3001) | LLM tracing |
+| **n8n**           | 5678 | [Open](http://localhost:5678)      | Workflows           |
+| **Grafana**       | 3002 | [Open](http://localhost:3002)      | Monitoring          |
+| **Langfuse**      | 3001 | [Open](http://localhost:3001)      | LLM tracing         |
 
 **Default credentials:**
+
 - n8n: `admin` / `changeme`
 - Grafana: `admin` / `admin`
 
 ## 🤖 Working with AI Models
 
 ### Pull Models
+
 ```bash
 # Pull default chat model (recommended)
 docker exec ollama ollama pull llama3
@@ -47,6 +50,7 @@ docker exec ollama ollama list
 ```
 
 ### Other Popular Models
+
 ```bash
 # Smaller/faster models
 docker exec ollama ollama pull llama3:8b
@@ -165,6 +169,7 @@ docker-compose up -d
 ### Port Already in Use
 
 Codespaces handles port forwarding automatically. If you see conflicts:
+
 1. Check the PORTS tab
 2. Stop conflicting services
 3. Or change ports in docker-compose.yml
@@ -221,4 +226,3 @@ df -h
 ---
 
 **Happy Coding! 🎉**
-

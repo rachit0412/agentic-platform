@@ -1,0 +1,45 @@
+<%- include('layout', { title: 'LLM Activity', page: 'llm-activity', body: `
+
+<h1 class="text-glow-cyan">LLM Activity</h1>
+
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <h3>Langfuse Dashboard</h3>
+    <a href="${urls.langfuse}" target="_blank" class="btn btn-primary btn-sm">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Open Langfuse
+    </a>
+  </div>
+  <iframe src="${urls.langfuse}" height="500" style="background:var(--surface-1);border-radius:12px;border:1px solid var(--glass-border)" loading="lazy"></iframe>
+</div>
+
+<div class="card animate-fade-up delay-100">
+  <div class="section-header">
+    <h3>Recent Traces</h3>
+    <button class="btn btn-secondary btn-sm" onclick="loadTraces()">Refresh</button>
+  </div>
+  <div id="traces-table" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+<script>
+function loadTraces() {
+  fetch('/api/traces').then(r=>r.json()).then(d=>{
+    const el = document.getElementById('traces-table');
+    if (!d.traces || d.traces.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">' + (d.error || 'No traces found. Run an agent prompt to generate traces.') + '</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Trace ID</th><th>Name</th><th>Session</th><th>Time</th></tr>' +
+      d.traces.map(t => \`<tr>
+        <td class="mono" style="font-size:0.78rem">\${(t.id||'').slice(0,12)}...</td>
+        <td>\${t.name||'-'}</td>
+        <td class="mono" style="font-size:0.78rem">\${t.sessionId||'-'}</td>
+        <td class="mono" style="font-size:0.78rem">\${t.timestamp ? new Date(t.timestamp).toLocaleString() : '-'}</td>
+      </tr>\`).join('') + '</table>';
+  }).catch(e=>{
+    document.getElementById('traces-table').innerHTML = '<p style="color:var(--danger)">Failed to load traces</p>';
+  });
+}
+loadTraces();
+</script>
+` }) %>

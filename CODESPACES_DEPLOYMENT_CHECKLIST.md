@@ -10,6 +10,7 @@
 ## ✅ Repository Setup
 
 - [ ] Commit all Codespaces configuration files
+
   ```bash
   git add .devcontainer .vscode .github CODESPACES* scripts/
   git commit -m "feat: Add GitHub Codespaces support"
@@ -23,6 +24,7 @@
 ## ✅ GitHub Settings
 
 ### Enable Prebuilds (Highly Recommended)
+
 - [ ] Go to repository **Settings** → **Codespaces**
 - [ ] Click **Set up prebuild**
 - [ ] Configure prebuild:
@@ -32,6 +34,7 @@
   - Machine type: `8-core` or `16-core`
 
 ### Configure Secrets
+
 - [ ] Go to repository **Settings** → **Secrets** → **Codespaces**
 - [ ] Add secrets (if applicable):
   - `OPENAI_API_KEY`
@@ -41,6 +44,7 @@
   - Database passwords for production
 
 ### Set Policies
+
 - [ ] Go to **Settings** → **Codespaces** → **Policies**
 - [ ] Set maximum retention period (default: 30 days)
 - [ ] Set idle timeout (recommended: 30 minutes)
@@ -50,6 +54,7 @@
 ## ✅ Testing
 
 ### Initial Test
+
 - [ ] Create a new codespace from main branch
 - [ ] Wait for initial build (3-5 minutes)
 - [ ] Verify post-create script runs successfully
@@ -57,7 +62,8 @@
 - [ ] Run health check: `./scripts/health-check.sh`
 
 ### Service Verification
-- [ ] Access OpenWebUI (port 3000) - Chat interface works
+
+- [ ] Access Dashboard (port 3000) - Platform UI works
 - [ ] Access LangGraph API (port 8000) - /docs loads
 - [ ] Access n8n (port 5678) - Login works
 - [ ] Access Grafana (port 3002) - Dashboards load
@@ -66,6 +72,7 @@
 - [ ] Check Ollama models: `docker exec ollama ollama list`
 
 ### Development Workflow
+
 - [ ] Edit a Python file in `services/langgraph-api/`
 - [ ] Verify hot reload works
 - [ ] Run a VS Code task from command palette
@@ -92,12 +99,14 @@
 ## ✅ Team Rollout
 
 ### Communication
+
 - [ ] Announce Codespaces availability to team
 - [ ] Share quick start guide
 - [ ] Schedule training session (optional)
 - [ ] Create internal wiki/confluence page
 
 ### Support
+
 - [ ] Set up support channel (Slack, Teams, etc.)
 - [ ] Designate Codespaces champions
 - [ ] Create FAQ document
@@ -106,6 +115,7 @@
 ## ✅ Optimization
 
 ### Performance
+
 - [ ] Monitor codespace startup times
 - [ ] Optimize Docker image layers
 - [ ] Review and reduce prebuild frequency if needed
@@ -113,6 +123,7 @@
 - [ ] Consider upgrading machine types for heavy workloads
 
 ### Cost Management
+
 - [ ] Review Codespaces billing
 - [ ] Set up spending limits
 - [ ] Monitor usage per user/team
@@ -120,6 +131,7 @@
 - [ ] Optimize prebuild schedule to reduce costs
 
 ### Developer Experience
+
 - [ ] Gather developer feedback
 - [ ] Add commonly used VS Code extensions
 - [ ] Create custom tasks for frequent operations
@@ -138,6 +150,7 @@
 ## ✅ Monitoring & Maintenance
 
 ### Regular Checks
+
 - [ ] Weekly: Review prebuild success rate
 - [ ] Weekly: Check for failed codespace creates
 - [ ] Monthly: Review usage and costs
@@ -145,6 +158,7 @@
 - [ ] Quarterly: Review and update documentation
 
 ### Alerts
+
 - [ ] Set up alerts for prebuild failures
 - [ ] Monitor codespace creation failures
 - [ ] Track spending approaching limits

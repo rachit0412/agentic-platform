@@ -47,7 +47,7 @@ check_port() {
 
 echo "📊 Checking HTTP Services..."
 echo "----------------------------"
-check_service "OpenWebUI" "http://localhost:3000" || true
+check_service "Dashboard" "http://localhost:3000/health" || true
 check_service "LangGraph API" "http://localhost:8000/health" || true
 check_service "n8n" "http://localhost:5678" || true
 check_service "Keycloak" "http://localhost:8080" || true
@@ -96,7 +96,7 @@ echo "===================================="
 echo "Health check complete!"
 echo ""
 echo "Access Points:"
-echo "  🎨 OpenWebUI:    http://localhost:3000"
+echo "  🎨 Dashboard:     http://localhost:3000"
 echo "  📚 API Docs:     http://localhost:8000/docs"
 echo "  🔄 Workflows:    http://localhost:5678"
 echo "  📊 Monitoring:   http://localhost:3002"

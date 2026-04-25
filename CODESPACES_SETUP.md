@@ -5,6 +5,7 @@ Your Agentic Platform is now fully configured for GitHub Codespaces.
 ## ✅ What Was Added
 
 ### 1. DevContainer Configuration (`.devcontainer/`)
+
 - **devcontainer.json** - Main Codespaces configuration
   - Docker-in-Docker support for running docker-compose
   - Python 3.11 and Node.js 20 pre-installed
@@ -20,25 +21,30 @@ Your Agentic Platform is now fully configured for GitHub Codespaces.
 - **README.md** - Comprehensive Codespaces documentation
 
 ### 2. VS Code Configuration (`.vscode/`)
+
 - **settings.json** - Editor settings and formatting rules
 - **tasks.json** - Quick access to common commands
 - **launch.json** - Debug configurations for Python
 - **extensions.json** - Recommended extensions list
 
 ### 3. GitHub Actions (`.github/`)
+
 - **workflows/codespaces-prebuild.yml** - Prebuild automation
 - **codespaces.json** - Codespace defaults and retention
 
 ### 4. Scripts (`scripts/`)
+
 - **health-check.sh** - Service health monitoring
 - **README.md** - Script documentation
 
 ### 5. Documentation
+
 - **CODESPACES.md** - Quick start guide for Codespaces users
 - **README.md** (updated) - Added Codespaces section with badge
 - **.env.example** - Environment variable template
 
 ### 6. Configuration Updates
+
 - **.gitignore** - Updated to preserve .vscode configs while ignoring sensitive files
 
 ## 🎯 Quick Start
@@ -46,6 +52,7 @@ Your Agentic Platform is now fully configured for GitHub Codespaces.
 ### For First-Time Users
 
 1. **Open in Codespaces**
+
    ```
    Code → Codespaces → Create codespace on main
    ```
@@ -58,7 +65,7 @@ Your Agentic Platform is now fully configured for GitHub Codespaces.
 
 3. **Access Services**
    - Check the **PORTS** tab in VS Code
-   - Click port 3000 for OpenWebUI
+   - Click port 3000 for Dashboard
    - Start chatting!
 
 ### For Repository Maintainers
@@ -83,20 +90,20 @@ Your Agentic Platform is now fully configured for GitHub Codespaces.
 
 ## 📋 Service Ports
 
-| Port | Service | Access |
-|------|---------|--------|
-| 3000 | OpenWebUI | Main chat interface |
-| 5678 | n8n | Workflow automation |
-| 8000 | LangGraph API | Agent orchestration |
-| 11434 | Ollama | LLM runtime |
-| 5432 | PostgreSQL | Database |
-| 6379 | Redis | Cache |
-| 8080 | Keycloak | Authentication |
-| 8181 | OPA | Policy engine |
-| 3001 | Langfuse | LLM tracing |
-| 9090 | Prometheus | Metrics |
-| 3002 | Grafana | Dashboards |
-| 3100 | Loki | Logs |
+| Port  | Service       | Access              |
+| ----- | ------------- | ------------------- |
+| 3000  | Dashboard     | Platform dashboard  |
+| 5678  | n8n           | Workflow automation |
+| 8000  | LangGraph API | Agent orchestration |
+| 11434 | Ollama        | LLM runtime         |
+| 5432  | PostgreSQL    | Database            |
+| 6379  | Redis         | Cache               |
+| 8080  | Keycloak      | Authentication      |
+| 8181  | OPA           | Policy engine       |
+| 3001  | Langfuse      | LLM tracing         |
+| 9090  | Prometheus    | Metrics             |
+| 3002  | Grafana       | Dashboards          |
+| 3100  | Loki          | Logs                |
 
 ## 🔧 VS Code Tasks
 
@@ -131,6 +138,7 @@ Debug configurations are pre-configured:
 ## 🎉 Next Steps
 
 1. **Commit these changes**
+
    ```bash
    git add .
    git commit -m "feat: Add GitHub Codespaces support"
@@ -164,6 +172,7 @@ Debug configurations are pre-configured:
 ## 🆘 Troubleshooting
 
 ### Services not starting
+
 ```bash
 docker-compose ps              # Check status
 docker-compose logs -f         # View logs
@@ -171,12 +180,14 @@ docker-compose restart         # Restart all
 ```
 
 ### Out of resources
+
 ```bash
 docker-compose stop grafana prometheus loki  # Stop monitoring
 docker system prune -a         # Clean up
 ```
 
 ### Port conflicts
+
 - Check PORTS tab in VS Code
 - Ports auto-forward in Codespaces
 - Make public if needed for external access

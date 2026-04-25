@@ -1,0 +1,83 @@
+{
+  "name": "Web Research Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "web-research",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://tools-service:8001/tools/web-search",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "query", "value": "={{ $json.body.query }}" },
+            {
+              "name": "max_results",
+              "value": "={{ $json.body.max_results || 5 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Web Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "Analyze and summarize these web search results for the query '{{ $node['Webhook'].json.body.query }}':\n\n{{ JSON.stringify($json.results) }}\n\nProvide a concise summary of the key findings."
+            },
+            {
+              "name": "sessionId",
+              "value": "web-research-{{ $now.toMillis() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Analyze with Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ query: $node['Webhook'].json.body.query, search_results: $node['Web Search'].json.results, analysis: $json.response }) }}"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Web Search", "type": "main", "index": 0 }]]
+    },
+    "Web Search": {
+      "main": [[{ "node": "Analyze with Agent", "type": "main", "index": 0 }]]
+    },
+    "Analyze with Agent": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": [{ "name": "research" }, { "name": "web-search" }]
+}

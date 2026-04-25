@@ -1,0 +1,70 @@
+<%- include('layout', { title: 'Observability', page: 'observability', body: `
+
+<h1 class="text-glow-cyan">Observability</h1>
+
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <h3>Grafana Dashboards</h3>
+    <a href="${urls.grafana}" target="_blank" class="btn btn-primary btn-sm">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Open Grafana
+    </a>
+  </div>
+  <iframe src="${urls.grafana}/d/agentic-platform-health?orgId=1&kiosk" height="600" style="background:var(--surface-1);border-radius:12px;border:1px solid var(--glass-border)" loading="lazy"></iframe>
+</div>
+
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+  <h3>Available Dashboards</h3>
+  <table class="mt-1">
+    <tr><th>Dashboard</th><th>Description</th><th>Link</th></tr>
+    <tr>
+      <td>Platform Health</td>
+      <td style="color:var(--text-3);font-size:0.82rem">Request rate, latency p50/p95, error rate, tool calls</td>
+      <td><a href="${urls.grafana}/d/agentic-platform-health" target="_blank" style="color:var(--accent-text)">Open &#x2197;</a></td>
+    </tr>
+  </table>
+</div>
+
+<div class="card animate-fade-up delay-200">
+  <h3>Observability Stack</h3>
+  <table class="mt-1">
+    <tr><th>Component</th><th>Purpose</th><th>Endpoint</th></tr>
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="pulse-dot-emerald"></span> Prometheus
+        </div>
+      </td>
+      <td style="color:var(--text-3)">Metrics storage</td>
+      <td class="mono">:9090</td>
+    </tr>
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="pulse-dot-emerald"></span> Grafana
+        </div>
+      </td>
+      <td style="color:var(--text-3)">Dashboards</td>
+      <td class="mono">:3003</td>
+    </tr>
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="pulse-dot-emerald"></span> Loki
+        </div>
+      </td>
+      <td style="color:var(--text-3)">Log aggregation</td>
+      <td class="mono">:3100</td>
+    </tr>
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="pulse-dot-emerald"></span> OTel Collector
+        </div>
+      </td>
+      <td style="color:var(--text-3)">Trace/metric pipeline</td>
+      <td class="mono">:4318 (HTTP) / :4317 (gRPC)</td>
+    </tr>
+  </table>
+</div>
+` }) %>

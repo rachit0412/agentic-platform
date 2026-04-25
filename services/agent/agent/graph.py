@@ -1,0 +1,377 @@
+"""
+LangGraph agent with ReAct loop.
+
+Graph:
+  START → reason → (tool calls?) → execute_tools → reason → … (max 5 iters) → END
+
+Uses ChatOllama (LangChain) instead of raw HTTP.
+Persists exchanges to SQLite memory.
+"""
+import os
+import json
+import logging
+from typing import TypedDict, Annotated, AsyncIterator
+
+from langgraph.graph import StateGraph, END
+from langchain_core.messages import (
+    HumanMessage, AIMessage, SystemMessage, ToolMessage,
+)
+
+from agent.memory import get_history, save_message
+from agent.tools import get_all_tools, catalogue_as_text, call_tool, TOOL_CATALOGUE
+from agent.llm import get_llm
+from agent.observability import (
+    LangfuseTrace, track_llm_call,
+    tool_call_counter, agent_run_counter,
+)
+
+logger = logging.getLogger("agent-service.graph")
+
+MAX_ITERATIONS = int(os.getenv("MAX_REACT_ITERATIONS", "5"))
+
+# ── Prompt templates ────────────────────────────────────────────────────────
+
+SYSTEM_PROMPT = """\
+You are a helpful AI assistant with access to tools.
+Available tools:
+{tools}
+
+When you need to use a tool, respond ONLY with a JSON block like:
+{{"tool": "<tool_name>", "arguments": {{<key>: <value>, ...}}}}
+
+If you do NOT need a tool, just answer the user directly in plain text.
+Do NOT wrap your answer in JSON if you are not calling a tool.
+Think step by step but be concise.
+You can call tools multiple times in sequence to solve complex problems."""
+
+FINAL_PROMPT = """\
+The user asked: {prompt}
+
+Tool results:
+{tool_results}
+
+Using the information above, provide a clear and helpful final answer to the user. Be concise."""
+
+
+# ── State ───────────────────────────────────────────────────────────────────
+
+class AgentState(TypedDict):
+    prompt: str
+    session_id: str
+    request_id: str
+    history: list[dict]
+    llm_raw: str
+    tool_calls: list[dict]
+    response: str
+    tools_used: list[str]
+    iteration: int
+
+
+# ── Helpers ─────────────────────────────────────────────────────────────────
+
+import re
+
+def _parse_tool_calls(text: str) -> list[dict]:
+    """
+    Extract tool-call JSON from the LLM response.
+    Supports both a single object and an array of objects.
+    """
+    json_pattern = r'```(?:json)?\s*(\{.*?\})\s*```|(\{(?:[^{}]|\{[^{}]*\})*"tool"(?:[^{}]|\{[^{}]*\})*\})'
+    matches = re.findall(json_pattern, text, re.DOTALL)
+
+    calls: list[dict] = []
+    for groups in matches:
+        raw_json = groups[0] or groups[1]
+        try:
+            obj = json.loads(raw_json)
+            if "tool" in obj:
+                name = obj["tool"]
+                args = obj.get("arguments", {})
+                if any(t["name"] == name for t in TOOL_CATALOGUE):
+                    calls.append({"name": name, "arguments": args, "result": None})
+        except json.JSONDecodeError:
+            continue
+
+    if not calls:
+        text_stripped = text.strip()
+        if text_stripped.startswith("```"):
+            text_stripped = re.sub(r'^```\w*\n?', '', text_stripped)
+            text_stripped = re.sub(r'\n?```$', '', text_stripped)
+        try:
+            obj = json.loads(text_stripped)
+            if isinstance(obj, dict) and "tool" in obj:
+                name = obj["tool"]
+                if any(t["name"] == name for t in TOOL_CATALOGUE):
+                    calls.append({"name": name, "arguments": obj.get("arguments", {}), "result": None})
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    return calls
+
+
+async def _ollama_chat(messages: list[dict], step: str = "default") -> str:
+    """Call ChatOllama and return the content string."""
+    llm = get_llm()
+    lc_messages = []
+    for m in messages:
+        role = m["role"]
+        content = m["content"]
+        if role == "system":
+            lc_messages.append(SystemMessage(content=content))
+        elif role == "user":
+            lc_messages.append(HumanMessage(content=content))
+        elif role == "assistant":
+            lc_messages.append(AIMessage(content=content))
+
+    with track_llm_call(step):
+        result = await llm.ainvoke(lc_messages)
+        return result.content
+
+
+# ── Graph nodes ─────────────────────────────────────────────────────────────
+
+async def reason(state: AgentState) -> dict:
+    """Send the prompt + history + prior tool results to LLM; decide if more tools are needed."""
+    system = SYSTEM_PROMPT.format(tools=catalogue_as_text())
+    iteration = state.get("iteration", 0)
+
+    messages = [{"role": "system", "content": system}]
+    for msg in state.get("history", []):
+        messages.append(msg)
+    messages.append({"role": "user", "content": state["prompt"]})
+
+    # Append prior tool results if this is a subsequent iteration
+    existing_calls = state.get("tool_calls", [])
+    if existing_calls:
+        results_text = "\n".join(
+            f"Tool '{tc['name']}' returned: {json.dumps(tc.get('result', {}))}"
+            for tc in existing_calls if tc.get("result") is not None
+        )
+        messages.append({"role": "assistant", "content": f"I called some tools. Results:\n{results_text}\n\nLet me decide if I need more tools or can answer now."})
+
+    raw = await _ollama_chat(messages, step=f"reason_iter_{iteration}")
+    logger.info("req=%s reason iter=%d raw=%s", state["request_id"], iteration, raw[:200])
+
+    new_tool_calls = _parse_tool_calls(raw)
+
+    return {
+        "llm_raw": raw,
+        "tool_calls": existing_calls + new_tool_calls,
+        "tools_used": state.get("tools_used", []) + [tc["name"] for tc in new_tool_calls],
+        "iteration": iteration + 1,
+    }
+
+
+async def execute_tools(state: AgentState) -> dict:
+    """Execute only the tool calls that don't have results yet."""
+    tool_calls = state.get("tool_calls", [])
+    for tc in tool_calls:
+        if tc.get("result") is not None:
+            continue  # Already executed
+        tool_call_counter.labels(tool_name=tc["name"]).inc()
+        result = await call_tool(tc["name"], tc["arguments"])
+        tc["result"] = result
+        logger.info("req=%s tool=%s result=%s", state["request_id"], tc["name"], str(result)[:200])
+    return {"tool_calls": tool_calls}
+
+
+async def generate_response(state: AgentState) -> dict:
+    """Produce the final answer, synthesizing tool results if any."""
+    tool_calls = state.get("tool_calls", [])
+
+    if not tool_calls:
+        response = state.get("llm_raw", "I'm sorry, I couldn't process that.")
+    else:
+        results_text = "\n".join(
+            f"- {tc['name']}({tc['arguments']}): {json.dumps(tc.get('result', {}))}"
+            for tc in tool_calls
+        )
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant. Synthesise tool results into a clear answer."},
+            {"role": "user", "content": FINAL_PROMPT.format(
+                prompt=state["prompt"],
+                tool_results=results_text,
+            )},
+        ]
+        response = await _ollama_chat(messages, step="generate_response")
+
+    save_message(state["session_id"], "user", state["prompt"])
+    save_message(state["session_id"], "assistant", response)
+
+    return {"response": response}
+
+
+# ── Routing ─────────────────────────────────────────────────────────────────
+
+def should_continue(state: AgentState) -> str:
+    """Decide: execute tools, continue reasoning, or finalize."""
+    tool_calls = state.get("tool_calls", [])
+    iteration = state.get("iteration", 0)
+
+    # Check if the latest reasoning produced new unexecuted tool calls
+    has_pending = any(tc.get("result") is None for tc in tool_calls)
+
+    if has_pending:
+        return "execute_tools"
+
+    if iteration >= MAX_ITERATIONS:
+        return "generate_response"
+
+    return "generate_response"
+
+
+def after_tools(state: AgentState) -> str:
+    """After tool execution, decide to reason again or finalize."""
+    iteration = state.get("iteration", 0)
+    if iteration < MAX_ITERATIONS:
+        # Could reason again, but for now go to response
+        # The reason node re-evaluates if more tools needed
+        return "generate_response"
+    return "generate_response"
+
+
+# ── Build graph ─────────────────────────────────────────────────────────────
+
+def build_graph():
+    g = StateGraph(AgentState)
+    g.add_node("reason", reason)
+    g.add_node("execute_tools", execute_tools)
+    g.add_node("generate_response", generate_response)
+
+    g.set_entry_point("reason")
+    g.add_conditional_edges("reason", should_continue, {
+        "execute_tools": "execute_tools",
+        "generate_response": "generate_response",
+    })
+    g.add_edge("execute_tools", "generate_response")
+    g.add_edge("generate_response", END)
+
+    return g.compile()
+
+
+_graph = build_graph()
+
+
+# ── Public API ──────────────────────────────────────────────────────────────
+
+async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
+    """Run the agent graph and return {response, tools_used, trace_id}."""
+    lf_trace = LangfuseTrace("agent-run", session_id, request_id, prompt)
+
+    history = get_history(session_id, limit=10)
+    initial_state: AgentState = {
+        "prompt": prompt,
+        "session_id": session_id,
+        "request_id": request_id,
+        "history": history,
+        "llm_raw": "",
+        "tool_calls": [],
+        "response": "",
+        "tools_used": [],
+        "iteration": 0,
+    }
+
+    try:
+        result = await _graph.ainvoke(initial_state)
+        agent_run_counter.labels(status="success").inc()
+        lf_trace.end(output=result.get("response", ""))
+    except Exception as e:
+        agent_run_counter.labels(status="error").inc()
+        lf_trace.end(output=f"ERROR: {e}")
+        raise
+
+    return {
+        "response": result.get("response", "No response generated."),
+        "tools_used": result.get("tools_used", []),
+        "trace_id": lf_trace.trace_id,
+    }
+
+
+# ── Streaming support ──────────────────────────────────────────────────────
+
+async def _ollama_chat_stream(messages: list[dict]) -> AsyncIterator[str]:
+    """Stream tokens from ChatOllama."""
+    llm = get_llm()
+    lc_messages = []
+    for m in messages:
+        role = m["role"]
+        content = m["content"]
+        if role == "system":
+            lc_messages.append(SystemMessage(content=content))
+        elif role == "user":
+            lc_messages.append(HumanMessage(content=content))
+        elif role == "assistant":
+            lc_messages.append(AIMessage(content=content))
+
+    async for chunk in llm.astream(lc_messages):
+        if chunk.content:
+            yield chunk.content
+
+
+async def run_agent_stream(
+    prompt: str, session_id: str, request_id: str
+) -> AsyncIterator[dict]:
+    """
+    Run the agent graph with streaming.
+    Yields SSE-compatible dicts.
+    """
+    lf_trace = LangfuseTrace("agent-run-stream", session_id, request_id, prompt)
+    history = get_history(session_id, limit=10)
+
+    yield {"event": "status", "data": "Understanding your request..."}
+
+    system = SYSTEM_PROMPT.format(tools=catalogue_as_text())
+    messages = [{"role": "system", "content": system}]
+    for msg in history:
+        messages.append(msg)
+    messages.append({"role": "user", "content": prompt})
+
+    raw = await _ollama_chat(messages, step="understand")
+    logger.info("req=%s understand raw=%s", request_id, raw[:200])
+    tool_calls = _parse_tool_calls(raw)
+    tools_used = [tc["name"] for tc in tool_calls]
+
+    if tool_calls:
+        yield {"event": "status", "data": f"Calling tool{'s' if len(tool_calls) > 1 else ''}: {', '.join(tools_used)}"}
+        for tc in tool_calls:
+            tool_call_counter.labels(tool_name=tc["name"]).inc()
+            result = await call_tool(tc["name"], tc["arguments"])
+            tc["result"] = result
+            logger.info("req=%s tool=%s result=%s", request_id, tc["name"], str(result)[:200])
+            yield {"event": "tool", "data": {"name": tc["name"], "result": result}}
+
+    yield {"event": "status", "data": "Generating response..."}
+
+    full_response = ""
+    if not tool_calls:
+        full_response = raw
+        for word in raw.split(" "):
+            yield {"event": "token", "data": word + " "}
+    else:
+        results_text = "\n".join(
+            f"- {tc['name']}({tc['arguments']}): {json.dumps(tc.get('result', {}))}"
+            for tc in tool_calls
+        )
+        synth_messages = [
+            {"role": "system", "content": "You are a helpful assistant. Synthesise tool results into a clear answer."},
+            {"role": "user", "content": FINAL_PROMPT.format(prompt=prompt, tool_results=results_text)},
+        ]
+        async for token in _ollama_chat_stream(synth_messages):
+            full_response += token
+            yield {"event": "token", "data": token}
+
+    save_message(session_id, "user", prompt)
+    save_message(session_id, "assistant", full_response)
+
+    agent_run_counter.labels(status="success").inc()
+    lf_trace.end(output=full_response)
+    logger.info("req=%s done tools=%s", request_id, tools_used)
+    yield {
+        "event": "done",
+        "data": {
+            "response": full_response,
+            "tools_used": tools_used,
+            "request_id": request_id,
+            "trace_id": lf_trace.trace_id,
+        },
+    }

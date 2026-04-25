@@ -1,0 +1,69 @@
+{
+  "name": "Scheduled Daily Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+        }
+      },
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "Generate a concise daily summary report. Include current date/time, any notable information, and a brief status update."
+            },
+            { "name": "sessionId", "value": "scheduled-daily-summary" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Ask Agent for Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://tools-service:8001/tools/file-write",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "filename",
+              "value": "daily-summary-{{ $now.format('yyyy-MM-dd') }}.txt"
+            },
+            { "name": "content", "value": "={{ $json.response }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Save Summary to File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [{ "node": "Ask Agent for Summary", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ask Agent for Summary": {
+      "main": [[{ "node": "Save Summary to File", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": [{ "name": "scheduled" }, { "name": "reports" }]
+}

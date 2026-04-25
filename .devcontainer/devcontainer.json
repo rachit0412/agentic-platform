@@ -83,24 +83,24 @@
 
   // Port forwarding for all services
   "forwardPorts": [
-    3000,  // OpenWebUI
-    5678,  // n8n
-    8000,  // LangGraph API
+    3000, // Dashboard
+    5678, // n8n
+    8000, // LangGraph API
     11434, // Ollama
-    5432,  // PostgreSQL
-    6379,  // Redis
-    8080,  // Keycloak
-    8181,  // OPA
-    3001,  // Langfuse
-    9090,  // Prometheus
-    3002,  // Grafana
-    3100   // Loki
+    5432, // PostgreSQL
+    6379, // Redis
+    8080, // Keycloak
+    8181, // OPA
+    3001, // Langfuse
+    9090, // Prometheus
+    3002, // Grafana
+    3100 // Loki
   ],
 
   // Port visibility and labels
   "portsAttributes": {
     "3000": {
-      "label": "OpenWebUI",
+      "label": "Dashboard",
       "onAutoForward": "notify"
     },
     "5678": {

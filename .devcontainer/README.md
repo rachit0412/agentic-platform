@@ -12,12 +12,13 @@ This directory contains the configuration for running the Agentic Platform in Gi
    - Once ready, check the "PORTS" tab in VS Code
    - Click on the forwarded port links to access services
    - Main interfaces:
-     - OpenWebUI (port 3000) - Chat interface
+     - Dashboard (port 3000) - Platform dashboard
      - n8n (port 5678) - Workflow builder
      - LangGraph API (port 8000) - Agent orchestration
      - Grafana (port 3002) - Monitoring dashboards
 
 3. **Pull AI Models**
+
    ```bash
    # Pull default models (runs automatically in background)
    docker exec ollama ollama pull llama3
@@ -30,6 +31,7 @@ This directory contains the configuration for running the Agentic Platform in Gi
 ## 📋 What's Included
 
 ### Development Container Features
+
 - Python 3.11
 - Node.js 20
 - Docker-in-Docker (for running docker-compose)
@@ -37,8 +39,10 @@ This directory contains the configuration for running the Agentic Platform in Gi
 - VS Code extensions for Python, Docker, YAML, etc.
 
 ### Services
+
 All services from docker-compose.yml are available:
-- OpenWebUI - Modern chat interface
+
+- Dashboard - Platform dashboard & agent UI
 - LangGraph API - Agent orchestration layer
 - n8n - Workflow automation
 - Ollama - Local LLM runtime
@@ -54,13 +58,16 @@ All services from docker-compose.yml are available:
 ## 🔧 Configuration
 
 ### Environment Variables
+
 Edit `.env` file in the root directory to customize:
+
 - Database credentials
 - API keys
 - Service passwords
 - OAuth settings
 
 ### Resource Considerations
+
 - **Minimum**: 4-core, 8GB RAM codespace
 - **Recommended**: 8-core, 16GB RAM for optimal performance
 - **GPU**: Not available in standard codespaces (Ollama will use CPU)
@@ -68,6 +75,7 @@ Edit `.env` file in the root directory to customize:
 ## 🛠️ Development Workflow
 
 ### Working with LangGraph API
+
 ```bash
 # Navigate to the service
 cd services/langgraph-api
@@ -82,6 +90,7 @@ pytest
 ```
 
 ### Managing Services
+
 ```bash
 # View all running services
 docker-compose ps
@@ -100,6 +109,7 @@ docker-compose up -d
 ```
 
 ### Database Access
+
 ```bash
 # Connect to PostgreSQL
 docker exec -it postgres psql -U agentic -d agentic_platform
@@ -110,6 +120,7 @@ docker exec -it postgres psql -U agentic -d agentic_platform
 ## 🐛 Troubleshooting
 
 ### Services not starting
+
 ```bash
 # Check service status
 docker-compose ps
@@ -122,11 +133,13 @@ docker-compose down && docker-compose up -d
 ```
 
 ### Port conflicts
+
 - Codespaces automatically handles port forwarding
 - Check the PORTS tab to see which ports are active
 - Make ports public if you need to share them
 
 ### Out of resources
+
 - Stop unused services: `docker-compose stop [service-name]`
 - Upgrade codespace machine type in settings
 - Clean up Docker: `docker system prune -a`

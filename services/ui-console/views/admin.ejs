@@ -1,0 +1,105 @@
+<%- include('layout', { title: 'Admin', page: 'admin', body: `
+
+<h1 class="text-glow-cyan">Admin</h1>
+
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <h3>Environment Info</h3>
+  <table class="mt-1">
+    <tr><th>Variable</th><th>Value</th></tr>
+    <tr><td>Node Environment</td><td class="mono">${process.env.NODE_ENV || 'development'}</td></tr>
+    <tr><td>Agent Service</td><td class="mono" style="color:var(--accent-text)">${urls.agent}</td></tr>
+    <tr><td>n8n</td><td class="mono" style="color:var(--accent-text)">${urls.n8n}</td></tr>
+    <tr><td>Langfuse</td><td class="mono" style="color:var(--accent-text)">${urls.langfuse}</td></tr>
+    <tr><td>Grafana</td><td class="mono" style="color:var(--accent-text)">${urls.grafana}</td></tr>
+  </table>
+</div>
+
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+  <div class="section-header">
+    <h3>Ollama Models</h3>
+    <button class="btn btn-secondary btn-sm" onclick="loadModels()">Refresh</button>
+  </div>
+  <div id="models-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+<div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
+  <h3>Service Versions</h3>
+  <table class="mt-1">
+    <tr><th>Service</th><th>Version</th></tr>
+    <tr><td>Agent Service</td><td class="mono" style="font-size:0.78rem">2.0.0 (FastAPI + LangGraph + LangChain)</td></tr>
+    <tr><td>Tools Service</td><td class="mono" style="font-size:0.78rem">2.0.0 (FastAPI + Web Search + Code Exec)</td></tr>
+    <tr><td>UI Console</td><td class="mono" style="font-size:0.78rem">2.0.0 (Express + EJS)</td></tr>
+    <tr><td>ChromaDB</td><td class="mono" style="font-size:0.78rem">latest (Vector Store)</td></tr>
+    <tr><td>Ollama</td><td class="mono" style="font-size:0.78rem">latest</td></tr>
+    <tr><td>n8n</td><td class="mono" style="font-size:0.78rem">latest</td></tr>
+    <tr><td>Langfuse</td><td class="mono" style="font-size:0.78rem">2.x</td></tr>
+    <tr><td>Grafana</td><td class="mono" style="font-size:0.78rem">latest</td></tr>
+  </table>
+</div>
+
+<div class="card animate-fade-up delay-300">
+  <h3>Feature Toggles</h3>
+  <table class="mt-1">
+    <tr><th>Feature</th><th>Status</th></tr>
+    <tr>
+      <td>LangChain Integration</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>Vector Memory (ChromaDB)</td>
+      <td><span class="badge badge-success">Enabled (Core)</span></td>
+    </tr>
+    <tr>
+      <td>RAG Pipeline</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>Web Search (DuckDuckGo)</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>Code Execution (Sandboxed)</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>LLM Tracing (Langfuse)</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>OpenTelemetry</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>Streaming SSE</td>
+      <td><span class="badge badge-success">Enabled</span></td>
+    </tr>
+    <tr>
+      <td>ReAct Agent Loop</td>
+      <td><span class="badge badge-success">Enabled (max 5 iters)</span></td>
+    </tr>
+  </table>
+</div>
+
+<script>
+async function loadModels() {
+  try {
+    const r = await fetch('/api/models');
+    const d = await r.json();
+    const el = document.getElementById('models-list');
+    if (!d.models || d.models.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker exec ollama ollama pull llama3</code></p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Model</th><th>Size</th><th>Digest</th></tr>' +
+      d.models.map(m => \`<tr>
+        <td>\${m.name} \${m.name === d.current_model ? '<span class="badge badge-success">active</span>' : ''}</td>
+        <td class="mono">\${(m.size / 1e9).toFixed(1)} GB</td>
+        <td class="mono" style="font-size:0.72rem">\${m.digest}</td>
+      </tr>\`).join('') + '</table>';
+  } catch(e) {
+    document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';
+  }
+}
+loadModels();
+</script>
+` }) %>

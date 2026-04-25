@@ -70,20 +70,22 @@ xdg-open http://localhost:3000  # Linux
 #### Prerequisites
 
 1. **Install Docker Desktop**
+
    ```powershell
    # Download and install from:
    # https://www.docker.com/products/docker-desktop
-   
+
    # Or use winget
    winget install Docker.DockerDesktop
    ```
 
 2. **Enable WSL 2** (Recommended)
+
    ```powershell
    # Run as Administrator
    wsl --install
    wsl --set-default-version 2
-   
+
    # Restart your computer
    ```
 
@@ -358,10 +360,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
+          cpus: "4"
           memory: 8G
         reservations:
-          cpus: '2'
+          cpus: "2"
           memory: 4G
 ```
 
@@ -369,20 +371,20 @@ services:
 
 Default ports used:
 
-| Service | Port | Configurable |
-|---------|------|--------------|
-| OpenWebUI | 3000 | Yes |
-| LangGraph API | 8000 | Yes |
-| n8n | 5678 | Yes |
-| Keycloak | 8080 | Yes |
-| PostgreSQL | 5432 | Yes |
-| Redis | 6379 | Yes |
-| Ollama | 11434 | Yes |
-| Langfuse | 3001 | Yes |
-| Grafana | 3002 | Yes |
-| Prometheus | 9090 | Yes |
-| OPA | 8181 | Yes |
-| Loki | 3100 | Yes |
+| Service       | Port  | Configurable |
+| ------------- | ----- | ------------ |
+| Dashboard     | 3000  | Yes          |
+| LangGraph API | 8000  | Yes          |
+| n8n           | 5678  | Yes          |
+| Keycloak      | 8080  | Yes          |
+| PostgreSQL    | 5432  | Yes          |
+| Redis         | 6379  | Yes          |
+| Ollama        | 11434 | Yes          |
+| Langfuse      | 3001  | Yes          |
+| Grafana       | 3002  | Yes          |
+| Prometheus    | 9090  | Yes          |
+| OPA           | 8181  | Yes          |
+| Loki          | 3100  | Yes          |
 
 To change ports, edit `docker-compose.yml`:
 
@@ -390,7 +392,7 @@ To change ports, edit `docker-compose.yml`:
 services:
   open-webui:
     ports:
-      - "8080:8080"  # Change 3000 to desired port
+      - "8080:8080" # Change 3000 to desired port
 ```
 
 ## Verification
@@ -414,7 +416,7 @@ curl http://localhost:9090/-/healthy
 
 After installation, verify you can access:
 
-- ✅ OpenWebUI: http://localhost:3000
+- ✅ Dashboard: http://localhost:3000
 - ✅ API Docs: http://localhost:8000/docs
 - ✅ n8n: http://localhost:5678
 - ✅ Keycloak: http://localhost:8080
@@ -590,7 +592,7 @@ If you encounter issues:
 
 After successful installation:
 
-1. ✅ Access OpenWebUI at http://localhost:3000
+1. ✅ Access Dashboard at http://localhost:3000
 2. ✅ Create your first chat conversation
 3. ✅ Explore API documentation at http://localhost:8000/docs
 4. ✅ Create workflows in n8n

@@ -1,0 +1,177 @@
+<%- include('layout', { title: 'Documents', page: 'documents', body: `
+
+<h1 class="text-glow-cyan">Document Management</h1>
+
+<!-- Stats Row -->
+<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </div>
+    <div class="stat-label">Total Chunks</div>
+    <div class="stat-number" id="stat-chunks">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="stat-label">Documents</div>
+    <div class="stat-number" id="stat-docs">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div class="stat-label">Collection</div>
+    <div class="stat-number" id="stat-collection" style="font-size:1rem">-</div>
+  </div>
+</div>
+
+<!-- Ingest Form -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+  <h3>Ingest Document</h3>
+  <div class="mt-1">
+    <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name</label>
+    <input id="ingest-source" placeholder="e.g. company-policy.pdf" style="max-width:400px;margin-top:0.375rem" />
+  </div>
+  <div class="mt-1">
+    <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Document Text</label>
+    <textarea id="ingest-text" rows="6" placeholder="Paste document text here..." style="margin-top:0.375rem"></textarea>
+  </div>
+  <div class="flex mt-1" style="align-items:center">
+    <label style="font-size:0.82rem;color:var(--text-2)">Chunk Size: <input id="chunk-size" type="number" value="1000" style="width:80px" /></label>
+    <label style="font-size:0.82rem;color:var(--text-2)">Overlap: <input id="chunk-overlap" type="number" value="200" style="width:80px" /></label>
+    <button class="btn btn-primary" id="ingestBtn" onclick="ingestDoc()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Ingest
+    </button>
+  </div>
+  <div id="ingest-result" class="mono mt-1" style="color:var(--success);font-size:0.82rem"></div>
+</div>
+
+<!-- Semantic Search -->
+<div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
+  <h3>Semantic Search</h3>
+  <div class="flex mt-1">
+    <input id="search-query" placeholder="Search your documents..." />
+    <input id="search-k" type="number" value="5" style="width:60px" placeholder="k" />
+    <button class="btn btn-primary" onclick="searchDocs()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search
+    </button>
+  </div>
+  <div id="search-results" class="mt-1"></div>
+</div>
+
+<!-- Indexed Documents -->
+<div class="card animate-fade-up delay-300">
+  <div class="section-header">
+    <h3>Indexed Documents</h3>
+    <button class="btn btn-secondary btn-sm" onclick="loadStats();loadDocs()">Refresh</button>
+  </div>
+  <div id="doc-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+<script>
+async function loadStats() {
+  try {
+    const r = await fetch('/api/documents/stats');
+    const d = await r.json();
+    document.getElementById('stat-chunks').textContent = d.total_chunks || 0;
+    document.getElementById('stat-docs').textContent = d.unique_documents || 0;
+    document.getElementById('stat-collection').textContent = d.collection || '-';
+  } catch(e) {
+    document.getElementById('stat-chunks').textContent = 'Error';
+  }
+}
+
+async function loadDocs() {
+  try {
+    const r = await fetch('/api/documents');
+    const d = await r.json();
+    const el = document.getElementById('doc-list');
+    if (!d.documents || d.documents.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No documents ingested yet.</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Source</th><th>Actions</th></tr>' +
+      d.documents.map(doc => \`<tr>
+        <td class="mono">\${doc.source}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteDoc('\${doc.source}')">Delete</button></td>
+      </tr>\`).join('') + '</table>';
+  } catch(e) {
+    document.getElementById('doc-list').innerHTML = '<p style="color:var(--danger)">Failed to load</p>';
+  }
+}
+
+async function ingestDoc() {
+  const source = document.getElementById('ingest-source').value.trim();
+  const text = document.getElementById('ingest-text').value.trim();
+  if (!source || !text) return alert('Source and text are required');
+  document.getElementById('ingestBtn').disabled = true;
+  document.getElementById('ingest-result').textContent = 'Ingesting...';
+  document.getElementById('ingest-result').style.color = 'var(--text-3)';
+  try {
+    const r = await fetch('/api/documents/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        source, text,
+        chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
+        chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+      })
+    });
+    const d = await r.json();
+    document.getElementById('ingest-result').style.color = 'var(--success)';
+    document.getElementById('ingest-result').textContent = 'Ingested: ' + (d.chunks || 0) + ' chunks from ' + (d.source || source);
+    loadStats(); loadDocs();
+  } catch(e) {
+    document.getElementById('ingest-result').textContent = 'Error: ' + e.message;
+    document.getElementById('ingest-result').style.color = 'var(--danger)';
+  } finally {
+    document.getElementById('ingestBtn').disabled = false;
+  }
+}
+
+async function searchDocs() {
+  const query = document.getElementById('search-query').value.trim();
+  if (!query) return;
+  const k = parseInt(document.getElementById('search-k').value) || 5;
+  try {
+    const r = await fetch('/api/documents/search', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ query, k })
+    });
+    const d = await r.json();
+    const el = document.getElementById('search-results');
+    if (!d.results || d.results.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No results found.</p>';
+      return;
+    }
+    el.innerHTML = d.results.map((r, i) => \`
+      <div class="glass-hover" style="padding:1rem;border-radius:14px;margin-top:0.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:var(--text-1)">#\${i+1} — \${r.metadata?.source || 'unknown'}</strong>
+          <span class="mono" style="color:var(--text-3);font-size:0.72rem">score: \${(r.score||0).toFixed(4)}</span>
+        </div>
+        <p style="font-size:0.82rem;margin-top:0.5rem;white-space:pre-wrap;color:var(--text-2);line-height:1.6">\${r.content}</p>
+      </div>
+    \`).join('');
+  } catch(e) {
+    document.getElementById('search-results').innerHTML = '<p style="color:var(--danger)">Search failed</p>';
+  }
+}
+
+async function deleteDoc(source) {
+  if (!confirm('Delete all chunks for ' + source + '?')) return;
+  try {
+    await fetch('/api/documents/' + encodeURIComponent(source), { method: 'DELETE' });
+    loadStats(); loadDocs();
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+loadStats();
+loadDocs();
+</script>
+` }) %>

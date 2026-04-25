@@ -1,255 +1,308 @@
-version: '3.8'
+###############################################################################
+# Agentic Platform — Full Local Developer Stack
+# Usage:  docker compose up -d
+###############################################################################
 
 services:
-  # UI Layer - OpenWebUI
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:latest
-    container_name: open-webui
+  # ── UI Console (Platform Dashboard) ───────────────────────────────────────
+  ui-console:
+    build:
+      context: ./services/ui-console
+      dockerfile: Dockerfile
+    container_name: ui-console
     ports:
-      - "3000:8080"
+      - "${UI_PORT:-3000}:3001"
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-change-me-in-production}
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      - ENABLE_OAUTH=true
-      - OAUTH_PROVIDER=keycloak
-      - OAUTH_CLIENT_ID=openwebui
-      - OAUTH_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-      - OAUTH_ISSUER=http://keycloak:8080/realms/ai-chat
-    volumes:
-      - open-webui-data:/app/backend/data
+      - PORT=3001
+      - AGENT_URL=http://agent-service:8000
+      - N8N_URL=http://n8n:5678
+      - LANGFUSE_URL=http://langfuse:3000
+      - GRAFANA_URL=http://grafana:3000
+      - N8N_EXTERNAL_URL=http://localhost:${N8N_PORT:-5678}
+      - LANGFUSE_EXTERNAL_URL=http://localhost:${LANGFUSE_PORT:-3002}
+      - GRAFANA_EXTERNAL_URL=http://localhost:${GRAFANA_PORT:-3003}
+      - AGENT_EXTERNAL_URL=http://localhost:${AGENT_PORT:-8010}
+      - CHROMA_URL=http://chromadb:8000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-local-dev}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-local-dev}
     depends_on:
-      - postgres
-      - ollama
-      - keycloak
+      agent-service:
+        condition: service_healthy
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # Model Runtime - Ollama
+  # ── Workflow Orchestrator — n8n ───────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:${N8N_PORT:-5678}/
+      - GENERIC_TIMEZONE=UTC
+      - NODE_ENV=production
+      - N8N_USER_MANAGEMENT_DISABLED=true
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./n8n/workflows:/workflows
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── LLM Runtime — Ollama ─────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
-      - "11434:11434"
+      - "${OLLAMA_PORT:-11436}:11434"
     volumes:
       - ollama-data:/root/.ollama
     environment:
       - OLLAMA_KEEP_ALIVE=24h
     networks:
-      - ai-chat-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-  # Workflow Engine - n8n
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - NODE_ENV=production
-      - WEBHOOK_URL=http://localhost:5678/
-      - GENERIC_TIMEZONE=UTC
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - n8n-data:/home/node/.n8n
-      - ./n8n/workflows:/workflows
-    depends_on:
-      - postgres
-    networks:
-      - ai-chat-network
-
-  # Agent Orchestration Service (LangGraph API)
-  langgraph-api:
-    build:
-      context: ./services/langgraph-api
-      dockerfile: Dockerfile
-    container_name: langgraph-api
-    privileged: true
-    ports:
-      - "8000:8000"
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - LANGFUSE_HOST=http://langfuse:3000
-      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
-      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-      - OPA_URL=http://opa:8181
-    volumes:
-      - ./services/langgraph-api:/app
-    depends_on:
-      - postgres
-      - ollama
-      - langfuse
-      - opa
-    networks:
-      - ai-chat-network
-
-  # Database - PostgreSQL with pgvector
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: postgres
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-aiuser}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-aipassword}
-      - POSTGRES_DB=${POSTGRES_DB:-ai_chat}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d
-    networks:
-      - ai-chat-network
+      - platform-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aiuser}"]
-      interval: 5s
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ── Agent Service — FastAPI + LangGraph ──────────────────────────────────
+  agent-service:
+    build:
+      context: ./services/agent
+      dockerfile: Dockerfile
+    container_name: agent-service
+    ports:
+      - "${AGENT_PORT:-8010}:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3}
+      - TOOLS_SERVICE_URL=http://tools-service:8001
+      - MEMORY_DIR=/data
+      - CHROMA_URL=${CHROMA_URL:-http://chromadb:8000}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-local-dev}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-local-dev}
+      - LANGFUSE_HOST=http://langfuse:3000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+    volumes:
+      - ./services/agent:/app
+      - ./data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+      tools-service:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Tools Service — FastAPI ──────────────────────────────────────────────
+  tools-service:
+    build:
+      context: ./services/tools
+      dockerfile: Dockerfile
+    container_name: tools-service
+    ports:
+      - "${TOOLS_PORT:-8011}:8001"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - AGENT_SERVICE_URL=http://agent-service:8000
+      - CHROMA_URL=http://chromadb:8000
+    volumes:
+      - ./services/tools:/app
+      - ./data:/data
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ── Langfuse (LLM Observability) ─────────────────────────────────────────
+  langfuse-db:
+    image: postgres:16-alpine
+    container_name: langfuse-db
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=${LANGFUSE_DB_PASSWORD:-langfuse}
+      - POSTGRES_DB=langfuse
+    volumes:
+      - langfuse-db-data:/var/lib/postgresql/data
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  # Observability - Langfuse
   langfuse:
-    image: langfuse/langfuse:latest
+    image: langfuse/langfuse:2
     container_name: langfuse
     ports:
-      - "3001:3000"
+      - "${LANGFUSE_PORT:-3002}:3000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
-      - NEXTAUTH_URL=http://localhost:3001
-      - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET:-change-me-in-production}
-      - SALT=${LANGFUSE_SALT:-change-me-in-production}
-      - LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES=true
+      - DATABASE_URL=postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/langfuse
+      - NEXTAUTH_URL=http://localhost:${LANGFUSE_PORT:-3002}
+      - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET:-supersecret-nextauth}
+      - SALT=${LANGFUSE_SALT:-supersecret-salt}
+      - TELEMETRY_ENABLED=true
+      - LANGFUSE_INIT_ORG_ID=default
+      - LANGFUSE_INIT_ORG_NAME=Local Dev
+      - LANGFUSE_INIT_PROJECT_ID=default
+      - LANGFUSE_INIT_PROJECT_NAME=Agentic Platform
+      - LANGFUSE_INIT_PROJECT_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-local-dev}
+      - LANGFUSE_INIT_PROJECT_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-local-dev}
+      - LANGFUSE_INIT_USER_EMAIL=admin@local.dev
+      - LANGFUSE_INIT_USER_PASSWORD=changeme
+      - LANGFUSE_INIT_USER_NAME=Admin
     depends_on:
-      - postgres
+      langfuse-db:
+        condition: service_healthy
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/public/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Security - Keycloak (SSO/OIDC)
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: keycloak
-    ports:
-      - "8080:8080"
-    environment:
-      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
-      - KC_DB_USERNAME=${POSTGRES_USER}
-      - KC_DB_PASSWORD=${POSTGRES_PASSWORD}
-      - KC_HOSTNAME=localhost
-      - KC_HTTP_ENABLED=true
-    command: start-dev
+  # ── OpenTelemetry Collector ──────────────────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.100.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector.yaml"]
     volumes:
-      - ./keycloak/realms:/opt/keycloak/data/import
-    depends_on:
-      - postgres
-    networks:
-      - ai-chat-network
-
-  # Policy Engine - Open Policy Agent
-  opa:
-    image: openpolicyagent/opa:latest
-    container_name: opa
+      - ./services/otel/otel-collector.yaml:/etc/otel-collector.yaml:ro
     ports:
-      - "8181:8181"
-    command:
-      - "run"
-      - "--server"
-      - "--log-level=info"
-      - "/policies"
-    volumes:
-      - ./opa/policies:/policies
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "8889:8889"   # Prometheus exporter
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:13133/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # Monitoring - Prometheus
+  # ── Prometheus ───────────────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # Monitoring - Grafana
+  # ── Grafana ──────────────────────────────────────────────────────────────
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3002:3000"
+      - "${GRAFANA_PORT:-3003}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-      - GF_INSTALL_PLUGINS=grafana-clock-panel
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
     volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # Log Aggregation - Loki
+  # ── Loki (Log Aggregation) ───────────────────────────────────────────────
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.0.0
     container_name: loki
     ports:
-      - "3100:3100"
+      - "${LOKI_PORT:-3100}:3100"
+    command: ["-config.file=/etc/loki/config.yaml"]
     volumes:
-      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - ./observability/loki/loki-config.yaml:/etc/loki/config.yaml:ro
       - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
-  # Redis (for caching and session management)
-  redis:
-    image: redis:7-alpine
-    container_name: redis
+  # ── (Optional) Vector Memory — ChromaDB ──────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb
     ports:
-      - "6379:6379"
+      - "${CHROMA_PORT:-8200}:8000"
+    environment:
+      - ANONYMIZED_TELEMETRY=false
     volumes:
-      - redis-data:/data
+      - chroma-data:/chroma/chroma
     networks:
-      - ai-chat-network
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8000' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
 volumes:
-  open-webui-data:
-  ollama-data:
   n8n-data:
-  postgres-data:
+  ollama-data:
+  chroma-data:
+  langfuse-db-data:
   prometheus-data:
   grafana-data:
   loki-data:
-  redis-data:
 
 networks:
-  ai-chat-network:
+  platform-net:
     driver: bridge

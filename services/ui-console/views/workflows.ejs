@@ -1,0 +1,78 @@
+<%- include('layout', { title: 'Workflows', page: 'workflows', body: `
+
+<h1 class="text-glow-cyan">Workflows</h1>
+
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <h3>n8n Workflow Editor</h3>
+    <a href="${urls.n8n}" target="_blank" class="btn btn-primary btn-sm">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Open n8n
+    </a>
+  </div>
+  <iframe src="${urls.n8n}" height="600" style="background:var(--surface-1);border-radius:12px;border:1px solid var(--glass-border)" loading="lazy"></iframe>
+</div>
+
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <h3>Workflow Templates</h3>
+    <button class="btn btn-secondary btn-sm" onclick="loadWorkflows()">Refresh</button>
+  </div>
+  <table class="mt-1">
+    <tr><th>Name</th><th>Description</th><th>File</th><th>Status</th></tr>
+    <tr>
+      <td>Agent Run Webhook</td>
+      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">POST /webhook/agent-run → agent-service → response + traceId</td>
+      <td class="mono">agent-workflow.json</td>
+      <td><span class="badge badge-success">Active</span></td>
+    </tr>
+    <tr>
+      <td>RAG Document Ingest</td>
+      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">POST /webhook/rag-ingest → ChromaDB vector store</td>
+      <td class="mono">rag-ingest.json</td>
+      <td><span class="badge badge-warning">Template</span></td>
+    </tr>
+    <tr>
+      <td>Scheduled Summary</td>
+      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">Cron daily @ 9am → agent prompt → save to file</td>
+      <td class="mono">scheduled-summary.json</td>
+      <td><span class="badge badge-warning">Template</span></td>
+    </tr>
+    <tr>
+      <td>Web Research Pipeline</td>
+      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">POST /webhook/web-research → DuckDuckGo → agent analysis</td>
+      <td class="mono">web-research.json</td>
+      <td><span class="badge badge-warning">Template</span></td>
+    </tr>
+  </table>
+</div>
+
+<div class="card animate-fade-up delay-200">
+  <h3>n8n API — Active Workflows</h3>
+  <div id="n8n-workflows" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+<script>
+async function loadWorkflows() {
+  try {
+    const r = await fetch('/api/n8n/workflows');
+    const d = await r.json();
+    const el = document.getElementById('n8n-workflows');
+    if (!d.workflows || d.workflows.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No active workflows found. Import templates via n8n.</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>ID</th><th>Name</th><th>Active</th><th>Updated</th></tr>' +
+      d.workflows.map(w => \`<tr>
+        <td class="mono">\${w.id}</td>
+        <td>\${w.name || '-'}</td>
+        <td><span class="badge \${w.active ? 'badge-success' : 'badge-warning'}">\${w.active ? 'Active' : 'Inactive'}</span></td>
+        <td class="mono">\${w.updatedAt ? new Date(w.updatedAt).toLocaleDateString() : '-'}</td>
+      </tr>\`).join('') + '</table>';
+  } catch(e) {
+    document.getElementById('n8n-workflows').innerHTML = '<p style="color:var(--text-3)">Could not connect to n8n API</p>';
+  }
+}
+loadWorkflows();
+</script>
+` }) %>
