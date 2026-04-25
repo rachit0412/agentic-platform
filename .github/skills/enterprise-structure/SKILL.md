@@ -82,6 +82,7 @@ For every directory under `services/`, confirm:
 ### 5. Verify Documentation Files
 
 Required docs at root:
+
 - `README.md` — Project overview with badges, quickstart, architecture
 - `CONTRIBUTING.md` — How to contribute, PR process, coding standards
 - `INSTALL.md` — Detailed installation instructions
@@ -100,11 +101,11 @@ Required docs at root:
 
 Output a summary table:
 
-| Category | Status | Details |
-|----------|--------|---------|
-| Top-level structure | PASS/FAIL | Missing items |
+| Category            | Status    | Details                         |
+| ------------------- | --------- | ------------------------------- |
+| Top-level structure | PASS/FAIL | Missing items                   |
 | Service scaffolding | PASS/FAIL | Services without required files |
-| Naming conventions | PASS/FAIL | Non-conforming names |
-| Test organization | PASS/FAIL | Missing test categories |
-| Documentation | PASS/FAIL | Missing docs |
-| Observability | PASS/FAIL | Missing configs |
+| Naming conventions  | PASS/FAIL | Non-conforming names            |
+| Test organization   | PASS/FAIL | Missing test categories         |
+| Documentation       | PASS/FAIL | Missing docs                    |
+| Observability       | PASS/FAIL | Missing configs                 |
