@@ -1,0 +1,194 @@
+<%- include('layout', { title: 'Prompt Library', page: 'prompts', body: `
+
+<h1 class="text-glow-cyan">Prompt Library</h1>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">A library of <strong style="color:var(--text-1)">reusable prompts</strong> that can be attached to Skills and Agents.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Think: <strong style="color:#f59e0b">instruction templates</strong>. Each prompt defines <em>what the model should do</em> — categorized, tagged, and ready to be plugged into any skill.</p>
+
+<!-- Action Bar -->
+<div class="flex-between mb-2">
+  <div style="display:flex;gap:0.75rem;align-items:center">
+    <span id="prompt-count" class="badge" style="font-size:0.78rem">0 prompts</span>
+    <select id="category-filter" class="input" style="width:160px;height:34px;font-size:0.78rem" onchange="loadPrompts()">
+      <option value="">All Categories</option>
+      <option value="general">General</option>
+      <option value="research">Research</option>
+      <option value="coding">Coding</option>
+      <option value="analysis">Analysis</option>
+      <option value="writing">Writing</option>
+      <option value="summarization">Summarization</option>
+      <option value="qa">QA / Testing</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" onclick="showCreateForm()">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Prompt
+  </button>
+</div>
+
+<!-- Create / Edit Form -->
+<div class="card animate-fade-up" id="prompt-form" style="display:none">
+  <h3 id="form-title">Create Prompt</h3>
+  <input type="hidden" id="edit-id" value="">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+    <div>
+      <label class="field-label">Name</label>
+      <input type="text" id="prompt-name" class="input" placeholder="e.g. Deep Research Analyst" maxlength="100">
+    </div>
+    <div>
+      <label class="field-label">Category</label>
+      <select id="prompt-category" class="input">
+        <option value="general">General</option>
+        <option value="research">Research</option>
+        <option value="coding">Coding</option>
+        <option value="analysis">Analysis</option>
+        <option value="writing">Writing</option>
+        <option value="summarization">Summarization</option>
+        <option value="qa">QA / Testing</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+  </div>
+  <div style="margin-top:1rem">
+    <label class="field-label">Description <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— short summary of what this prompt does</span></label>
+    <input type="text" id="prompt-desc" class="input" placeholder="e.g. Instructs the model to perform deep research with citations" maxlength="500">
+  </div>
+  <div style="margin-top:1rem">
+    <label class="field-label">Prompt Content <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the full instructional text</span></label>
+    <textarea id="prompt-content" class="input" rows="8" placeholder="e.g. You are a deep research analyst. Break complex topics into sub-questions, search for evidence, cite sources, and synthesize a structured report..." style="resize:vertical;font-family:var(--mono)"></textarea>
+  </div>
+  <div style="margin-top:1rem">
+    <label class="field-label">Tags <span style="color:var(--text-3);font-weight:400">(comma-separated)</span></label>
+    <input type="text" id="prompt-tags" class="input" placeholder="e.g. research, citations, structured-output">
+  </div>
+  <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+    <button class="btn btn-primary" onclick="savePrompt()">Save</button>
+    <button class="btn" onclick="hideForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- Prompts Grid -->
+<div id="prompts-grid" class="grid-3" style="margin-top:1rem"></div>
+
+<script>
+  const categoryColors = {
+    general: '#6366f1', research: '#0ea5e9', coding: '#10b981',
+    analysis: '#f59e0b', writing: '#ec4899', summarization: '#8b5cf6',
+    qa: '#ef4444', custom: '#64748b'
+  };
+
+  async function loadPrompts() {
+    try {
+      const r = await fetch('/api/prompts');
+      const d = await r.json();
+      let prompts = d.prompts || [];
+      const catFilter = document.getElementById('category-filter').value;
+      if (catFilter) prompts = prompts.filter(p => p.category === catFilter);
+      document.getElementById('prompt-count').textContent = prompts.length + ' prompt' + (prompts.length !== 1 ? 's' : '');
+      const grid = document.getElementById('prompts-grid');
+      if (prompts.length === 0) {
+        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3)"><p style="font-size:1.1rem">No prompts yet</p><p style="margin-top:0.5rem">Create your first prompt to build a reusable library</p></div>';
+        return;
+      }
+      grid.innerHTML = prompts.map(p => {
+        const color = categoryColors[p.category] || '#64748b';
+        const tagBadges = (p.tags || []).slice(0,4).map(t => '<span class="badge">' + t + '</span>').join(' ');
+        const extra = (p.tags || []).length > 4 ? ' <span class="badge">+' + ((p.tags||[]).length - 4) + '</span>' : '';
+        return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
+          '<div>' +
+            '<div style="display:flex;align-items:center;justify-content:space-between">' +
+              '<h3 style="margin:0;font-size:1rem">📝 ' + p.name + '</h3>' +
+              '<span class="badge" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + p.category + '</span>' +
+            '</div>' +
+            '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + (p.description || 'No description') + '</p>' +
+            '<div style="background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);max-height:80px;overflow:hidden;margin-bottom:0.5rem">' + (p.content || '').slice(0,200) + (p.content && p.content.length > 200 ? '...' : '') + '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.5rem">' + tagBadges + extra + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
+            '<button class="btn btn-sm" onclick="copyPrompt(\\'' + p.id + '\\')">Copy</button>' +
+            '<button class="btn btn-sm" onclick="editPrompt(\\'' + p.id + '\\')">Edit</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deletePrompt(\\'' + p.id + '\\')">Delete</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch(e) {
+      document.getElementById('prompts-grid').innerHTML = '<div class="card" style="color:var(--danger)">Error loading prompts: ' + e.message + '</div>';
+    }
+  }
+
+  function showCreateForm() {
+    document.getElementById('form-title').textContent = 'Create Prompt';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('prompt-name').value = '';
+    document.getElementById('prompt-category').value = 'general';
+    document.getElementById('prompt-desc').value = '';
+    document.getElementById('prompt-content').value = '';
+    document.getElementById('prompt-tags').value = '';
+    document.getElementById('prompt-form').style.display = 'block';
+    document.getElementById('prompt-name').focus();
+  }
+
+  function hideForm() {
+    document.getElementById('prompt-form').style.display = 'none';
+  }
+
+  async function editPrompt(id) {
+    try {
+      const r = await fetch('/api/prompts/' + id);
+      const p = await r.json();
+      document.getElementById('form-title').textContent = 'Edit Prompt';
+      document.getElementById('edit-id').value = p.id;
+      document.getElementById('prompt-name').value = p.name;
+      document.getElementById('prompt-category').value = p.category || 'general';
+      document.getElementById('prompt-desc').value = p.description || '';
+      document.getElementById('prompt-content').value = p.content || '';
+      document.getElementById('prompt-tags').value = (p.tags || []).join(', ');
+      document.getElementById('prompt-form').style.display = 'block';
+      document.getElementById('prompt-name').focus();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function savePrompt() {
+    const id = document.getElementById('edit-id').value;
+    const payload = {
+      name: document.getElementById('prompt-name').value.trim(),
+      category: document.getElementById('prompt-category').value,
+      description: document.getElementById('prompt-desc').value.trim(),
+      content: document.getElementById('prompt-content').value.trim(),
+      tags: document.getElementById('prompt-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    };
+    if (!payload.name) { alert('Name is required'); return; }
+    if (!payload.content) { alert('Prompt content is required'); return; }
+    try {
+      const url = id ? '/api/prompts/' + id : '/api/prompts';
+      const method = id ? 'PUT' : 'POST';
+      await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      hideForm();
+      loadPrompts();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function deletePrompt(id) {
+    if (!confirm('Delete this prompt?')) return;
+    try {
+      await fetch('/api/prompts/' + id, { method: 'DELETE' });
+      loadPrompts();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function copyPrompt(id) {
+    try {
+      const r = await fetch('/api/prompts/' + id);
+      const p = await r.json();
+      await navigator.clipboard.writeText(p.content || '');
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  loadPrompts();
+</script>
+
+` }) %>

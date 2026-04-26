@@ -61,4 +61,84 @@ async function uninstall(id) {
 
 loadTemplates();
 </script>
+
+<!-- ── Guides: How to Add Tools & Marketplace Agents ── -->
+<div style="margin-top:2.5rem;border-top:1px solid var(--glass-border);padding-top:2rem">
+  <h2 class="text-glow-cyan" style="font-size:1.25rem;margin-bottom:1rem">How to Add & Maintain Custom Tools, Agents & Templates</h2>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr 1fr;gap:1rem">
+    <!-- Guide 1: Creating a New Tool -->
+    <div class="card" style="border-left:3px solid #10b981">
+      <h3 style="margin:0 0 0.75rem;font-size:0.95rem;color:#10b981">🔧 Creating a New Tool</h3>
+      <ol style="color:var(--text-2);font-size:0.8rem;line-height:1.7;padding-left:1.25rem;margin:0">
+        <li>Open <code>services/agent/agent/tools.py</code></li>
+        <li>Add a new function with the <code>@tool</code> decorator:
+          <pre style="background:var(--input-bg);border-radius:6px;padding:0.5rem;margin:0.5rem 0;font-size:0.72rem;overflow-x:auto"><code>@tool
+async def my_tool(param: str) -> str:
+    """Description of what this tool does."""
+    result = await _proxy_call(
+        "/tools/my-endpoint",
+        {"param": param}
+    )
+    return json.dumps(result)</code></pre>
+        </li>
+        <li>If it calls tools-service, add the endpoint in <code>services/tools/main.py</code></li>
+        <li>Register it in the <code>get_tools()</code> list at the bottom of <code>tools.py</code></li>
+        <li>Rebuild: <code>docker-compose build agent-service</code></li>
+      </ol>
+      <p style="color:var(--text-3);font-size:0.72rem;margin-top:0.75rem"><strong>Tip:</strong> Use <code>_proxy_call()</code> for tools-service proxied tools, or write logic directly for local tools.</p>
+    </div>
+
+    <!-- Guide 2: Creating a Marketplace Agent Template -->
+    <div class="card" style="border-left:3px solid #6366f1">
+      <h3 style="margin:0 0 0.75rem;font-size:0.95rem;color:#6366f1">🤖 Creating a Marketplace Agent</h3>
+      <ol style="color:var(--text-2);font-size:0.8rem;line-height:1.7;padding-left:1.25rem;margin:0">
+        <li>Open <code>services/ui-console/marketplace.js</code></li>
+        <li>Add a new entry to the <code>TEMPLATES</code> array:
+          <pre style="background:var(--input-bg);border-radius:6px;padding:0.5rem;margin:0.5rem 0;font-size:0.72rem;overflow-x:auto"><code>{
+  id: "my-agent-template",
+  name: "My Custom Agent",
+  type: "agent-template",
+  description: "Does X using Y tools",
+  config: {
+    name: "My Agent",
+    description: "...",
+    provider: "ollama",
+    model: "llama3",
+    system_prompt: "You are...",
+    tool_ids: ["web_search"],
+    skill_ids: []
+  }
+}</code></pre>
+        </li>
+        <li>The <code>install</code> action auto-creates the agent via the API</li>
+        <li>Restart: <code>docker-compose restart ui-console</code></li>
+      </ol>
+      <p style="color:var(--text-3);font-size:0.72rem;margin-top:0.75rem"><strong>Types:</strong> <code>agent-template</code>, <code>tool</code>, <code>n8n-workflow</code></p>
+    </div>
+
+    <!-- Guide 3: Maintaining & Contributing -->
+    <div class="card" style="border-left:3px solid #f59e0b">
+      <h3 style="margin:0 0 0.75rem;font-size:0.95rem;color:#f59e0b">📦 Maintaining & Contributing</h3>
+      <div style="color:var(--text-2);font-size:0.8rem;line-height:1.7">
+        <p style="margin:0 0 0.5rem"><strong>File Locations:</strong></p>
+        <ul style="padding-left:1.25rem;margin:0 0 0.75rem">
+          <li><code>services/agent/agent/tools.py</code> — tool definitions</li>
+          <li><code>services/tools/main.py</code> — tools-service endpoints</li>
+          <li><code>services/ui-console/marketplace.js</code> — marketplace templates</li>
+          <li><code>n8n/workflows/</code> — n8n workflow JSON files</li>
+        </ul>
+        <p style="margin:0 0 0.5rem"><strong>Best Practices:</strong></p>
+        <ul style="padding-left:1.25rem;margin:0">
+          <li>Always add a docstring to tools — it's the LLM's description</li>
+          <li>Use <code>async</code> for all tool functions</li>
+          <li>Keep marketplace <code>id</code> fields unique and URL-safe</li>
+          <li>Test tools locally before adding to marketplace</li>
+          <li>n8n workflows: export JSON from n8n UI, save to <code>n8n/workflows/</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 ` }) %>

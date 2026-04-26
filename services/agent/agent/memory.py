@@ -121,6 +121,21 @@ def init_db():
         )
         """
     )
+    # ── Prompts Library table ──
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS prompts (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE,
+            category    TEXT DEFAULT 'general',
+            content     TEXT NOT NULL DEFAULT '',
+            description TEXT DEFAULT '',
+            tags        TEXT DEFAULT '[]',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
     # Ensure default agent exists
     existing = conn.execute("SELECT id FROM agents WHERE is_default = 1").fetchone()
     if not existing:
@@ -581,5 +596,76 @@ def update_mcp_server(server_id: str, **kwargs) -> dict | None:
 def delete_mcp_server(server_id: str) -> bool:
     conn = _get_conn()
     cursor = conn.execute("DELETE FROM mcp_servers WHERE id = ?", (server_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+# ── Prompts CRUD ───────────────────────────────────────────────────────────
+
+def _row_to_prompt(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "category": row["category"],
+        "content": row["content"],
+        "description": row["description"],
+        "tags": json.loads(row["tags"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_prompts() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM prompts ORDER BY name").fetchall()
+    return [_row_to_prompt(r) for r in rows]
+
+
+def get_prompt(prompt_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM prompts WHERE id = ?", (prompt_id,)).fetchone()
+    return _row_to_prompt(row) if row else None
+
+
+def create_prompt(name: str, content: str, category: str = "general",
+                  description: str = "", tags: list[str] | None = None) -> dict:
+    conn = _get_conn()
+    prompt_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO prompts (id, name, category, content, description, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (prompt_id, name, category, content, description, json.dumps(tags or []), now, now),
+    )
+    conn.commit()
+    return get_prompt(prompt_id)
+
+
+def update_prompt(prompt_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_prompt(prompt_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "category", "content", "description"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    for key in ("tags",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(prompt_id)
+        conn.execute(f"UPDATE prompts SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_prompt(prompt_id)
+
+
+def delete_prompt(prompt_id: str) -> bool:
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM prompts WHERE id = ?", (prompt_id,))
     conn.commit()
     return cursor.rowcount > 0

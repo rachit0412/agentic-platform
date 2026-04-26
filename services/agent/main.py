@@ -21,6 +21,7 @@ from agent.memory import (
     list_agents, get_agent, create_agent, update_agent, delete_agent,
     list_a2a_peers, get_a2a_peer, create_a2a_peer, update_a2a_peer, delete_a2a_peer,
     list_mcp_servers, get_mcp_server, create_mcp_server, update_mcp_server, delete_mcp_server,
+    list_prompts, get_prompt, create_prompt, update_prompt, delete_prompt,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
@@ -443,6 +444,66 @@ async def skills_delete_endpoint(skill_id: str):
     if not ok:
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=404, content={"error": "Skill not found"})
+    return {"deleted": True}
+
+
+# ── Prompts CRUD endpoints ────────────────────────────────────────────────
+
+class PromptCreate(BaseModel):
+    name: str
+    content: str
+    category: str = "general"
+    description: str = ""
+    tags: list[str] = Field(default_factory=list)
+
+class PromptUpdate(BaseModel):
+    name: str | None = None
+    content: str | None = None
+    category: str | None = None
+    description: str | None = None
+    tags: list[str] | None = None
+
+
+@app.get("/prompts")
+async def prompts_list_endpoint():
+    return {"prompts": list_prompts()}
+
+
+@app.post("/prompts")
+async def prompts_create_endpoint(body: PromptCreate):
+    prompt = create_prompt(
+        name=body.name, content=body.content,
+        category=body.category, description=body.description,
+        tags=body.tags,
+    )
+    return prompt
+
+
+@app.get("/prompts/{prompt_id}")
+async def prompts_get_endpoint(prompt_id: str):
+    prompt = get_prompt(prompt_id)
+    if not prompt:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+    return prompt
+
+
+@app.put("/prompts/{prompt_id}")
+async def prompts_update_endpoint(prompt_id: str, body: PromptUpdate):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    prompt = update_prompt(prompt_id, **updates)
+    if not prompt:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
+    return prompt
+
+
+@app.delete("/prompts/{prompt_id}")
+async def prompts_delete_endpoint(prompt_id: str):
+    ok = delete_prompt(prompt_id)
+    if not ok:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Prompt not found"})
     return {"deleted": True}
 
 

@@ -72,6 +72,28 @@ app.delete("/api/skills/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// ── API: Prompts CRUD proxy ────────────────────────────
+app.get("/api/prompts", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/prompts", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/prompts/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/prompts/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/prompts/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: Agents CRUD proxy ─────────────────────────────
 app.get("/api/agents", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/agents`); res.json(await r.json()); }
@@ -536,6 +558,7 @@ app.get("/run-agent", (req, res) => res.render("run-agent", { urls: externalUrls
 app.get("/documents", (req, res) => res.render("documents", { urls: externalUrls }));
 app.get("/workflows", (req, res) => res.render("workflows", { urls: externalUrls }));
 app.get("/skills", (req, res) => res.render("skills", { urls: externalUrls }));
+app.get("/prompts", (req, res) => res.render("prompts", { urls: externalUrls }));
 app.get("/agents", (req, res) => res.render("agents", { urls: externalUrls }));
 app.get("/a2a", (req, res) => res.render("a2a", { urls: externalUrls }));
 app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));

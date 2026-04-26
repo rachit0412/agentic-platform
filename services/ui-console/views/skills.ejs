@@ -30,7 +30,12 @@
     </div>
   </div>
   <div style="margin-top:1rem">
-    <label class="field-label">Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the instructional context: what the model should do, how it should behave, what output is expected</span></label>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
+      <label class="field-label" style="margin-bottom:0">Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the instructional context: what the model should do, how it should behave, what output is expected</span></label>
+      <select id="prompt-library-picker" class="input" style="width:220px;height:30px;font-size:0.75rem" onchange="applyLibraryPrompt()">
+        <option value="">— Select from Prompt Library —</option>
+      </select>
+    </div>
     <textarea id="skill-prompt" class="input" rows="5" placeholder="e.g. You are a deep research analyst. Break complex topics into sub-questions, search for evidence, cite sources, and synthesize a structured report..." style="resize:vertical;font-family:var(--mono)"></textarea>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
@@ -54,6 +59,7 @@
 
 <script>
   let allTools = [];
+  let libraryPrompts = [];
 
   async function loadTools() {
     try {
@@ -61,6 +67,26 @@
       const d = await r.json();
       allTools = (d.tools || []).map(t => t.name);
     } catch(e) {}
+  }
+
+  async function loadLibraryPrompts() {
+    try {
+      const r = await fetch('/api/prompts');
+      const d = await r.json();
+      libraryPrompts = d.prompts || [];
+      const picker = document.getElementById('prompt-library-picker');
+      picker.innerHTML = '<option value="">— Select from Prompt Library —</option>' +
+        libraryPrompts.map(p => '<option value="' + p.id + '">' + p.name + ' (' + p.category + ')' + '</option>').join('');
+    } catch(e) {}
+  }
+
+  function applyLibraryPrompt() {
+    const picker = document.getElementById('prompt-library-picker');
+    const selected = libraryPrompts.find(p => p.id === picker.value);
+    if (selected) {
+      document.getElementById('skill-prompt').value = selected.content;
+    }
+    picker.value = '';
   }
 
   async function loadSkills() {
@@ -159,6 +185,7 @@
 
   loadSkills();
   loadTools();
+  loadLibraryPrompts();
 </script>
 
 ` }) %>
