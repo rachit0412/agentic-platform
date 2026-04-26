@@ -1,0 +1,315 @@
+<%- include('layout', { title: 'Agents', page: 'agents', body: `
+
+<h1 class="text-glow-cyan">Agent Registry</h1>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Register, configure, and manage your fleet of autonomous AI agents. Each agent = <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic</strong> in a reasoning loop.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Start with one agent, scale to hundreds. Every agent runs the same <strong style="color:#06b6d4">LangGraph ReAct engine</strong> but with its own model, skills, knowledge base, and behavior constraints.</p>
+
+<!-- Action Bar -->
+<div class="flex-between mb-2">
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <span id="agent-count" class="badge" style="font-size:0.78rem">0 agents</span>
+  </div>
+  <button class="btn btn-primary" onclick="showAgentForm()">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Agent
+  </button>
+</div>
+
+<!-- Create / Edit Form -->
+<div class="card animate-fade-up" id="agent-form" style="display:none">
+  <h3 id="agent-form-title">Create Agent</h3>
+  <input type="hidden" id="agent-edit-id" value="">
+
+  <!-- Identity -->
+  <div style="margin-top:1rem">
+    <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Identity</h4></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">
+      <div>
+        <label class="field-label">Name</label>
+        <input type="text" id="agent-name" class="input" placeholder="e.g. Research Agent" maxlength="100">
+      </div>
+      <div>
+        <label class="field-label">Description</label>
+        <input type="text" id="agent-desc" class="input" placeholder="What this agent does" maxlength="1000">
+      </div>
+    </div>
+  </div>
+
+  <!-- Model -->
+  <div style="margin-top:1.25rem">
+    <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Model</h4></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:0.5rem">
+      <div>
+        <label class="field-label">Provider</label>
+        <select id="agent-provider" class="input">
+          <option value="ollama">Ollama (Local)</option>
+          <option value="azure-openai">Azure OpenAI</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Model</label>
+        <input type="text" id="agent-model" class="input" placeholder="e.g. llama3" value="llama3">
+      </div>
+      <div>
+        <label class="field-label">Temperature</label>
+        <input type="number" id="agent-temp" class="input" min="0" max="2" step="0.1" value="0.7">
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Engineering -->
+  <div style="margin-top:1.25rem">
+    <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Context Engineering</h4></div>
+    <div style="margin-top:0.5rem">
+      <label class="field-label">Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— instructional context: defines what the agent should do, its persona, and output format</span></label>
+      <textarea id="agent-prompt" class="input" rows="4" placeholder="e.g. You are a senior code reviewer. Analyze code for bugs, security issues, and best practices. Always explain your reasoning..." style="resize:vertical;font-family:var(--mono)"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+      <div>
+        <label class="field-label">Skills <span style="color:var(--text-3);font-weight:400">(select multiple)</span></label>
+        <div id="agent-skills-list" style="max-height:120px;overflow-y:auto;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.82rem"></div>
+      </div>
+      <div>
+        <label class="field-label">Tools <span style="color:var(--text-3);font-weight:400">(comma-separated, empty = all)</span></label>
+        <input type="text" id="agent-tools" class="input" placeholder="e.g. web_search, code_execute">
+      </div>
+    </div>
+  </div>
+
+  <!-- Knowledge Base & Settings -->
+  <div style="margin-top:1.25rem">
+    <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Knowledge Base</h4></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">
+      <div>
+        <label class="field-label">Collection Name</label>
+        <input type="text" id="agent-kb" class="input" value="agentic_docs" placeholder="ChromaDB collection name">
+        <p style="color:var(--text-3);font-size:0.7rem;margin:0.25rem 0 0">The ChromaDB collection this agent retrieves knowledge from</p>
+      </div>
+      <div>
+        <label class="field-label">Upload Knowledge <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— paste text to ingest into the collection</span></label>
+        <textarea id="agent-kb-text" class="input" rows="3" placeholder="Paste document text here... it will be chunked and embedded into the collection above." style="resize:vertical;font-size:0.82rem"></textarea>
+        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
+          <input type="text" id="agent-kb-source" class="input" placeholder="Source name (e.g. faq.pdf)" style="flex:1;font-size:0.82rem">
+          <button type="button" class="btn btn-sm" onclick="uploadKB()" id="kb-upload-btn" style="white-space:nowrap">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload
+          </button>
+        </div>
+        <div id="kb-upload-result" style="font-size:0.75rem;margin-top:0.25rem;color:var(--success)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div style="margin-top:1.25rem">
+    <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Settings</h4></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">
+      <div>
+        <label class="field-label">Max Iterations</label>
+        <input type="number" id="agent-iterations" class="input" min="1" max="20" value="5">
+      </div>
+      <div>
+        <label class="field-label">Memory</label>
+        <select id="agent-memory" class="input">
+          <option value="1">Enabled</option>
+          <option value="0">Disabled</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0.75rem;margin-top:1.5rem">
+    <button class="btn btn-primary" onclick="saveAgent()">Save Agent</button>
+    <button class="btn" onclick="hideAgentForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- Agents Grid -->
+<div id="agents-grid" class="grid-2" style="margin-top:1rem"></div>
+
+<script>
+  let allSkillsList = [];
+
+  async function loadSkillsList() {
+    try {
+      const r = await fetch('/api/skills');
+      const d = await r.json();
+      allSkillsList = d.skills || [];
+    } catch(e) {}
+  }
+
+  function renderSkillCheckboxes(selectedIds) {
+    const el = document.getElementById('agent-skills-list');
+    if (allSkillsList.length === 0) {
+      el.innerHTML = '<span style="color:var(--text-3)">No skills created yet</span>';
+      return;
+    }
+    el.innerHTML = allSkillsList.map(s =>
+      '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;cursor:pointer">' +
+        '<input type="checkbox" class="skill-cb" value="' + s.id + '"' + (selectedIds.includes(s.id) ? ' checked' : '') + '> ' +
+        '<span>⚡ ' + s.name + '</span>' +
+      '</label>'
+    ).join('');
+  }
+
+  function getSelectedSkillIds() {
+    return Array.from(document.querySelectorAll('.skill-cb:checked')).map(cb => cb.value);
+  }
+
+  async function loadAgents() {
+    try {
+      const r = await fetch('/api/agents');
+      const d = await r.json();
+      const agents = d.agents || [];
+      document.getElementById('agent-count').textContent = agents.length + ' agent' + (agents.length !== 1 ? 's' : '');
+      const grid = document.getElementById('agents-grid');
+      if (agents.length === 0) {
+        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3)"><p style="font-size:1.1rem">No agents found</p></div>';
+        return;
+      }
+      grid.innerHTML = agents.map(a => {
+        const skillBadges = (a.skill_ids||[]).map(sid => {
+          const sk = allSkillsList.find(s => s.id === sid);
+          return '<span class="badge">⚡ ' + (sk ? sk.name : sid) + '</span>';
+        }).join(' ');
+        const toolBadges = (a.tool_ids||[]).slice(0,3).map(t => '<span class="badge">' + t + '</span>').join(' ');
+        const isDefault = a.is_default ? ' <span class="badge" style="background:rgba(6,182,212,0.15);color:#06b6d4">default</span>' : '';
+        return '<div class="card animate-fade-up">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">' +
+            '<h3 style="margin:0;font-size:1.05rem">🤖 ' + a.name + isDefault + '</h3>' +
+            '<span class="mono" style="font-size:0.68rem;color:var(--text-3)">' + a.id + '</span>' +
+          '</div>' +
+          '<p style="color:var(--text-3);font-size:0.82rem;margin:0 0 0.75rem 0">' + (a.description || 'No description') + '</p>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.78rem;color:var(--text-2)">' +
+            '<div><strong>Provider:</strong> ' + a.provider + '</div>' +
+            '<div><strong>Model:</strong> ' + a.model + '</div>' +
+            '<div><strong>Temp:</strong> ' + a.temperature + '</div>' +
+            '<div><strong>Max Iter:</strong> ' + a.max_iterations + '</div>' +
+            '<div><strong>KB:</strong> ' + a.kb_collection + '</div>' +
+            '<div><strong>Memory:</strong> ' + (a.memory_enabled ? 'On' : 'Off') + '</div>' +
+          '</div>' +
+          (a.system_prompt ? '<div style="margin-top:0.75rem;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.72rem;font-family:var(--mono);color:var(--text-2);max-height:50px;overflow:hidden">' + a.system_prompt.slice(0,200) + (a.system_prompt.length > 200 ? '...' : '') + '</div>' : '') +
+          '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.75rem">' + skillBadges + ' ' + toolBadges + '</div>' +
+          '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
+            '<button class="btn btn-sm" onclick="editAgent(\\'' + a.id + '\\')">Edit</button>' +
+            (a.is_default ? '' : '<button class="btn btn-sm btn-danger" onclick="deleteAgent(\\'' + a.id + '\\')">Delete</button>') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch(e) {
+      document.getElementById('agents-grid').innerHTML = '<div class="card" style="color:var(--danger)">Error: ' + e.message + '</div>';
+    }
+  }
+
+  async function showAgentForm() {
+    await loadSkillsList();
+    document.getElementById('agent-form-title').textContent = 'Create Agent';
+    document.getElementById('agent-edit-id').value = '';
+    document.getElementById('agent-name').value = '';
+    document.getElementById('agent-desc').value = '';
+    document.getElementById('agent-provider').value = 'ollama';
+    document.getElementById('agent-model').value = 'llama3';
+    document.getElementById('agent-temp').value = '0.7';
+    document.getElementById('agent-prompt').value = '';
+    document.getElementById('agent-tools').value = '';
+    document.getElementById('agent-kb').value = 'agentic_docs';
+    document.getElementById('agent-iterations').value = '5';
+    document.getElementById('agent-memory').value = '1';
+    renderSkillCheckboxes([]);
+    document.getElementById('agent-form').style.display = 'block';
+    document.getElementById('agent-name').focus();
+  }
+
+  function hideAgentForm() {
+    document.getElementById('agent-form').style.display = 'none';
+  }
+
+  async function editAgent(id) {
+    await loadSkillsList();
+    try {
+      const r = await fetch('/api/agents/' + id);
+      const a = await r.json();
+      document.getElementById('agent-form-title').textContent = 'Edit Agent';
+      document.getElementById('agent-edit-id').value = a.id;
+      document.getElementById('agent-name').value = a.name;
+      document.getElementById('agent-desc').value = a.description || '';
+      document.getElementById('agent-provider').value = a.provider || 'ollama';
+      document.getElementById('agent-model').value = a.model || 'llama3';
+      document.getElementById('agent-temp').value = a.temperature || 0.7;
+      document.getElementById('agent-prompt').value = a.system_prompt || '';
+      document.getElementById('agent-tools').value = (a.tool_ids || []).join(', ');
+      document.getElementById('agent-kb').value = a.kb_collection || 'agentic_docs';
+      document.getElementById('agent-iterations').value = a.max_iterations || 5;
+      document.getElementById('agent-memory').value = a.memory_enabled ? '1' : '0';
+      renderSkillCheckboxes(a.skill_ids || []);
+      document.getElementById('agent-form').style.display = 'block';
+      document.getElementById('agent-name').focus();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function saveAgent() {
+    const id = document.getElementById('agent-edit-id').value;
+    const payload = {
+      name: document.getElementById('agent-name').value.trim(),
+      description: document.getElementById('agent-desc').value.trim(),
+      provider: document.getElementById('agent-provider').value,
+      model: document.getElementById('agent-model').value.trim(),
+      temperature: parseFloat(document.getElementById('agent-temp').value) || 0.7,
+      system_prompt: document.getElementById('agent-prompt').value.trim(),
+      skill_ids: getSelectedSkillIds(),
+      tool_ids: document.getElementById('agent-tools').value.split(',').map(s=>s.trim()).filter(Boolean),
+      kb_collection: document.getElementById('agent-kb').value.trim() || 'agentic_docs',
+      max_iterations: parseInt(document.getElementById('agent-iterations').value) || 5,
+      memory_enabled: document.getElementById('agent-memory').value === '1',
+    };
+    if (!payload.name) { alert('Name is required'); return; }
+    try {
+      const url = id ? '/api/agents/' + id : '/api/agents';
+      const method = id ? 'PUT' : 'POST';
+      await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      hideAgentForm();
+      loadAgents();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function deleteAgent(id) {
+    if (!confirm('Delete this agent?')) return;
+    try {
+      await fetch('/api/agents/' + id, { method: 'DELETE' });
+      loadAgents();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function uploadKB() {
+    const text = document.getElementById('agent-kb-text').value.trim();
+    const source = document.getElementById('agent-kb-source').value.trim();
+    const collection = document.getElementById('agent-kb').value.trim() || 'agentic_docs';
+    const resultEl = document.getElementById('kb-upload-result');
+    if (!text) { resultEl.style.color='var(--danger)'; resultEl.textContent='Paste some text first'; return; }
+    if (!source) { resultEl.style.color='var(--danger)'; resultEl.textContent='Enter a source name'; return; }
+    const btn = document.getElementById('kb-upload-btn');
+    btn.disabled = true; btn.textContent = 'Uploading...';
+    resultEl.textContent = '';
+    try {
+      const r = await fetch('/api/documents/ingest', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ text, source, collection, chunk_size: 1000, chunk_overlap: 200 })
+      });
+      const d = await r.json();
+      resultEl.style.color='var(--success)';
+      resultEl.textContent = 'Uploaded ' + (d.chunks_stored || '?') + ' chunks to "' + collection + '"';
+      document.getElementById('agent-kb-text').value = '';
+      document.getElementById('agent-kb-source').value = '';
+    } catch(e) {
+      resultEl.style.color='var(--danger)';
+      resultEl.textContent = 'Upload failed: ' + e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Upload';
+    }
+  }
+
+  loadSkillsList().then(() => loadAgents());
+</script>
+
+` }) %>

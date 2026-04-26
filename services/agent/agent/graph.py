@@ -385,19 +385,41 @@ async def _ollama_chat_stream(messages: list[dict]) -> AsyncIterator[str]:
 
 
 async def run_agent_stream(
-    prompt: str, session_id: str, request_id: str
+    prompt: str, session_id: str, request_id: str,
+    agent_config: dict | None = None,
 ) -> AsyncIterator[dict]:
     """
     Run the agent graph with streaming.
-    Yields SSE-compatible dicts.
+    Yields SSE-compatible dicts with structured step events.
+    agent_config: optional dict with provider, model, system_prompt, skill_ids, tool_ids, kb_collection, etc.
     """
+    import time as _time
+
     lf_trace = LangfuseTrace("agent-run-stream", session_id, request_id, prompt)
     history = get_history(session_id, limit=10)
 
-    yield {"event": "status", "data": "Retrieving context..."}
+    # Build merged system prompt from agent config + skills
+    extra_system_parts = []
+    if agent_config:
+        if agent_config.get("system_prompt"):
+            extra_system_parts.append(agent_config["system_prompt"])
+        # Resolve skills into additional system prompts
+        skill_ids = agent_config.get("skill_ids", [])
+        if skill_ids:
+            from agent.memory import get_skill
+            for sid in skill_ids:
+                sk = get_skill(sid)
+                if sk and sk.get("system_prompt"):
+                    extra_system_parts.append(f"[Skill: {sk['name']}]\n{sk['system_prompt']}")
 
-    # Auto-retrieve KB context
+    agent_extra_prompt = "\n\n".join(extra_system_parts) if extra_system_parts else ""
+
+    # ── Step 1: Retrieve context ────────────────────────────────────────
+    yield {"event": "step", "data": {"step": "retrieve_context", "status": "started", "label": "Retrieving from Knowledge Base"}}
+    t0 = _time.time()
+
     kb_context = ""
+    kb_chunks = 0
     try:
         from agent.vectorstore import search_similar, get_collection_stats
         stats = get_collection_stats()
@@ -407,17 +429,30 @@ async def run_agent_stream(
                         for r in results if r.get("score", 1.0) < 0.8]
             if snippets:
                 kb_context = "\n---\n".join(snippets)
+                kb_chunks = len(snippets)
     except Exception:
         pass
 
+    yield {"event": "step", "data": {"step": "retrieve_context", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"Found {kb_chunks} chunks"}}
+
+    # ── Step 2: Load memory ─────────────────────────────────────────────
+    yield {"event": "step", "data": {"step": "load_memory", "status": "started", "label": "Loading conversation memory"}}
+    t0 = _time.time()
+
     memory_summary = get_session_summary(session_id) or ""
 
+    yield {"event": "step", "data": {"step": "load_memory", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": "Has context" if memory_summary else "New conversation"}}
+
+    # ── Step 3: Reasoning ───────────────────────────────────────────────
     kb_section = f"Relevant knowledge base context:\n{kb_context}" if kb_context else "No relevant knowledge base documents found for this query."
     memory_section = f"Conversation summary so far:\n{memory_summary}" if memory_summary else "This is a new conversation with no prior context."
 
-    yield {"event": "status", "data": "Understanding your request..."}
+    yield {"event": "step", "data": {"step": "reason", "status": "started", "label": "Reasoning", "iteration": 1}}
+    t0 = _time.time()
 
     system = SYSTEM_PROMPT.format(tools=catalogue_as_text(), kb_section=kb_section, memory_section=memory_section)
+    if agent_extra_prompt:
+        system += "\n\n" + agent_extra_prompt
     messages = [{"role": "system", "content": system}]
     for msg in history:
         messages.append(msg)
@@ -428,16 +463,22 @@ async def run_agent_stream(
     tool_calls = _parse_tool_calls(raw)
     tools_used = [tc["name"] for tc in tool_calls]
 
+    yield {"event": "step", "data": {"step": "reason", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"{'Needs tools: ' + ', '.join(tools_used) if tools_used else 'Direct answer'}"}}
+
+    # ── Step 4: Tool execution (if needed) ──────────────────────────────
     if tool_calls:
-        yield {"event": "status", "data": f"Calling tool{'s' if len(tool_calls) > 1 else ''}: {', '.join(tools_used)}"}
         for tc in tool_calls:
+            yield {"event": "step", "data": {"step": "tool_call", "status": "started", "label": f"Calling tool: {tc['name']}", "tool": tc["name"], "args": tc["arguments"]}}
+            t0 = _time.time()
             tool_call_counter.labels(tool_name=tc["name"]).inc()
             result = await call_tool(tc["name"], tc["arguments"])
             tc["result"] = result
             logger.info("req=%s tool=%s result=%s", request_id, tc["name"], str(result)[:200])
-            yield {"event": "tool", "data": {"name": tc["name"], "result": result}}
+            yield {"event": "step", "data": {"step": "tool_call", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "tool": tc["name"], "detail": str(result)[:150]}}
 
-    yield {"event": "status", "data": "Generating response..."}
+    # ── Step 5: Generating response ─────────────────────────────────────
+    yield {"event": "step", "data": {"step": "generate_response", "status": "started", "label": "Generating response"}}
+    t0 = _time.time()
 
     full_response = ""
     if not tool_calls:
@@ -456,6 +497,8 @@ async def run_agent_stream(
         async for token in _ollama_chat_stream(synth_messages):
             full_response += token
             yield {"event": "token", "data": token}
+
+    yield {"event": "step", "data": {"step": "generate_response", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"{len(full_response)} chars"}}
 
     save_message(session_id, "user", prompt)
     save_message(session_id, "assistant", full_response)

@@ -44,7 +44,7 @@ cd agentic-platform
 .\setup.ps1
 
 # 3. Access the application
-Start-Process "http://localhost:3000"
+Start-Process "http://localhost:3001"
 ```
 
 ### Linux/macOS (Bash)
@@ -59,8 +59,8 @@ chmod +x setup.sh
 ./setup.sh
 
 # 3. Access the application
-open http://localhost:3000  # macOS
-xdg-open http://localhost:3000  # Linux
+open http://localhost:3001  # macOS
+xdg-open http://localhost:3001  # Linux
 ```
 
 ## Platform-Specific Instructions
@@ -373,18 +373,17 @@ Default ports used:
 
 | Service       | Port  | Configurable |
 | ------------- | ----- | ------------ |
-| Dashboard     | 3000  | Yes          |
-| LangGraph API | 8000  | Yes          |
+| UI Console    | 3001  | Yes          |
+| Agent Service | 8010  | Yes          |
+| Tools Service | 8011  | Yes          |
 | n8n           | 5678  | Yes          |
-| Keycloak      | 8080  | Yes          |
+| Ollama        | 11436 | Yes          |
+| ChromaDB      | 8200  | Yes          |
+| Langfuse      | 3012  | Yes          |
+| Grafana       | 3013  | Yes          |
+| Prometheus    | 9090  | Yes          |
 | PostgreSQL    | 5432  | Yes          |
 | Redis         | 6379  | Yes          |
-| Ollama        | 11434 | Yes          |
-| Langfuse      | 3001  | Yes          |
-| Grafana       | 3002  | Yes          |
-| Prometheus    | 9090  | Yes          |
-| OPA           | 8181  | Yes          |
-| Loki          | 3100  | Yes          |
 
 To change ports, edit `docker-compose.yml`:
 
@@ -400,39 +399,47 @@ services:
 ### Check Service Health
 
 ```bash
-# Using management script (Windows)
-.\manage.ps1 test
+# Manual health checks
+curl http://localhost:8010/health
+curl http://localhost:8011/health
+curl http://localhost:3001
 
-# Using management script (Linux/Mac)
-./manage.sh test
-
-# Manual checks
-curl http://localhost:8000/health
-curl http://localhost:3000
-curl http://localhost:9090/-/healthy
+# Check all containers
+docker compose ps
 ```
 
 ### Access Services
 
 After installation, verify you can access:
 
-- ✅ Dashboard: http://localhost:3000
-- ✅ API Docs: http://localhost:8000/docs
+- ✅ UI Console: http://localhost:3001
+- ✅ Agent API Docs: http://localhost:8010/docs
 - ✅ n8n: http://localhost:5678
-- ✅ Keycloak: http://localhost:8080
-- ✅ Grafana: http://localhost:3002
-- ✅ Langfuse: http://localhost:3001
+- ✅ Langfuse: http://localhost:3012
+- ✅ Grafana: http://localhost:3013
 - ✅ Prometheus: http://localhost:9090
 
-### Test Chat Functionality
+### Test Agent
 
 ```bash
-# Test chat API
-curl -X POST http://localhost:8000/api/v1/chat \
+# List available models
+curl http://localhost:8010/models
+
+# Run agent
+curl -X POST http://localhost:8010/run \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "Hello!",
-    "user_id": "test",
+    "prompt": "What is 42 * 13?",
+    "sessionId": "test-1"
+  }'
+
+# Run agent with specific model
+curl -X POST http://localhost:8010/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Hello!",
+    "sessionId": "test-2",
+    "provider": "ollama",
     "model": "llama3"
   }'
 ```
@@ -441,13 +448,13 @@ curl -X POST http://localhost:8000/api/v1/chat \
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f langgraph-api
+docker compose logs -f agent-service
 
 # Last 100 lines
-docker-compose logs --tail=100
+docker compose logs --tail=100
 ```
 
 ## Troubleshooting
@@ -592,11 +599,14 @@ If you encounter issues:
 
 After successful installation:
 
-1. ✅ Access Dashboard at http://localhost:3000
-2. ✅ Create your first chat conversation
-3. ✅ Explore API documentation at http://localhost:8000/docs
-4. ✅ Create workflows in n8n
-5. ✅ Monitor performance in Grafana
-6. ✅ Review traces in Langfuse
+1. ✅ Access UI Console at http://localhost:3001
+2. ✅ Run your first agent prompt in **Run Agent**
+3. ✅ Pull additional Ollama models: `docker exec ollama ollama pull mistral`
+4. ✅ Ingest documents into the knowledge base
+5. ✅ Configure Azure OpenAI for cloud LLM access
+6. ✅ Explore API docs at http://localhost:8010/docs
+7. ✅ Create workflows in n8n at http://localhost:5678
+8. ✅ Review LLM traces in Langfuse at http://localhost:3012
+9. ✅ Monitor platform health in Grafana at http://localhost:3013
 
 Happy building! 🚀

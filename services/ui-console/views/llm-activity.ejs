@@ -1,45 +1,40 @@
 <%- include('layout', { title: 'LLM Activity', page: 'llm-activity', body: `
 
 <h1 class="text-glow-cyan">LLM Activity</h1>
+<p style="color:var(--text-3);margin-bottom:1.5rem">LLM Activity has been split into dedicated pages for better separation of concerns.</p>
 
-<div class="card animate-fade-up" style="margin-bottom:1.5rem">
-  <div class="section-header mb-1">
-    <h3>Langfuse Dashboard</h3>
-    <a href="${urls.langfuse}" target="_blank" class="btn btn-primary btn-sm">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Open Langfuse
-    </a>
-  </div>
-  <iframe src="${urls.langfuse}" height="500" style="background:var(--surface-1);border-radius:12px;border:1px solid var(--glass-border)" loading="lazy"></iframe>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem">
+  <!-- Traceability -->
+  <a href="/traceability" class="card animate-fade-up" style="text-decoration:none;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f43f5e" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <h3 style="margin:0;color:var(--text-1)">Traceability</h3>
+    </div>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0">LLM traces, Langfuse dashboard, latency distribution, token analytics, and detailed trace inspection.</p>
+  </a>
+
+  <!-- Evaluation -->
+  <a href="/evaluation" class="card animate-fade-up delay-100" style="text-decoration:none;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <h3 style="margin:0;color:var(--text-1)">Evaluation</h3>
+    </div>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0">Per-agent evaluation matrix, quality scoring, Responsible AI controls, and agent comparison.</p>
+  </a>
+
+  <!-- Observability -->
+  <a href="/observability" class="card animate-fade-up delay-200" style="text-decoration:none;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#06b6d4" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <h3 style="margin:0;color:var(--text-1)">Observability</h3>
+    </div>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0">Grafana dashboards, Prometheus metrics, Loki logs, and OpenTelemetry infrastructure.</p>
+  </a>
 </div>
-
-<div class="card animate-fade-up delay-100">
-  <div class="section-header">
-    <h3>Recent Traces</h3>
-    <button class="btn btn-secondary btn-sm" onclick="loadTraces()">Refresh</button>
-  </div>
-  <div id="traces-table" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
-</div>
-
-<script>
-function loadTraces() {
-  fetch('/api/traces').then(r=>r.json()).then(d=>{
-    const el = document.getElementById('traces-table');
-    if (!d.traces || d.traces.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">' + (d.error || 'No traces found. Run an agent prompt to generate traces.') + '</p>';
-      return;
-    }
-    el.innerHTML = '<table><tr><th>Trace ID</th><th>Name</th><th>Session</th><th>Time</th></tr>' +
-      d.traces.map(t => \`<tr>
-        <td class="mono" style="font-size:0.78rem">\${(t.id||'').slice(0,12)}...</td>
-        <td>\${t.name||'-'}</td>
-        <td class="mono" style="font-size:0.78rem">\${t.sessionId||'-'}</td>
-        <td class="mono" style="font-size:0.78rem">\${t.timestamp ? new Date(t.timestamp).toLocaleString() : '-'}</td>
-      </tr>\`).join('') + '</table>';
-  }).catch(e=>{
-    document.getElementById('traces-table').innerHTML = '<p style="color:var(--danger)">Failed to load traces</p>';
-  });
-}
-loadTraces();
-</script>
 ` }) %>

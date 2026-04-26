@@ -4,34 +4,34 @@
 
 <!-- Memory & Knowledge Base Status -->
 <div class="grid-4 mb-2" style="margin-bottom:1.5rem">
-  <div class="stat-card animate-fade-up">
+  <a href="/llm-activity" class="stat-card animate-fade-up" style="text-decoration:none;color:inherit;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 20px rgba(6,182,212,0.15)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
     <div class="stat-icon stat-icon-cyan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2z"/><path d="M12 6v6l4 2"/></svg>
     </div>
     <div class="stat-label">Memory Sessions</div>
     <div class="stat-number" id="stat-sessions">-</div>
-  </div>
-  <div class="stat-card animate-fade-up delay-100">
+  </a>
+  <a href="/llm-activity" class="stat-card animate-fade-up delay-100" style="text-decoration:none;color:inherit;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 20px rgba(139,92,246,0.15)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     </div>
     <div class="stat-label">Total Messages</div>
     <div class="stat-number" id="stat-messages">-</div>
-  </div>
-  <div class="stat-card animate-fade-up delay-200">
+  </a>
+  <a href="/documents" class="stat-card animate-fade-up delay-200" style="text-decoration:none;color:inherit;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 20px rgba(16,185,129,0.15)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
     <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
     <div class="stat-label">KB Documents</div>
     <div class="stat-number" id="stat-kb-docs">-</div>
-  </div>
-  <div class="stat-card animate-fade-up delay-300">
+  </a>
+  <a href="/documents" class="stat-card animate-fade-up delay-300" style="text-decoration:none;color:inherit;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 20px rgba(245,158,11,0.15)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
     <div class="stat-icon" style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08));color:#f59e0b">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     </div>
     <div class="stat-label">KB Chunks</div>
     <div class="stat-number" id="stat-kb-chunks">-</div>
-  </div>
+  </a>
 </div>
 
 <div style="display:flex;gap:1.5rem">
@@ -39,8 +39,14 @@
     <div class="card animate-fade-up">
       <div class="mb-1"><label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Prompt</label></div>
       <textarea id="prompt" rows="3" placeholder="Ask something... e.g. What is 42 * 13?" style="margin-bottom:0.75rem"></textarea>
-      <div class="flex">
-        <input id="session" placeholder="Session ID (auto)" style="max-width:250px" />
+      <div class="flex" style="gap:0.5rem;flex-wrap:wrap;align-items:center">
+        <input id="session" placeholder="Session ID (auto)" style="max-width:200px" />
+        <select id="agent-select" style="max-width:200px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
+          <option value="">Loading agents...</option>
+        </select>
+        <select id="model-select" style="max-width:220px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
+          <option value="">Loading models...</option>
+        </select>
         <button class="btn btn-primary" id="sendBtn" onclick="runAgent()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Send
@@ -56,6 +62,19 @@
       <h3>Response</h3>
       <div id="response" style="white-space:pre-wrap;line-height:1.7;margin-top:0.75rem;color:var(--text-1)"></div>
       <div id="meta" class="mono mt-1" style="font-size:0.72rem"></div>
+    </div>
+
+    <!-- Activity Panel -->
+    <div class="card animate-fade-up delay-100" id="activity-card" style="display:none">
+      <div class="section-header" style="cursor:pointer" onclick="toggleActivity()">
+        <h3 style="display:flex;align-items:center;gap:0.5rem">
+          <svg id="activity-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+          Agent Activity
+          <span id="activity-status" class="badge" style="font-size:0.68rem">idle</span>
+        </h3>
+        <span id="activity-total-time" class="mono" style="font-size:0.72rem;color:var(--text-3)"></span>
+      </div>
+      <div id="activity-steps" style="margin-top:0.75rem;border-left:2px solid var(--accent);padding-left:1rem"></div>
     </div>
 
     <div class="card animate-fade-up delay-200">
@@ -116,35 +135,151 @@
     if (!prompt) return;
     const session = document.getElementById('session').value || ('s-' + Math.random().toString(36).slice(2,8));
     document.getElementById('session').value = session;
+
+    // Get selected model
+    const modelSelect = document.getElementById('model-select');
+    const selectedVal = modelSelect.value;
+    let provider = null, model = null;
+    if (selectedVal) {
+      const parts = selectedVal.split(':');
+      provider = parts[0];
+      model = parts[1];
+    }
+
+    // Get selected agent
+    const agentSelect = document.getElementById('agent-select');
+    const agentId = agentSelect ? agentSelect.value : '';
+
     document.getElementById('sendBtn').disabled = true;
     document.getElementById('sendBtn').style.opacity = '0.6';
     document.getElementById('result-card').style.display = 'block';
-    document.getElementById('response').textContent = 'Thinking...';
-    document.getElementById('response').style.color = 'var(--text-3)';
+    document.getElementById('response').textContent = '';
+    document.getElementById('response').style.color = 'var(--text-1)';
     document.getElementById('meta').textContent = '';
 
+    // Show activity panel
+    document.getElementById('activity-card').style.display = 'block';
+    document.getElementById('activity-steps').innerHTML = '';
+    document.getElementById('activity-status').textContent = 'running';
+    document.getElementById('activity-status').style.background = 'rgba(6,182,212,0.15)';
+    document.getElementById('activity-status').style.color = '#06b6d4';
+    document.getElementById('activity-total-time').textContent = '';
+
+    const startTime = Date.now();
+    const stepElements = {};
+
     try {
-      const r = await fetch('/api/agent-run', {
+      const payload = { prompt, sessionId: session };
+      if (provider) payload.provider = provider;
+      if (model) payload.model = model;
+      if (agentId) payload.agent_id = agentId;
+
+      const resp = await fetch('/api/agent-run/stream', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ prompt, sessionId: session })
+        body: JSON.stringify(payload)
       });
-      const d = await r.json();
-      document.getElementById('response').style.color = 'var(--text-1)';
-      document.getElementById('response').textContent = d.response || d.error || JSON.stringify(d);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullResponse = '';
+      let toolsUsed = [];
+      let traceId = '';
+      let requestId = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\\n');
+        buffer = lines.pop();
+
+        let eventType = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            const raw = line.slice(6);
+            handleSSEEvent(eventType, raw, stepElements, {
+              onToken: (t) => { fullResponse += t; document.getElementById('response').textContent = fullResponse; },
+              onDone: (d) => { toolsUsed = d.tools_used || []; traceId = d.trace_id || ''; requestId = d.request_id || ''; }
+            });
+          }
+        }
+      }
+
       document.getElementById('meta').textContent =
-        'Tools: ' + (d.tools_used||[]).join(', ') +
-        ' | Request: ' + (d.request_id||'') +
-        ' | Trace: ' + (d.trace_id||'none');
+        'Tools: ' + (toolsUsed.join(', ') || 'none') +
+        ' | Request: ' + requestId +
+        ' | Trace: ' + (traceId || 'none');
+
+      document.getElementById('activity-status').textContent = 'done';
+      document.getElementById('activity-status').style.background = 'rgba(16,185,129,0.15)';
+      document.getElementById('activity-status').style.color = '#10b981';
+      document.getElementById('activity-total-time').textContent = ((Date.now() - startTime)/1000).toFixed(1) + 's total';
+
       loadSessions();
       loadMemoryStats();
       loadSessionSummary(session);
     } catch(e) {
       document.getElementById('response').style.color = 'var(--danger)';
       document.getElementById('response').textContent = 'Error: ' + e.message;
+      document.getElementById('activity-status').textContent = 'error';
+      document.getElementById('activity-status').style.background = 'rgba(244,63,94,0.15)';
+      document.getElementById('activity-status').style.color = '#f43f5e';
     } finally {
       document.getElementById('sendBtn').disabled = false;
       document.getElementById('sendBtn').style.opacity = '1';
+    }
+  }
+
+  function handleSSEEvent(type, raw, stepElements, callbacks) {
+    if (type === 'step') {
+      try {
+        const d = JSON.parse(raw);
+        const key = d.step + (d.tool || '');
+        const stepsEl = document.getElementById('activity-steps');
+        if (d.status === 'started') {
+          const icons = {
+            retrieve_context: '\\u{1F50D}',
+            load_memory: '\\u{1F4AD}',
+            reason: '\\u{1F9E0}',
+            tool_call: '\\u{1F527}',
+            generate_response: '\\u{270D}\\uFE0F',
+          };
+          const el = document.createElement('div');
+          el.style.cssText = 'margin-bottom:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border-radius:8px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem;transition:all 0.3s';
+          el.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem">' +
+            '<span class="step-spinner"></span> ' +
+            '<span>' + (icons[d.step]||'\\u{1F4CC}') + ' ' + (d.label||d.step) + '</span>' +
+            '</div><span class="mono" style="font-size:0.72rem;color:var(--text-3)">...</span>';
+          stepsEl.appendChild(el);
+          stepElements[key] = el;
+        } else if (d.status === 'done' && stepElements[key]) {
+          const el = stepElements[key];
+          el.querySelector('.step-spinner').outerHTML = '<span style="color:#10b981">\\u2713</span>';
+          const dur = el.querySelector('span.mono');
+          if (dur) dur.textContent = (d.duration_ms ? (d.duration_ms/1000).toFixed(2) + 's' : '') + (d.detail ? ' — ' + d.detail : '');
+        }
+      } catch(e) {}
+    } else if (type === 'token') {
+      callbacks.onToken(raw);
+    } else if (type === 'done') {
+      try { callbacks.onDone(JSON.parse(raw)); } catch(e) {}
+    }
+  }
+
+  function toggleActivity() {
+    const steps = document.getElementById('activity-steps');
+    const chevron = document.getElementById('activity-chevron');
+    if (steps.style.display === 'none') {
+      steps.style.display = 'block';
+      chevron.style.transform = 'rotate(0deg)';
+    } else {
+      steps.style.display = 'none';
+      chevron.style.transform = 'rotate(-90deg)';
     }
   }
 
@@ -197,8 +332,56 @@
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runAgent();
   });
 
+  async function loadModels() {
+    try {
+      const r = await fetch('/api/models');
+      const d = await r.json();
+      const sel = document.getElementById('model-select');
+      sel.innerHTML = '';
+      if (!d.models || d.models.length === 0) {
+        sel.innerHTML = '<option value="">No models available</option>';
+        return;
+      }
+      d.models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.provider + ':' + m.model;
+        const provLabel = m.provider === 'azure-openai' ? '☁️ Azure' : '🦙 Ollama';
+        opt.textContent = provLabel + ' — ' + m.model;
+        if (m.active) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch(e) {
+      document.getElementById('model-select').innerHTML = '<option value="">Failed to load</option>';
+    }
+  }
+
+  async function loadAgentsDropdown() {
+    try {
+      const r = await fetch('/api/agents');
+      const d = await r.json();
+      const sel = document.getElementById('agent-select');
+      sel.innerHTML = '';
+      const agents = d.agents || [];
+      if (agents.length === 0) {
+        sel.innerHTML = '<option value="">No agents</option>';
+        return;
+      }
+      agents.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = '🤖 ' + a.name;
+        if (a.is_default) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch(e) {
+      document.getElementById('agent-select').innerHTML = '<option value="">Failed to load</option>';
+    }
+  }
+
   loadSessions();
   loadTools();
   loadMemoryStats();
+  loadModels();
+  loadAgentsDropdown();
 </script>
 ` }) %>

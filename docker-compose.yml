@@ -19,8 +19,8 @@ services:
       - LANGFUSE_URL=http://langfuse:3000
       - GRAFANA_URL=http://grafana:3000
       - N8N_EXTERNAL_URL=http://localhost:${N8N_PORT:-5678}
-      - LANGFUSE_EXTERNAL_URL=http://localhost:${LANGFUSE_PORT:-3002}
-      - GRAFANA_EXTERNAL_URL=http://localhost:${GRAFANA_PORT:-3003}
+      - LANGFUSE_EXTERNAL_URL=http://localhost:${LANGFUSE_PORT:-3012}
+      - GRAFANA_EXTERNAL_URL=http://localhost:${GRAFANA_PORT:-3013}
       - AGENT_EXTERNAL_URL=http://localhost:${AGENT_PORT:-8010}
       - CHROMA_URL=http://chromadb:8000
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-local-dev}
@@ -95,6 +95,11 @@ services:
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3}
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-06-01}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o-mini}
       - TOOLS_SERVICE_URL=http://tools-service:8001
       - MEMORY_DIR=/data
       - CHROMA_URL=${CHROMA_URL:-http://chromadb:8000}
@@ -167,10 +172,10 @@ services:
     image: langfuse/langfuse:2
     container_name: langfuse
     ports:
-      - "${LANGFUSE_PORT:-3002}:3000"
+      - "${LANGFUSE_PORT:-3012}:3000"
     environment:
       - DATABASE_URL=postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/langfuse
-      - NEXTAUTH_URL=http://localhost:${LANGFUSE_PORT:-3002}
+      - NEXTAUTH_URL=http://localhost:${LANGFUSE_PORT:-3012}
       - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET:-supersecret-nextauth}
       - SALT=${LANGFUSE_SALT:-supersecret-salt}
       - TELEMETRY_ENABLED=true
@@ -183,6 +188,8 @@ services:
       - LANGFUSE_INIT_USER_EMAIL=admin@local.dev
       - LANGFUSE_INIT_USER_PASSWORD=changeme
       - LANGFUSE_INIT_USER_NAME=Admin
+      - LANGFUSE_CSP_ENFORCE_HTTPS=false
+      - NEXT_PUBLIC_LANGFUSE_CLOUD_REGION=
     depends_on:
       langfuse-db:
         condition: service_healthy
@@ -236,12 +243,16 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "${GRAFANA_PORT:-3003}:3000"
+      - "${GRAFANA_PORT:-3013}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SECURITY_COOKIE_SAMESITE=disabled
+      - GF_SECURITY_COOKIE_SECURE=false
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro

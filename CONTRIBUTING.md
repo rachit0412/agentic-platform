@@ -34,14 +34,16 @@ Thank you for your interest in contributing! This document provides guidelines f
 2. **Create a feature branch**: `git checkout -b feature/your-feature`
 3. **Make your changes**
 4. **Test thoroughly**
-5. **Commit with clear messages**: 
+5. **Commit with clear messages**:
+
    ```
    feat: Add new agent type for data analysis
-   
+
    - Implemented DataAnalystAgent class
    - Added tests for new agent
    - Updated documentation
    ```
+
 6. **Push to your fork**: `git push origin feature/your-feature`
 7. **Open a Pull Request** with:
    - Clear description of changes
@@ -65,9 +67,17 @@ docker-compose up -d
 docker-compose logs -f
 ```
 
+### Key Concepts for Contributors
+
+- **Agent** = `LLM + Tools + Memory + Control Logic` — an autonomous loop, not just a model
+- **Skill** = A packaged capability (prompt + tools + constraints) — reusable function with intelligence
+- **Prompt** = The instructional context given to a model or skill — defines behavior and output format
+- All agent/skill CRUD is in `services/agent/main.py`, storage in `services/agent/agent/memory.py` (SQLite)
+
 ## Code Style
 
 ### Python
+
 - Follow PEP 8
 - Use type hints
 - Write docstrings for functions/classes
@@ -77,11 +87,11 @@ docker-compose logs -f
 def create_agent(model: str, temperature: float = 0.7) -> Agent:
     """
     Create a new agent instance.
-    
+
     Args:
         model: Model name to use
         temperature: Sampling temperature
-        
+
     Returns:
         Configured agent instance
     """
@@ -89,11 +99,13 @@ def create_agent(model: str, temperature: float = 0.7) -> Agent:
 ```
 
 ### JavaScript/TypeScript (n8n workflows)
+
 - Use ES6+ features
 - Consistent indentation (2 spaces)
 - Clear variable names
 
 ### Docker
+
 - Multi-stage builds when possible
 - Minimize image size
 - Use specific versions, not `latest`
@@ -102,6 +114,7 @@ def create_agent(model: str, temperature: float = 0.7) -> Agent:
 ## Testing
 
 ### Run Tests
+
 ```bash
 # Python tests
 pytest services/langgraph-api/tests/
@@ -111,6 +124,7 @@ pytest services/langgraph-api/tests/
 ```
 
 ### Test Coverage
+
 - Aim for >80% coverage
 - Test edge cases
 - Include integration tests
@@ -118,12 +132,14 @@ pytest services/langgraph-api/tests/
 ## Documentation
 
 Update documentation when:
+
 - Adding new features
 - Changing APIs
 - Modifying configuration
 - Fixing bugs that affect usage
 
 ### Documentation Files
+
 - `README.md` - Overview and quick start
 - `INSTALL.md` - Detailed installation
 - `docs/` - In-depth guides
@@ -132,6 +148,7 @@ Update documentation when:
 ## Commit Messages
 
 Format:
+
 ```
 <type>: <subject>
 
@@ -141,6 +158,7 @@ Format:
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -150,6 +168,7 @@ Types:
 - `chore`: Maintenance
 
 Example:
+
 ```
 feat: Add RAG support with pgvector
 
@@ -182,6 +201,7 @@ agentic-platform/
 ## Areas for Contribution
 
 ### High Priority
+
 - [ ] Additional agent implementations
 - [ ] More n8n workflow templates
 - [ ] Grafana dashboards
@@ -189,12 +209,14 @@ agentic-platform/
 - [ ] Test coverage
 
 ### Documentation
+
 - [ ] Tutorial videos
 - [ ] Blog posts
 - [ ] Use case examples
 - [ ] API reference
 
 ### Infrastructure
+
 - [ ] Kubernetes manifests
 - [ ] Terraform modules
 - [ ] CI/CD pipelines
@@ -213,6 +235,7 @@ By contributing, you agree that your contributions will be licensed under the MI
 ## Recognition
 
 Contributors will be:
+
 - Listed in CONTRIBUTORS.md
 - Mentioned in release notes
 - Acknowledged in documentation

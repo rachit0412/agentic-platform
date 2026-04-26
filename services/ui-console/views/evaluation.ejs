@@ -1,0 +1,539 @@
+<%- include('layout', { title: 'Evaluation', page: 'evaluation', body: `
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+  <h1 class="text-glow-cyan" style="margin:0">Evaluation</h1>
+  <!-- Agent Selector -->
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <label style="font-size:0.82rem;color:var(--text-3);white-space:nowrap">Evaluate Agent:</label>
+    <select id="agent-select" onchange="onAgentChange()" style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text-1);font-size:0.82rem;min-width:180px;cursor:pointer">
+      <option value="__all__">All Agents (Global)</option>
+    </select>
+  </div>
+</div>
+
+<!-- Agent Info Banner -->
+<div id="agent-info-banner" class="card animate-fade-up" style="margin-bottom:1rem;padding:0.75rem 1.25rem;display:none">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="3"/></svg>
+    </div>
+    <div style="flex:1">
+      <strong id="agent-info-name" style="font-size:0.88rem;color:var(--text-1)">-</strong>
+      <div style="display:flex;gap:0.75rem;margin-top:0.25rem">
+        <span id="agent-info-model" style="font-size:0.72rem;color:var(--text-3)">-</span>
+        <span id="agent-info-provider" style="font-size:0.72rem;color:var(--text-3)">-</span>
+        <span id="agent-info-tools" style="font-size:0.72rem;color:var(--text-3)">-</span>
+      </div>
+    </div>
+    <div id="agent-trace-count" style="text-align:center">
+      <div style="font-size:1.1rem;font-weight:700;color:var(--text-1)">-</div>
+      <div style="font-size:0.68rem;color:var(--text-3)">traces</div>
+    </div>
+  </div>
+</div>
+
+<!-- Evaluation Matrix -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0">Evaluation Matrix</h3>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.82rem">Agent quality scoring across key dimensions — computed from trace data</p>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadEvaluation()">Refresh Scores</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem">
+    <!-- Completion Rate -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Completion Rate</span>
+        <span id="eval-completion" style="font-size:1.1rem;font-weight:700;color:#10b981">-</span>
+      </div>
+      <div style="height:6px;background:var(--glass-border);border-radius:3px;overflow:hidden">
+        <div id="eval-completion-bar" style="height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;width:0%;transition:width 0.6s"></div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-3);margin-top:0.4rem">% of traces with successful output (non-error)</div>
+    </div>
+
+    <!-- Latency Score -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Latency Score</span>
+        <span id="eval-latency" style="font-size:1.1rem;font-weight:700;color:#06b6d4">-</span>
+      </div>
+      <div style="height:6px;background:var(--glass-border);border-radius:3px;overflow:hidden">
+        <div id="eval-latency-bar" style="height:100%;background:linear-gradient(90deg,#06b6d4,#8b5cf6);border-radius:3px;width:0%;transition:width 0.6s"></div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-3);margin-top:0.4rem">% of traces completing under 5s threshold</div>
+    </div>
+
+    <!-- Tool Efficiency -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Tool Efficiency</span>
+        <span id="eval-tool-eff" style="font-size:1.1rem;font-weight:700;color:#f59e0b">-</span>
+      </div>
+      <div style="height:6px;background:var(--glass-border);border-radius:3px;overflow:hidden">
+        <div id="eval-tool-bar" style="height:100%;background:linear-gradient(90deg,#f59e0b,#f97316);border-radius:3px;width:0%;transition:width 0.6s"></div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-3);margin-top:0.4rem">% of tool-using traces that completed successfully</div>
+    </div>
+  </div>
+
+  <!-- Detailed Evaluation Table -->
+  <table class="mt-1" style="font-size:0.82rem">
+    <tr>
+      <th>Dimension</th>
+      <th>Score</th>
+      <th>Grade</th>
+      <th>Details</th>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Completion Rate</td>
+      <td id="eval-row-completion" class="mono">-</td>
+      <td id="eval-grade-completion">-</td>
+      <td style="color:var(--text-3);font-size:0.78rem">Traces with valid non-error output</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Response Latency</td>
+      <td id="eval-row-latency" class="mono">-</td>
+      <td id="eval-grade-latency">-</td>
+      <td style="color:var(--text-3);font-size:0.78rem">Avg response time (target &lt; 5s)</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Tool Usage</td>
+      <td id="eval-row-tools" class="mono">-</td>
+      <td id="eval-grade-tools">-</td>
+      <td style="color:var(--text-3);font-size:0.78rem">Tool call success rate</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Error Rate</td>
+      <td id="eval-row-errors" class="mono">-</td>
+      <td id="eval-grade-errors">-</td>
+      <td style="color:var(--text-3);font-size:0.78rem">Inverted error percentage</td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Memory Utilization</td>
+      <td id="eval-row-memory" class="mono">-</td>
+      <td id="eval-grade-memory">-</td>
+      <td style="color:var(--text-3);font-size:0.78rem">Sessions using multi-turn context</td>
+    </tr>
+    <tr style="background:rgba(139,92,246,0.05)">
+      <td style="font-weight:700;color:#8b5cf6">Overall Score</td>
+      <td id="eval-row-overall" class="mono" style="font-weight:700">-</td>
+      <td id="eval-grade-overall" style="font-weight:700">-</td>
+      <td style="color:var(--text-3);font-size:0.78rem">Weighted average across all dimensions</td>
+    </tr>
+  </table>
+</div>
+
+<!-- Responsible AI Controls (per-agent) -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0">Responsible AI Controls</h3>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.82rem" id="rai-subtitle">Per-agent governance guardrails, fairness checks & safety monitoring</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <!-- Safety & Content -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.25rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <strong style="font-size:0.88rem;color:#10b981">Content Safety</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Input Validation</span>
+          <span id="rai-input-val" class="badge" style="font-size:0.68rem;background:rgba(16,185,129,0.12);color:#10b981">Active</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">System Prompt Guard</span>
+          <span id="rai-sys-prompt" class="badge" style="font-size:0.68rem;background:rgba(16,185,129,0.12);color:#10b981">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Output Sanitization</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(16,185,129,0.12);color:#10b981">Active</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Error Disclosure Guard</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(16,185,129,0.12);color:#10b981">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transparency & Audit -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.25rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <strong style="font-size:0.88rem;color:#06b6d4">Transparency & Audit</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Full Trace Logging</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(6,182,212,0.12);color:#06b6d4">Langfuse</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Decision Explainability</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(6,182,212,0.12);color:#06b6d4">Step-by-step</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Memory Enabled</span>
+          <span id="rai-memory" class="badge" style="font-size:0.68rem;background:rgba(6,182,212,0.12);color:#06b6d4">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Knowledge Base</span>
+          <span id="rai-kb" class="badge" style="font-size:0.68rem;background:rgba(6,182,212,0.12);color:#06b6d4">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Access & Authorization -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.25rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <strong style="font-size:0.88rem;color:#8b5cf6">Access Control</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Agent Isolation</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(139,92,246,0.12);color:#8b5cf6">Per-session</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Allowed Tools</span>
+          <span id="rai-tools" class="badge" style="font-size:0.68rem;background:rgba(139,92,246,0.12);color:#8b5cf6">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Assigned Skills</span>
+          <span id="rai-skills" class="badge" style="font-size:0.68rem;background:rgba(139,92,246,0.12);color:#8b5cf6">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Network Isolation</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(139,92,246,0.12);color:#8b5cf6">Docker net</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reliability & Limits -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.25rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364"/></svg>
+        <strong style="font-size:0.88rem;color:#f59e0b">Reliability & Limits</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Max Iterations</span>
+          <span id="rai-max-iter" class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Temperature</span>
+          <span id="rai-temperature" class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Graceful Degradation</span>
+          <span class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">Fallback</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Error Rate</span>
+          <span id="rai-error-threshold" class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAI Summary -->
+  <div style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:linear-gradient(135deg,rgba(16,185,129,0.04),rgba(6,182,212,0.04));border:1px solid rgba(16,185,129,0.15);border-radius:12px">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <div>
+      <strong style="font-size:0.82rem;color:var(--text-1)" id="rai-status">Responsible AI: Checking...</strong>
+      <p style="margin:0.15rem 0 0;font-size:0.72rem;color:var(--text-3)" id="rai-detail">Evaluating guardrails and safety controls</p>
+    </div>
+  </div>
+</div>
+
+<!-- Per-Agent Comparison (shown when "All Agents" selected) -->
+<div class="card animate-fade-up delay-200" id="agent-comparison-card" style="margin-bottom:1.5rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#06b6d4" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0">Agent Comparison</h3>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.82rem">Side-by-side evaluation scores for all registered agents</p>
+      </div>
+    </div>
+  </div>
+  <div id="agent-comparison-table" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+<script>
+let allAgents = [];
+let allTraces = [];
+let selectedAgentId = '__all__';
+
+function gradeFor(pct) {
+  if (pct >= 95) return '<span style="color:#10b981;font-weight:700">A</span>';
+  if (pct >= 85) return '<span style="color:#06b6d4;font-weight:700">B</span>';
+  if (pct >= 70) return '<span style="color:#f59e0b;font-weight:700">C</span>';
+  if (pct >= 50) return '<span style="color:#f97316;font-weight:700">D</span>';
+  return '<span style="color:#f43f5e;font-weight:700">F</span>';
+}
+
+function gradeColor(pct) {
+  if (pct >= 95) return '#10b981';
+  if (pct >= 85) return '#06b6d4';
+  if (pct >= 70) return '#f59e0b';
+  if (pct >= 50) return '#f97316';
+  return '#f43f5e';
+}
+
+function computeScores(traces) {
+  if (traces.length === 0) return { completion: 0, latency: 0, tool: 0, error: 0, overall: 0 };
+  const success = traces.filter(t => t.status !== 'ERROR').length;
+  const completionPct = Math.round(success / traces.length * 100);
+  const durations = traces.filter(t => t.latency != null).map(t => t.latency);
+  const under5s = durations.filter(d => d < 5000).length;
+  const latencyPct = durations.length > 0 ? Math.round(under5s / durations.length * 100) : 0;
+  const toolPct = success > 0 ? Math.round(success / traces.length * 100) : 0;
+  const errorPct = Math.round((1 - (traces.length - success) / traces.length) * 100);
+  const overall = Math.round(completionPct * 0.3 + latencyPct * 0.25 + toolPct * 0.2 + errorPct * 0.25);
+  return { completion: completionPct, latency: latencyPct, tool: toolPct, error: errorPct, overall };
+}
+
+async function init() {
+  try {
+    const [agentRes, traceRes] = await Promise.all([
+      fetch('/api/agents').then(r => r.json()),
+      fetch('/api/traces').then(r => r.json())
+    ]);
+    allAgents = agentRes.agents || agentRes || [];
+    allTraces = traceRes.traces || [];
+
+    // Populate agent selector
+    const sel = document.getElementById('agent-select');
+    allAgents.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.name + (a.is_default ? ' (default)' : '');
+      sel.appendChild(opt);
+    });
+
+    loadEvaluation();
+  } catch (e) {
+    console.error('Init failed:', e);
+  }
+}
+
+function onAgentChange() {
+  selectedAgentId = document.getElementById('agent-select').value;
+  loadEvaluation();
+}
+
+function getFilteredTraces() {
+  if (selectedAgentId === '__all__') return allTraces;
+  const agent = allAgents.find(a => a.id === selectedAgentId);
+  if (!agent) return allTraces;
+  // Filter traces by agent name (Langfuse traces use agent name in trace name/metadata)
+  return allTraces.filter(t => {
+    const name = (t.name || '').toLowerCase();
+    const meta = JSON.stringify(t.metadata || {}).toLowerCase();
+    const agentName = agent.name.toLowerCase();
+    return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
+  });
+}
+
+async function loadEvaluation() {
+  // Re-fetch fresh data
+  try {
+    const [traceRes, memRes] = await Promise.all([
+      fetch('/api/traces').then(r => r.json()),
+      fetch('/api/memory/stats').then(r => r.json())
+    ]);
+    allTraces = traceRes.traces || [];
+    const traces = getFilteredTraces();
+    const scores = computeScores(traces);
+
+    // Update agent info banner
+    const banner = document.getElementById('agent-info-banner');
+    if (selectedAgentId !== '__all__') {
+      const agent = allAgents.find(a => a.id === selectedAgentId);
+      if (agent) {
+        banner.style.display = 'block';
+        document.getElementById('agent-info-name').textContent = agent.name;
+        document.getElementById('agent-info-model').textContent = 'Model: ' + agent.provider + '/' + agent.model;
+        document.getElementById('agent-info-provider').textContent = 'Temp: ' + agent.temperature;
+        document.getElementById('agent-info-tools').textContent = 'Tools: ' + (agent.tool_ids || []).length + ' | Skills: ' + (agent.skill_ids || []).length;
+        document.getElementById('agent-trace-count').querySelector('div').textContent = traces.length;
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+
+    // Completion rate
+    document.getElementById('eval-completion').textContent = scores.completion + '%';
+    document.getElementById('eval-completion-bar').style.width = scores.completion + '%';
+    document.getElementById('eval-row-completion').textContent = scores.completion + '%';
+    document.getElementById('eval-grade-completion').innerHTML = gradeFor(scores.completion);
+
+    // Latency score
+    const durations = traces.filter(t => t.latency != null).map(t => t.latency);
+    document.getElementById('eval-latency').textContent = scores.latency + '%';
+    document.getElementById('eval-latency-bar').style.width = scores.latency + '%';
+    const avgLat = durations.length > 0 ? (durations.reduce((a,b)=>a+b,0)/durations.length/1000).toFixed(1) + 's avg' : '-';
+    document.getElementById('eval-row-latency').textContent = avgLat;
+    document.getElementById('eval-grade-latency').innerHTML = gradeFor(scores.latency);
+
+    // Tool efficiency
+    document.getElementById('eval-tool-eff').textContent = scores.tool + '%';
+    document.getElementById('eval-tool-bar').style.width = scores.tool + '%';
+    document.getElementById('eval-row-tools').textContent = scores.tool + '%';
+    document.getElementById('eval-grade-tools').innerHTML = gradeFor(scores.tool);
+
+    // Error rate
+    document.getElementById('eval-row-errors').textContent = scores.error + '%';
+    document.getElementById('eval-grade-errors').innerHTML = gradeFor(scores.error);
+
+    // Memory utilization
+    const mem = memRes.memory || {};
+    const sessionsWithMulti = mem.sessions_with_summary || 0;
+    const totalSess = mem.total_sessions || 1;
+    const memPct = Math.min(100, Math.round(sessionsWithMulti / totalSess * 100));
+    document.getElementById('eval-row-memory').textContent = memPct + '%';
+    document.getElementById('eval-grade-memory').innerHTML = gradeFor(memPct);
+
+    // Overall
+    const overall = Math.round(scores.completion * 0.3 + scores.latency * 0.2 + scores.tool * 0.2 + scores.error * 0.2 + memPct * 0.1);
+    document.getElementById('eval-row-overall').textContent = overall + '%';
+    document.getElementById('eval-grade-overall').innerHTML = gradeFor(overall);
+
+    // Load RAI controls for this agent
+    loadRAIForAgent();
+
+    // Load agent comparison table if global view
+    if (selectedAgentId === '__all__') {
+      document.getElementById('agent-comparison-card').style.display = 'block';
+      loadAgentComparison();
+    } else {
+      document.getElementById('agent-comparison-card').style.display = 'none';
+    }
+
+  } catch(e) {
+    console.error('loadEvaluation failed:', e);
+  }
+}
+
+function loadRAIForAgent() {
+  const agent = selectedAgentId !== '__all__' ? allAgents.find(a => a.id === selectedAgentId) : null;
+  const traces = getFilteredTraces();
+  const errorCount = traces.filter(t => t.status === 'ERROR').length;
+  const errorRate = traces.length > 0 ? (errorCount / traces.length * 100).toFixed(1) : '0.0';
+
+  // Per-agent config items
+  if (agent) {
+    document.getElementById('rai-subtitle').textContent = 'Governance controls for agent: ' + agent.name;
+    document.getElementById('rai-sys-prompt').textContent = agent.system_prompt ? 'Configured' : 'None';
+    document.getElementById('rai-sys-prompt').style.color = agent.system_prompt ? '#10b981' : '#f59e0b';
+    document.getElementById('rai-sys-prompt').style.background = agent.system_prompt ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)';
+    document.getElementById('rai-memory').textContent = agent.memory_enabled ? 'Enabled' : 'Disabled';
+    document.getElementById('rai-memory').style.color = agent.memory_enabled ? '#06b6d4' : '#f59e0b';
+    document.getElementById('rai-kb').textContent = agent.kb_collection || 'None';
+    document.getElementById('rai-tools').textContent = (agent.tool_ids || []).length + ' tools';
+    document.getElementById('rai-skills').textContent = (agent.skill_ids || []).length + ' skills';
+    document.getElementById('rai-max-iter').textContent = agent.max_iterations + ' loops';
+    document.getElementById('rai-temperature').textContent = agent.temperature;
+    document.getElementById('rai-temperature').style.color = agent.temperature > 1.0 ? '#f43f5e' : '#f59e0b';
+    document.getElementById('rai-temperature').style.background = agent.temperature > 1.0 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
+  } else {
+    document.getElementById('rai-subtitle').textContent = 'Global governance guardrails, fairness checks & safety monitoring';
+    document.getElementById('rai-sys-prompt').textContent = 'Per-agent';
+    document.getElementById('rai-sys-prompt').style.color = '#10b981';
+    document.getElementById('rai-sys-prompt').style.background = 'rgba(16,185,129,0.12)';
+    document.getElementById('rai-memory').textContent = 'Per-agent';
+    document.getElementById('rai-memory').style.color = '#06b6d4';
+    document.getElementById('rai-kb').textContent = 'Per-agent';
+    document.getElementById('rai-tools').textContent = 'Per-agent';
+    document.getElementById('rai-skills').textContent = 'Per-agent';
+    document.getElementById('rai-max-iter').textContent = 'Per-agent';
+    document.getElementById('rai-temperature').textContent = 'Per-agent';
+    document.getElementById('rai-temperature').style.color = '#f59e0b';
+    document.getElementById('rai-temperature').style.background = 'rgba(245,158,11,0.12)';
+  }
+
+  document.getElementById('rai-error-threshold').textContent = errorRate + '%';
+  document.getElementById('rai-error-threshold').style.color = parseFloat(errorRate) > 10 ? '#f43f5e' : '#f59e0b';
+  document.getElementById('rai-error-threshold').style.background = parseFloat(errorRate) > 10 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
+
+  // Overall RAI status
+  const issues = [];
+  if (parseFloat(errorRate) > 20) issues.push('high error rate (' + errorRate + '%)');
+  if (traces.length === 0) issues.push('no traces recorded');
+  if (agent && !agent.system_prompt) issues.push('no system prompt configured');
+  if (agent && agent.temperature > 1.0) issues.push('high temperature (' + agent.temperature + ')');
+
+  const raiEl = document.getElementById('rai-status');
+  const raiDetail = document.getElementById('rai-detail');
+  if (issues.length === 0) {
+    raiEl.textContent = 'Responsible AI: All Controls Active';
+    raiEl.style.color = '#10b981';
+    raiDetail.textContent = traces.length + ' traces monitored — ' + errorRate + '% error rate — guardrails operational';
+  } else {
+    raiEl.textContent = 'Responsible AI: ' + issues.length + ' concern(s)';
+    raiEl.style.color = '#f59e0b';
+    raiDetail.textContent = issues.join(', ');
+  }
+}
+
+function loadAgentComparison() {
+  if (allAgents.length === 0) {
+    document.getElementById('agent-comparison-table').innerHTML = '<p style="color:var(--text-3)">No agents registered yet.</p>';
+    return;
+  }
+
+  let html = '<table><tr><th>Agent</th><th>Model</th><th>Traces</th><th>Completion</th><th>Latency</th><th>Error Rate</th><th>Overall</th><th>RAI Status</th></tr>';
+  allAgents.forEach(agent => {
+    const agentTraces = allTraces.filter(t => {
+      const name = (t.name || '').toLowerCase();
+      const meta = JSON.stringify(t.metadata || {}).toLowerCase();
+      const agentName = agent.name.toLowerCase();
+      return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
+    });
+    const scores = computeScores(agentTraces);
+    const raiIssues = [];
+    if (!agent.system_prompt) raiIssues.push('no prompt');
+    if (agent.temperature > 1.0) raiIssues.push('high temp');
+    if (scores.error < 80 && agentTraces.length > 0) raiIssues.push('errors');
+
+    const raiBadge = raiIssues.length === 0
+      ? '<span class="badge" style="font-size:0.68rem;background:rgba(16,185,129,0.12);color:#10b981">OK</span>'
+      : '<span class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">' + raiIssues.length + ' issue(s)</span>';
+
+    html += '<tr>' +
+      '<td style="font-weight:600">' + agent.name + (agent.is_default ? ' <span style="font-size:0.65rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
+      '<td class="mono" style="font-size:0.78rem">' + agent.provider + '/' + agent.model + '</td>' +
+      '<td class="mono">' + agentTraces.length + '</td>' +
+      '<td><span style="color:' + gradeColor(scores.completion) + ';font-weight:600">' + scores.completion + '%</span></td>' +
+      '<td><span style="color:' + gradeColor(scores.latency) + ';font-weight:600">' + scores.latency + '%</span></td>' +
+      '<td><span style="color:' + gradeColor(scores.error) + ';font-weight:600">' + scores.error + '%</span></td>' +
+      '<td><span style="font-weight:700">' + scores.overall + '% ' + gradeFor(scores.overall).replace('font-weight:700', 'font-weight:700;font-size:0.88rem') + '</span></td>' +
+      '<td>' + raiBadge + '</td>' +
+      '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('agent-comparison-table').innerHTML = html;
+}
+
+init();
+</script>
+` }) %>

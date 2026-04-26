@@ -1,0 +1,290 @@
+<%- include('layout', { title: 'Agent-to-Agent (A2A)', page: 'a2a', body: `
+
+<h1 class="text-glow-cyan">Agent-to-Agent Protocol</h1>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Register, discover, and communicate with <strong style="color:#8b5cf6">remote peer agents</strong> using the <strong style="color:#06b6d4">A2A protocol</strong>. Each peer exposes an agent card describing its capabilities.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Send tasks across agent boundaries, orchestrate multi-agent workflows, and build distributed AI systems with <strong style="color:#f59e0b">zero tight coupling</strong>.</p>
+
+<!-- Stats Row -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.75rem;font-weight:700;color:var(--cyan)" id="stat-total">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Registered Peers</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.75rem;font-weight:700;color:#10b981" id="stat-online">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Online</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.75rem;font-weight:700;color:#f59e0b" id="stat-offline">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Offline / Unknown</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.75rem;font-weight:700;color:#8b5cf6" id="stat-capabilities">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Total Capabilities</div>
+  </div>
+</div>
+
+<!-- Action Bar -->
+<div class="flex-between mb-2">
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <span id="peer-count" class="badge" style="font-size:0.78rem">0 peers</span>
+    <button class="btn" onclick="viewSelfCard()" style="font-size:0.78rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      View My Agent Card
+    </button>
+  </div>
+  <button class="btn btn-primary" onclick="showPeerForm()">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Register Peer
+  </button>
+</div>
+
+<!-- Self Agent Card Modal -->
+<div class="card animate-fade-up" id="self-card" style="display:none;border-left:3px solid #06b6d4;margin-bottom:1.5rem">
+  <div class="flex-between">
+    <h3 style="color:#06b6d4;margin:0">My Agent Card</h3>
+    <button class="btn" onclick="document.getElementById('self-card').style.display='none'" style="font-size:0.75rem">Close</button>
+  </div>
+  <pre id="self-card-json" style="margin-top:0.75rem;padding:1rem;background:var(--surface-2);border-radius:8px;font-size:0.75rem;overflow-x:auto;max-height:400px;color:var(--text-2);font-family:var(--mono)"></pre>
+</div>
+
+<!-- Create / Edit Form -->
+<div class="card animate-fade-up" id="peer-form" style="display:none;margin-bottom:1.5rem">
+  <h3 id="form-title">Register Peer Agent</h3>
+  <input type="hidden" id="edit-id" value="">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+    <div>
+      <label class="field-label">Name</label>
+      <input type="text" id="peer-name" class="input" placeholder="e.g. Research Agent Cluster" maxlength="100">
+    </div>
+    <div>
+      <label class="field-label">Endpoint URL</label>
+      <input type="text" id="peer-url" class="input" placeholder="e.g. http://agent-2:8000">
+    </div>
+  </div>
+  <div style="margin-top:1rem">
+    <label class="field-label">Description</label>
+    <input type="text" id="peer-desc" class="input" placeholder="What does this peer agent do?" maxlength="1000">
+  </div>
+  <div style="margin-top:1rem">
+    <label class="field-label">Capabilities <span style="color:var(--text-3);font-weight:400">(comma-separated)</span></label>
+    <input type="text" id="peer-caps" class="input" placeholder="e.g. research, summarization, code-review">
+  </div>
+  <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+    <button class="btn btn-primary" onclick="savePeer()">Save</button>
+    <button class="btn" onclick="hidePeerForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- Peers Grid -->
+<div id="peers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1rem"></div>
+<div id="peers-empty" class="card" style="display:none;text-align:center;padding:3rem;color:var(--text-3)">
+  <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto 1rem;opacity:0.3"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+  <p>No peer agents registered. Click <strong>Register Peer</strong> to connect to a remote agent.</p>
+</div>
+
+<!-- Task Delegation Section -->
+<div class="card" style="margin-top:1.5rem" id="delegation-section" style="display:none">
+  <h3 style="color:#8b5cf6">Send Task to Peer</h3>
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem;margin-top:1rem">
+    <div>
+      <label class="field-label">Target Peer</label>
+      <select id="task-peer" class="input"></select>
+    </div>
+    <div>
+      <label class="field-label">Task / Prompt</label>
+      <input type="text" id="task-prompt" class="input" placeholder="e.g. Summarize the latest research on AI safety">
+    </div>
+  </div>
+  <div style="display:flex;gap:0.75rem;margin-top:1rem;align-items:center">
+    <button class="btn btn-primary" onclick="sendTask()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Send Task
+    </button>
+    <span id="task-status" style="font-size:0.78rem;color:var(--text-3)"></span>
+  </div>
+  <div id="task-result" style="display:none;margin-top:1rem;padding:1rem;background:var(--surface-2);border-radius:8px;font-size:0.82rem;max-height:300px;overflow-y:auto;color:var(--text-2)"></div>
+</div>
+
+<script>
+let peers = [];
+
+async function init() {
+  await loadPeers();
+}
+
+async function loadPeers() {
+  try {
+    const resp = await fetch('/api/a2a/peers');
+    const data = await resp.json();
+    peers = data.peers || [];
+    renderPeers();
+    updateStats();
+    updatePeerSelect();
+  } catch(e) { console.error('Failed to load peers', e); }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = peers.length;
+  document.getElementById('stat-online').textContent = peers.filter(p => p.status === 'online').length;
+  document.getElementById('stat-offline').textContent = peers.filter(p => p.status !== 'online').length;
+  const totalCaps = peers.reduce((sum, p) => sum + (p.capabilities?.length || 0), 0);
+  document.getElementById('stat-capabilities').textContent = totalCaps;
+  document.getElementById('peer-count').textContent = peers.length + ' peer' + (peers.length !== 1 ? 's' : '');
+}
+
+function updatePeerSelect() {
+  const sel = document.getElementById('task-peer');
+  sel.innerHTML = '<option value="">Select peer...</option>' +
+    peers.map(p => '<option value="' + p.id + '">' + p.name + ' (' + p.status + ')</option>').join('');
+}
+
+function renderPeers() {
+  const grid = document.getElementById('peers-grid');
+  const empty = document.getElementById('peers-empty');
+  if (peers.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = peers.map(p => {
+    const statusColor = p.status === 'online' ? '#10b981' : p.status === 'unreachable' ? '#ef4444' : '#f59e0b';
+    const statusDot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>';
+    const caps = (p.capabilities || []).map(c => '<span class="badge" style="font-size:0.7rem;margin:2px">' + c + '</span>').join('') || '<span style="color:var(--text-3);font-size:0.75rem">No capabilities listed</span>';
+    const lastSeen = p.last_seen ? new Date(p.last_seen).toLocaleString() : 'Never';
+    const hasCard = p.agent_card && Object.keys(p.agent_card).length > 0;
+
+    return '<div class="card animate-fade-up" style="border-left:3px solid ' + statusColor + '">' +
+      '<div class="flex-between">' +
+        '<div>' +
+          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + p.name + '</h3>' +
+          '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px">' + p.url + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:0.5rem">' +
+          '<button class="btn" onclick="pingPeer(\\'' + p.id + '\\')" style="font-size:0.72rem" title="Test connectivity">Ping</button>' +
+          (hasCard ? '<button class="btn" onclick="viewAgentCard(\\'' + p.id + '\\')" style="font-size:0.72rem">Card</button>' : '') +
+          '<button class="btn" onclick="editPeer(\\'' + p.id + '\\')" style="font-size:0.72rem">Edit</button>' +
+          '<button class="btn" onclick="deletePeer(\\'' + p.id + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>' +
+        '</div>' +
+      '</div>' +
+      '<p style="font-size:0.8rem;color:var(--text-3);margin:0.5rem 0">' + (p.description || 'No description') + '</p>' +
+      '<div style="margin:0.5rem 0">' + caps + '</div>' +
+      '<div style="font-size:0.72rem;color:var(--text-3)">Last seen: ' + lastSeen + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function showPeerForm() {
+  document.getElementById('peer-form').style.display = 'block';
+  document.getElementById('form-title').textContent = 'Register Peer Agent';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('peer-name').value = '';
+  document.getElementById('peer-url').value = '';
+  document.getElementById('peer-desc').value = '';
+  document.getElementById('peer-caps').value = '';
+}
+
+function hidePeerForm() {
+  document.getElementById('peer-form').style.display = 'none';
+}
+
+function editPeer(id) {
+  const p = peers.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('peer-form').style.display = 'block';
+  document.getElementById('form-title').textContent = 'Edit Peer Agent';
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('peer-name').value = p.name;
+  document.getElementById('peer-url').value = p.url;
+  document.getElementById('peer-desc').value = p.description || '';
+  document.getElementById('peer-caps').value = (p.capabilities || []).join(', ');
+}
+
+async function savePeer() {
+  const id = document.getElementById('edit-id').value;
+  const body = {
+    name: document.getElementById('peer-name').value.trim(),
+    url: document.getElementById('peer-url').value.trim(),
+    description: document.getElementById('peer-desc').value.trim(),
+    capabilities: document.getElementById('peer-caps').value.split(',').map(s => s.trim()).filter(Boolean),
+  };
+  if (!body.name || !body.url) return alert('Name and URL are required');
+  try {
+    const url = id ? '/api/a2a/peers/' + id : '/api/a2a/peers';
+    const method = id ? 'PUT' : 'POST';
+    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    hidePeerForm();
+    await loadPeers();
+  } catch(e) { alert('Failed to save: ' + e.message); }
+}
+
+async function deletePeer(id) {
+  if (!confirm('Delete this peer?')) return;
+  try {
+    await fetch('/api/a2a/peers/' + id, { method: 'DELETE' });
+    await loadPeers();
+  } catch(e) { alert('Failed to delete: ' + e.message); }
+}
+
+async function pingPeer(id) {
+  try {
+    const resp = await fetch('/api/a2a/peers/' + id + '/ping', { method: 'POST' });
+    const data = await resp.json();
+    await loadPeers();
+    alert('Ping result: ' + data.status + (data.error ? ' — ' + data.error : ''));
+  } catch(e) { alert('Ping failed: ' + e.message); }
+}
+
+function viewAgentCard(id) {
+  const p = peers.find(x => x.id === id);
+  if (!p || !p.agent_card) return;
+  const el = document.getElementById('self-card');
+  el.style.display = 'block';
+  el.querySelector('h3').textContent = p.name + ' — Agent Card';
+  document.getElementById('self-card-json').textContent = JSON.stringify(p.agent_card, null, 2);
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function viewSelfCard() {
+  try {
+    const resp = await fetch('/api/a2a/card');
+    const data = await resp.json();
+    const el = document.getElementById('self-card');
+    el.style.display = 'block';
+    el.querySelector('h3').textContent = 'My Agent Card';
+    document.getElementById('self-card-json').textContent = JSON.stringify(data, null, 2);
+  } catch(e) { alert('Failed to fetch card: ' + e.message); }
+}
+
+async function sendTask() {
+  const peerId = document.getElementById('task-peer').value;
+  const prompt = document.getElementById('task-prompt').value.trim();
+  if (!peerId || !prompt) return alert('Select a peer and enter a task');
+  const statusEl = document.getElementById('task-status');
+  const resultEl = document.getElementById('task-result');
+  statusEl.textContent = 'Sending...';
+  statusEl.style.color = '#f59e0b';
+  resultEl.style.display = 'none';
+  try {
+    const resp = await fetch('/api/a2a/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peer_id: peerId, task: prompt }),
+    });
+    const data = await resp.json();
+    statusEl.textContent = data.status === 'completed' ? 'Task completed' : 'Error: ' + (data.error || data.status);
+    statusEl.style.color = data.status === 'completed' ? '#10b981' : '#ef4444';
+    resultEl.style.display = 'block';
+    resultEl.textContent = JSON.stringify(data.response || data, null, 2);
+  } catch(e) {
+    statusEl.textContent = 'Failed: ' + e.message;
+    statusEl.style.color = '#ef4444';
+  }
+}
+
+init();
+</script>
+
+` }) %>

@@ -1,10 +1,13 @@
 """
 SQLite-based conversation memory.
 Stores message history per sessionId in /data/memory.db.
+Also stores skills and agent configurations.
 """
 import os
+import json
 import sqlite3
 import threading
+import uuid
 from datetime import datetime, timezone
 
 MEMORY_DIR = os.getenv("MEMORY_DIR", "/data")
@@ -48,6 +51,84 @@ def init_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS skills (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE,
+            description TEXT DEFAULT '',
+            system_prompt TEXT DEFAULT '',
+            tool_ids    TEXT DEFAULT '[]',
+            constraints TEXT DEFAULT '[]',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS agents (
+            id              TEXT PRIMARY KEY,
+            name            TEXT NOT NULL UNIQUE,
+            description     TEXT DEFAULT '',
+            provider        TEXT DEFAULT 'ollama',
+            model           TEXT DEFAULT 'llama3',
+            temperature     REAL DEFAULT 0.7,
+            system_prompt   TEXT DEFAULT '',
+            skill_ids       TEXT DEFAULT '[]',
+            tool_ids        TEXT DEFAULT '[]',
+            kb_collection   TEXT DEFAULT 'agentic_docs',
+            max_iterations  INTEGER DEFAULT 5,
+            memory_enabled  INTEGER DEFAULT 1,
+            is_default      INTEGER DEFAULT 0,
+            created_at      TEXT NOT NULL,
+            updated_at      TEXT NOT NULL
+        )
+        """
+    )
+    # ── A2A Peers table ──
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS a2a_peers (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            url         TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            status      TEXT DEFAULT 'unknown',
+            capabilities TEXT DEFAULT '[]',
+            agent_card  TEXT DEFAULT '{}',
+            last_seen   TEXT DEFAULT '',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
+    # ── MCP Servers table ──
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS mcp_servers (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            url         TEXT NOT NULL,
+            transport   TEXT DEFAULT 'stdio',
+            description TEXT DEFAULT '',
+            status      TEXT DEFAULT 'unknown',
+            tools       TEXT DEFAULT '[]',
+            enabled     INTEGER DEFAULT 1,
+            last_seen   TEXT DEFAULT '',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
+    # Ensure default agent exists
+    existing = conn.execute("SELECT id FROM agents WHERE is_default = 1").fetchone()
+    if not existing:
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "INSERT INTO agents (id, name, description, provider, model, temperature, system_prompt, skill_ids, tool_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ("default", "Assistant", "Default general-purpose AI assistant", "ollama", os.getenv("OLLAMA_MODEL", "llama3"), 0.7, "", "[]", "[]", "agentic_docs", 5, 1, 1, now, now),
+        )
     conn.commit()
 
 
@@ -177,3 +258,328 @@ def get_relevant_context(query: str, k: int = 3) -> list[dict]:
         return results
     except Exception:
         return []
+
+
+# ── Skills CRUD ────────────────────────────────────────────────────────────
+
+def _row_to_skill(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "description": row["description"],
+        "system_prompt": row["system_prompt"],
+        "tool_ids": json.loads(row["tool_ids"]),
+        "constraints": json.loads(row["constraints"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_skills() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM skills ORDER BY name").fetchall()
+    return [_row_to_skill(r) for r in rows]
+
+
+def get_skill(skill_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM skills WHERE id = ?", (skill_id,)).fetchone()
+    return _row_to_skill(row) if row else None
+
+
+def create_skill(name: str, description: str = "", system_prompt: str = "",
+                 tool_ids: list[str] | None = None, constraints: list[str] | None = None) -> dict:
+    conn = _get_conn()
+    skill_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO skills (id, name, description, system_prompt, tool_ids, constraints, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (skill_id, name, description, system_prompt, json.dumps(tool_ids or []), json.dumps(constraints or []), now, now),
+    )
+    conn.commit()
+    return get_skill(skill_id)
+
+
+def update_skill(skill_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_skill(skill_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "description", "system_prompt"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    for key in ("tool_ids", "constraints"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(skill_id)
+        conn.execute(f"UPDATE skills SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_skill(skill_id)
+
+
+def delete_skill(skill_id: str) -> bool:
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM skills WHERE id = ?", (skill_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+# ── Agents CRUD ────────────────────────────────────────────────────────────
+
+def _row_to_agent(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "description": row["description"],
+        "provider": row["provider"],
+        "model": row["model"],
+        "temperature": row["temperature"],
+        "system_prompt": row["system_prompt"],
+        "skill_ids": json.loads(row["skill_ids"]),
+        "tool_ids": json.loads(row["tool_ids"]),
+        "kb_collection": row["kb_collection"],
+        "max_iterations": row["max_iterations"],
+        "memory_enabled": bool(row["memory_enabled"]),
+        "is_default": bool(row["is_default"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_agents() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM agents ORDER BY is_default DESC, name").fetchall()
+    return [_row_to_agent(r) for r in rows]
+
+
+def get_agent(agent_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM agents WHERE id = ?", (agent_id,)).fetchone()
+    return _row_to_agent(row) if row else None
+
+
+def create_agent(name: str, description: str = "", provider: str = "ollama",
+                 model: str = "llama3", temperature: float = 0.7,
+                 system_prompt: str = "", skill_ids: list[str] | None = None,
+                 tool_ids: list[str] | None = None, kb_collection: str = "agentic_docs",
+                 max_iterations: int = 5, memory_enabled: bool = True) -> dict:
+    conn = _get_conn()
+    agent_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO agents (id, name, description, provider, model, temperature, system_prompt, skill_ids, tool_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (agent_id, name, description, provider, model, temperature, system_prompt,
+         json.dumps(skill_ids or []), json.dumps(tool_ids or []), kb_collection,
+         max_iterations, int(memory_enabled), 0, now, now),
+    )
+    conn.commit()
+    return get_agent(agent_id)
+
+
+def update_agent(agent_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_agent(agent_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "description", "provider", "model", "system_prompt", "kb_collection"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    for key in ("temperature",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(float(kwargs[key]))
+    for key in ("max_iterations",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(int(kwargs[key]))
+    for key in ("memory_enabled",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(int(kwargs[key]))
+    for key in ("skill_ids", "tool_ids"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(agent_id)
+        conn.execute(f"UPDATE agents SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_agent(agent_id)
+
+
+def delete_agent(agent_id: str) -> bool:
+    conn = _get_conn()
+    # Cannot delete default agent
+    row = conn.execute("SELECT is_default FROM agents WHERE id = ?", (agent_id,)).fetchone()
+    if row and row["is_default"]:
+        return False
+    cursor = conn.execute("DELETE FROM agents WHERE id = ?", (agent_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+# ── A2A Peers CRUD ─────────────────────────────────────────────────────────
+
+def _row_to_a2a_peer(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "url": row["url"],
+        "description": row["description"],
+        "status": row["status"],
+        "capabilities": json.loads(row["capabilities"]),
+        "agent_card": json.loads(row["agent_card"]),
+        "last_seen": row["last_seen"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_a2a_peers() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM a2a_peers ORDER BY name").fetchall()
+    return [_row_to_a2a_peer(r) for r in rows]
+
+
+def get_a2a_peer(peer_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM a2a_peers WHERE id = ?", (peer_id,)).fetchone()
+    return _row_to_a2a_peer(row) if row else None
+
+
+def create_a2a_peer(name: str, url: str, description: str = "",
+                    capabilities: list[str] | None = None) -> dict:
+    conn = _get_conn()
+    peer_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO a2a_peers (id, name, url, description, capabilities, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (peer_id, name, url, description, json.dumps(capabilities or []), now, now),
+    )
+    conn.commit()
+    return get_a2a_peer(peer_id)
+
+
+def update_a2a_peer(peer_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_a2a_peer(peer_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "url", "description", "status", "last_seen"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    for key in ("capabilities",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    for key in ("agent_card",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(peer_id)
+        conn.execute(f"UPDATE a2a_peers SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_a2a_peer(peer_id)
+
+
+def delete_a2a_peer(peer_id: str) -> bool:
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM a2a_peers WHERE id = ?", (peer_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+# ── MCP Servers CRUD ───────────────────────────────────────────────────────
+
+def _row_to_mcp_server(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "url": row["url"],
+        "transport": row["transport"],
+        "description": row["description"],
+        "status": row["status"],
+        "tools": json.loads(row["tools"]),
+        "enabled": bool(row["enabled"]),
+        "last_seen": row["last_seen"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_mcp_servers() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM mcp_servers ORDER BY name").fetchall()
+    return [_row_to_mcp_server(r) for r in rows]
+
+
+def get_mcp_server(server_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM mcp_servers WHERE id = ?", (server_id,)).fetchone()
+    return _row_to_mcp_server(row) if row else None
+
+
+def create_mcp_server(name: str, url: str, transport: str = "stdio",
+                      description: str = "", tools: list[dict] | None = None) -> dict:
+    conn = _get_conn()
+    server_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO mcp_servers (id, name, url, transport, description, tools, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (server_id, name, url, transport, description, json.dumps(tools or []), now, now),
+    )
+    conn.commit()
+    return get_mcp_server(server_id)
+
+
+def update_mcp_server(server_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_mcp_server(server_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "url", "transport", "description", "status", "last_seen"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    for key in ("enabled",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(int(kwargs[key]))
+    for key in ("tools",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(server_id)
+        conn.execute(f"UPDATE mcp_servers SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_mcp_server(server_id)
+
+
+def delete_mcp_server(server_id: str) -> bool:
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM mcp_servers WHERE id = ?", (server_id,))
+    conn.commit()
+    return cursor.rowcount > 0

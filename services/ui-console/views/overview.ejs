@@ -1,17 +1,279 @@
 <%- include('layout', { title: 'Overview', page: 'overview', body: `
 
-<h1 class="text-glow-cyan">Platform Overview</h1>
+<h1 class="text-glow-cyan">Agentic Platform</h1>
+<p style="color:var(--text-3);margin:-0.5rem 0 1.5rem;font-size:0.92rem">An <strong style="color:var(--text-1)">agent factory</strong> — build, register, and run hundreds of autonomous AI agents, each with its own model, tools, memory, and control logic.</p>
+
+<!-- Get Started -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem;border:1px solid rgba(6,182,212,0.2);background:linear-gradient(135deg, rgba(6,182,212,0.04), rgba(139,92,246,0.04))">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:36px;height:36px;border-radius:10px;background:rgba(6,182,212,0.12);display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div>
+      <h3 style="margin:0;font-size:1.05rem">Get Started — Build Your First Agentic AI App</h3>
+      <p style="margin:0;color:var(--text-3);font-size:0.78rem">Follow these steps to go from zero to a working AI agent</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr;gap:0">
+
+    <!-- Step 1 -->
+    <a href="/documents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">1</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Feed Knowledge</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Documents</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Upload documents to ChromaDB so your agent can retrieve relevant context via RAG. PDFs, notes, code docs — anything the agent should know about.</p>
+      </div>
+    </a>
+
+    <!-- Step 2 -->
+    <a href="/skills" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">2</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Define Skills</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Skills</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Create skills — packaged capabilities with a prompt, tools, and constraints. Think: reusable functions with intelligence. e.g. "Code Reviewer", "Research Analyst", "Data Extractor".</p>
+      </div>
+    </a>
+
+    <!-- Step 3 -->
+    <a href="/agents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(139,92,246,0.12);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">3</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Build Agents</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Agents</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Compose an agent: pick a model, attach skills, select tools, upload a knowledge base, and write the prompt that defines its behavior and persona.</p>
+      </div>
+    </a>
+
+    <!-- Step 4 -->
+    <a href="/run-agent" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(6,182,212,0.12);color:#06b6d4;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">4</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Run & Interact</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Run Agent</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Send prompts to your agent and watch it work in real-time — the activity panel streams every step: KB retrieval, reasoning, tool calls, and response generation with timing.</p>
+      </div>
+    </a>
+
+    <!-- Step 5 -->
+    <a href="/llm-activity" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(244,63,94,0.12);color:#f43f5e;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">5</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Trace & Debug</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">LLM Activity</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Inspect every LLM call in Langfuse — see latency, token usage, tool invocations, and full conversation traces. Debug and optimize your agent's behavior.</p>
+      </div>
+    </a>
+
+    <!-- Step 6 -->
+    <a href="/workflows" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">6</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Automate with Workflows</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">n8n</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Connect your agent to external triggers — scheduled runs, webhooks, multi-step pipelines. n8n orchestrates the <em>outside world</em> while LangGraph handles the <em>agent brain</em>.</p>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- What is an Agent? -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem;border:1px solid rgba(139,92,246,0.18)">
+  <h3 style="margin-bottom:0.25rem">What is an Agent?</h3>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1rem">An agent is <strong style="color:var(--text-1)">not</strong> a model. It is <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic</strong> wrapped into a loop that keeps working until the task is done or it hits a stop condition.</p>
+
+  <!-- Agent formula -->
+  <div style="background:linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.06));border:1px solid rgba(139,92,246,0.2);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;text-align:center">
+    <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.02em;color:var(--text-1);margin-bottom:0.5rem">
+      Agent&nbsp; =&nbsp; <span style="color:#8b5cf6">LLM</span>&nbsp; +&nbsp; <span style="color:#06b6d4">Tools</span>&nbsp; +&nbsp; <span style="color:#f43f5e">Memory</span>&nbsp; +&nbsp; <span style="color:#f59e0b">Control Logic</span>
+    </div>
+    <div style="display:flex;justify-content:center;gap:0.35rem;align-items:center;margin-bottom:0.6rem">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+    <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap">
+      <span style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#8b5cf6;font-weight:600">Observe</span>
+      <span style="color:var(--text-3);font-size:0.78rem;display:flex;align-items:center">→</span>
+      <span style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#06b6d4;font-weight:600">Reason</span>
+      <span style="color:var(--text-3);font-size:0.78rem;display:flex;align-items:center">→</span>
+      <span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#f59e0b;font-weight:600">Act</span>
+      <span style="color:var(--text-3);font-size:0.78rem;display:flex;align-items:center">→</span>
+      <span style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#10b981;font-weight:600">Repeat until done</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+    <!-- Left: Agent anatomy -->
+    <div style="padding:1.25rem;border-radius:14px;background:linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));border:1px solid var(--glass-border)">
+      <strong style="font-size:0.9rem;color:#8b5cf6;display:block;margin-bottom:0.75rem">Each Agent Has:</strong>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg>
+          </div>
+          <div><strong style="font-size:0.8rem">LLM (brain)</strong> <span style="color:var(--text-3);font-size:0.75rem">— Ollama local or Azure OpenAI cloud</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div><strong style="font-size:0.8rem">Tools (actions)</strong> <span style="color:var(--text-3);font-size:0.75rem">— web_search, code_execute, file_read, http_fetch</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(244,63,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f43f5e" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9c0 3.9-3.1 7.1-5 8.9a13 13 0 0 1-4 2.1 13 13 0 0 1-4-2.1C6.1 18.1 3 14.9 3 11a9 9 0 0 1 9-9z"/></svg>
+          </div>
+          <div><strong style="font-size:0.8rem">Memory (state)</strong> <span style="color:var(--text-3);font-size:0.75rem">— conversation history + session context</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,158,11,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div><strong style="font-size:0.8rem">Control Logic (skills)</strong> <span style="color:var(--text-3);font-size:0.75rem">— prompt + behavior constraints</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div><strong style="font-size:0.8rem">Knowledge Base (RAG)</strong> <span style="color:var(--text-3);font-size:0.75rem">— ChromaDB vector retrieval</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Scale vision -->
+    <div style="padding:1.25rem;border-radius:14px;background:linear-gradient(135deg, rgba(245,158,11,0.04), rgba(16,185,129,0.04));border:1px solid var(--glass-border)">
+      <strong style="font-size:0.9rem;color:#f59e0b;display:block;margin-bottom:0.5rem">Think: 100s of Agents</strong>
+      <p style="color:var(--text-3);font-size:0.8rem;line-height:1.6;margin:0 0 0.75rem">This platform is an <strong style="color:var(--text-1)">agent registry</strong>. Each use case gets its own agent with a dedicated configuration. All share the same runtime engine.</p>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);display:flex;justify-content:space-between;align-items:center">
+          <div><strong style="font-size:0.78rem;color:#8b5cf6">Research Analyst</strong> <span style="color:var(--text-3);font-size:0.68rem">llama3 &bull; web_search, file_read</span></div>
+          <span style="font-size:0.65rem;color:var(--text-3)">Agent #1</span>
+        </div>
+        <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.15);display:flex;justify-content:space-between;align-items:center">
+          <div><strong style="font-size:0.78rem;color:#06b6d4">Code Assistant</strong> <span style="color:var(--text-3);font-size:0.68rem">gpt-4o &bull; code_execute, file_read</span></div>
+          <span style="font-size:0.65rem;color:var(--text-3)">Agent #2</span>
+        </div>
+        <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);display:flex;justify-content:space-between;align-items:center">
+          <div><strong style="font-size:0.78rem;color:#10b981">Support Bot</strong> <span style="color:var(--text-3);font-size:0.68rem">llama3 &bull; notes &bull; KB: faq-docs</span></div>
+          <span style="font-size:0.65rem;color:var(--text-3)">Agent #3</span>
+        </div>
+        <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);display:flex;justify-content:space-between;align-items:center">
+          <div><strong style="font-size:0.78rem;color:#f59e0b">Data Analyst</strong> <span style="color:var(--text-3);font-size:0.68rem">gpt-4o &bull; code_execute, http_fetch</span></div>
+          <span style="font-size:0.65rem;color:var(--text-3)">Agent #4</span>
+        </div>
+        <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(139,92,246,0.05);border:1px dashed var(--glass-border);display:flex;justify-content:space-between;align-items:center">
+          <div><span style="color:var(--text-3);font-size:0.78rem;font-style:italic">... Content Writer, QA Tester, Sales Rep, Compliance Checker ...</span></div>
+          <span style="font-size:0.65rem;color:var(--text-3)">Agent #N</span>
+        </div>
+      </div>
+      <p style="color:var(--text-3);font-size:0.72rem;margin:0.6rem 0 0;line-height:1.5">Every agent runs the same <strong style="color:#06b6d4">LangGraph ReAct loop</strong> — but each with its own LLM, tools, memory, knowledge base, and skills. Create one agent or create hundreds.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create Your First Agent — Concrete Tutorial -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem;border:1px solid rgba(16,185,129,0.2);background:linear-gradient(135deg, rgba(16,185,129,0.03), rgba(6,182,212,0.03))">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:36px;height:36px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+    </div>
+    <div>
+      <h3 style="margin:0;font-size:1.05rem">Create an Agent from Scratch</h3>
+      <p style="margin:0;color:var(--text-3);font-size:0.78rem">Example: build a "Research Analyst" agent step by step</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <!-- Left column: Steps 1-2 -->
+    <div>
+      <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);margin-bottom:0.75rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 1</span>
+          <strong style="font-size:0.82rem">Create a Skill</strong>
+        </div>
+        <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/skills" style="color:#f59e0b;text-decoration:none;font-weight:600">Skills</a> → Click <strong>Create Skill</strong></p>
+        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
+          <span style="color:#f59e0b">Name:</span> Deep Research<br>
+          <span style="color:#f59e0b">Prompt:</span> You are a research analyst. Find authoritative sources, cross-reference facts, and produce structured reports with citations.<br>
+          <span style="color:#f59e0b">Tools:</span> web_search, file_read<br>
+          <span style="color:#f59e0b">Constraints:</span> Always cite sources, max 3 search queries
+        </div>
+      </div>
+
+      <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(16,185,129,0.15);color:#10b981;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 2</span>
+          <strong style="font-size:0.82rem">Upload Knowledge (optional)</strong>
+        </div>
+        <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/documents" style="color:#10b981;text-decoration:none;font-weight:600">Documents</a> → Upload files</p>
+        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
+          Upload PDFs, text files, or markdown docs<br>
+          that your agent should reference via RAG.<br>
+          <span style="color:#10b981">Collection:</span> agentic_docs (default)
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Steps 3-4 -->
+    <div>
+      <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);margin-bottom:0.75rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(139,92,246,0.15);color:#8b5cf6;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 3</span>
+          <strong style="font-size:0.82rem">Create the Agent</strong>
+        </div>
+        <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/agents" style="color:#8b5cf6;text-decoration:none;font-weight:600">Agents</a> → Click <strong>Create Agent</strong></p>
+        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
+          <span style="color:#8b5cf6">Name:</span> Research Analyst<br>
+          <span style="color:#8b5cf6">Provider:</span> ollama &nbsp;|&nbsp; <span style="color:#8b5cf6">Model:</span> llama3<br>
+          <span style="color:#8b5cf6">Temperature:</span> 0.3<br>
+          <span style="color:#8b5cf6">Skills:</span> ✅ Deep Research<br>
+          <span style="color:#8b5cf6">Tools:</span> web_search, file_read<br>
+          <span style="color:#8b5cf6">KB Collection:</span> agentic_docs<br>
+          <span style="color:#8b5cf6">Memory:</span> enabled
+        </div>
+      </div>
+
+      <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(6,182,212,0.15);color:#06b6d4;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 4</span>
+          <strong style="font-size:0.82rem">Run It</strong>
+        </div>
+        <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/run-agent" style="color:#06b6d4;text-decoration:none;font-weight:600">Run Agent</a> → Select your agent</p>
+        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
+          <span style="color:#06b6d4">Agent:</span> Research Analyst<br>
+          <span style="color:#06b6d4">Prompt:</span> "What are the latest trends in agentic AI frameworks? Compare LangGraph, CrewAI, and AutoGen."<br><br>
+          <span style="color:var(--text-3)">Watch the Activity panel stream each step</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Stats Row -->
-<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
-  <div class="stat-card animate-fade-up">
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.75rem;margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up" style="border-left:3px solid #8b5cf6">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+    </div>
+    <div class="stat-label">Agents</div>
+    <div class="stat-number" id="stat-agents">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100" style="border-left:3px solid #f59e0b">
+    <div class="stat-icon stat-icon-amber">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div class="stat-label">Skills</div>
+    <div class="stat-number" id="stat-skills">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
     <div class="stat-icon stat-icon-cyan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
     </div>
     <div class="stat-label">Models</div>
     <div class="stat-number" id="stat-models">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-100">
+  <div class="stat-card animate-fade-up delay-200">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     </div>
@@ -26,7 +288,7 @@
     <div class="stat-number" id="stat-sessions">-</div>
   </div>
   <div class="stat-card animate-fade-up delay-300">
-    <div class="stat-icon stat-icon-amber">
+    <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
     <div class="stat-label">Documents</div>
@@ -115,18 +377,193 @@ loadHealth();
 
 async function loadPlatformStats() {
   try {
-    const [models, tools, sessions, docs] = await Promise.all([
+    const [agents, skills, models, tools, memStats, docs] = await Promise.all([
+      fetch('/api/agents').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/skills').then(r=>r.json()).catch(()=>[]),
       fetch('/api/models').then(r=>r.json()).catch(()=>({})),
       fetch('/api/tools').then(r=>r.json()).catch(()=>({})),
-      fetch('/api/sessions').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/memory/stats').then(r=>r.json()).catch(()=>({})),
       fetch('/api/documents/stats').then(r=>r.json()).catch(()=>({})),
     ]);
+    document.getElementById('stat-agents').textContent = (Array.isArray(agents)?agents:[]).length;
+    document.getElementById('stat-skills').textContent = (Array.isArray(skills)?skills:[]).length;
     document.getElementById('stat-models').textContent = (models.models||[]).length;
     document.getElementById('stat-tools').textContent = (tools.tools||[]).length;
-    document.getElementById('stat-sessions').textContent = (sessions.sessions||[]).length;
-    document.getElementById('stat-docs').textContent = (docs.total_chunks||0);
+    document.getElementById('stat-sessions').textContent = (memStats.memory?.total_sessions || 0);
+    document.getElementById('stat-docs').textContent = (docs.unique_documents || memStats.knowledge_base?.unique_documents || 0);
   } catch(e) {}
 }
 loadPlatformStats();
 </script>
+
+<!-- Architecture Diagram -->
+<div class="card animate-fade-up delay-300" style="margin-top:1.5rem">
+  <h3 style="margin-bottom:0.5rem">Platform Architecture</h3>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">One runtime, <strong style="color:#8b5cf6">unlimited agents</strong>. Each agent = <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic</strong> in a <strong style="color:#06b6d4">ReAct loop</strong> that keeps working until the task is done. Register 1 or 100 — they all share the same engine.</p>
+
+  <div style="overflow-x:auto">
+    <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:960px;margin:0 auto;display:block;font-family:var(--sans)">
+      <defs>
+        <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--text-3)"/></marker>
+        <marker id="ah-cyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#06b6d4"/></marker>
+        <marker id="ah-violet" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#8b5cf6"/></marker>
+        <marker id="ah-amber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/></marker>
+        <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feComposite in="SourceGraphic" in2="blur"/></filter>
+      </defs>
+
+      <!-- ====== USER ====== -->
+      <rect x="20" y="210" width="90" height="60" rx="14" fill="rgba(139,92,246,0.12)" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="65" y="236" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="600">User /</text>
+      <text x="65" y="250" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="600">Webhook</text>
+
+      <!-- ====== UI CONSOLE ====== -->
+      <rect x="140" y="200" width="100" height="80" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="190" y="232" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="600">UI Console</text>
+      <text x="190" y="248" text-anchor="middle" fill="var(--text-3)" font-size="8">Express + EJS</text>
+      <text x="190" y="260" text-anchor="middle" fill="var(--text-3)" font-size="8">:3001</text>
+
+      <!-- User → UI -->
+      <line x1="110" y1="240" x2="138" y2="240" stroke="var(--text-3)" stroke-width="1.2" marker-end="url(#ah)"/>
+
+      <!-- ====== AGENT RUNTIME (center, large) ====== -->
+      <rect x="270" y="20" width="420" height="480" rx="20" fill="rgba(139,92,246,0.03)" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="480" y="48" text-anchor="middle" fill="#8b5cf6" font-size="12" font-weight="700">AGENT REGISTRY &amp; RUNTIME</text>
+      <text x="480" y="63" text-anchor="middle" fill="var(--text-3)" font-size="9">FastAPI :8010 — Each agent = LLM + Tools + Memory + Control Logic in a loop</text>
+
+      <!-- UI → Agent Runtime -->
+      <line x1="240" y1="240" x2="268" y2="240" stroke="#06b6d4" stroke-width="1.2" marker-end="url(#ah-cyan)"/>
+      <text x="254" y="233" text-anchor="middle" fill="#06b6d4" font-size="7">SSE</text>
+
+      <!-- ── Agent A ── -->
+      <rect x="295" y="80" width="180" height="110" rx="14" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#glow)"/>
+      <text x="385" y="100" text-anchor="middle" fill="#8b5cf6" font-size="10" font-weight="700">Agent: Research Analyst</text>
+      <text x="385" y="114" text-anchor="middle" fill="var(--text-3)" font-size="8">model: llama3 (ollama) | temp: 0.3</text>
+      <!-- Skills inside agent A -->
+      <rect x="305" y="122" width="75" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="342" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Deep Research</text>
+      <rect x="388" y="122" width="75" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="425" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Summarization</text>
+      <!-- Tools inside agent A -->
+      <rect x="305" y="150" width="55" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
+      <text x="332" y="162" text-anchor="middle" fill="#06b6d4" font-size="7">web_search</text>
+      <rect x="365" y="150" width="45" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
+      <text x="387" y="162" text-anchor="middle" fill="#06b6d4" font-size="7">file_read</text>
+      <rect x="415" y="150" width="50" height="18" rx="4" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.6"/>
+      <text x="440" y="162" text-anchor="middle" fill="#10b981" font-size="7">KB: docs</text>
+
+      <!-- ── Agent B ── -->
+      <rect x="495" y="80" width="180" height="110" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5" filter="url(#glow)"/>
+      <text x="585" y="100" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">Agent: Code Assistant</text>
+      <text x="585" y="114" text-anchor="middle" fill="var(--text-3)" font-size="8">model: gpt-4o (azure) | temp: 0.1</text>
+      <rect x="505" y="122" width="65" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="537" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Code Review</text>
+      <rect x="578" y="122" width="55" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="605" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Bug Fix</text>
+      <rect x="640" y="122" width="25" height="22" rx="5" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-width="0.5"/>
+      <text x="652" y="137" text-anchor="middle" fill="var(--text-3)" font-size="7.5">...</text>
+      <rect x="505" y="150" width="62" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
+      <text x="536" y="162" text-anchor="middle" fill="#06b6d4" font-size="7">code_exec</text>
+      <rect x="572" y="150" width="45" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
+      <text x="594" y="162" text-anchor="middle" fill="#06b6d4" font-size="7">file_read</text>
+      <rect x="622" y="150" width="48" height="18" rx="4" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.6"/>
+      <text x="646" y="162" text-anchor="middle" fill="#10b981" font-size="7">KB: code</text>
+
+      <!-- ── More agents indicator ── -->
+      <rect x="295" y="200" width="380" height="28" rx="8" fill="rgba(139,92,246,0.04)" stroke="var(--glass-border)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="485" y="219" text-anchor="middle" fill="var(--text-3)" font-size="9" font-style="italic">+ Support Bot, Content Writer, API Orchestrator ... (create as many agents as you need)</text>
+
+      <!-- ====== LANGGRAPH ReAct Loop ====== -->
+      <rect x="310" y="240" width="360" height="120" rx="14" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="490" y="260" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700">LangGraph — ReAct Reasoning Loop</text>
+      <text x="490" y="274" text-anchor="middle" fill="var(--text-3)" font-size="8">Every agent runs through this same execution engine</text>
+
+      <!-- ReAct nodes -->
+      <rect x="325" y="284" width="90" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="370" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">1. Retrieve KB</text>
+
+      <rect x="425" y="284" width="80" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="465" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">2. Reason</text>
+
+      <rect x="515" y="284" width="80" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="555" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">3. Act (tools)</text>
+
+      <rect x="605" y="284" width="55" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="632" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">4. Reply</text>
+
+      <!-- Loop arrow -->
+      <path d="M595 312 Q610 340 465 340 Q330 340 330 304" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2" fill="none"/>
+      <text x="490" y="350" text-anchor="middle" fill="#06b6d4" font-size="7.5" font-style="italic">iterate until done</text>
+
+      <!-- ====== DATA LAYER ====== -->
+      <rect x="295" y="375" width="120" height="50" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="355" y="396" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">ChromaDB</text>
+      <text x="355" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Vector Store :8200</text>
+
+      <rect x="430" y="375" width="120" height="50" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="490" y="396" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">SQLite</text>
+      <text x="490" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Memory + Config</text>
+
+      <rect x="565" y="375" width="110" height="50" rx="10" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1"/>
+      <text x="620" y="396" text-anchor="middle" fill="#8b5cf6" font-size="10" font-weight="600">LLM Provider</text>
+      <text x="620" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Ollama / Azure OAI</text>
+
+      <!-- ====== OBSERVABILITY (bottom) ====== -->
+      <rect x="295" y="440" width="120" height="46" rx="10" fill="rgba(244,63,94,0.08)" stroke="#f43f5e" stroke-width="1"/>
+      <text x="355" y="460" text-anchor="middle" fill="#f43f5e" font-size="10" font-weight="600">Langfuse</text>
+      <text x="355" y="474" text-anchor="middle" fill="var(--text-3)" font-size="8">LLM Tracing :3012</text>
+
+      <rect x="430" y="440" width="120" height="46" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="490" y="460" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">Grafana</text>
+      <text x="490" y="474" text-anchor="middle" fill="var(--text-3)" font-size="8">Monitoring :3013</text>
+
+      <rect x="565" y="440" width="110" height="46" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="620" y="460" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">Prometheus</text>
+      <text x="620" y="474" text-anchor="middle" fill="var(--text-3)" font-size="8">Metrics</text>
+
+      <!-- ====== n8n (EXTERNAL, right side) ====== -->
+      <rect x="730" y="80" width="200" height="240" rx="18" fill="rgba(245,158,11,0.05)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="830" y="108" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700">n8n — External</text>
+      <text x="830" y="124" text-anchor="middle" fill="var(--text-3)" font-size="9">Workflow Automation :5678</text>
+
+      <rect x="748" y="140" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="159" text-anchor="middle" fill="var(--text-2)" font-size="9">Scheduled Agent Runs</text>
+      <rect x="748" y="174" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="193" text-anchor="middle" fill="var(--text-2)" font-size="9">Webhook → Agent Trigger</text>
+      <rect x="748" y="208" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="227" text-anchor="middle" fill="var(--text-2)" font-size="9">Multi-Step Pipelines</text>
+      <rect x="748" y="242" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="261" text-anchor="middle" fill="var(--text-2)" font-size="9">RAG Ingest Workflows</text>
+      <rect x="748" y="276" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="295" text-anchor="middle" fill="var(--text-2)" font-size="9">External API Chains</text>
+
+      <!-- Tools Service (external, below n8n) -->
+      <rect x="730" y="345" width="200" height="50" rx="10" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="830" y="366" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="600">Tools Service</text>
+      <text x="830" y="380" text-anchor="middle" fill="var(--text-3)" font-size="8">web_search, code_exec, http_fetch :8001</text>
+
+      <!-- ====== ARROWS ====== -->
+      <!-- UI → n8n -->
+      <path d="M240 220 Q260 100 728 120" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#ah-amber)"/>
+      <text x="450" y="90" fill="#f59e0b" font-size="7">iframe / API</text>
+
+      <!-- n8n → Agent Runtime -->
+      <line x1="730" y1="260" x2="692" y2="260" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#ah-amber)"/>
+      <text x="711" y="253" text-anchor="middle" fill="#f59e0b" font-size="7">calls</text>
+
+      <!-- Agent Runtime → Tools Service -->
+      <line x1="690" y1="300" x2="728" y2="340" stroke="#06b6d4" stroke-width="1" marker-end="url(#ah-cyan)"/>
+
+      <!-- ====== LEGEND ====== -->
+      <rect x="730" y="415" width="200" height="75" rx="10" fill="var(--glass-bg)" stroke="var(--glass-border)" stroke-width="1"/>
+      <text x="830" y="432" text-anchor="middle" fill="var(--text-2)" font-size="9" font-weight="600">Legend</text>
+      <rect x="742" y="440" width="10" height="10" rx="2" fill="rgba(139,92,246,0.3)" stroke="#8b5cf6"/>
+      <text x="758" y="449" fill="var(--text-2)" font-size="8">Agent = LLM + Tools + Memory + Logic</text>
+      <rect x="742" y="455" width="10" height="10" rx="2" fill="rgba(245,158,11,0.3)" stroke="#f59e0b"/>
+      <text x="758" y="464" fill="var(--text-2)" font-size="8">Skill = behavior profile (prompt + tools)</text>
+      <rect x="742" y="470" width="10" height="10" rx="2" fill="rgba(6,182,212,0.3)" stroke="#06b6d4"/>
+      <text x="758" y="479" fill="var(--text-2)" font-size="8">LangGraph = agent reasoning engine</text>
+    </svg>
+  </div>
+</div>
 ` }) %>
+
