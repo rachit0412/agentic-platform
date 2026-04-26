@@ -420,11 +420,12 @@ async def run_agent_stream(
 
     kb_context = ""
     kb_chunks = 0
+    kb_coll = agent_config.get("kb_collection") if agent_config else None
     try:
         from agent.vectorstore import search_similar, get_collection_stats
-        stats = get_collection_stats()
+        stats = get_collection_stats(collection_name=kb_coll)
         if stats.get("total_chunks", 0) > 0:
-            results = search_similar(prompt, k=3)
+            results = search_similar(prompt, k=3, collection_name=kb_coll)
             snippets = [f"[{r.get('metadata',{}).get('source','unknown')}]: {r['content'][:500]}"
                         for r in results if r.get("score", 1.0) < 0.8]
             if snippets:

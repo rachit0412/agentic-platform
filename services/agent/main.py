@@ -243,6 +243,7 @@ class DocumentIngestRequest(BaseModel):
     metadata: dict = Field(default_factory=dict)
     chunk_size: int = Field(default=1000, ge=100, le=5000)
     chunk_overlap: int = Field(default=200, ge=0, le=1000)
+    collection: str = Field(default="agentic_docs", max_length=200)
 
 
 class DocumentSearchRequest(BaseModel):
@@ -259,6 +260,7 @@ async def documents_ingest(body: DocumentIngestRequest):
         metadata=body.metadata,
         chunk_size=body.chunk_size,
         chunk_overlap=body.chunk_overlap,
+        collection_name=body.collection,
     )
     return result
 

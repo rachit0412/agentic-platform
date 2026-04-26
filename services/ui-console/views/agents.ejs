@@ -48,7 +48,9 @@
       </div>
       <div>
         <label class="field-label">Model</label>
-        <input type="text" id="agent-model" class="input" placeholder="e.g. llama3" value="llama3">
+        <select id="agent-model" class="input">
+          <option value="llama3">llama3</option>
+        </select>
       </div>
       <div>
         <label class="field-label">Temperature</label>
@@ -70,8 +72,8 @@
         <div id="agent-skills-list" style="max-height:120px;overflow-y:auto;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.82rem"></div>
       </div>
       <div>
-        <label class="field-label">Tools <span style="color:var(--text-3);font-weight:400">(comma-separated, empty = all)</span></label>
-        <input type="text" id="agent-tools" class="input" placeholder="e.g. web_search, code_execute">
+        <label class="field-label">Tools <span style="color:var(--text-3);font-weight:400">(select multiple, empty = all)</span></label>
+        <div id="agent-tools-list" style="max-height:120px;overflow-y:auto;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.82rem"></div>
       </div>
     </div>
   </div>
@@ -86,8 +88,16 @@
         <p style="color:var(--text-3);font-size:0.7rem;margin:0.25rem 0 0">The ChromaDB collection this agent retrieves knowledge from</p>
       </div>
       <div>
-        <label class="field-label">Upload Knowledge <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— paste text to ingest into the collection</span></label>
-        <textarea id="agent-kb-text" class="input" rows="3" placeholder="Paste document text here... it will be chunked and embedded into the collection above." style="resize:vertical;font-size:0.82rem"></textarea>
+        <label class="field-label">Upload Knowledge <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— upload a file or paste text</span></label>
+        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+          <label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem" for="agent-kb-file">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Choose File
+          </label>
+          <input type="file" id="agent-kb-file" accept=".txt,.md,.csv,.json,.pdf,.html,.htm,.xml,.yaml,.yml,.log,.py,.js,.ts,.sql" style="display:none" onchange="handleFileSelect(this)">
+          <span id="agent-kb-filename" style="color:var(--text-3);font-size:0.78rem">No file selected</span>
+        </div>
+        <textarea id="agent-kb-text" class="input" rows="3" placeholder="Or paste document text here... it will be chunked and embedded into the collection above." style="resize:vertical;font-size:0.82rem"></textarea>
         <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
           <input type="text" id="agent-kb-source" class="input" placeholder="Source name (e.g. faq.pdf)" style="flex:1;font-size:0.82rem">
           <button type="button" class="btn btn-sm" onclick="uploadKB()" id="kb-upload-btn" style="white-space:nowrap">
@@ -129,6 +139,8 @@
 
 <script>
   let allSkillsList = [];
+  let allToolsList = [];
+  let allModelsList = [];
 
   async function loadSkillsList() {
     try {
@@ -136,6 +148,51 @@
       const d = await r.json();
       allSkillsList = d.skills || [];
     } catch(e) {}
+  }
+
+  async function loadToolsList() {
+    try {
+      const r = await fetch('/api/tools');
+      const d = await r.json();
+      allToolsList = (d.tools || []).map(t => t.name);
+    } catch(e) {}
+  }
+
+  async function loadModelsList() {
+    try {
+      const r = await fetch('/api/models');
+      const d = await r.json();
+      allModelsList = (d.models || []).map(m => m.name || m.model || m);
+    } catch(e) {}
+  }
+
+  function renderModelDropdown(selectedModel) {
+    const el = document.getElementById('agent-model');
+    const models = allModelsList.length > 0 ? allModelsList : ['llama3'];
+    el.innerHTML = models.map(m =>
+      '<option value="' + m + '"' + (m === selectedModel ? ' selected' : '') + '>' + m + '</option>'
+    ).join('');
+    if (selectedModel && !models.includes(selectedModel)) {
+      el.innerHTML += '<option value="' + selectedModel + '" selected>' + selectedModel + '</option>';
+    }
+  }
+
+  function renderToolCheckboxes(selectedIds) {
+    const el = document.getElementById('agent-tools-list');
+    if (allToolsList.length === 0) {
+      el.innerHTML = '<span style="color:var(--text-3)">No tools available</span>';
+      return;
+    }
+    el.innerHTML = allToolsList.map(t =>
+      '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;cursor:pointer">' +
+        '<input type="checkbox" class="tool-cb" value="' + t + '"' + (selectedIds.includes(t) ? ' checked' : '') + '> ' +
+        '<span>🔧 ' + t + '</span>' +
+      '</label>'
+    ).join('');
+  }
+
+  function getSelectedToolIds() {
+    return Array.from(document.querySelectorAll('.tool-cb:checked')).map(cb => cb.value);
   }
 
   function renderSkillCheckboxes(selectedIds) {
@@ -202,20 +259,24 @@
   }
 
   async function showAgentForm() {
-    await loadSkillsList();
+    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]);
     document.getElementById('agent-form-title').textContent = 'Create Agent';
     document.getElementById('agent-edit-id').value = '';
     document.getElementById('agent-name').value = '';
     document.getElementById('agent-desc').value = '';
     document.getElementById('agent-provider').value = 'ollama';
-    document.getElementById('agent-model').value = 'llama3';
+    renderModelDropdown('llama3');
     document.getElementById('agent-temp').value = '0.7';
     document.getElementById('agent-prompt').value = '';
-    document.getElementById('agent-tools').value = '';
+    renderToolCheckboxes([]);
     document.getElementById('agent-kb').value = 'agentic_docs';
     document.getElementById('agent-iterations').value = '5';
     document.getElementById('agent-memory').value = '1';
     renderSkillCheckboxes([]);
+    document.getElementById('agent-kb-filename').textContent = 'No file selected';
+    document.getElementById('agent-kb-text').value = '';
+    document.getElementById('agent-kb-source').value = '';
+    document.getElementById('kb-upload-result').textContent = '';
     document.getElementById('agent-form').style.display = 'block';
     document.getElementById('agent-name').focus();
   }
@@ -225,7 +286,7 @@
   }
 
   async function editAgent(id) {
-    await loadSkillsList();
+    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]);
     try {
       const r = await fetch('/api/agents/' + id);
       const a = await r.json();
@@ -234,14 +295,18 @@
       document.getElementById('agent-name').value = a.name;
       document.getElementById('agent-desc').value = a.description || '';
       document.getElementById('agent-provider').value = a.provider || 'ollama';
-      document.getElementById('agent-model').value = a.model || 'llama3';
+      renderModelDropdown(a.model || 'llama3');
       document.getElementById('agent-temp').value = a.temperature || 0.7;
       document.getElementById('agent-prompt').value = a.system_prompt || '';
-      document.getElementById('agent-tools').value = (a.tool_ids || []).join(', ');
+      renderToolCheckboxes(a.tool_ids || []);
       document.getElementById('agent-kb').value = a.kb_collection || 'agentic_docs';
       document.getElementById('agent-iterations').value = a.max_iterations || 5;
       document.getElementById('agent-memory').value = a.memory_enabled ? '1' : '0';
       renderSkillCheckboxes(a.skill_ids || []);
+      document.getElementById('agent-kb-filename').textContent = 'No file selected';
+      document.getElementById('agent-kb-text').value = '';
+      document.getElementById('agent-kb-source').value = '';
+      document.getElementById('kb-upload-result').textContent = '';
       document.getElementById('agent-form').style.display = 'block';
       document.getElementById('agent-name').focus();
     } catch(e) { alert('Error: ' + e.message); }
@@ -257,7 +322,7 @@
       temperature: parseFloat(document.getElementById('agent-temp').value) || 0.7,
       system_prompt: document.getElementById('agent-prompt').value.trim(),
       skill_ids: getSelectedSkillIds(),
-      tool_ids: document.getElementById('agent-tools').value.split(',').map(s=>s.trim()).filter(Boolean),
+      tool_ids: getSelectedToolIds(),
       kb_collection: document.getElementById('agent-kb').value.trim() || 'agentic_docs',
       max_iterations: parseInt(document.getElementById('agent-iterations').value) || 5,
       memory_enabled: document.getElementById('agent-memory').value === '1',
@@ -280,12 +345,32 @@
     } catch(e) { alert('Error: ' + e.message); }
   }
 
+  function handleFileSelect(input) {
+    const file = input.files[0];
+    const nameEl = document.getElementById('agent-kb-filename');
+    if (!file) { nameEl.textContent = 'No file selected'; return; }
+    nameEl.textContent = file.name;
+    // Auto-fill source name from file name
+    if (!document.getElementById('agent-kb-source').value.trim()) {
+      document.getElementById('agent-kb-source').value = file.name;
+    }
+    // Read file as text
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('agent-kb-text').value = e.target.result;
+    };
+    reader.onerror = function() {
+      nameEl.textContent = 'Error reading file';
+    };
+    reader.readAsText(file);
+  }
+
   async function uploadKB() {
     const text = document.getElementById('agent-kb-text').value.trim();
     const source = document.getElementById('agent-kb-source').value.trim();
     const collection = document.getElementById('agent-kb').value.trim() || 'agentic_docs';
     const resultEl = document.getElementById('kb-upload-result');
-    if (!text) { resultEl.style.color='var(--danger)'; resultEl.textContent='Paste some text first'; return; }
+    if (!text) { resultEl.style.color='var(--danger)'; resultEl.textContent='Upload a file or paste text first'; return; }
     if (!source) { resultEl.style.color='var(--danger)'; resultEl.textContent='Enter a source name'; return; }
     const btn = document.getElementById('kb-upload-btn');
     btn.disabled = true; btn.textContent = 'Uploading...';
@@ -301,6 +386,8 @@
       resultEl.textContent = 'Uploaded ' + (d.chunks_stored || '?') + ' chunks to "' + collection + '"';
       document.getElementById('agent-kb-text').value = '';
       document.getElementById('agent-kb-source').value = '';
+      document.getElementById('agent-kb-filename').textContent = 'No file selected';
+      document.getElementById('agent-kb-file').value = '';
     } catch(e) {
       resultEl.style.color='var(--danger)';
       resultEl.textContent = 'Upload failed: ' + e.message;
@@ -309,7 +396,7 @@
     }
   }
 
-  loadSkillsList().then(() => loadAgents());
+  Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]).then(() => loadAgents());
 </script>
 
 ` }) %>
