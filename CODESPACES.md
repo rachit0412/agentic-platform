@@ -1,202 +1,76 @@
-# 🚀 Quick Start Guide for GitHub Codespaces
+# GitHub Codespaces
 
-Welcome to the Agentic Platform on GitHub Codespaces! This guide will help you get started quickly.
+Quick start, configuration, and deployment guide for running the Agentic Platform in GitHub Codespaces.
 
-## ⚡ Getting Started (2 minutes)
+## Getting Started
 
-1. **Open in Codespaces**
-   - You're already here! If not: Code → Codespaces → Create codespace on main
-   - Initial setup takes 3-5 minutes (automatic after first time)
+1. **Open in Codespaces**: Code → Codespaces → Create codespace on main (initial setup 3-5 min)
+2. **Check status**: `docker-compose ps`
+3. **Access the UI**: PORTS tab → click 🌐 next to port **3001**
 
-2. **Check Service Status**
+## Services
 
-   ```bash
-   docker-compose ps
-   ```
+| Service        | Port  | Purpose                         |
+| -------------- | ----- | ------------------------------- |
+| **UI Console** | 3001  | Platform dashboard (Express.js) |
+| **Agent API**  | 8010  | FastAPI + LangGraph agent       |
+| **Tools API**  | 8011  | FastAPI tool endpoints          |
+| **n8n**        | 5678  | Workflow automation             |
+| **Langfuse**   | 3012  | LLM tracing                     |
+| **Grafana**    | 3013  | Monitoring dashboards           |
+| **Prometheus** | 9090  | Metrics collection              |
+| **Ollama**     | 11436 | Local LLM runtime               |
+| **ChromaDB**   | 8200  | Vector store for RAG            |
 
-3. **Access the UI**
-   - Go to the **PORTS** tab (bottom panel)
-   - Click the 🌐 icon next to port **3000** (Dashboard)
-   - Start exploring the platform!
+**Default credentials:** n8n: `admin` / `changeme` · Grafana: `admin` / `admin`
 
-## 🎯 Main Services
-
-| Service           | Port | Access                             | Purpose             |
-| ----------------- | ---- | ---------------------------------- | ------------------- |
-| **Dashboard**     | 3000 | [Open](http://localhost:3000)      | Platform dashboard  |
-| **LangGraph API** | 8000 | [Docs](http://localhost:8000/docs) | Agent orchestration |
-| **n8n**           | 5678 | [Open](http://localhost:5678)      | Workflows           |
-| **Grafana**       | 3002 | [Open](http://localhost:3002)      | Monitoring          |
-| **Langfuse**      | 3001 | [Open](http://localhost:3001)      | LLM tracing         |
-
-**Default credentials:**
-
-- n8n: `admin` / `changeme`
-- Grafana: `admin` / `admin`
-
-## 🤖 Working with AI Models
-
-### Pull Models
+## Working with AI Models
 
 ```bash
-# Pull default chat model (recommended)
-docker exec ollama ollama pull llama3
-
-# Pull embedding model for RAG
-docker exec ollama ollama pull nomic-embed-text
-
-# List available models
-docker exec ollama ollama list
+docker exec ollama ollama pull llama3            # Default chat model
+docker exec ollama ollama pull nomic-embed-text   # Embedding model for RAG
+docker exec ollama ollama list                    # List installed models
 ```
 
-### Other Popular Models
+## Development Workflow
 
 ```bash
-# Smaller/faster models
-docker exec ollama ollama pull llama3:8b
-docker exec ollama ollama pull phi3
+# Logs
+docker-compose logs -f                  # All services
+docker-compose logs --tail=50 agent-service  # Specific service
 
-# Specialized models
-docker exec ollama ollama pull codellama    # For coding
-docker exec ollama ollama pull mistral      # General purpose
+# Manage services
+docker-compose down                     # Stop all
+docker-compose up -d                    # Start all
+docker-compose restart agent-service    # Restart one
+docker stats                            # Resource usage
 ```
 
-## 💻 Development Workflow
-
-### Working with LangGraph API
+## Database Access
 
 ```bash
-# Navigate to the service
-cd services/langgraph-api
-
-# Edit files - changes auto-reload!
-code main.py
-
-# Install new dependencies
-pip install some-package
-echo "some-package==1.0.0" >> requirements.txt
-
-# Restart service to apply changes
-docker-compose restart langgraph-api
-```
-
-### Viewing Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f langgraph-api
-
-# Last 50 lines only
-docker-compose logs --tail=50 langgraph-api
-```
-
-### Managing Services
-
-```bash
-# Stop all services
-docker-compose down
-
-# Start all services
-docker-compose up -d
-
-# Restart one service
-docker-compose restart [service-name]
-
-# View resource usage
-docker stats
-```
-
-## 🗄️ Database Access
-
-### PostgreSQL
-
-```bash
-# Connect via CLI
 docker exec -it postgres psql -U agentic -d agentic_platform
-
-# Or use SQL Tools extension in VS Code
-# 1. Open Command Palette (Ctrl+Shift+P)
-# 2. Search "SQLTools: Connect"
-# 3. Create connection:
-#    - Host: localhost
-#    - Port: 5432
-#    - Database: agentic_platform
-#    - Username: agentic
-#    - Password: agentic123
 ```
 
-### Common SQL Queries
+## VS Code Tasks
 
-```sql
--- List all tables
-\dt
+Press `Ctrl+Shift+P` → "Run Task":
+🚀 Start All · 🛑 Stop All · 🔄 Restart · 📝 View Logs · 🤖 Pull Models · 🗄️ Connect PostgreSQL · 🧹 Clean Docker
 
--- View schema
-\d+ table_name
+## Repository Maintainer Setup
 
--- View recent activity
-SELECT * FROM conversations ORDER BY created_at DESC LIMIT 10;
-```
+1. **Enable Prebuilds**: Settings → Codespaces → Enable prebuilds (main branch, 8-core recommended)
+2. **Set Secrets**: Settings → Secrets → Codespaces → add `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.
+3. **Machine types**: Configured in `.github/codespaces.json` (min 4-core, recommended 8-core 16GB)
 
-## 🎨 VS Code Tasks
-
-Press `Ctrl+Shift+P` and search for "Run Task" to access:
-
-- 🚀 Start All Services
-- 🛑 Stop All Services
-- 📝 View Logs
-- 🤖 Pull Ollama Models
-- 🗄️ Connect to PostgreSQL
-- 🧹 Clean Docker Resources
-
-## 🐛 Troubleshooting
-
-### Service Won't Start
+## Troubleshooting
 
 ```bash
-# Check what's wrong
-docker-compose ps
-docker-compose logs [service-name]
-
-# Nuclear option - restart everything
-docker-compose down
-docker-compose up -d
-```
-
-### Port Already in Use
-
-Codespaces handles port forwarding automatically. If you see conflicts:
-
-1. Check the PORTS tab
-2. Stop conflicting services
-3. Or change ports in docker-compose.yml
-
-### Out of Memory
-
-```bash
-# Stop unused services
-docker-compose stop grafana prometheus loki
-
-# Clean up Docker
-docker system prune -a
-
-# Or upgrade machine type in Codespace settings
-```
-
-### Models Not Loading
-
-```bash
-# Check Ollama is running
-curl http://localhost:11434/api/tags
-
-# Pull models manually
-docker exec ollama ollama pull llama3
-
-# Check disk space
-df -h
+docker-compose ps                       # Check status
+docker-compose logs [service-name]      # View logs
+docker-compose down && docker-compose up -d  # Full restart
+docker system prune -a                  # Free disk space
+curl http://localhost:11436/api/tags    # Check Ollama
 ```
 
 ## 📚 Quick Links
