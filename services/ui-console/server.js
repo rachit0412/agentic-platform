@@ -346,6 +346,22 @@ app.delete("/api/documents/:source", async (req, res) => {
   }
 });
 
+app.post("/api/documents/fetch-url", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/fetch-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
 // ── API: A2A Protocol ─────────────────────────────────
 // A2A peers CRUD
 app.get("/api/a2a/peers", async (req, res) => {

@@ -27,24 +27,78 @@
   </div>
 </div>
 
-<!-- Ingest Form -->
+<!-- Ingest Form — Multi-Source Importer -->
 <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
-  <h3>Ingest Document</h3>
-  <div class="mt-1">
-    <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name</label>
-    <input id="ingest-source" placeholder="e.g. company-policy.pdf" style="max-width:400px;margin-top:0.375rem" />
+  <h3 style="margin-bottom:0.75rem">Import Data</h3>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--glass-border);margin-bottom:1.25rem">
+    <button class="importer-tab active" onclick="switchTab('file')" id="tab-file" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      File Upload
+    </button>
+    <button class="importer-tab" onclick="switchTab('url')" id="tab-url" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      URL Import
+    </button>
+    <button class="importer-tab" onclick="switchTab('text')" id="tab-text" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Paste Text
+    </button>
   </div>
-  <div class="mt-1">
-    <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Document Text</label>
-    <textarea id="ingest-text" rows="6" placeholder="Paste document text here..." style="margin-top:0.375rem"></textarea>
+
+  <!-- Tab: File Upload -->
+  <div id="panel-file" class="importer-panel">
+    <div id="drop-zone" style="border:2px dashed rgba(6,182,212,0.3);border-radius:14px;padding:2.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(6,182,212,0.02)" ondragover="event.preventDefault();this.style.borderColor='#06b6d4';this.style.background='rgba(6,182,212,0.06)'" ondragleave="this.style.borderColor='rgba(6,182,212,0.3)';this.style.background='rgba(6,182,212,0.02)'" ondrop="handleDrop(event)" onclick="document.getElementById('file-input').click()">
+      <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#06b6d4" stroke-width="1.5" style="margin-bottom:0.75rem"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p style="color:var(--text-2);font-size:0.88rem;margin:0 0 0.25rem;font-weight:600">Drop files here or click to browse</p>
+      <p style="color:var(--text-3);font-size:0.75rem;margin:0">.txt, .md, .json, .csv, .pdf (text-based) — max 5 MB</p>
+      <input type="file" id="file-input" multiple accept=".txt,.md,.json,.csv,.pdf,.log,.yaml,.yml,.xml,.html" style="display:none" onchange="handleFiles(this.files)" />
+    </div>
+    <div id="file-list" style="margin-top:0.75rem"></div>
   </div>
-  <div class="flex mt-1" style="align-items:center">
+
+  <!-- Tab: URL Import -->
+  <div id="panel-url" class="importer-panel" style="display:none">
+    <div class="mt-1">
+      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">URL to Import</label>
+      <input id="import-url" placeholder="https://example.com/article or https://docs.example.com/page" style="margin-top:0.375rem" />
+    </div>
+    <div class="mt-1">
+      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name (optional)</label>
+      <input id="url-source" placeholder="Auto-detected from URL if empty" style="max-width:400px;margin-top:0.375rem" />
+    </div>
+    <div class="flex mt-1" style="align-items:center;gap:0.75rem">
+      <button class="btn btn-primary" id="fetchUrlBtn" onclick="fetchAndIngestUrl()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Fetch & Ingest
+      </button>
+      <span id="url-status" style="font-size:0.78rem;color:var(--text-3)"></span>
+    </div>
+  </div>
+
+  <!-- Tab: Paste Text -->
+  <div id="panel-text" class="importer-panel" style="display:none">
+    <div class="mt-1">
+      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name</label>
+      <input id="ingest-source" placeholder="e.g. company-policy.pdf" style="max-width:400px;margin-top:0.375rem" />
+    </div>
+    <div class="mt-1">
+      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Document Text</label>
+      <textarea id="ingest-text" rows="6" placeholder="Paste document text here..." style="margin-top:0.375rem"></textarea>
+    </div>
+    <div class="flex mt-1" style="align-items:center">
+      <button class="btn btn-primary" id="ingestBtn" onclick="ingestDoc()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Ingest
+      </button>
+    </div>
+  </div>
+
+  <!-- Shared chunk controls -->
+  <div class="flex mt-1" style="align-items:center;padding-top:0.75rem;border-top:1px solid var(--glass-border);margin-top:1rem">
     <label style="font-size:0.82rem;color:var(--text-2)">Chunk Size: <input id="chunk-size" type="number" value="1000" style="width:80px" /></label>
     <label style="font-size:0.82rem;color:var(--text-2)">Overlap: <input id="chunk-overlap" type="number" value="200" style="width:80px" /></label>
-    <button class="btn btn-primary" id="ingestBtn" onclick="ingestDoc()">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Ingest
-    </button>
   </div>
   <div id="ingest-result" class="mono mt-1" style="color:var(--success);font-size:0.82rem"></div>
 </div>
@@ -73,6 +127,123 @@
 </div>
 
 <script>
+// ── Tab Switching ──
+function switchTab(tab) {
+  document.querySelectorAll('.importer-tab').forEach(t => {
+    t.classList.remove('active');
+    t.style.borderBottomColor = 'transparent';
+    t.style.color = 'var(--text-3)';
+  });
+  document.querySelectorAll('.importer-panel').forEach(p => p.style.display = 'none');
+  const btn = document.getElementById('tab-' + tab);
+  btn.classList.add('active');
+  btn.style.borderBottomColor = '#06b6d4';
+  btn.style.color = 'var(--text-1)';
+  document.getElementById('panel-' + tab).style.display = 'block';
+}
+// Init active tab
+switchTab('file');
+
+// ── File Upload ──
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'rgba(6,182,212,0.3)';
+  e.currentTarget.style.background = 'rgba(6,182,212,0.02)';
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+}
+
+function handleFiles(files) {
+  const list = document.getElementById('file-list');
+  Array.from(files).forEach(file => {
+    if (file.size > 5 * 1024 * 1024) {
+      list.innerHTML += '<p style="color:var(--danger);font-size:0.8rem">⚠ ' + file.name + ' exceeds 5 MB limit</p>';
+      return;
+    }
+    const id = 'file-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    list.innerHTML += '<div id="' + id + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--input-bg);border:1px solid var(--glass-border);margin-bottom:0.5rem">' +
+      '<span style="font-size:0.82rem;color:var(--text-1);flex:1" class="mono">' + file.name + ' <span style="color:var(--text-3);font-size:0.72rem">(' + (file.size/1024).toFixed(1) + ' KB)</span></span>' +
+      '<span id="' + id + '-status" style="font-size:0.75rem;color:var(--text-3)">Pending</span>' +
+      '</div>';
+    readAndIngestFile(file, id);
+  });
+}
+
+function readAndIngestFile(file, id) {
+  const statusEl = document.getElementById(id + '-status');
+  statusEl.textContent = 'Reading...';
+  statusEl.style.color = '#f59e0b';
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    statusEl.textContent = 'Ingesting...';
+    try {
+      const r = await fetch('/api/documents/ingest', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          source: file.name,
+          text: e.target.result,
+          chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
+          chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+        })
+      });
+      const d = await r.json();
+      statusEl.textContent = '✓ ' + (d.chunks || 0) + ' chunks';
+      statusEl.style.color = '#10b981';
+      loadStats(); loadDocs();
+    } catch(err) {
+      statusEl.textContent = '✗ ' + err.message;
+      statusEl.style.color = '#f43f5e';
+    }
+  };
+  reader.onerror = function() {
+    statusEl.textContent = '✗ Read error';
+    statusEl.style.color = '#f43f5e';
+  };
+  reader.readAsText(file);
+}
+
+// ── URL Import ──
+async function fetchAndIngestUrl() {
+  const url = document.getElementById('import-url').value.trim();
+  if (!url) return alert('Please enter a URL');
+  const statusEl = document.getElementById('url-status');
+  const btn = document.getElementById('fetchUrlBtn');
+  btn.disabled = true;
+  statusEl.textContent = 'Fetching content...';
+  statusEl.style.color = '#f59e0b';
+  try {
+    const r = await fetch('/api/documents/fetch-url', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ url })
+    });
+    if (!r.ok) { const err = await r.json(); throw new Error(err.detail || 'Fetch failed'); }
+    const fetched = await r.json();
+    statusEl.textContent = 'Ingesting ' + (fetched.text||'').length + ' chars...';
+    const source = document.getElementById('url-source').value.trim() || fetched.source || url;
+    const ingestR = await fetch('/api/documents/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        source: source,
+        text: fetched.text,
+        chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
+        chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+      })
+    });
+    const d = await ingestR.json();
+    statusEl.textContent = '✓ Ingested ' + (d.chunks || 0) + ' chunks from ' + source;
+    statusEl.style.color = '#10b981';
+    document.getElementById('import-url').value = '';
+    document.getElementById('url-source').value = '';
+    loadStats(); loadDocs();
+  } catch(e) {
+    statusEl.textContent = '✗ ' + e.message;
+    statusEl.style.color = '#f43f5e';
+  } finally {
+    btn.disabled = false;
+  }
+}
 async function loadStats() {
   try {
     const r = await fetch('/api/documents/stats');

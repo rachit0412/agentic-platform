@@ -14,7 +14,7 @@ Start everything with one command, define **skills** (packaged capabilities with
 
 | Concept            | Definition                                                                                                                                         |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent**          | `LLM + Tools + Memory + Control Logic + Context` — an autonomous loop that observes, reasons, acts, and repeats until the task is done.              |
+| **Agent**          | `LLM + Tools + Memory + Control Logic + Context` — an autonomous loop that observes, reasons, acts, and repeats until the task is done.            |
 | **Skill**          | A packaged capability that performs a specific task — reusable logic + tools + optional data access. Think: _reusable function with intelligence_. |
 | **Prompt**         | The instructional context given to a model or skill — defines what the model should do, how it should behave, and what output is expected.         |
 | **Knowledge Base** | ChromaDB vector store — upload documents that the agent auto-retrieves via RAG on every prompt.                                                    |

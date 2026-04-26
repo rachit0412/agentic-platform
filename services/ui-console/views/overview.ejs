@@ -18,18 +18,8 @@
   <div style="display:grid;grid-template-columns:1fr;gap:0">
 
     <!-- Step 1 -->
-    <a href="/documents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">1</div>
-      <div>
-        <strong style="font-size:0.88rem;color:var(--text-1)">Feed Knowledge</strong>
-        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Documents</span>
-        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Upload documents to ChromaDB so your agent can retrieve relevant context via RAG. PDFs, notes, code docs — anything the agent should know about.</p>
-      </div>
-    </a>
-
-    <!-- Step 2 -->
     <a href="/skills" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">2</div>
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">1</div>
       <div>
         <strong style="font-size:0.88rem;color:var(--text-1)">Define Skills</strong>
         <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Skills</span>
@@ -37,13 +27,23 @@
       </div>
     </a>
 
-    <!-- Step 3 -->
+    <!-- Step 2 -->
     <a href="/agents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(139,92,246,0.12);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">3</div>
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(139,92,246,0.12);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">2</div>
       <div>
         <strong style="font-size:0.88rem;color:var(--text-1)">Build Agents</strong>
         <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Agents</span>
         <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Compose an agent: pick a model, attach skills, select tools, upload a knowledge base, and write the prompt that defines its behavior and persona.</p>
+      </div>
+    </a>
+
+    <!-- Step 3 -->
+    <a href="/documents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">3</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Feed Knowledge</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Documents</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Upload documents, import from URLs, or paste text — your agent retrieves relevant context via RAG. Supports file upload, URL import, and direct text input.</p>
       </div>
     </a>
 
@@ -203,23 +203,7 @@
 
       <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
         <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-          <span style="background:rgba(16,185,129,0.15);color:#10b981;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 2</span>
-          <strong style="font-size:0.82rem">Upload Knowledge (optional)</strong>
-        </div>
-        <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/documents" style="color:#10b981;text-decoration:none;font-weight:600">Documents</a> → Upload files</p>
-        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
-          Upload PDFs, text files, or markdown docs<br>
-          that your agent should reference via RAG.<br>
-          <span style="color:#10b981">Collection:</span> agentic_docs (default)
-        </div>
-      </div>
-    </div>
-
-    <!-- Right column: Steps 3-4 -->
-    <div>
-      <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);margin-bottom:0.75rem">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-          <span style="background:rgba(139,92,246,0.15);color:#8b5cf6;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 3</span>
+          <span style="background:rgba(139,92,246,0.15);color:#8b5cf6;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 2</span>
           <strong style="font-size:0.82rem">Create the Agent</strong>
         </div>
         <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/agents" style="color:#8b5cf6;text-decoration:none;font-weight:600">Agents</a> → Click <strong>Create Agent</strong></p>
@@ -231,6 +215,22 @@
           <span style="color:#8b5cf6">Tools:</span> web_search, file_read<br>
           <span style="color:#8b5cf6">KB Collection:</span> agentic_docs<br>
           <span style="color:#8b5cf6">Memory:</span> enabled
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Steps 3-4 -->
+    <div>
+      <div style="padding:0.85rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);margin-bottom:0.75rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(16,185,129,0.15);color:#10b981;font-weight:700;font-size:0.7rem;padding:2px 8px;border-radius:6px">STEP 3</span>
+          <strong style="font-size:0.82rem">Upload Knowledge (optional)</strong>
+        </div>
+        <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/documents" style="color:#10b981;text-decoration:none;font-weight:600">Documents</a> → Upload, import URL, or paste text</p>
+        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
+          Upload files, import from URLs, or paste text<br>
+          that your agent should reference via RAG.<br>
+          <span style="color:#10b981">Collection:</span> agentic_docs (default)
         </div>
       </div>
 

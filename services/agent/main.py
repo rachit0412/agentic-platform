@@ -290,6 +290,60 @@ async def documents_delete(source: str):
     return delete_document(source)
 
 
+class FetchUrlRequest(BaseModel):
+    url: str = Field(..., min_length=1, max_length=2048)
+
+
+@app.post("/documents/fetch-url")
+async def documents_fetch_url(body: FetchUrlRequest):
+    """Fetch text content from a URL for ingestion."""
+    import httpx
+    from urllib.parse import urlparse
+
+    parsed = urlparse(body.url)
+    if parsed.scheme not in ("http", "https"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Only http/https URLs are supported")
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, max_redirects=5) as client:
+            resp = await client.get(body.url, headers={"User-Agent": "AgenticPlatform/1.0"})
+            resp.raise_for_status()
+
+            content_length = len(resp.content)
+            if content_length > 512 * 1024:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=413, detail="Content exceeds 512 KB limit")
+
+            content_type = resp.headers.get("content-type", "")
+            text = resp.text
+
+            # Strip HTML tags for HTML content
+            if "text/html" in content_type:
+                import re
+                text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
+                text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+                text = re.sub(r'<[^>]+>', ' ', text)
+                text = re.sub(r'\s+', ' ', text).strip()
+
+            source_name = parsed.netloc + parsed.path
+            if len(source_name) > 200:
+                source_name = source_name[:200]
+
+            return {
+                "text": text,
+                "source": source_name,
+                "content_type": content_type,
+                "size": content_length,
+            }
+    except httpx.HTTPStatusError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=502, detail=f"URL returned {e.response.status_code}")
+    except httpx.RequestError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=502, detail=f"Failed to fetch URL: {str(e)}")
+
+
 # ── Model management endpoints ─────────────────────────────────────────────
 
 @app.get("/models")
