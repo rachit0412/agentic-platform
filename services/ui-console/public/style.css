@@ -433,6 +433,7 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   transition: all 0.3s ease;
+  display: block;
 }
 .stat-card:hover {
   background: var(--glass-hover-bg);
