@@ -1,6 +1,6 @@
 # Architecture
 
-> **Auto-generated** - do not edit manually. Run `scripts/generate-docs.sh` or the PowerShell equivalent to refresh.
+> **Auto-generated** — do not edit manually. Run `bash scripts/generate-docs.sh` to refresh.
 
 ## System Overview
 
@@ -18,47 +18,30 @@ The Agentic Platform is a containerised agent factory built with:
 
 | Directory | Description |
 | --------- | ----------- |
-| `services/agent` | FastAPI agent-service - LangGraph ReAct agent, agent/skill/A2A/MCP registry |
-| `services/tools` | FastAPI tools-service - math, HTTP, file, datetime tools |
-| `services/ui` | Static HTML UI served by nginx |
-| `services/ui-console` | Express.js platform dashboard - 13 pages, API proxies |
+| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry |
 | `services/otel` | OpenTelemetry Collector configuration |
+| `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
+| `services/ui-console` | Express.js platform dashboard — 13 pages, API proxies |
+
+## Docker Compose Services (20 containers)
+
+`agent-service` `chroma-data` `chromadb` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
 
 ## UI Pages (14 pages)
 
-- a2a
-- admin
-- agents
-- documents
-- evaluation
-- llm-activity
-- marketplace
-- mcp
-- observability
-- overview
-- run-agent
-- skills
-- traceability
-- workflows
 
 
 ## Test Suites
 
-- `tests/contract/`
-- `tests/e2e/`
-- `tests/integration/`
-- `tests/load/`
-- `tests/smoke/`
-- `tests/unit/`
 
 
 ## Telemetry Pipeline
 
 ```
-agent-service -> OTel Collector -> Prometheus (metrics)
-                                -> Loki (logs)
-agent-service -> Langfuse SDK   -> Langfuse (LLM traces)
-Grafana <- Prometheus + Loki
+agent-service → OTel Collector → Prometheus (metrics)
+                               → Loki (logs)
+agent-service → Langfuse SDK   → Langfuse (LLM traces)
+Grafana ← Prometheus + Loki
 ```
 
 ## Protocols
