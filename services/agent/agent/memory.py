@@ -38,6 +38,16 @@ def init_db():
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)"
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS session_summaries (
+            session_id TEXT PRIMARY KEY,
+            summary    TEXT NOT NULL,
+            turn_count INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
     conn.commit()
 
 
@@ -95,8 +105,65 @@ def delete_session(session_id: str) -> int:
     cursor = conn.execute(
         "DELETE FROM conversations WHERE session_id = ?", (session_id,)
     )
+    conn.execute("DELETE FROM session_summaries WHERE session_id = ?", (session_id,))
     conn.commit()
     return cursor.rowcount
+
+
+def get_session_summary(session_id: str) -> str | None:
+    """Return the rolling summary for a session, or None."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT summary FROM session_summaries WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    return row["summary"] if row else None
+
+
+def update_session_summary(session_id: str, user_msg: str, assistant_msg: str):
+    """Append a compact turn summary to the session's rolling summary."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT summary, turn_count FROM session_summaries WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+
+    user_short = user_msg[:200].replace("\n", " ")
+    asst_short = assistant_msg[:300].replace("\n", " ")
+    turn_line = f"Turn {(row['turn_count'] if row else 0) + 1}: User asked about '{user_short}' → Assistant: {asst_short}"
+
+    if row:
+        # Keep summary under ~2000 chars by trimming oldest turns
+        existing = row["summary"]
+        new_summary = existing + "\n" + turn_line
+        if len(new_summary) > 2000:
+            lines = new_summary.split("\n")
+            while len("\n".join(lines)) > 2000 and len(lines) > 3:
+                lines.pop(0)
+            new_summary = "\n".join(lines)
+        conn.execute(
+            "UPDATE session_summaries SET summary = ?, turn_count = turn_count + 1, updated_at = ? WHERE session_id = ?",
+            (new_summary, datetime.now(timezone.utc).isoformat(), session_id),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO session_summaries (session_id, summary, turn_count, updated_at) VALUES (?, ?, 1, ?)",
+            (session_id, turn_line, datetime.now(timezone.utc).isoformat()),
+        )
+    conn.commit()
+
+
+def get_memory_stats() -> dict:
+    """Return global memory statistics."""
+    conn = _get_conn()
+    total_messages = conn.execute("SELECT COUNT(*) as c FROM conversations").fetchone()["c"]
+    total_sessions = conn.execute("SELECT COUNT(DISTINCT session_id) as c FROM conversations").fetchone()["c"]
+    sessions_with_summary = conn.execute("SELECT COUNT(*) as c FROM session_summaries").fetchone()["c"]
+    return {
+        "total_messages": total_messages,
+        "total_sessions": total_sessions,
+        "sessions_with_summary": sessions_with_summary,
+    }
 
 
 def get_relevant_context(query: str, k: int = 3) -> list[dict]:

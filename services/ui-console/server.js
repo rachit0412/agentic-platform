@@ -123,6 +123,27 @@ app.delete("/api/sessions/:id", async (req, res) => {
   }
 });
 
+app.get("/api/sessions/:id/summary", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/sessions/${req.params.id}/summary`, { signal: AbortSignal.timeout(5000) });
+    const data = await resp.json();
+    res.json(data);
+  } catch (e) {
+    res.json({ summary: null, error: e.message });
+  }
+});
+
+// ── API: Memory stats ─────────────────────────────────
+app.get("/api/memory/stats", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/memory/stats`, { signal: AbortSignal.timeout(5000) });
+    const data = await resp.json();
+    res.json(data);
+  } catch (e) {
+    res.json({ memory: {}, knowledge_base: {}, error: e.message });
+  }
+});
+
 // ── API: Models (proxy to agent) ──────────────────────
 app.get("/api/models", async (req, res) => {
   try {

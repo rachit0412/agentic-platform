@@ -17,7 +17,7 @@ from langchain_core.messages import (
     HumanMessage, AIMessage, SystemMessage, ToolMessage,
 )
 
-from agent.memory import get_history, save_message
+from agent.memory import get_history, save_message, get_session_summary, update_session_summary
 from agent.tools import get_all_tools, catalogue_as_text, call_tool, TOOL_CATALOGUE
 from agent.llm import get_llm
 from agent.observability import (
@@ -32,7 +32,12 @@ MAX_ITERATIONS = int(os.getenv("MAX_REACT_ITERATIONS", "5"))
 # ── Prompt templates ────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """\
-You are a helpful AI assistant with access to tools.
+You are a helpful AI assistant with access to tools, a knowledge base, and conversation memory.
+
+{memory_section}
+
+{kb_section}
+
 Available tools:
 {tools}
 
@@ -60,6 +65,8 @@ class AgentState(TypedDict):
     session_id: str
     request_id: str
     history: list[dict]
+    kb_context: str
+    memory_summary: str
     llm_raw: str
     tool_calls: list[dict]
     response: str
@@ -130,9 +137,68 @@ async def _ollama_chat(messages: list[dict], step: str = "default") -> str:
 
 # ── Graph nodes ─────────────────────────────────────────────────────────────
 
+async def retrieve_context(state: AgentState) -> dict:
+    """Auto-retrieve relevant KB docs and build memory summary before reasoning."""
+    prompt = state["prompt"]
+    session_id = state["session_id"]
+
+    # ── Knowledge base retrieval ────────────────────────────────────────
+    kb_context = ""
+    try:
+        from agent.vectorstore import search_similar, get_collection_stats
+        stats = get_collection_stats()
+        if stats.get("total_chunks", 0) > 0:
+            results = search_similar(prompt, k=3)
+            if results:
+                kb_snippets = []
+                for r in results:
+                    if r.get("score", 1.0) < 0.8:  # cosine distance threshold
+                        source = r.get("metadata", {}).get("source", "unknown")
+                        kb_snippets.append(f"[{source}]: {r['content'][:500]}")
+                if kb_snippets:
+                    kb_context = "\n---\n".join(kb_snippets)
+    except Exception as e:
+        logger.warning("KB retrieval failed: %s", e)
+
+    # ── Memory summary ──────────────────────────────────────────────────
+    memory_summary = ""
+    try:
+        summary = get_session_summary(session_id)
+        if summary:
+            memory_summary = summary
+    except Exception as e:
+        logger.warning("Memory summary failed: %s", e)
+
+    logger.info("req=%s kb_chunks=%d memory_summary=%s",
+                state["request_id"],
+                len(kb_context.split("---")) if kb_context else 0,
+                "yes" if memory_summary else "no")
+
+    return {"kb_context": kb_context, "memory_summary": memory_summary}
+
+
 async def reason(state: AgentState) -> dict:
     """Send the prompt + history + prior tool results to LLM; decide if more tools are needed."""
-    system = SYSTEM_PROMPT.format(tools=catalogue_as_text())
+    kb_context = state.get("kb_context", "")
+    memory_summary = state.get("memory_summary", "")
+
+    kb_section = ""
+    if kb_context:
+        kb_section = f"Relevant knowledge base context:\n{kb_context}"
+    else:
+        kb_section = "No relevant knowledge base documents found for this query."
+
+    memory_section = ""
+    if memory_summary:
+        memory_section = f"Conversation summary so far:\n{memory_summary}"
+    else:
+        memory_section = "This is a new conversation with no prior context."
+
+    system = SYSTEM_PROMPT.format(
+        tools=catalogue_as_text(),
+        kb_section=kb_section,
+        memory_section=memory_section,
+    )
     iteration = state.get("iteration", 0)
 
     messages = [{"role": "system", "content": system}]
@@ -198,6 +264,12 @@ async def generate_response(state: AgentState) -> dict:
     save_message(state["session_id"], "user", state["prompt"])
     save_message(state["session_id"], "assistant", response)
 
+    # Update conversation summary for long-term memory
+    try:
+        update_session_summary(state["session_id"], state["prompt"], response)
+    except Exception as e:
+        logger.warning("Failed to update session summary: %s", e)
+
     return {"response": response}
 
 
@@ -234,11 +306,13 @@ def after_tools(state: AgentState) -> str:
 
 def build_graph():
     g = StateGraph(AgentState)
+    g.add_node("retrieve_context", retrieve_context)
     g.add_node("reason", reason)
     g.add_node("execute_tools", execute_tools)
     g.add_node("generate_response", generate_response)
 
-    g.set_entry_point("reason")
+    g.set_entry_point("retrieve_context")
+    g.add_edge("retrieve_context", "reason")
     g.add_conditional_edges("reason", should_continue, {
         "execute_tools": "execute_tools",
         "generate_response": "generate_response",
@@ -264,6 +338,8 @@ async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
         "session_id": session_id,
         "request_id": request_id,
         "history": history,
+        "kb_context": "",
+        "memory_summary": "",
         "llm_raw": "",
         "tool_calls": [],
         "response": "",
@@ -318,9 +394,30 @@ async def run_agent_stream(
     lf_trace = LangfuseTrace("agent-run-stream", session_id, request_id, prompt)
     history = get_history(session_id, limit=10)
 
+    yield {"event": "status", "data": "Retrieving context..."}
+
+    # Auto-retrieve KB context
+    kb_context = ""
+    try:
+        from agent.vectorstore import search_similar, get_collection_stats
+        stats = get_collection_stats()
+        if stats.get("total_chunks", 0) > 0:
+            results = search_similar(prompt, k=3)
+            snippets = [f"[{r.get('metadata',{}).get('source','unknown')}]: {r['content'][:500]}"
+                        for r in results if r.get("score", 1.0) < 0.8]
+            if snippets:
+                kb_context = "\n---\n".join(snippets)
+    except Exception:
+        pass
+
+    memory_summary = get_session_summary(session_id) or ""
+
+    kb_section = f"Relevant knowledge base context:\n{kb_context}" if kb_context else "No relevant knowledge base documents found for this query."
+    memory_section = f"Conversation summary so far:\n{memory_summary}" if memory_summary else "This is a new conversation with no prior context."
+
     yield {"event": "status", "data": "Understanding your request..."}
 
-    system = SYSTEM_PROMPT.format(tools=catalogue_as_text())
+    system = SYSTEM_PROMPT.format(tools=catalogue_as_text(), kb_section=kb_section, memory_section=memory_section)
     messages = [{"role": "system", "content": system}]
     for msg in history:
         messages.append(msg)
@@ -362,6 +459,10 @@ async def run_agent_stream(
 
     save_message(session_id, "user", prompt)
     save_message(session_id, "assistant", full_response)
+    try:
+        update_session_summary(session_id, prompt, full_response)
+    except Exception:
+        pass
 
     agent_run_counter.labels(status="success").inc()
     lf_trace.end(output=full_response)

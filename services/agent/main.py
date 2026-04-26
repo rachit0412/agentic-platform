@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from agent.graph import run_agent, run_agent_stream
-from agent.memory import init_db, get_history, list_sessions, delete_session
+from agent.memory import init_db, get_history, list_sessions, delete_session, get_session_summary, get_memory_stats
 from agent.observability import setup_otel
 
 logging.basicConfig(
@@ -141,6 +141,28 @@ async def session_history(session_id: str):
 async def session_delete(session_id: str):
     count = delete_session(session_id)
     return {"session_id": session_id, "deleted_messages": count}
+
+
+@app.get("/sessions/{session_id}/summary")
+async def session_summary(session_id: str):
+    summary = get_session_summary(session_id)
+    return {"session_id": session_id, "summary": summary}
+
+
+# ── Memory management ──────────────────────────────────────────────────────
+
+@app.get("/memory/stats")
+async def memory_stats():
+    stats = get_memory_stats()
+    from agent.vectorstore import get_collection_stats
+    try:
+        kb_stats = get_collection_stats()
+    except Exception:
+        kb_stats = {"total_chunks": 0, "unique_documents": 0}
+    return {
+        "memory": stats,
+        "knowledge_base": kb_stats,
+    }
 
 
 # ── Document / RAG endpoints ───────────────────────────────────────────────

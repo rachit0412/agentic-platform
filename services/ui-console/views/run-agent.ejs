@@ -2,6 +2,38 @@
 
 <h1 class="text-glow-cyan">Run Agent</h1>
 
+<!-- Memory & Knowledge Base Status -->
+<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2z"/><path d="M12 6v6l4 2"/></svg>
+    </div>
+    <div class="stat-label">Memory Sessions</div>
+    <div class="stat-number" id="stat-sessions">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div class="stat-label">Total Messages</div>
+    <div class="stat-number" id="stat-messages">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="stat-label">KB Documents</div>
+    <div class="stat-number" id="stat-kb-docs">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.08));color:#f59e0b">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </div>
+    <div class="stat-label">KB Chunks</div>
+    <div class="stat-number" id="stat-kb-chunks">-</div>
+  </div>
+</div>
+
 <div style="display:flex;gap:1.5rem">
   <div style="flex:1">
     <div class="card animate-fade-up">
@@ -13,6 +45,10 @@
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Send
         </button>
+      </div>
+      <div class="mono" style="font-size:0.72rem;color:var(--text-3);margin-top:0.5rem">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Agent auto-retrieves from knowledge base & uses conversation memory
       </div>
     </div>
 
@@ -38,10 +74,43 @@
         <span style="color:var(--text-3);font-size:0.82rem">Loading...</span>
       </div>
     </div>
+
+    <div class="card animate-fade-up delay-200" id="summary-card" style="display:none;margin-top:1rem">
+      <h3>Session Summary</h3>
+      <div id="session-summary" class="mono" style="font-size:0.78rem;color:var(--text-2);white-space:pre-wrap;max-height:200px;overflow-y:auto;line-height:1.5"></div>
+    </div>
   </div>
 </div>
 
 <script>
+  async function loadMemoryStats() {
+    try {
+      const r = await fetch('/api/memory/stats');
+      const d = await r.json();
+      document.getElementById('stat-sessions').textContent = d.memory?.total_sessions || 0;
+      document.getElementById('stat-messages').textContent = d.memory?.total_messages || 0;
+      document.getElementById('stat-kb-docs').textContent = d.knowledge_base?.unique_documents || 0;
+      document.getElementById('stat-kb-chunks').textContent = d.knowledge_base?.total_chunks || 0;
+    } catch(e) {
+      document.getElementById('stat-sessions').textContent = '-';
+    }
+  }
+
+  async function loadSessionSummary(sessionId) {
+    try {
+      const r = await fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/summary');
+      const d = await r.json();
+      if (d.summary) {
+        document.getElementById('summary-card').style.display = 'block';
+        document.getElementById('session-summary').textContent = d.summary;
+      } else {
+        document.getElementById('summary-card').style.display = 'none';
+      }
+    } catch(e) {
+      document.getElementById('summary-card').style.display = 'none';
+    }
+  }
+
   async function runAgent() {
     const prompt = document.getElementById('prompt').value.trim();
     if (!prompt) return;
@@ -68,6 +137,8 @@
         ' | Request: ' + (d.request_id||'') +
         ' | Trace: ' + (d.trace_id||'none');
       loadSessions();
+      loadMemoryStats();
+      loadSessionSummary(session);
     } catch(e) {
       document.getElementById('response').style.color = 'var(--danger)';
       document.getElementById('response').textContent = 'Error: ' + e.message;
@@ -87,7 +158,7 @@
         return;
       }
       el.innerHTML = d.sessions.map(s => \`
-        <div class="glass-hover" style="padding:0.625rem 0.875rem;border-radius:12px;margin-bottom:0.5rem;cursor:pointer" onclick="document.getElementById('session').value='\${s.session_id}'">
+        <div class="glass-hover" style="padding:0.625rem 0.875rem;border-radius:12px;margin-bottom:0.5rem;cursor:pointer" onclick="selectSession('\${s.session_id}')">
           <div class="mono" style="font-size:0.72rem;word-break:break-all;color:var(--accent-text)">\${s.session_id}</div>
           <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.25rem">\${s.message_count} messages</div>
         </div>
@@ -95,6 +166,11 @@
     } catch(e) {
       document.getElementById('sessions-list').innerHTML = '<p style="color:var(--danger);font-size:0.82rem">Failed to load</p>';
     }
+  }
+
+  function selectSession(id) {
+    document.getElementById('session').value = id;
+    loadSessionSummary(id);
   }
 
   async function loadTools() {
@@ -123,5 +199,6 @@
 
   loadSessions();
   loadTools();
+  loadMemoryStats();
 </script>
 ` }) %>
