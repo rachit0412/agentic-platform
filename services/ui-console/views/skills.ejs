@@ -40,8 +40,8 @@
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
     <div>
-      <label class="field-label">Allowed Tools <span style="color:var(--text-3);font-weight:400">(comma-separated, empty = all)</span></label>
-      <input type="text" id="skill-tools" class="input" placeholder="e.g. web_search, code_execute">
+      <label class="field-label">Allowed Tools <span style="color:var(--text-3);font-weight:400">(select multiple, empty = all)</span></label>
+      <select id="skill-tools" class="input" multiple style="height:120px;font-size:0.82rem"></select>
     </div>
     <div>
       <label class="field-label">Constraints <span style="color:var(--text-3);font-weight:400">(comma-separated rules)</span></label>
@@ -66,7 +66,19 @@
       const r = await fetch('/api/tools');
       const d = await r.json();
       allTools = (d.tools || []).map(t => t.name);
+      renderToolsDropdown([]);
     } catch(e) {}
+  }
+
+  function renderToolsDropdown(selectedIds) {
+    const el = document.getElementById('skill-tools');
+    el.innerHTML = allTools.map(t =>
+      '<option value="' + t + '"' + (selectedIds.includes(t) ? ' selected' : '') + '>🔧 ' + t + '</option>'
+    ).join('');
+  }
+
+  function getSelectedTools() {
+    return Array.from(document.getElementById('skill-tools').selectedOptions).map(o => o.value);
   }
 
   async function loadLibraryPrompts() {
@@ -130,7 +142,7 @@
     document.getElementById('skill-name').value = '';
     document.getElementById('skill-desc').value = '';
     document.getElementById('skill-prompt').value = '';
-    document.getElementById('skill-tools').value = '';
+    renderToolsDropdown([]);
     document.getElementById('skill-constraints').value = '';
     document.getElementById('skill-form').style.display = 'block';
     document.getElementById('skill-name').focus();
@@ -149,7 +161,7 @@
       document.getElementById('skill-name').value = s.name;
       document.getElementById('skill-desc').value = s.description || '';
       document.getElementById('skill-prompt').value = s.system_prompt || '';
-      document.getElementById('skill-tools').value = (s.tool_ids || []).join(', ');
+      renderToolsDropdown(s.tool_ids || []);
       document.getElementById('skill-constraints').value = (s.constraints || []).join(', ');
       document.getElementById('skill-form').style.display = 'block';
       document.getElementById('skill-name').focus();
@@ -162,7 +174,7 @@
       name: document.getElementById('skill-name').value.trim(),
       description: document.getElementById('skill-desc').value.trim(),
       system_prompt: document.getElementById('skill-prompt').value.trim(),
-      tool_ids: document.getElementById('skill-tools').value.split(',').map(s=>s.trim()).filter(Boolean),
+      tool_ids: getSelectedTools(),
       constraints: document.getElementById('skill-constraints').value.split(',').map(s=>s.trim()).filter(Boolean),
     };
     if (!payload.name) { alert('Name is required'); return; }

@@ -69,11 +69,11 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
       <div>
         <label class="field-label">Skills <span style="color:var(--text-3);font-weight:400">(select multiple)</span></label>
-        <div id="agent-skills-list" style="max-height:120px;overflow-y:auto;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.82rem"></div>
+        <select id="agent-skills-list" class="input" multiple style="height:120px;font-size:0.82rem"></select>
       </div>
       <div>
         <label class="field-label">Tools <span style="color:var(--text-3);font-weight:400">(select multiple, empty = all)</span></label>
-        <div id="agent-tools-list" style="max-height:120px;overflow-y:auto;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.82rem"></div>
+        <select id="agent-tools-list" class="input" multiple style="height:120px;font-size:0.82rem"></select>
       </div>
     </div>
   </div>
@@ -180,37 +180,31 @@
   function renderToolCheckboxes(selectedIds) {
     const el = document.getElementById('agent-tools-list');
     if (allToolsList.length === 0) {
-      el.innerHTML = '<span style="color:var(--text-3)">No tools available</span>';
+      el.innerHTML = '<option disabled>No tools available</option>';
       return;
     }
     el.innerHTML = allToolsList.map(t =>
-      '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;cursor:pointer">' +
-        '<input type="checkbox" class="tool-cb" value="' + t + '"' + (selectedIds.includes(t) ? ' checked' : '') + '> ' +
-        '<span>🔧 ' + t + '</span>' +
-      '</label>'
+      '<option value="' + t + '"' + (selectedIds.includes(t) ? ' selected' : '') + '>🔧 ' + t + '</option>'
     ).join('');
   }
 
   function getSelectedToolIds() {
-    return Array.from(document.querySelectorAll('.tool-cb:checked')).map(cb => cb.value);
+    return Array.from(document.getElementById('agent-tools-list').selectedOptions).map(o => o.value);
   }
 
   function renderSkillCheckboxes(selectedIds) {
     const el = document.getElementById('agent-skills-list');
     if (allSkillsList.length === 0) {
-      el.innerHTML = '<span style="color:var(--text-3)">No skills created yet</span>';
+      el.innerHTML = '<option disabled>No skills created yet</option>';
       return;
     }
     el.innerHTML = allSkillsList.map(s =>
-      '<label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;cursor:pointer">' +
-        '<input type="checkbox" class="skill-cb" value="' + s.id + '"' + (selectedIds.includes(s.id) ? ' checked' : '') + '> ' +
-        '<span>⚡ ' + s.name + '</span>' +
-      '</label>'
+      '<option value="' + s.id + '"' + (selectedIds.includes(s.id) ? ' selected' : '') + '>⚡ ' + s.name + '</option>'
     ).join('');
   }
 
   function getSelectedSkillIds() {
-    return Array.from(document.querySelectorAll('.skill-cb:checked')).map(cb => cb.value);
+    return Array.from(document.getElementById('agent-skills-list').selectedOptions).map(o => o.value);
   }
 
   async function loadAgents() {
