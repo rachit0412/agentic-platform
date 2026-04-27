@@ -1,384 +1,310 @@
-# Agentic Platform
+<div align="center">
 
-Production-ready, containerised **agent factory** — build, register, and run hundreds of autonomous AI agents, each with its own model, tools, memory, knowledge base, and control logic. Supports **A2A** (Agent-to-Agent) protocol for inter-agent delegation and **MCP** (Model Context Protocol) for dynamic tool discovery.
+# 🤖 Agentic Platform
 
-```
-UI Console → Agent Registry → Agent Service (LangGraph + LangChain) → Skills / Tools / Knowledge Base / Memory
-                                    ↕ A2A Protocol (peer agents)
-                                    ↕ MCP Protocol (tool servers)
-```
+### The open-source agent factory I wish existed when I started building AI apps.
 
-Start everything with one command, define **skills** (packaged capabilities with a prompt + tools + constraints), compose **agents** by attaching skills + a model + a knowledge base, and run them interactively or via n8n workflows.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-One%20Command-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![LangGraph](https://img.shields.io/badge/LangGraph-ReAct%20Agent-1C3C3C?logo=langchain&logoColor=white)](#the-stack--why-every-piece-matters)
+[![Ollama](https://img.shields.io/badge/Ollama-Local%20LLMs-000000?logo=ollama&logoColor=white)](#the-stack--why-every-piece-matters)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-### Core Concepts
+**One `docker compose up` → 12 services → your own AI agent factory, running locally, with zero API costs.**
 
-| Concept            | Definition                                                                                                                                         |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent**          | `LLM + Tools + Memory + Control Logic + Context` — an autonomous loop that observes, reasons, acts, and repeats until the task is done.            |
-| **Skill**          | A packaged capability that performs a specific task — reusable logic + tools + optional data access. Think: _reusable function with intelligence_. |
-| **Prompt**         | The instructional context given to a model or skill — defines what the model should do, how it should behave, and what output is expected.         |
-| **Knowledge Base** | ChromaDB vector store — upload documents that the agent auto-retrieves via RAG on every prompt.                                                    |
-| **A2A Protocol**   | Agent-to-Agent — register peer agents by URL so they can delegate sub-tasks to each other over HTTP.                                               |
-| **MCP Protocol**   | Model Context Protocol — connect to external tool servers that dynamically expose tools the agent can use.                                         |
+[Quick Start](#-quick-start) · [Why Fork This](#-why-fork-this) · [The Stack](#the-stack--why-every-piece-matters) · [Architecture](docs/ARCHITECTURE.md) · [Install Guide](INSTALL.md)
+
+</div>
 
 ---
 
-## Architecture
+## 👋 Hey — a word from the builder
+
+I'm Rachit — a solo developer who got tired of the gap between *"cool AI demo"* and *"production-ready AI system."*
+
+Every agent framework I tried gave me one piece of the puzzle: a ReAct loop here, a vector store there, maybe tracing if I wired it up myself. But nowhere could I find a single repo where I could spin up a full agent factory — agents, skills, prompts, knowledge base, memory, tool servers, workflows, tracing, evaluation, observability — all wired together, all running locally, all under my control.
+
+So I built it. Nights and weekends. One service at a time.
+
+This isn't a tutorial. It's not a toy. It's the platform I actually use to prototype, evaluate, and ship AI agents — and I'm sharing it because I think **every developer deserves a full-stack agent lab they can run on their laptop.**
+
+If you're the kind of person who'd rather understand the full picture than glue SaaS APIs together — you're in the right place.
+
+---
+
+## 🎯 Why Fork This
+
+Most agent repos give you a chatbot. This gives you a **factory**.
+
+| What you get | Why it matters |
+|---|---|
+| **Agent Registry** | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot |
+| **Skills System** | Package a prompt + tools + constraints into a reusable skill. Attach it to any agent. Think: *functions, but intelligent* |
+| **4 LLM Providers** | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes |
+| **Auto-RAG** | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context |
+| **A2A Protocol** | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths |
+| **MCP Protocol** | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime |
+| **Full Traceability** | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes |
+| **Responsible AI** | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on |
+| **15-page Dashboard** | Not a CLI-only project. A real UI for building, running, and monitoring agents |
+| **One-command setup** | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts |
+
+<details>
+<summary><b>📋 Full feature list</b></summary>
+
+- **Prompt Library** — Create, categorize, and tag prompt templates; attach to skills or agents
+- **Conversation Memory** — SQLite-backed session summaries for rolling context across messages
+- **LangGraph ReAct Agent** — State graph: retrieve context → reason → execute tools → respond
+- **9 Built-in Tools** — Math, HTTP fetch, file I/O, datetime, web search, code execution, vector search & ingest
+- **Evaluation Matrix** — Quality scoring (faithfulness, relevance, coherence) across models and agents
+- **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion
+- **Full Observability** — Prometheus + Grafana dashboards + Loki logs + OpenTelemetry pipeline
+- **Security Hardening** — XSS protection, input validation, SSRF protection, path traversal prevention
+- **Marketplace** — Browse and install agent/skill/workflow templates
+- **GPU Support** — Uncomment one block in docker-compose.yml for NVIDIA GPU acceleration
+
+</details>
+
+---
+
+## The Stack — Why Every Piece Matters
+
+This isn't a random grab bag of tools. Every layer was chosen because it solves a real problem I hit while building agents:
 
 ```
- Browser (http://localhost:3000)
-      │
-      ▼
- ┌──────────────────┐
- │   ui-console     │  Express.js dashboard (15 pages)
- │   :3000          │  Agent runner, Registry, Skills, Prompts,
- │                  │  A2A, MCP, Documents, Workflows, Traceability,
- │                  │  Evaluation, Observability, Marketplace, Admin
- └────────┬─────────┘
-          │ /api/*
-          ▼
- ┌──────────────────┐     ┌────────────────┐
- │  agent-service   │────►│ tools-service  │
- │  :8010           │     │ :8011          │
- │  FastAPI +       │     └────────────────┘
- │  LangGraph       │
- │       │          │     ┌────────────────┐
- │       ├─────────►│────►│   ChromaDB     │  Vector store (RAG)
- │       │          │     │   :8200        │
- │       ├──► SQLite│     └────────────────┘
- │       │  (memory)│
- │       ▼          │     ┌────────────────┐
- │   LLM Provider   │────►│ Ollama :11436  │  Local LLMs
- │  (multi-model)   │     │   OR           │
- │                  │     │ Azure OpenAI ☁ │  Cloud LLMs
- └───────┬──────────┘     └────────────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
- ┌──────┐  ┌──────┐
- │ A2A  │  │ MCP  │  Agent-to-Agent delegation &
- │Peers │  │Srvrs │  Model Context Protocol tools
- └──────┘  └──────┘
-
- ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌───────────┐  ┌──────────┐
- │   n8n    │  │  Langfuse    │  │ Grafana  │  │Prometheus │  │   Loki   │
- │  :5678   │  │  :3012       │  │ :3013    │  │  :9090    │  │  :3100   │
- │ Workflows│  │ LLM Tracing  │  │Dashboards│  │  Metrics  │  │   Logs   │
- └──────────┘  └──────────────┘  └──────────┘  └───────────┘  └──────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  🖥️  UI Console (Express.js + EJS)                :3000        │
+│  15 pages — build, run, evaluate, trace agents from the browser│
+├─────────────────────────────────────────────────────────────────┤
+│  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
+│  ReAct agent loop, skill/agent registry, auto-RAG, memory      │
+├──────────────────────┬──────────────────────────────────────────┤
+│  🔧 Tools Service    │  📚 ChromaDB        │  💾 SQLite         │
+│  :8011               │  :8200              │  (embedded)        │
+│  9 tool endpoints    │  Vector store / RAG │  Memory & registry │
+├──────────────────────┴──────────────────────┴───────────────────┤
+│  🤖 LLM Layer                                                  │
+│  Ollama (local) · OpenAI · Azure OpenAI · Azure AI Foundry     │
+├─────────────────────────────────────────────────────────────────┤
+│  📡 Observability                                               │
+│  Langfuse (traces) · Prometheus (metrics) · Grafana (dashboards)│
+│  Loki (logs) · OpenTelemetry Collector (pipeline)               │
+├─────────────────────────────────────────────────────────────────┤
+│  ⚡ Orchestration                                               │
+│  n8n (workflows, webhooks, scheduled jobs)                      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Services
+**Why this specific stack?**
 
-| Service            | Port    | Stack               | Purpose                                                     |
-| ------------------ | ------- | ------------------- | ----------------------------------------------------------- |
-| **ui-console**     | `3000`  | Express.js + EJS    | Platform dashboard (15 pages), agent runner, admin          |
-| **agent-service**  | `8010`  | FastAPI + LangGraph | ReAct agent, auto-RAG, memory, A2A, MCP, skills API         |
-| **tools-service**  | `8011`  | FastAPI             | Math, HTTP fetch, file I/O, datetime, web search, code exec |
-| **ollama**         | `11436` | Ollama              | Local LLM runtime (llama3, mistral, phi3, etc.)             |
-| **chromadb**       | `8200`  | ChromaDB            | Vector store for knowledge base / RAG                       |
-| **n8n**            | `5678`  | n8n                 | Workflow orchestration & webhooks                           |
-| **langfuse**       | `3012`  | Langfuse v2         | LLM tracing, evaluation & prompt analytics                  |
-| **langfuse-db**    | —       | PostgreSQL 16       | Langfuse backend database (internal only)                   |
-| **grafana**        | `3013`  | Grafana 11          | Monitoring dashboards                                       |
-| **prometheus**     | `9090`  | Prometheus          | Metrics collection                                          |
-| **loki**           | `3100`  | Loki 3              | Log aggregation                                             |
-| **otel-collector** | `4317`  | OpenTelemetry       | Trace & metric pipeline (gRPC 4317, HTTP 4318, Prom 8889)   |
+| Layer | Tech | Why |
+|---|---|---|
+| **Agent runtime** | LangGraph + LangChain | State-machine agent with full control over the ReAct loop — not a black-box `agent.run()` |
+| **API layer** | FastAPI | Async, typed, auto-docs — agents need to be APIs, not scripts |
+| **Local LLMs** | Ollama | Zero API costs during development. Pull a model, use it instantly |
+| **Cloud LLMs** | OpenAI / Azure OpenAI / Foundry | When you need GPT-4o or enterprise compliance — just set env vars |
+| **Vector store** | ChromaDB | Embedded, no external infra, persists across restarts. RAG that just works |
+| **Tracing** | Langfuse | See every LLM call: prompt, response, cost, latency. Non-negotiable for production |
+| **Observability** | Prometheus + Grafana + Loki | Industry-standard monitoring. Not a toy dashboard — real SRE tooling |
+| **Workflows** | n8n | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks |
+| **Dashboard** | Express.js + EJS | Server-rendered, fast, no build step. 15 pages for full platform control |
 
-> All host ports are configurable via environment variables in `.env` or `docker-compose.yml`.
+---
 
-## UI Pages
+## 🚀 Quick Start
 
-| Page              | Route            | Purpose                                             |
-| ----------------- | ---------------- | --------------------------------------------------- |
-| **Overview**      | `/`              | Platform dashboard — service health, stats, KPIs    |
-| **Run Agent**     | `/run-agent`     | Execute agents, view streaming responses, sessions  |
-| **Agents**        | `/agents`        | Create, configure, and manage agent definitions     |
-| **Skills**        | `/skills`        | Define reusable skill packages (prompt + tools)     |
-| **Prompts**       | `/prompts`       | Prompt library — create, categorize, tag prompts    |
-| **Documents**     | `/documents`     | Knowledge base — ingest, search, manage RAG docs    |
-| **A2A**           | `/a2a`           | Agent-to-Agent protocol — peer registration & tasks |
-| **MCP**           | `/mcp`           | Model Context Protocol — server & tool management   |
-| **Workflows**     | `/workflows`     | n8n workflow status & orchestration                 |
-| **LLM Activity**  | `/llm-activity`  | LLM usage monitoring & call logs                    |
-| **Traceability**  | `/traceability`  | Langfuse trace timeline, detail, observations       |
-| **Evaluation**    | `/evaluation`    | Agent quality scoring & model comparison            |
-| **Observability** | `/observability` | Stack health — Prometheus targets, Grafana, Loki    |
-| **Marketplace**   | `/marketplace`   | Browse & install agent/skill/workflow templates     |
-| **Admin**         | `/admin`         | Ollama model management, system configuration       |
-
-## Key Features
-
-- **Agent Registry** — Create, configure, and manage multiple agents, each with its own model, skills, tools, knowledge base, and behavior
-- **Skills System** — Define reusable skill packages (prompt + tools + constraints) and attach them to any agent
-- **Prompt Library** — Create, categorize, and tag prompt templates; attach them to skills or agents
-- **A2A Protocol** — Register peer agents for inter-agent delegation over HTTP; monitor trust status and capabilities
-- **MCP Protocol** — Connect to external tool servers; dynamically discover and invoke tools via Model Context Protocol
-- **Multi-Model LLM Support** — Switch between Ollama local models (llama3, mistral, phi3, codellama) and Azure OpenAI (gpt-4o, gpt-4o-mini) from the UI
-- **Auto-RAG Knowledge Base** — Upload documents into ChromaDB directly from the agent form; automatically retrieved as context for every prompt
-- **Conversation Memory** — SQLite-backed session summaries provide rolling context across messages
-- **LangGraph ReAct Agent** — State graph: retrieve context → reason → execute tools → generate response
-- **Tool Augmentation** — Math, HTTP fetch, file I/O, datetime, web search, and code execution tools available to the agent
-- **LLM Traceability** — Full LLM call tracing via Langfuse with cost tracking, latency breakdown, and session grouping
-- **Evaluation Matrix** — Quality scoring (faithfulness, relevance, coherence) across model, skill, and agent dimensions
-- **Responsible AI** — Built-in guardrails: PII detection, toxicity filtering, bias warnings, safety scoring
-- **Security Hardening** — XSS protection via HTML escaping on all user-generated content, input validation, SSRF protection, path traversal prevention
-- **Full Observability** — Live stack health, Prometheus scrape targets, Grafana dashboards, Loki logs, OpenTelemetry pipeline
-- **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, and RAG ingestion
-
-## Prerequisites
-
-- **Docker Desktop** with Compose v2 — [download](https://www.docker.com/products/docker-desktop)
-- **8 GB RAM** minimum (16 GB recommended)
-- **~6 GB disk** for Docker images + Ollama models
-
-## Quick Start
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop) (8 GB RAM minimum)
 
 ```bash
-# 1. Clone & enter the repo
 git clone https://github.com/rachit0412/agentic-platform.git
 cd agentic-platform
-
-# 2. (Optional) Copy and customise environment
-cp .env.example .env
-
-# 3. Start all services
 docker compose up -d --build
-
-# 4. Pull an Ollama model (first time only — ~4 GB)
-docker exec ollama ollama pull llama3
-
-# 5. (Optional) Pull additional models
-docker exec ollama ollama pull mistral
-docker exec ollama ollama pull phi3
+docker exec ollama ollama pull llama3    # first time only (~4 GB)
 ```
 
-Wait until all containers are healthy:
+Open **http://localhost:3000** — you're running a full agent factory.
+
+> 📖 **Detailed installation** (Windows/Mac/Linux, GPU setup, troubleshooting): **[INSTALL.md](INSTALL.md)**
+
+### Your first agent in 60 seconds
+
+1. **Skills** → Create a skill (name it, write a prompt, pick tools)
+2. **Agents** → Create an agent (pick a model, attach skills, optionally upload docs for RAG)
+3. **Run Agent** → Select your agent, type a prompt, watch it reason and act in real-time
+4. **Traceability** → Click the trace link to see exactly what the LLM did
+
+### Or use the API
 
 ```bash
-docker compose ps
-```
-
-Open the dashboard at **http://localhost:3000**.
-
-## Using the Agent
-
-### From the UI
-
-1. Open **http://localhost:3000** → go to **Skills** and create a skill (prompt + tools + constraints)
-2. Navigate to **Agents** → create an agent: pick a model, attach skills, upload knowledge, write the prompt
-3. Go to **Run Agent** → select your agent, send a prompt, and watch it work in real-time
-4. View response, tools used, trace links, and session history
-
-### From curl
-
-```bash
-# Health checks
-curl http://localhost:8010/health
-curl http://localhost:8011/health
-
-# Run agent with default model
 curl -X POST http://localhost:8010/run \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "What is 42 * 13?", "sessionId": "test-1"}'
-
-# Run agent with specific model
-curl -X POST http://localhost:8010/run \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Explain quantum computing", "sessionId": "test-2", "provider": "ollama", "model": "mistral"}'
-
-# List available models
-curl http://localhost:8010/models
-
-# Switch active model
-curl -X POST http://localhost:8010/models/switch \
-  -H "Content-Type: application/json" \
-  -d '{"provider": "ollama", "model": "llama3"}'
+  -d '{"prompt": "What is 42 * 13?", "sessionId": "demo"}'
 ```
 
-### Knowledge Base (RAG)
+---
+
+## 🗺️ What's Inside
+
+### Services (12 containers)
+
+| Service | Port | Purpose |
+|---|---|---|
+| **ui-console** | `3000` | Platform dashboard — 15 pages for building, running, monitoring agents |
+| **agent-service** | `8010` | FastAPI + LangGraph — the brain: ReAct agent, registry, auto-RAG, memory |
+| **tools-service** | `8011` | Math, HTTP, file I/O, datetime, web search, code exec, vector ops |
+| **ollama** | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more |
+| **chromadb** | `8200` | Vector store for knowledge base and RAG retrieval |
+| **n8n** | `5678` | Workflow orchestration, webhooks, and scheduled automation |
+| **langfuse** | `3012` | LLM tracing, cost tracking, evaluation, prompt analytics |
+| **grafana** | `3013` | Monitoring dashboards (pre-configured with Prometheus + Loki) |
+| **prometheus** | `9090` | Metrics collection and alerting |
+| **loki** | `3100` | Log aggregation from all services |
+| **otel-collector** | `4317` | OpenTelemetry pipeline — traces, metrics, logs routing |
+| **langfuse-db** | — | PostgreSQL backend for Langfuse (internal) |
+
+### Dashboard Pages (15)
+
+| Page | What you do there |
+|---|---|
+| Overview | Service health, stats, quick-start guide |
+| Run Agent | Execute agents, stream responses, browse sessions |
+| Agents | Create and manage agent definitions |
+| Skills | Build reusable skill packages |
+| Prompts | Prompt template library |
+| Documents | Knowledge base — upload, search, manage RAG docs |
+| A2A | Register peer agents for inter-agent delegation |
+| MCP | Connect external tool servers |
+| Workflows | n8n workflow monitoring |
+| LLM Activity | Usage monitoring and call logs |
+| Traceability | Langfuse trace timeline and deep-dive |
+| Evaluation | Agent quality scoring and model comparison |
+| Observability | Stack health — Prometheus, Grafana, Loki status |
+| Marketplace | Browse and install templates |
+| Admin | Model management and system config |
+
+---
+
+## 🧬 How the Agent Thinks
+
+```
+User Prompt
+  │
+  ▼
+┌──────────────────────────────────────────┐
+│  1. Retrieve context (ChromaDB → RAG)    │
+│  2. Load memory (SQLite → session)       │
+│  3. Inject skills + system prompt        │
+│  4. LLM reasoning (ReAct loop)           │
+│  5. Tool execution (if needed)           │
+│  6. Generate response                    │
+│  7. Save memory + emit traces            │
+└──────────────────────────────────────────┘
+  │
+  ├──→ Langfuse (full trace)
+  ├──→ OpenTelemetry (metrics + logs)
+  └──→ Response to user
+```
+
+> Deep dive: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — embedding pipeline, LLM provider details, protocol specs
+
+---
+
+## 🔧 Configuration
+
+All ports and credentials are configurable via environment variables. Copy `.env.example` to `.env` and customise:
 
 ```bash
-# Ingest a document
-curl -X POST http://localhost:8010/documents/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"text": "LangGraph is a framework for building stateful agents...", "source": "docs"}'
-
-# Search the knowledge base
-curl -X POST http://localhost:8010/documents/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "what is langgraph", "k": 3}'
+cp .env.example .env
 ```
 
-Documents are automatically retrieved as context when you send a prompt — no extra configuration needed.
+Key settings:
 
-## Multi-Model LLM Configuration
+| Variable | Default | What it does |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` | Default LLM backend (`ollama`, `azure-openai`, `openai`, `azure-foundry`) |
+| `OLLAMA_MODEL` | `llama3` | Default local model |
+| `AZURE_OPENAI_API_KEY` | — | Enables Azure OpenAI models |
+| `OPENAI_API_KEY` | — | Enables OpenAI models |
+| `UI_PORT` | `3000` | Dashboard port |
 
-### Ollama (Local — Free)
+> Full configuration reference with 20+ variables: see the **Configuration** section in **[INSTALL.md](INSTALL.md)**
 
-Ollama models are auto-detected. Pull any model and it appears in the UI:
+---
+
+## 🧪 Testing
 
 ```bash
-docker exec ollama ollama pull llama3       # Meta Llama 3 (8B)
-docker exec ollama ollama pull mistral      # Mistral 7B
-docker exec ollama ollama pull phi3         # Microsoft Phi-3
-docker exec ollama ollama pull codellama    # Code Llama
-docker exec ollama ollama pull gemma2       # Google Gemma 2
-docker exec ollama ollama pull llama3:70b   # Llama 3 70B (needs 40GB+ RAM)
+# Python unit tests
+cd tests && pytest -v
+
+# JavaScript tests
+cd tests/unit && npx jest
+
+# Smoke test
+bash tests/smoke/smoke-test.sh
+
+# Load test (k6)
+k6 run tests/load/load-test.js
 ```
 
-### Azure OpenAI (Cloud)
+---
 
-Set these environment variables in `.env` or `docker-compose.yml`:
-
-```env
-AZURE_OPENAI_API_KEY=your-api-key-here
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_OPENAI_API_VERSION=2024-06-01
-LLM_PROVIDER=azure-openai    # Optional: set as default provider
-```
-
-Once configured, Azure OpenAI models appear in the UI model dropdown alongside Ollama models.
-
-## Tools Available
-
-| Endpoint               | Method | Description                                                        |
-| ---------------------- | ------ | ------------------------------------------------------------------ |
-| `/tools/math`          | POST   | Safe arithmetic evaluation (`{"expression": "2+2"}`)               |
-| `/tools/http-fetch`    | POST   | Fetch a URL (allowlist: httpbin.org, jsonplaceholder.typicode.com) |
-| `/tools/file-write`    | POST   | Save a note (`{"filename": "todo.txt", "content": "..."}`)         |
-| `/tools/file-read`     | POST   | Read a saved note (`{"filename": "todo.txt"}`)                     |
-| `/tools/datetime`      | POST   | Current UTC date, time, and weekday                                |
-| `/tools/web-search`    | POST   | Web search via DuckDuckGo (`{"query": "...", "max_results": 5}`)   |
-| `/tools/code-execute`  | POST   | Execute Python code in a sandbox                                   |
-| `/tools/vector-search` | POST   | Search documents in ChromaDB                                       |
-| `/tools/vector-store`  | POST   | Ingest documents into ChromaDB                                     |
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 agentic-platform/
-├── docker-compose.yml           # All 12 services
-├── .env.example                 # Environment variable template
-├── README.md                    # This file
-├── INSTALL.md                   # Detailed installation guide
+├── docker-compose.yml           # All 12 services — one command to rule them all
+├── README.md                    # You are here
+├── INSTALL.md                   # Detailed install guide (Windows/Mac/Linux/GPU)
 ├── CONTRIBUTING.md              # Contribution guidelines
-├── pyproject.toml               # Python project metadata
-├── data/                        # Mounted volumes (SQLite, notes)
-├── docs/
-│   ├── README.md                # Documentation index
-│   └── ARCHITECTURE.md          # Platform architecture deep-dive
-├── n8n/workflows/               # n8n workflow JSON files
-├── observability/
-│   ├── grafana/                 # Dashboards & provisioning
-│   ├── loki/                    # Log aggregation config
-│   └── prometheus/              # Metrics scrape config
-├── scripts/                     # Health checks & utilities
+├── docs/ARCHITECTURE.md         # Deep-dive architecture & protocols
 ├── services/
-│   ├── agent/                   # FastAPI + LangGraph agent
-│   │   ├── Dockerfile
-│   │   ├── main.py              # API endpoints (47 routes)
-│   │   ├── requirements.txt
-│   │   └── agent/
-│   │       ├── graph.py         # LangGraph ReAct state graph
-│   │       ├── llm.py           # Multi-provider LLM (Ollama + Azure OpenAI)
-│   │       ├── memory.py        # SQLite memory + agent/skill/A2A/MCP registry
-│   │       ├── tools.py         # Tool catalogue & HTTP client
-│   │       ├── vectorstore.py   # ChromaDB vector store wrapper
-│   │       └── observability.py # OpenTelemetry + Langfuse setup
-│   ├── tools/                   # FastAPI tool endpoints (10 routes)
-│   │   ├── Dockerfile
-│   │   ├── main.py              # Math, fetch, file, datetime, search, code exec
-│   │   └── requirements.txt
-│   ├── ui/                      # Static UI (nginx — legacy)
-│   ├── ui-console/              # Platform dashboard (Express.js + EJS)
-│   │   ├── Dockerfile
-│   │   ├── server.js            # API proxies & view routing (~80 routes)
-│   │   ├── marketplace.js       # Marketplace route handler
-│   │   ├── package.json
-│   │   ├── public/style.css     # Platform CSS
-│   │   └── views/               # EJS templates (15 pages + layout)
-│   └── otel/                    # OpenTelemetry collector config
-└── tests/
-    ├── unit/                    # pytest + jest unit tests
-    ├── integration/             # Integration tests
-    ├── e2e/                     # End-to-end tests
-    ├── contract/                # Contract tests
-    ├── load/                    # k6 load tests
-    └── smoke/                   # Smoke tests
+│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (47 API routes)
+│   ├── tools/                   # 🔧 FastAPI tool endpoints (9 tools)
+│   ├── ui-console/              # 🖥️  Express.js dashboard (15 pages)
+│   └── otel/                    # 📡 OpenTelemetry collector config
+├── n8n/workflows/               # ⚡ Pre-built n8n workflow templates
+├── observability/               # 📊 Grafana dashboards, Prometheus, Loki config
+└── tests/                       # 🧪 Unit, integration, e2e, contract, load, smoke
 ```
 
-## Configuration
+---
 
-| Variable                            | Default              | Description                                       |
-| ----------------------------------- | -------------------- | ------------------------------------------------- |
-| `UI_PORT`                           | `3000`               | UI Console host port                              |
-| `AGENT_PORT`                        | `8010`               | Agent Service host port                           |
-| `TOOLS_PORT`                        | `8011`               | Tools Service host port                           |
-| `OLLAMA_PORT`                       | `11436`              | Ollama host port                                  |
-| `OLLAMA_MODEL`                      | `llama3`             | Default Ollama model                              |
-| `LLM_PROVIDER`                      | `ollama`             | Default LLM provider (`ollama` or `azure-openai`) |
-| `AZURE_OPENAI_API_KEY`              | _(empty)_            | Azure OpenAI API key                              |
-| `AZURE_OPENAI_ENDPOINT`             | _(empty)_            | Azure OpenAI endpoint URL                         |
-| `AZURE_OPENAI_DEPLOYMENT`           | `gpt-4o-mini`        | Azure OpenAI deployment name                      |
-| `AZURE_OPENAI_API_VERSION`          | `2024-06-01`         | Azure OpenAI API version                          |
-| `CHROMA_PORT`                       | `8200`               | ChromaDB host port                                |
-| `N8N_PORT`                          | `5678`               | n8n host port                                     |
-| `N8N_USER` / `N8N_PASSWORD`         | `admin` / `changeme` | n8n basic auth                                    |
-| `LANGFUSE_PORT`                     | `3012`               | Langfuse host port                                |
-| `LANGFUSE_PUBLIC_KEY`               | `pk-lf-local-dev`    | Langfuse public key                               |
-| `LANGFUSE_SECRET_KEY`               | `sk-lf-local-dev`    | Langfuse secret key                               |
-| `GRAFANA_PORT`                      | `3013`               | Grafana host port                                 |
-| `GRAFANA_USER` / `GRAFANA_PASSWORD` | `admin` / `admin`    | Grafana admin credentials                         |
-| `PROMETHEUS_PORT`                   | `9090`               | Prometheus host port                              |
-| `LOKI_PORT`                         | `3100`               | Loki host port                                    |
+## 📖 Documentation
 
-## Observability
+| Doc | What's in it |
+|---|---|
+| **[INSTALL.md](INSTALL.md)** | Full installation guide — Windows, Mac, Linux, GPU setup, troubleshooting, all 20+ config variables |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Deep-dive — embedding pipeline, LLM providers, telemetry flow, protocol specs, service map |
+| **[CONTRIBUTING.md](CONTRIBUTING.md)** | How to contribute — code style, PR workflow, development setup |
 
-| Tool           | URL                   | Credentials                | Purpose                 |
-| -------------- | --------------------- | -------------------------- | ----------------------- |
-| **Langfuse**   | http://localhost:3012 | admin@local.dev / changeme | LLM tracing & analytics |
-| **Grafana**    | http://localhost:3013 | admin / admin              | Monitoring dashboards   |
-| **Prometheus** | http://localhost:9090 | —                          | Metrics                 |
-| **n8n**        | http://localhost:5678 | admin / changeme           | Workflow orchestration  |
+---
 
-## Development
+## 🤝 Contributing
 
-Python services run with `uvicorn --reload` — source dirs are bind-mounted:
+I built this solo, but I'd love collaborators. Whether it's a bug fix, a new tool, a better prompt template, or a whole new agent type — PRs are welcome.
 
 ```bash
-# View agent logs
-docker compose logs -f agent-service
-
-# Restart a single service
-docker compose restart agent-service
-
-# Rebuild after changing Dockerfile / requirements
-docker compose up -d --build agent-service
-
-# Run unit tests (Python)
-cd tests && pytest -v
-
-# Run unit tests (JavaScript)
-cd tests/unit && npx jest
+git clone https://github.com/YOUR_USERNAME/agentic-platform.git
+cd agentic-platform
+docker compose up -d --build
+# hack away, then open a PR
 ```
 
-## Troubleshooting
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines.
 
-| Problem                            | Fix                                                                                         |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| `agent-service` unhealthy          | Check Ollama is running: `curl http://localhost:11436/api/tags`. Pull a model if empty.     |
-| n8n webhook returns 404            | Import the workflow JSON and **activate** it in the n8n UI.                                 |
-| Model not showing in dropdown      | Pull it first: `docker exec ollama ollama pull <model>`. Refresh the page.                  |
-| Azure OpenAI not available         | Set `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_ENDPOINT` env vars and restart agent-service.  |
-| `tools-service` connection refused | Run `docker compose ps` — make sure `tools-service` is `healthy`.                           |
-| Ollama slow / OOM                  | Use a smaller model: `docker exec ollama ollama pull phi3` and select it in the UI.         |
-| Langfuse not loading               | Verify port 3012 is free. Check `docker compose logs langfuse`.                             |
-| Grafana not loading                | Verify port 3013 is free. Check `docker compose logs grafana`.                              |
-| GPU not used                       | Uncomment the `deploy.resources.reservations` block in `docker-compose.yml` under `ollama`. |
-| Port already in use                | Change the port via env var (e.g., `UI_PORT=3001 docker compose up -d`).                    |
+---
 
-## License
+## 📄 License
 
-MIT — see [LICENSE](LICENSE).
+MIT — use it, fork it, ship it. See [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+**Built with mass mass mass amounts of mass amounts of caffeine by [Rachit](https://github.com/rachit0412)**
+
+If this saves you time, consider giving it a ⭐
+
+</div>

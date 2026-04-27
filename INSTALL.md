@@ -333,3 +333,108 @@ After successful installation:
 8. Create workflows in n8n at http://localhost:5678
 9. Review LLM traces in Langfuse at http://localhost:3012
 10. Monitor platform health in Grafana at http://localhost:3013
+
+---
+
+## Multi-Model LLM Configuration
+
+### Ollama (Local — Free)
+
+Ollama models are auto-detected. Pull any model and it appears in the UI:
+
+```bash
+docker exec ollama ollama pull llama3       # Meta Llama 3 (8B)
+docker exec ollama ollama pull mistral      # Mistral 7B
+docker exec ollama ollama pull phi3         # Microsoft Phi-3
+docker exec ollama ollama pull codellama    # Code Llama
+docker exec ollama ollama pull gemma2       # Google Gemma 2
+docker exec ollama ollama pull llama3:70b   # Llama 3 70B (needs 40GB+ RAM)
+```
+
+### Azure OpenAI (Cloud)
+
+Set these environment variables in `.env` or `docker-compose.yml`:
+
+```env
+AZURE_OPENAI_API_KEY=your-api-key-here
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_API_VERSION=2024-06-01
+LLM_PROVIDER=azure-openai    # Optional: set as default provider
+```
+
+### OpenAI (Cloud)
+
+```env
+OPENAI_API_KEY=sk-your-key-here
+OPENAI_MODEL=gpt-4o
+LLM_PROVIDER=openai           # Optional: set as default provider
+```
+
+### Azure AI Foundry (Cloud)
+
+```env
+AZURE_FOUNDRY_ENDPOINT=https://your-foundry.openai.azure.com/
+AZURE_FOUNDRY_API_KEY=your-key-here
+AZURE_FOUNDRY_MODELS=model1,model2
+LLM_PROVIDER=azure-foundry    # Optional: set as default provider
+```
+
+Once configured, cloud models appear in the UI model dropdown alongside Ollama models.
+
+---
+
+## API Reference (curl examples)
+
+### Agent Service
+
+```bash
+# Health check
+curl http://localhost:8010/health
+
+# Run agent with default model
+curl -X POST http://localhost:8010/run \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "What is 42 * 13?", "sessionId": "test-1"}'
+
+# Run agent with specific model
+curl -X POST http://localhost:8010/run \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Explain quantum computing", "sessionId": "test-2", "provider": "ollama", "model": "mistral"}'
+
+# List available models
+curl http://localhost:8010/models
+
+# Switch active model
+curl -X POST http://localhost:8010/models/switch \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "ollama", "model": "llama3"}'
+```
+
+### Knowledge Base (RAG)
+
+```bash
+# Ingest a document
+curl -X POST http://localhost:8010/documents/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"text": "LangGraph is a framework for building stateful agents...", "source": "docs"}'
+
+# Search the knowledge base
+curl -X POST http://localhost:8010/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "what is langgraph", "k": 3}'
+```
+
+### Tools Service
+
+| Endpoint               | Method | Description                                                        |
+| ---------------------- | ------ | ------------------------------------------------------------------ |
+| `/tools/math`          | POST   | Safe arithmetic evaluation (`{"expression": "2+2"}`)               |
+| `/tools/http-fetch`    | POST   | Fetch a URL (allowlist: httpbin.org, jsonplaceholder.typicode.com) |
+| `/tools/file-write`    | POST   | Save a note (`{"filename": "todo.txt", "content": "..."}`)         |
+| `/tools/file-read`     | POST   | Read a saved note (`{"filename": "todo.txt"}`)                     |
+| `/tools/datetime`      | POST   | Current UTC date, time, and weekday                                |
+| `/tools/web-search`    | POST   | Web search via DuckDuckGo (`{"query": "...", "max_results": 5}`)   |
+| `/tools/code-execute`  | POST   | Execute Python code in a sandbox                                   |
+| `/tools/vector-search` | POST   | Search documents in ChromaDB                                       |
+| `/tools/vector-store`  | POST   | Ingest documents into ChromaDB                                     |
