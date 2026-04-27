@@ -24,7 +24,7 @@ exporters:
     loglevel: warn
 
 service:
-  extensions: [health_check]
+  extensions: [ health_check ]
   pipelines:
     traces:
       receivers: [ otlp ]
