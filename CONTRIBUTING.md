@@ -61,10 +61,13 @@ cd agentic-platform
 cp .env.example .env
 
 # Start development environment
-docker-compose up -d
+docker compose up -d --build
+
+# Pull a model
+docker exec ollama ollama pull llama3
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### Key Concepts for Contributors
@@ -98,17 +101,18 @@ def create_agent(model: str, temperature: float = 0.7) -> Agent:
     # Implementation
 ```
 
-### JavaScript/TypeScript (n8n workflows)
+### JavaScript (UI Console)
 
 - Use ES6+ features
 - Consistent indentation (2 spaces)
 - Clear variable names
+- XSS protection: always use `escapeHtml()` for user-generated content in EJS templates
 
 ### Docker
 
 - Multi-stage builds when possible
 - Minimize image size
-- Use specific versions, not `latest`
+- Use specific versions, not `latest` (except for Ollama/n8n)
 - Add health checks
 
 ## Testing
@@ -116,11 +120,23 @@ def create_agent(model: str, temperature: float = 0.7) -> Agent:
 ### Run Tests
 
 ```bash
-# Python tests
-pytest services/langgraph-api/tests/
+# All Python tests (unit, integration, contract, e2e)
+cd tests && pytest -v
 
-# Integration tests
-./scripts/integration-tests.sh
+# Unit tests only
+cd tests && pytest unit/ -v
+
+# Specific test file
+cd tests && pytest unit/test_agent.py -v
+
+# JavaScript tests
+cd tests/unit && npx jest test_console.test.js
+
+# Smoke tests (requires running services)
+bash tests/smoke/smoke-test.sh
+
+# Load tests (requires k6)
+k6 run tests/load/load-test.js
 ```
 
 ### Test Coverage
@@ -128,6 +144,28 @@ pytest services/langgraph-api/tests/
 - Aim for >80% coverage
 - Test edge cases
 - Include integration tests
+
+### Test Structure
+
+```
+tests/
+├── unit/                    # Fast, isolated tests
+│   ├── test_agent.py        # Agent graph, LLM, memory
+│   ├── test_llm.py          # LLM provider switching
+│   ├── test_tools.py        # Tool endpoints
+│   ├── test_vectorstore.py  # ChromaDB operations
+│   └── test_console.test.js # UI console routes (Jest)
+├── integration/             # Cross-service tests
+│   └── test_integration.py
+├── contract/                # API schema contracts
+│   └── test_contracts.py
+├── e2e/                     # Full user journeys
+│   └── test_e2e.py
+├── load/                    # Performance tests
+│   └── load-test.js
+└── smoke/                   # Service connectivity
+    └── smoke-test.sh
+```
 
 ## Documentation
 
@@ -140,10 +178,13 @@ Update documentation when:
 
 ### Documentation Files
 
-- `README.md` - Overview and quick start
-- `INSTALL.md` - Detailed installation
-- `docs/` - In-depth guides
-- Code comments - Implementation details
+| File                                         | Content                                   |
+| -------------------------------------------- | ----------------------------------------- |
+| [README.md](README.md)                       | Overview, quick start, configuration      |
+| [INSTALL.md](INSTALL.md)                     | Detailed installation, per-platform setup |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | This file — code style, PR process        |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, data flows, telemetry      |
+| [docs/README.md](docs/README.md)             | API reference & documentation index       |
 
 ## Commit Messages
 
@@ -170,11 +211,11 @@ Types:
 Example:
 
 ```
-feat: Add RAG support with pgvector
+feat: Add web-search tool to tools-service
 
-- Implemented document ingestion
-- Added vector similarity search
-- Updated API with RAG endpoint
+- Implemented DuckDuckGo search endpoint
+- Added SSRF protection via domain allowlist
+- Updated tool catalogue in agent-service
 
 Closes #123
 ```
@@ -190,12 +231,27 @@ Closes #123
 
 ```
 agentic-platform/
-├── services/           # Microservices
-│   └── langgraph-api/  # Agent orchestration
-├── database/           # DB schemas
-├── n8n/                # Workflows
-├── monitoring/         # Observability configs
-└── docs/               # Documentation
+├── services/
+│   ├── agent/               # FastAPI + LangGraph agent (port 8010)
+│   │   ├── main.py          # 47 REST endpoints
+│   │   └── agent/           # graph, llm, memory, tools, vectorstore, observability
+│   ├── tools/               # FastAPI tool endpoints (port 8011)
+│   │   └── main.py          # math, fetch, file-read/write, search, code-execute
+│   ├── ui-console/          # Express.js + EJS dashboard (port 3000)
+│   │   ├── server.js        # Routes + API proxy
+│   │   ├── views/           # 15 EJS page templates
+│   │   └── public/          # Static assets
+│   ├── ui/                  # Legacy static UI
+│   └── otel/                # OpenTelemetry Collector config
+├── data/                    # SQLite DB + notes files (bind-mounted)
+├── n8n/workflows/           # 5 workflow templates
+├── observability/           # Prometheus, Grafana, Loki configs
+├── tests/                   # unit, integration, contract, e2e, load, smoke
+├── scripts/                 # health-check.sh
+├── docs/                    # ARCHITECTURE.md, API reference
+├── docker-compose.yml       # 12 services on platform-net
+├── .env.example             # Environment variable template
+└── pyproject.toml           # Python project metadata
 ```
 
 ## Areas for Contribution
@@ -213,7 +269,6 @@ agentic-platform/
 - [ ] Tutorial videos
 - [ ] Blog posts
 - [ ] Use case examples
-- [ ] API reference
 
 ### Infrastructure
 
@@ -224,9 +279,8 @@ agentic-platform/
 
 ## Getting Help
 
-- 💬 [GitHub Discussions](https://github.com/rachit0412/agentic-platform/discussions)
-- 🐛 [Issues](https://github.com/rachit0412/agentic-platform/issues)
-- 📧 Contact maintainers
+- [GitHub Discussions](https://github.com/rachit0412/agentic-platform/discussions)
+- [Issues](https://github.com/rachit0412/agentic-platform/issues)
 
 ## License
 
@@ -238,6 +292,3 @@ Contributors will be:
 
 - Listed in CONTRIBUTORS.md
 - Mentioned in release notes
-- Acknowledged in documentation
-
-Thank you for contributing! 🎉

@@ -156,12 +156,12 @@ function handleFiles(files) {
   const list = document.getElementById('file-list');
   Array.from(files).forEach(file => {
     if (file.size > 5 * 1024 * 1024) {
-      list.innerHTML += '<p style="color:var(--danger);font-size:0.8rem">⚠ ' + file.name + ' exceeds 5 MB limit</p>';
+      list.innerHTML += '<p style="color:var(--danger);font-size:0.8rem">⚠ ' + escapeHtml(file.name) + ' exceeds 5 MB limit</p>';
       return;
     }
     const id = 'file-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
     list.innerHTML += '<div id="' + id + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--input-bg);border:1px solid var(--glass-border);margin-bottom:0.5rem">' +
-      '<span style="font-size:0.82rem;color:var(--text-1);flex:1" class="mono">' + file.name + ' <span style="color:var(--text-3);font-size:0.72rem">(' + (file.size/1024).toFixed(1) + ' KB)</span></span>' +
+      '<span style="font-size:0.82rem;color:var(--text-1);flex:1" class="mono">' + escapeHtml(file.name) + ' <span style="color:var(--text-3);font-size:0.72rem">(' + (file.size/1024).toFixed(1) + ' KB)</span></span>' +
       '<span id="' + id + '-status" style="font-size:0.75rem;color:var(--text-3)">Pending</span>' +
       '</div>';
     readAndIngestFile(file, id);
@@ -267,8 +267,8 @@ async function loadDocs() {
     }
     el.innerHTML = '<table><tr><th>Source</th><th>Actions</th></tr>' +
       d.documents.map(doc => \`<tr>
-        <td class="mono">\${doc.source}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteDoc('\${doc.source}')">Delete</button></td>
+        <td class="mono">\${escapeHtml(doc.source)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteDoc('\${escapeHtml(doc.source)}')">Delete</button></td>
       </tr>\`).join('') + '</table>';
   } catch(e) {
     document.getElementById('doc-list').innerHTML = '<p style="color:var(--danger)">Failed to load</p>';
@@ -323,10 +323,10 @@ async function searchDocs() {
     el.innerHTML = d.results.map((r, i) => \`
       <div class="glass-hover" style="padding:1rem;border-radius:14px;margin-top:0.75rem">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong style="color:var(--text-1)">#\${i+1} — \${r.metadata?.source || 'unknown'}</strong>
+          <strong style="color:var(--text-1)">#\${i+1} — \${escapeHtml(r.metadata?.source || 'unknown')}</strong>
           <span class="mono" style="color:var(--text-3);font-size:0.72rem">score: \${(r.score||0).toFixed(4)}</span>
         </div>
-        <p style="font-size:0.82rem;margin-top:0.5rem;white-space:pre-wrap;color:var(--text-2);line-height:1.6">\${r.content}</p>
+        <p style="font-size:0.82rem;margin-top:0.5rem;white-space:pre-wrap;color:var(--text-2);line-height:1.6">\${escapeHtml(r.content)}</p>
       </div>
     \`).join('');
   } catch(e) {

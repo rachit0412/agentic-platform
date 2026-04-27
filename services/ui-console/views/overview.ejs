@@ -371,9 +371,9 @@ function loadHealth() {
       <div class="health-item">
         <div style="display:flex;align-items:center;gap:10px">
           <span class="pulse-dot-\${s.status==='healthy'?'emerald':'rose'}"></span>
-          <strong style="font-size:0.875rem">\${s.name}</strong>
+          <strong style="font-size:0.875rem">\${escapeHtml(s.name)}</strong>
         </div>
-        <span class="badge \${s.status==='healthy'?'badge-success':'badge-error'}">\${s.status}</span>
+        <span class="badge \${s.status==='healthy'?'badge-success':'badge-error'}">\${escapeHtml(s.status)}</span>
       </div>
     \`).join('');
   }).catch(()=>{

@@ -92,9 +92,9 @@ async function loadModels() {
     }
     el.innerHTML = '<table><tr><th>Model</th><th>Size</th><th>Digest</th></tr>' +
       d.models.map(m => \`<tr>
-        <td>\${m.name} \${m.name === d.current_model ? '<span class="badge badge-success">active</span>' : ''}</td>
+        <td>\${escapeHtml(m.name)} \${m.name === d.current_model ? '<span class="badge badge-success">active</span>' : ''}</td>
         <td class="mono">\${(m.size / 1e9).toFixed(1)} GB</td>
-        <td class="mono" style="font-size:0.72rem">\${m.digest}</td>
+        <td class="mono" style="font-size:0.72rem">\${escapeHtml(m.digest)}</td>
       </tr>\`).join('') + '</table>';
   } catch(e) {
     document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';

@@ -92,27 +92,27 @@
       }
       grid.innerHTML = prompts.map(p => {
         const color = categoryColors[p.category] || '#64748b';
-        const tagBadges = (p.tags || []).slice(0,4).map(t => '<span class="badge">' + t + '</span>').join(' ');
+        const tagBadges = (p.tags || []).slice(0,4).map(t => '<span class="badge">' + escapeHtml(t) + '</span>').join(' ');
         const extra = (p.tags || []).length > 4 ? ' <span class="badge">+' + ((p.tags||[]).length - 4) + '</span>' : '';
         return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
           '<div>' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
-              '<h3 style="margin:0;font-size:1rem">📝 ' + p.name + '</h3>' +
-              '<span class="badge" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + p.category + '</span>' +
+              '<h3 style="margin:0;font-size:1rem">📝 ' + escapeHtml(p.name) + '</h3>' +
+              '<span class="badge" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + escapeHtml(p.category) + '</span>' +
             '</div>' +
-            '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + (p.description || 'No description') + '</p>' +
-            '<div style="background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);max-height:80px;overflow:hidden;margin-bottom:0.5rem">' + (p.content || '').slice(0,200) + (p.content && p.content.length > 200 ? '...' : '') + '</div>' +
+            '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + escapeHtml(p.description || 'No description') + '</p>' +
+            '<div style="background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);max-height:80px;overflow:hidden;margin-bottom:0.5rem">' + escapeHtml((p.content || '').slice(0,200)) + (p.content && p.content.length > 200 ? '...' : '') + '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.5rem">' + tagBadges + extra + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
-            '<button class="btn btn-sm" onclick="copyPrompt(\\'' + p.id + '\\')">Copy</button>' +
-            '<button class="btn btn-sm" onclick="editPrompt(\\'' + p.id + '\\')">Edit</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="deletePrompt(\\'' + p.id + '\\')">Delete</button>' +
+            '<button class="btn btn-sm" onclick="copyPrompt(\\'' + escapeHtml(p.id) + '\\')">Copy</button>' +
+            '<button class="btn btn-sm" onclick="editPrompt(\\'' + escapeHtml(p.id) + '\\')">Edit</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deletePrompt(\\'' + escapeHtml(p.id) + '\\')">Delete</button>' +
           '</div>' +
         '</div>';
       }).join('');
     } catch(e) {
-      document.getElementById('prompts-grid').innerHTML = '<div class="card" style="color:var(--danger)">Error loading prompts: ' + e.message + '</div>';
+      document.getElementById('prompts-grid').innerHTML = '<div class="card" style="color:var(--danger)">Error loading prompts: ' + escapeHtml(e.message) + '</div>';
     }
   }
 

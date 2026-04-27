@@ -170,10 +170,10 @@
     const el = document.getElementById('agent-model');
     const models = allModelsList.length > 0 ? allModelsList : ['llama3'];
     el.innerHTML = models.map(m =>
-      '<option value="' + m + '"' + (m === selectedModel ? ' selected' : '') + '>' + m + '</option>'
+      '<option value="' + escapeHtml(m) + '"' + (m === selectedModel ? ' selected' : '') + '>' + escapeHtml(m) + '</option>'
     ).join('');
     if (selectedModel && !models.includes(selectedModel)) {
-      el.innerHTML += '<option value="' + selectedModel + '" selected>' + selectedModel + '</option>';
+      el.innerHTML += '<option value="' + escapeHtml(selectedModel) + '" selected>' + escapeHtml(selectedModel) + '</option>';
     }
   }
 
@@ -184,7 +184,7 @@
       return;
     }
     el.innerHTML = allToolsList.map(t =>
-      '<option value="' + t + '"' + (selectedIds.includes(t) ? ' selected' : '') + '>🔧 ' + t + '</option>'
+      '<option value="' + escapeHtml(t) + '"' + (selectedIds.includes(t) ? ' selected' : '') + '>🔧 ' + escapeHtml(t) + '</option>'
     ).join('');
   }
 
@@ -199,7 +199,7 @@
       return;
     }
     el.innerHTML = allSkillsList.map(s =>
-      '<option value="' + s.id + '"' + (selectedIds.includes(s.id) ? ' selected' : '') + '>⚡ ' + s.name + '</option>'
+      '<option value="' + escapeHtml(s.id) + '"' + (selectedIds.includes(s.id) ? ' selected' : '') + '>⚡ ' + escapeHtml(s.name) + '</option>'
     ).join('');
   }
 
@@ -221,34 +221,34 @@
       grid.innerHTML = agents.map(a => {
         const skillBadges = (a.skill_ids||[]).map(sid => {
           const sk = allSkillsList.find(s => s.id === sid);
-          return '<span class="badge">⚡ ' + (sk ? sk.name : sid) + '</span>';
+          return '<span class="badge">⚡ ' + escapeHtml(sk ? sk.name : sid) + '</span>';
         }).join(' ');
-        const toolBadges = (a.tool_ids||[]).slice(0,3).map(t => '<span class="badge">' + t + '</span>').join(' ');
+        const toolBadges = (a.tool_ids||[]).slice(0,3).map(t => '<span class="badge">' + escapeHtml(t) + '</span>').join(' ');
         const isDefault = a.is_default ? ' <span class="badge" style="background:rgba(6,182,212,0.15);color:#06b6d4">default</span>' : '';
         return '<div class="card animate-fade-up">' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">' +
-            '<h3 style="margin:0;font-size:1.05rem">🤖 ' + a.name + isDefault + '</h3>' +
-            '<span class="mono" style="font-size:0.68rem;color:var(--text-3)">' + a.id + '</span>' +
+            '<h3 style="margin:0;font-size:1.05rem">🤖 ' + escapeHtml(a.name) + isDefault + '</h3>' +
+            '<span class="mono" style="font-size:0.68rem;color:var(--text-3)">' + escapeHtml(a.id) + '</span>' +
           '</div>' +
-          '<p style="color:var(--text-3);font-size:0.82rem;margin:0 0 0.75rem 0">' + (a.description || 'No description') + '</p>' +
+          '<p style="color:var(--text-3);font-size:0.82rem;margin:0 0 0.75rem 0">' + escapeHtml(a.description || 'No description') + '</p>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.78rem;color:var(--text-2)">' +
-            '<div><strong>Provider:</strong> ' + a.provider + '</div>' +
-            '<div><strong>Model:</strong> ' + a.model + '</div>' +
+            '<div><strong>Provider:</strong> ' + escapeHtml(a.provider) + '</div>' +
+            '<div><strong>Model:</strong> ' + escapeHtml(a.model) + '</div>' +
             '<div><strong>Temp:</strong> ' + a.temperature + '</div>' +
             '<div><strong>Max Iter:</strong> ' + a.max_iterations + '</div>' +
-            '<div><strong>KB:</strong> ' + a.kb_collection + '</div>' +
+            '<div><strong>KB:</strong> ' + escapeHtml(a.kb_collection) + '</div>' +
             '<div><strong>Memory:</strong> ' + (a.memory_enabled ? 'On' : 'Off') + '</div>' +
           '</div>' +
-          (a.system_prompt ? '<div style="margin-top:0.75rem;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.72rem;font-family:var(--mono);color:var(--text-2);max-height:50px;overflow:hidden">' + a.system_prompt.slice(0,200) + (a.system_prompt.length > 200 ? '...' : '') + '</div>' : '') +
+          (a.system_prompt ? '<div style="margin-top:0.75rem;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.72rem;font-family:var(--mono);color:var(--text-2);max-height:50px;overflow:hidden">' + escapeHtml(a.system_prompt.slice(0,200)) + (a.system_prompt.length > 200 ? '...' : '') + '</div>' : '') +
           '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.75rem">' + skillBadges + ' ' + toolBadges + '</div>' +
           '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
-            '<button class="btn btn-sm" onclick="editAgent(\\'' + a.id + '\\')">Edit</button>' +
-            (a.is_default ? '' : '<button class="btn btn-sm btn-danger" onclick="deleteAgent(\\'' + a.id + '\\')">Delete</button>') +
+            '<button class="btn btn-sm" onclick="editAgent(\\'' + escapeHtml(a.id) + '\\')">Edit</button>' +
+            (a.is_default ? '' : '<button class="btn btn-sm btn-danger" onclick="deleteAgent(\\'' + escapeHtml(a.id) + '\\')">Delete</button>') +
           '</div>' +
         '</div>';
       }).join('');
     } catch(e) {
-      document.getElementById('agents-grid').innerHTML = '<div class="card" style="color:var(--danger)">Error: ' + e.message + '</div>';
+      document.getElementById('agents-grid').innerHTML = '<div class="card" style="color:var(--danger)">Error: ' + escapeHtml(e.message) + '</div>';
     }
   }
 

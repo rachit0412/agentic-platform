@@ -112,8 +112,8 @@ async function loadWorkflows() {
     }
     el.innerHTML = '<table><tr><th>ID</th><th>Name</th><th>Active</th><th>Updated</th></tr>' +
       d.workflows.map(w => \`<tr>
-        <td class="mono">\${w.id}</td>
-        <td>\${w.name || '-'}</td>
+        <td class="mono">\${escapeHtml(w.id)}</td>
+        <td>\${escapeHtml(w.name || '-')}</td>
         <td><span class="badge \${w.active ? 'badge-success' : 'badge-warning'}">\${w.active ? 'Active' : 'Inactive'}</span></td>
         <td class="mono">\${w.updatedAt ? new Date(w.updatedAt).toLocaleDateString() : '-'}</td>
       </tr>\`).join('') + '</table>';

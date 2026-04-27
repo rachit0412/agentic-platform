@@ -136,7 +136,7 @@ function updateStats() {
 function updatePeerSelect() {
   const sel = document.getElementById('task-peer');
   sel.innerHTML = '<option value="">Select peer...</option>' +
-    peers.map(p => '<option value="' + p.id + '">' + p.name + ' (' + p.status + ')</option>').join('');
+    peers.map(p => '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.name) + ' (' + escapeHtml(p.status) + ')</option>').join('');
 }
 
 function renderPeers() {
@@ -152,24 +152,24 @@ function renderPeers() {
   grid.innerHTML = peers.map(p => {
     const statusColor = p.status === 'online' ? '#10b981' : p.status === 'unreachable' ? '#ef4444' : '#f59e0b';
     const statusDot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>';
-    const caps = (p.capabilities || []).map(c => '<span class="badge" style="font-size:0.7rem;margin:2px">' + c + '</span>').join('') || '<span style="color:var(--text-3);font-size:0.75rem">No capabilities listed</span>';
+    const caps = (p.capabilities || []).map(c => '<span class="badge" style="font-size:0.7rem;margin:2px">' + escapeHtml(c) + '</span>').join('') || '<span style="color:var(--text-3);font-size:0.75rem">No capabilities listed</span>';
     const lastSeen = p.last_seen ? new Date(p.last_seen).toLocaleString() : 'Never';
     const hasCard = p.agent_card && Object.keys(p.agent_card).length > 0;
 
     return '<div class="card animate-fade-up" style="border-left:3px solid ' + statusColor + '">' +
       '<div class="flex-between">' +
         '<div>' +
-          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + p.name + '</h3>' +
-          '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px">' + p.url + '</div>' +
+          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + escapeHtml(p.name) + '</h3>' +
+          '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px">' + escapeHtml(p.url) + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:0.5rem">' +
-          '<button class="btn" onclick="pingPeer(\\'' + p.id + '\\')" style="font-size:0.72rem" title="Test connectivity">Ping</button>' +
-          (hasCard ? '<button class="btn" onclick="viewAgentCard(\\'' + p.id + '\\')" style="font-size:0.72rem">Card</button>' : '') +
-          '<button class="btn" onclick="editPeer(\\'' + p.id + '\\')" style="font-size:0.72rem">Edit</button>' +
-          '<button class="btn" onclick="deletePeer(\\'' + p.id + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>' +
+          '<button class="btn" onclick="pingPeer(\\'' + escapeHtml(p.id) + '\\')" style="font-size:0.72rem" title="Test connectivity">Ping</button>' +
+          (hasCard ? '<button class="btn" onclick="viewAgentCard(\\'' + escapeHtml(p.id) + '\\')" style="font-size:0.72rem">Card</button>' : '') +
+          '<button class="btn" onclick="editPeer(\\'' + escapeHtml(p.id) + '\\')" style="font-size:0.72rem">Edit</button>' +
+          '<button class="btn" onclick="deletePeer(\\'' + escapeHtml(p.id) + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>' +
         '</div>' +
       '</div>' +
-      '<p style="font-size:0.8rem;color:var(--text-3);margin:0.5rem 0">' + (p.description || 'No description') + '</p>' +
+      '<p style="font-size:0.8rem;color:var(--text-3);margin:0.5rem 0">' + escapeHtml(p.description || 'No description') + '</p>' +
       '<div style="margin:0.5rem 0">' + caps + '</div>' +
       '<div style="font-size:0.72rem;color:var(--text-3)">Last seen: ' + lastSeen + '</div>' +
     '</div>';

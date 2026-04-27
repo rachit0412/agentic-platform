@@ -133,7 +133,7 @@ function updateStats() {
 function updateServerSelect() {
   const sel = document.getElementById('invoke-server');
   sel.innerHTML = '<option value="">Select server...</option>' +
-    servers.map(s => '<option value="' + s.id + '">' + s.name + ' (' + (s.tools?.length || 0) + ' tools)</option>').join('');
+    servers.map(s => '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.name) + ' (' + (s.tools?.length || 0) + ' tools)</option>').join('');
 }
 
 function onServerSelect() {
@@ -147,7 +147,7 @@ function onServerSelect() {
   toolSel.innerHTML = s.tools.map(t => {
     const name = t.name || t;
     const desc = t.description ? ' — ' + t.description : '';
-    return '<option value="' + name + '">' + name + desc + '</option>';
+    return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + escapeHtml(desc) + '</option>';
   }).join('');
 }
 
@@ -164,7 +164,7 @@ function renderServers() {
   grid.innerHTML = servers.map(s => {
     const statusColor = s.status === 'connected' ? '#10b981' : s.status === 'disconnected' ? '#ef4444' : '#f59e0b';
     const statusDot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>';
-    const transportBadge = '<span class="badge" style="font-size:0.7rem;background:rgba(139,92,246,0.15);color:#8b5cf6">' + s.transport + '</span>';
+    const transportBadge = '<span class="badge" style="font-size:0.7rem;background:rgba(139,92,246,0.15);color:#8b5cf6">' + escapeHtml(s.transport) + '</span>';
     const enabledBadge = s.enabled
       ? '<span class="badge" style="font-size:0.7rem;background:rgba(16,185,129,0.15);color:#10b981">Enabled</span>'
       : '<span class="badge" style="font-size:0.7rem;background:rgba(239,68,68,0.15);color:#ef4444">Disabled</span>';
@@ -173,7 +173,7 @@ function renderServers() {
       ? '<div style="margin-top:0.75rem"><div style="font-size:0.75rem;color:var(--text-3);margin-bottom:0.5rem">Discovered Tools (' + toolCount + '):</div><div style="display:flex;flex-wrap:wrap;gap:4px">' +
         s.tools.map(t => {
           const name = t.name || t;
-          return '<span class="badge" style="font-size:0.68rem">' + name + '</span>';
+          return '<span class="badge" style="font-size:0.68rem">' + escapeHtml(name) + '</span>';
         }).join('') + '</div></div>'
       : '<div style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-3)">No tools discovered yet — click Discover to scan</div>';
     const lastSeen = s.last_seen ? new Date(s.last_seen).toLocaleString() : 'Never';
@@ -181,19 +181,19 @@ function renderServers() {
     return '<div class="card animate-fade-up" style="border-left:3px solid ' + statusColor + '">' +
       '<div class="flex-between">' +
         '<div>' +
-          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + s.name + '</h3>' +
+          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + escapeHtml(s.name) + '</h3>' +
           '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px;display:flex;gap:0.5rem;align-items:center">' +
-            '<span>' + s.url + '</span>' + transportBadge + enabledBadge +
+            '<span>' + escapeHtml(s.url) + '</span>' + transportBadge + enabledBadge +
           '</div>' +
         '</div>' +
         '<div style="display:flex;gap:0.5rem">' +
-          '<button class="btn" onclick="discoverTools(\\'' + s.id + '\\')" style="font-size:0.72rem" title="Discover available tools">Discover</button>' +
-          '<button class="btn" onclick="toggleServer(\\'' + s.id + '\\', ' + !s.enabled + ')" style="font-size:0.72rem">' + (s.enabled ? 'Disable' : 'Enable') + '</button>' +
-          '<button class="btn" onclick="editServer(\\'' + s.id + '\\')" style="font-size:0.72rem">Edit</button>' +
-          '<button class="btn" onclick="deleteServer(\\'' + s.id + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>' +
+          '<button class="btn" onclick="discoverTools(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem" title="Discover available tools">Discover</button>' +
+          '<button class="btn" onclick="toggleServer(\\'' + escapeHtml(s.id) + '\\', ' + !s.enabled + ')" style="font-size:0.72rem">' + (s.enabled ? 'Disable' : 'Enable') + '</button>' +
+          '<button class="btn" onclick="editServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem">Edit</button>' +
+          '<button class="btn" onclick="deleteServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>' +
         '</div>' +
       '</div>' +
-      '<p style="font-size:0.8rem;color:var(--text-3);margin:0.5rem 0">' + (s.description || 'No description') + '</p>' +
+      '<p style="font-size:0.8rem;color:var(--text-3);margin:0.5rem 0">' + escapeHtml(s.description || 'No description') + '</p>' +
       toolsList +
       '<div style="font-size:0.72rem;color:var(--text-3);margin-top:0.5rem">Last seen: ' + lastSeen + '</div>' +
     '</div>';

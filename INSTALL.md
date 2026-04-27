@@ -1,4 +1,4 @@
-# 📦 Installation Guide - Agentic Platform
+# Installation Guide — Agentic Platform
 
 Complete installation guide for all platforms and deployment scenarios.
 
@@ -7,10 +7,9 @@ Complete installation guide for all platforms and deployment scenarios.
 1. [System Requirements](#system-requirements)
 2. [Quick Install](#quick-install)
 3. [Platform-Specific Instructions](#platform-specific-instructions)
-4. [Manual Installation](#manual-installation)
-5. [Configuration](#configuration)
-6. [Verification](#verification)
-7. [Troubleshooting](#troubleshooting)
+4. [Configuration](#configuration)
+5. [Verification](#verification)
+6. [Troubleshooting](#troubleshooting)
 
 ## System Requirements
 
@@ -19,7 +18,7 @@ Complete installation guide for all platforms and deployment scenarios.
 - **CPU:** 4 cores
 - **RAM:** 8 GB
 - **Disk:** 20 GB free space
-- **OS:** Windows 10/11, macOS 11+, Linux (Ubuntu 20.04+, Debian 11+, CentOS 8+)
+- **OS:** Windows 10/11, macOS 11+, Linux (Ubuntu 20.04+, Debian 11+)
 - **Docker:** Version 20.10+
 - **Docker Compose:** Version 2.0+
 
@@ -28,39 +27,30 @@ Complete installation guide for all platforms and deployment scenarios.
 - **CPU:** 8+ cores
 - **RAM:** 16 GB
 - **Disk:** 50 GB SSD
-- **GPU:** NVIDIA GPU with 8GB+ VRAM (for faster inference)
-- **Network:** High-speed internet for initial model downloads
+- **GPU:** NVIDIA GPU with 8 GB+ VRAM (for faster local inference)
+- **Network:** High-speed internet for initial model downloads (~4 GB per model)
 
 ## Quick Install
-
-### Windows (PowerShell)
-
-```powershell
-# 1. Clone repository
-git clone https://github.com/rachit0412/agentic-platform.git
-cd agentic-platform
-
-# 2. Run automated setup
-.\setup.ps1
-
-# 3. Access the application
-Start-Process "http://localhost:3001"
-```
-
-### Linux/macOS (Bash)
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/rachit0412/agentic-platform.git
 cd agentic-platform
 
-# 2. Run setup script
-chmod +x setup.sh
-./setup.sh
+# 2. (Optional) Copy and customise environment
+cp .env.example .env
 
-# 3. Access the application
-open http://localhost:3001  # macOS
-xdg-open http://localhost:3001  # Linux
+# 3. Start all 12 services
+docker compose up -d --build
+
+# 4. Pull a model (first time only — ~4 GB)
+docker exec ollama ollama pull llama3
+
+# 5. Wait for containers to become healthy
+docker compose ps
+
+# 6. Open the dashboard
+# http://localhost:3000
 ```
 
 ## Platform-Specific Instructions
@@ -72,10 +62,8 @@ xdg-open http://localhost:3001  # Linux
 1. **Install Docker Desktop**
 
    ```powershell
-   # Download and install from:
-   # https://www.docker.com/products/docker-desktop
-
-   # Or use winget
+   # Download from https://www.docker.com/products/docker-desktop
+   # Or use winget:
    winget install Docker.DockerDesktop
    ```
 
@@ -85,49 +73,40 @@ xdg-open http://localhost:3001  # Linux
    # Run as Administrator
    wsl --install
    wsl --set-default-version 2
-
    # Restart your computer
    ```
 
 3. **Configure Docker Desktop**
-   - Open Docker Desktop
-   - Go to Settings → Resources
-   - Allocate at least 8 GB RAM
-   - Allocate at least 4 CPUs
+   - Open Docker Desktop → Settings → Resources
+   - Allocate at least 8 GB RAM and 4 CPUs
    - Apply & Restart
 
 #### Installation
 
 ```powershell
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/rachit0412/agentic-platform.git
 cd agentic-platform
 
-# 2. Copy environment file
+# (Optional) Customise environment
 Copy-Item .env.example .env
 
-# 3. Run setup script
-.\setup.ps1
+# Start all services
+docker compose up -d --build
 
-# 4. Wait for setup to complete (5-15 minutes)
+# Pull a model
+docker exec ollama ollama pull llama3
 
-# 5. Verify installation
-.\manage.ps1 status
-.\manage.ps1 test
+# Verify
+docker compose ps
 ```
 
 #### GPU Support (Windows)
 
 ```powershell
-# 1. Install NVIDIA drivers
-# Download from: https://www.nvidia.com/Download/index.aspx
-
-# 2. Install NVIDIA Container Toolkit
-# Follow: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
-
-# 3. Enable GPU in Docker Desktop
-# Settings → Resources → WSL Integration → Enable GPU
-
+# 1. Install NVIDIA drivers from https://www.nvidia.com/Download/index.aspx
+# 2. Enable GPU in Docker Desktop: Settings → Resources → WSL Integration → Enable GPU
+# 3. Uncomment the GPU block in docker-compose.yml under the ollama service
 # 4. Restart Docker Desktop
 ```
 
@@ -137,26 +116,20 @@ Copy-Item .env.example .env
 
 ```bash
 # Update system
-sudo apt-get update
-sudo apt-get upgrade -y
+sudo apt-get update && sudo apt-get upgrade -y
 
 # Install dependencies
-sudo apt-get install -y \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release \
-    git
+sudo apt-get install -y ca-certificates curl gnupg git
 
 # Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
-# Add user to docker group
+# Add user to docker group (log out and back in after)
 sudo usermod -aG docker $USER
 newgrp docker
 
-# Verify Docker installation
+# Verify
 docker version
 docker compose version
 ```
@@ -164,22 +137,14 @@ docker compose version
 #### Installation
 
 ```bash
-# 1. Clone repository
 git clone https://github.com/rachit0412/agentic-platform.git
 cd agentic-platform
 
-# 2. Copy environment file
-cp .env.example .env
+cp .env.example .env          # optional
+docker compose up -d --build
+docker exec ollama ollama pull llama3
 
-# 3. Make scripts executable
-chmod +x setup.sh manage.sh
-
-# 4. Run setup
-./setup.sh
-
-# 5. Verify installation
-./manage.sh status
-./manage.sh test
+docker compose ps              # verify all healthy
 ```
 
 #### GPU Support (Linux)
@@ -189,17 +154,17 @@ chmod +x setup.sh manage.sh
 sudo ubuntu-drivers autoinstall
 
 # 2. Install NVIDIA Container Toolkit
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+distribution=$(. /etc/os-release; echo $ID$VERSION_ID)
 curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
 curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
     sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-sudo apt-get update
-sudo apt-get install -y nvidia-docker2
+sudo apt-get update && sudo apt-get install -y nvidia-docker2
 sudo systemctl restart docker
 
 # 3. Test GPU access
 docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
+
+# 4. Uncomment the GPU block in docker-compose.yml under ollama
 ```
 
 ### macOS
@@ -207,191 +172,66 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 #### Prerequisites
 
 ```bash
-# Install Homebrew (if not installed)
+# Install Homebrew (if needed)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install Docker Desktop
 brew install --cask docker
 
-# Or download from:
-# https://www.docker.com/products/docker-desktop
-
-# Install Git (if not installed)
+# Install Git (if needed)
 brew install git
 ```
 
 #### Installation
 
 ```bash
-# 1. Clone repository
 git clone https://github.com/rachit0412/agentic-platform.git
 cd agentic-platform
 
-# 2. Copy environment file
-cp .env.example .env
-
-# 3. Make scripts executable
-chmod +x setup.sh manage.sh
-
-# 4. Run setup
-./setup.sh
-
-# 5. Verify installation
-./manage.sh status
-```
-
-#### Note for Apple Silicon (M1/M2/M3)
-
-```bash
-# Some images may need platform specification
-# Edit docker-compose.yml to add:
-# platform: linux/amd64
-
-# Or pull ARM-compatible images when available
-```
-
-## Manual Installation
-
-If automated scripts fail, follow these steps:
-
-### Step 1: Prepare Environment
-
-```bash
-# 1. Clone repository
-git clone https://github.com/rachit0412/agentic-platform.git
-cd agentic-platform
-
-# 2. Create environment file
-cp .env.example .env
-
-# 3. Edit .env file with your values
-nano .env  # or vim, VSCode, etc.
-```
-
-### Step 2: Create Necessary Directories
-
-```bash
-mkdir -p database/init
-mkdir -p services/langgraph-api/agents
-mkdir -p n8n/workflows
-mkdir -p keycloak/realms
-mkdir -p opa/policies
-mkdir -p monitoring/prometheus
-mkdir -p monitoring/grafana/datasources
-mkdir -p monitoring/grafana/dashboards
-mkdir -p monitoring/loki
-```
-
-### Step 3: Start Services
-
-```bash
-# Pull images
-docker-compose pull
-
-# Start services
-docker-compose up -d
-
-# Check status
-docker-compose ps
-```
-
-### Step 4: Download Models
-
-```bash
-# Wait for Ollama to be ready (check logs)
-docker-compose logs -f ollama
-
-# Pull base model (7B, ~4GB)
+cp .env.example .env          # optional
+docker compose up -d --build
 docker exec ollama ollama pull llama3
 
-# Pull embedding model (~274MB)
-docker exec ollama ollama pull nomic-embed-text
-
-# Verify models
-docker exec ollama ollama list
+docker compose ps              # verify all healthy
 ```
 
-### Step 5: Initialize Databases
+#### Apple Silicon (M1/M2/M3/M4)
 
-```bash
-# Database initialization happens automatically via init scripts
-# Check logs to verify
-docker-compose logs postgres
-
-# Test connection
-docker exec postgres psql -U aiuser -d ai_chat -c "SELECT 1"
-```
+All images used are multi-arch compatible. No special configuration needed.
 
 ## Configuration
 
-### Essential Configuration
+### Environment Variables
 
-Edit `.env` file:
+Copy `.env.example` to `.env` and edit as needed. Key variables:
 
-```bash
-# REQUIRED: Change these before production
-POSTGRES_PASSWORD=your-strong-password-here
-WEBUI_SECRET_KEY=$(openssl rand -hex 32)
-KEYCLOAK_CLIENT_SECRET=$(openssl rand -hex 32)
-LANGFUSE_NEXTAUTH_SECRET=$(openssl rand -hex 32)
-LANGFUSE_SALT=$(openssl rand -hex 16)
-
-# Optional: API keys for external services
-OPENAI_API_KEY=sk-...
-```
-
-### Generate Secure Keys
-
-```bash
-# Linux/macOS
-openssl rand -hex 32
-
-# PowerShell
--join ((65..90) + (97..122) | Get-Random -Count 32 | % {[char]$_})
-```
+| Variable                    | Default              | Description                                   |
+| --------------------------- | -------------------- | --------------------------------------------- |
+| `UI_PORT`                   | `3000`               | UI Console host port                          |
+| `AGENT_PORT`                | `8010`               | Agent Service host port                       |
+| `TOOLS_PORT`                | `8011`               | Tools Service host port                       |
+| `OLLAMA_PORT`               | `11436`              | Ollama host port                              |
+| `OLLAMA_MODEL`              | `llama3`             | Default Ollama model                          |
+| `LLM_PROVIDER`              | `ollama`             | Default provider (`ollama` or `azure-openai`) |
+| `AZURE_OPENAI_API_KEY`      | _(empty)_            | Azure OpenAI API key                          |
+| `AZURE_OPENAI_ENDPOINT`     | _(empty)_            | Azure OpenAI endpoint URL                     |
+| `AZURE_OPENAI_DEPLOYMENT`   | `gpt-4o-mini`        | Azure OpenAI deployment name                  |
+| `N8N_USER` / `N8N_PASSWORD` | `admin` / `changeme` | n8n basic auth                                |
+| `LANGFUSE_PORT`             | `3012`               | Langfuse host port                            |
+| `GRAFANA_PORT`              | `3013`               | Grafana host port                             |
 
 ### Resource Allocation
 
-Edit `docker-compose.yml` to adjust resources:
+To adjust container resources, edit `docker-compose.yml`:
 
 ```yaml
 services:
-  langgraph-api:
+  agent-service:
     deploy:
       resources:
         limits:
           cpus: "4"
           memory: 8G
-        reservations:
-          cpus: "2"
-          memory: 4G
-```
-
-### Network Ports
-
-Default ports used:
-
-| Service       | Port  | Configurable |
-| ------------- | ----- | ------------ |
-| UI Console    | 3001  | Yes          |
-| Agent Service | 8010  | Yes          |
-| Tools Service | 8011  | Yes          |
-| n8n           | 5678  | Yes          |
-| Ollama        | 11436 | Yes          |
-| ChromaDB      | 8200  | Yes          |
-| Langfuse      | 3012  | Yes          |
-| Grafana       | 3013  | Yes          |
-| Prometheus    | 9090  | Yes          |
-| PostgreSQL    | 5432  | Yes          |
-| Redis         | 6379  | Yes          |
-
-To change ports, edit `docker-compose.yml`:
-
-```yaml
-services:
-  open-webui:
-    ports:
-      - "8080:8080" # Change 3000 to desired port
 ```
 
 ## Verification
@@ -399,25 +239,29 @@ services:
 ### Check Service Health
 
 ```bash
-# Manual health checks
-curl http://localhost:8010/health
-curl http://localhost:8011/health
-curl http://localhost:3001
-
-# Check all containers
+# All containers
 docker compose ps
+
+# API health checks
+curl http://localhost:8010/health   # agent-service
+curl http://localhost:8011/health   # tools-service
+curl http://localhost:3000/health   # ui-console
+
+# Multi-service health check
+curl http://localhost:3000/api/health-check
 ```
 
 ### Access Services
 
-After installation, verify you can access:
-
-- ✅ UI Console: http://localhost:3001
-- ✅ Agent API Docs: http://localhost:8010/docs
-- ✅ n8n: http://localhost:5678
-- ✅ Langfuse: http://localhost:3012
-- ✅ Grafana: http://localhost:3013
-- ✅ Prometheus: http://localhost:9090
+| Service        | URL                        | Credentials                |
+| -------------- | -------------------------- | -------------------------- |
+| UI Console     | http://localhost:3000      | —                          |
+| Agent API Docs | http://localhost:8010/docs | —                          |
+| Tools API Docs | http://localhost:8011/docs | —                          |
+| n8n            | http://localhost:5678      | admin / changeme           |
+| Langfuse       | http://localhost:3012      | admin@local.dev / changeme |
+| Grafana        | http://localhost:3013      | admin / admin              |
+| Prometheus     | http://localhost:9090      | —                          |
 
 ### Test Agent
 
@@ -428,20 +272,7 @@ curl http://localhost:8010/models
 # Run agent
 curl -X POST http://localhost:8010/run \
   -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "What is 42 * 13?",
-    "sessionId": "test-1"
-  }'
-
-# Run agent with specific model
-curl -X POST http://localhost:8010/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Hello!",
-    "sessionId": "test-2",
-    "provider": "ollama",
-    "model": "llama3"
-  }'
+  -d '{"prompt": "What is 42 * 13?", "sessionId": "test-1"}'
 ```
 
 ### View Logs
@@ -459,154 +290,46 @@ docker compose logs --tail=100
 
 ## Troubleshooting
 
-### Installation Issues
+### Docker Issues
 
-#### Docker not starting
-
-```bash
-# Windows: Restart Docker Desktop
-# Linux: Check Docker service
-sudo systemctl status docker
-sudo systemctl restart docker
-
-# Verify installation
-docker version
-```
-
-#### Permission denied errors
-
-```bash
-# Linux: Add user to docker group
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Verify
-docker ps
-```
-
-#### Port already in use
-
-```bash
-# Find process using port
-# Windows
-netstat -ano | findstr :3000
-
-# Linux/Mac
-lsof -i :3000
-
-# Stop conflicting service or change port in docker-compose.yml
-```
+| Problem             | Fix                                                            |
+| ------------------- | -------------------------------------------------------------- |
+| Docker not starting | Restart Docker Desktop. Linux: `sudo systemctl restart docker` |
+| Permission denied   | Linux: `sudo usermod -aG docker $USER` then log out/in         |
+| Port already in use | Change port via env var: `UI_PORT=3001 docker compose up -d`   |
+| Out of disk space   | `docker system prune -a` and `docker volume prune`             |
 
 ### Service Issues
 
-#### Services won't start
-
-```bash
-# Check logs
-docker-compose logs [service-name]
-
-# Restart specific service
-docker-compose restart [service-name]
-
-# Full restart
-docker-compose down
-docker-compose up -d
-```
-
-#### Out of disk space
-
-```bash
-# Clean up Docker
-docker system prune -a
-docker volume prune
-
-# Check disk usage
-docker system df
-```
-
-#### Models not downloading
-
-```bash
-# Check Ollama logs
-docker-compose logs ollama
-
-# Manually pull models
-docker exec ollama ollama pull llama3
-
-# Check available space
-df -h  # Linux/Mac
-Get-PSDrive C | Select-Object Used,Free  # Windows
-```
+| Problem                   | Fix                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------- |
+| `agent-service` unhealthy | Check Ollama: `curl http://localhost:11436/api/tags`. Pull a model.               |
+| Model not in UI dropdown  | Pull it: `docker exec ollama ollama pull <model>`. Refresh.                       |
+| Azure OpenAI unavailable  | Set `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_ENDPOINT` in `.env`, restart.        |
+| `tools-service` refused   | `docker compose ps` — ensure it's healthy. `docker compose restart tools-service` |
+| Langfuse not loading      | Verify port 3012 is free. Check `docker compose logs langfuse`                    |
+| Grafana not loading       | Verify port 3013 is free. Check `docker compose logs grafana`                     |
 
 ### Performance Issues
 
-#### Slow responses
-
-```bash
-# Check resource usage
-docker stats
-
-# Increase memory limit in Docker settings
-# Or allocate more resources in docker-compose.yml
-```
-
-#### Model loading slow
-
-```bash
-# Keep models in memory
-docker exec ollama ollama show llama3
-
-# Configure in docker-compose.yml
-OLLAMA_KEEP_ALIVE=24h
-```
-
-### Database Issues
-
-#### Connection errors
-
-```bash
-# Check PostgreSQL status
-docker exec postgres pg_isready -U aiuser
-
-# Restart database
-docker-compose restart postgres
-
-# Check logs
-docker-compose logs postgres
-```
-
-#### Reset database
-
-```bash
-# Backup first!
-docker exec postgres pg_dump -U aiuser ai_chat > backup.sql
-
-# Reset
-docker-compose down -v
-docker-compose up -d
-```
-
-## Getting Help
-
-If you encounter issues:
-
-1. **Check logs**: `docker-compose logs [service-name]`
-2. **Search issues**: [GitHub Issues](https://github.com/rachit0412/agentic-platform/issues)
-3. **Ask questions**: [GitHub Discussions](https://github.com/rachit0412/agentic-platform/discussions)
-4. **Read docs**: Check other documentation files in `docs/`
+| Problem            | Fix                                                            |
+| ------------------ | -------------------------------------------------------------- |
+| Slow responses     | `docker stats` — check resources. Allocate more RAM in Docker. |
+| Ollama OOM         | Use smaller model: `docker exec ollama ollama pull phi3`       |
+| Model loading slow | Model is kept in memory with `OLLAMA_KEEP_ALIVE=24h` (default) |
+| GPU not used       | Uncomment GPU block in `docker-compose.yml` under `ollama`     |
 
 ## Next Steps
 
 After successful installation:
 
-1. ✅ Access UI Console at http://localhost:3001
-2. ✅ Run your first agent prompt in **Run Agent**
-3. ✅ Pull additional Ollama models: `docker exec ollama ollama pull mistral`
-4. ✅ Ingest documents into the knowledge base
-5. ✅ Configure Azure OpenAI for cloud LLM access
-6. ✅ Explore API docs at http://localhost:8010/docs
-7. ✅ Create workflows in n8n at http://localhost:5678
-8. ✅ Review LLM traces in Langfuse at http://localhost:3012
-9. ✅ Monitor platform health in Grafana at http://localhost:3013
-
-Happy building! 🚀
+1. Open the UI at http://localhost:3000
+2. Create a **Skill** (prompt + tools + constraints)
+3. Create an **Agent** (model + skills + knowledge base)
+4. Run your agent in **Run Agent**
+5. Pull additional models: `docker exec ollama ollama pull mistral`
+6. Ingest documents into the knowledge base
+7. Explore API docs at http://localhost:8010/docs
+8. Create workflows in n8n at http://localhost:5678
+9. Review LLM traces in Langfuse at http://localhost:3012
+10. Monitor platform health in Grafana at http://localhost:3013

@@ -183,7 +183,7 @@ function loadTraces() {
         return '<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem">' +
           '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></span>' +
           '<span style="width:60px;flex-shrink:0;color:var(--text-3);font-family:monospace;font-size:0.68rem">' + time + '</span>' +
-          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)">' + (t.name||t.id?.slice(0,12)||'-') + '</span>' +
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)">' + escapeHtml(t.name||t.id?.slice(0,12)||'-') + '</span>' +
           '<div style="width:100px;height:8px;background:var(--glass-bg);border-radius:4px;overflow:hidden;flex-shrink:0"><div style="width:' + barWidth + '%;height:100%;background:' + (t.latency > 5000 ? '#f59e0b' : '#06b6d4') + ';border-radius:4px"></div></div>' +
           '<span style="width:40px;text-align:right;font-family:monospace;font-size:0.68rem;color:var(--text-3);flex-shrink:0">' + dur + '</span>' +
           '</div>';
@@ -202,13 +202,13 @@ function loadTraces() {
           ? '<span style="color:#f43f5e;font-size:0.72rem">&#x2716; Error</span>'
           : '<span style="color:#10b981;font-size:0.72rem">&#x2714; OK</span>';
         return '<tr>' +
-        '<td class="mono" style="font-size:0.78rem">' + (t.id||'').slice(0,12) + '...</td>' +
-        '<td>' + (t.name||'-') + '</td>' +
-        '<td class="mono" style="font-size:0.78rem">' + (t.sessionId||'-').slice(0,12) + '</td>' +
-        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input)).slice(0,60) : '-') + '</td>' +
+        '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.id||'').slice(0,12)) + '...</td>' +
+        '<td>' + escapeHtml(t.name||'-') + '</td>' +
+        '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.sessionId||'-').slice(0,12)) + '</td>' +
+        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input)).slice(0,60) : '-') + '</td>' +
         '<td class="mono" style="font-size:0.78rem">' + latStr + '</td>' +
         '<td>' + statusBadge + '</td>' +
-        '<td><button class="btn btn-secondary btn-sm" onclick="viewTrace(\\'' + t.id + '\\')">Detail</button></td>' +
+        '<td><button class="btn btn-secondary btn-sm" onclick="viewTrace(\\'' + escapeHtml(t.id) + '\\')">Detail</button></td>' +
         '</tr>';
       }).join('') + '</table>';
   }).catch(e=>{
@@ -223,13 +223,13 @@ function viewTrace(traceId) {
   fetch('/api/traces/' + traceId).then(r=>r.json()).then(d=>{
     const t = d.trace || d;
     let html = '<div style="display:grid;grid-template-columns:140px 1fr;gap:0.5rem 1rem;margin-bottom:1rem">';
-    html += '<span style="color:var(--text-3)">Trace ID</span><span>' + (t.id||'-') + '</span>';
-    html += '<span style="color:var(--text-3)">Name</span><span>' + (t.name||'-') + '</span>';
-    html += '<span style="color:var(--text-3)">Session</span><span>' + (t.sessionId||'-') + '</span>';
+    html += '<span style="color:var(--text-3)">Trace ID</span><span>' + escapeHtml(t.id||'-') + '</span>';
+    html += '<span style="color:var(--text-3)">Name</span><span>' + escapeHtml(t.name||'-') + '</span>';
+    html += '<span style="color:var(--text-3)">Session</span><span>' + escapeHtml(t.sessionId||'-') + '</span>';
     html += '<span style="color:var(--text-3)">Timestamp</span><span>' + (t.timestamp ? new Date(t.timestamp).toLocaleString() : '-') + '</span>';
     html += '<span style="color:var(--text-3)">Latency</span><span>' + (t.latency ? (t.latency/1000).toFixed(2) + 's' : '-') + '</span>';
-    html += '<span style="color:var(--text-3)">Input</span><span style="white-space:pre-wrap;max-height:120px;overflow-y:auto;display:block">' + (t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input,null,2)).slice(0,500) : '-') + '</span>';
-    html += '<span style="color:var(--text-3)">Output</span><span style="white-space:pre-wrap;max-height:200px;overflow-y:auto;display:block">' + (t.output ? (typeof t.output==='string'?t.output:JSON.stringify(t.output,null,2)).slice(0,1000) : '-') + '</span>';
+    html += '<span style="color:var(--text-3)">Input</span><span style="white-space:pre-wrap;max-height:120px;overflow-y:auto;display:block">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input,null,2)).slice(0,500) : '-') + '</span>';
+    html += '<span style="color:var(--text-3)">Output</span><span style="white-space:pre-wrap;max-height:200px;overflow-y:auto;display:block">' + escapeHtml(t.output ? (typeof t.output==='string'?t.output:JSON.stringify(t.output,null,2)).slice(0,1000) : '-') + '</span>';
     html += '</div>';
 
     if (d.observations && d.observations.length > 0) {
@@ -240,11 +240,11 @@ function viewTrace(traceId) {
         const dur = obs.endTime && obs.startTime ? ((new Date(obs.endTime) - new Date(obs.startTime))/1000).toFixed(2) + 's' : '';
         html += '<div style="margin-bottom:0.75rem;padding:0.5rem;background:var(--glass-bg);border-radius:8px">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center">';
-        html += '<span>' + icon + ' <strong>' + (obs.name||obs.type||'-') + '</strong></span>';
+        html += '<span>' + icon + ' <strong>' + escapeHtml(obs.name||obs.type||'-') + '</strong></span>';
         html += '<span class="badge" style="font-size:0.7rem">' + dur + '</span>';
         html += '</div>';
-        if (obs.input) html += '<div style="margin-top:0.25rem;font-size:0.75rem;color:var(--text-3)">Input: ' + (typeof obs.input==='string'?obs.input:JSON.stringify(obs.input)).slice(0,200) + '</div>';
-        if (obs.output) html += '<div style="margin-top:0.25rem;font-size:0.75rem;color:var(--text-2)">Output: ' + (typeof obs.output==='string'?obs.output:JSON.stringify(obs.output)).slice(0,300) + '</div>';
+        if (obs.input) html += '<div style="margin-top:0.25rem;font-size:0.75rem;color:var(--text-3)">Input: ' + escapeHtml((typeof obs.input==='string'?obs.input:JSON.stringify(obs.input)).slice(0,200)) + '</div>';
+        if (obs.output) html += '<div style="margin-top:0.25rem;font-size:0.75rem;color:var(--text-2)">Output: ' + escapeHtml((typeof obs.output==='string'?obs.output:JSON.stringify(obs.output)).slice(0,300)) + '</div>';
         html += '</div>';
       });
       html += '</div>';
@@ -252,7 +252,7 @@ function viewTrace(traceId) {
 
     document.getElementById('trace-detail').innerHTML = html;
   }).catch(e => {
-    document.getElementById('trace-detail').innerHTML = '<p style="color:var(--danger)">Failed to load trace detail: ' + e.message + '</p>';
+    document.getElementById('trace-detail').innerHTML = '<p style="color:var(--danger)">Failed to load trace detail: ' + escapeHtml(e.message) + '</p>';
   });
 }
 

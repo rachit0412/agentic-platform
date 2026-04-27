@@ -520,8 +520,8 @@ function loadAgentComparison() {
       : '<span class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">' + raiIssues.length + ' issue(s)</span>';
 
     html += '<tr>' +
-      '<td style="font-weight:600">' + agent.name + (agent.is_default ? ' <span style="font-size:0.65rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
-      '<td class="mono" style="font-size:0.78rem">' + agent.provider + '/' + agent.model + '</td>' +
+      '<td style="font-weight:600">' + escapeHtml(agent.name) + (agent.is_default ? ' <span style="font-size:0.65rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
+      '<td class="mono" style="font-size:0.78rem">' + escapeHtml(agent.provider) + '/' + escapeHtml(agent.model) + '</td>' +
       '<td class="mono">' + agentTraces.length + '</td>' +
       '<td><span style="color:' + gradeColor(scores.completion) + ';font-weight:600">' + scores.completion + '%</span></td>' +
       '<td><span style="color:' + gradeColor(scores.latency) + ';font-weight:600">' + scores.latency + '%</span></td>' +

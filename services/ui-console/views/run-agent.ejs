@@ -253,7 +253,7 @@
           el.style.cssText = 'margin-bottom:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border-radius:8px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem;transition:all 0.3s';
           el.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem">' +
             '<span class="step-spinner"></span> ' +
-            '<span>' + (icons[d.step]||'\\u{1F4CC}') + ' ' + (d.label||d.step) + '</span>' +
+            '<span>' + (icons[d.step]||'\u{1F4CC}') + ' ' + escapeHtml(d.label||d.step) + '</span>' +
             '</div><span class="mono" style="font-size:0.72rem;color:var(--text-3)">...</span>';
           stepsEl.appendChild(el);
           stepElements[key] = el;
@@ -293,8 +293,8 @@
         return;
       }
       el.innerHTML = d.sessions.map(s => \`
-        <div class="glass-hover" style="padding:0.625rem 0.875rem;border-radius:12px;margin-bottom:0.5rem;cursor:pointer" onclick="selectSession('\${s.session_id}')">
-          <div class="mono" style="font-size:0.72rem;word-break:break-all;color:var(--accent-text)">\${s.session_id}</div>
+        <div class="glass-hover" style="padding:0.625rem 0.875rem;border-radius:12px;margin-bottom:0.5rem;cursor:pointer" onclick="selectSession('\${escapeHtml(s.session_id)}')">
+          <div class="mono" style="font-size:0.72rem;word-break:break-all;color:var(--accent-text)">\${escapeHtml(s.session_id)}</div>
           <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.25rem">\${s.message_count} messages</div>
         </div>
       \`).join('');
@@ -319,8 +319,8 @@
       }
       el.innerHTML = (d.tools||[]).map(t => \`
         <div style="padding:0.5rem 0;border-bottom:1px solid var(--divider)">
-          <strong style="color:var(--text-1);font-size:0.82rem">\${t.name}</strong>
-          <span style="color:var(--text-3);font-size:0.78rem"> — \${t.description.slice(0,100)}\${t.description.length>100?'...':''}</span>
+          <strong style="color:var(--text-1);font-size:0.82rem">\${escapeHtml(t.name)}</strong>
+          <span style="color:var(--text-3);font-size:0.78rem"> — \${escapeHtml(t.description.slice(0,100))}\${t.description.length>100?'...':''}</span>
         </div>
       \`).join('');
     } catch(e) {
