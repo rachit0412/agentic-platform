@@ -186,6 +186,7 @@ services:
     ports:
       - "${LANGFUSE_PORT:-3012}:3000"
     environment:
+      - HOSTNAME=0.0.0.0
       - DATABASE_URL=postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/langfuse
       - NEXTAUTH_URL=http://localhost:${LANGFUSE_PORT:-3012}
       - NEXTAUTH_SECRET=${LANGFUSE_NEXTAUTH_SECRET:-supersecret-nextauth}
@@ -208,11 +209,11 @@ services:
     networks:
       - platform-net
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/public/health || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://0.0.0.0:3000/api/public/health || exit 1"]
       interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      timeout: 10s
+      retries: 8
+      start_period: 45s
 
   # ── OpenTelemetry Collector ──────────────────────────────────────────────
   otel-collector:
@@ -228,8 +229,8 @@ services:
     networks:
       - platform-net
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:13133/ || exit 1"]
-      interval: 10s
+      test: ["CMD", "/otelcol-contrib", "components"]
+      interval: 15s
       timeout: 5s
       retries: 3
 
