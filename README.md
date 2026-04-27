@@ -20,7 +20,7 @@
 
 ## 👋 Hey — a word from the builder
 
-I'm Rachit — a solo developer who got tired of the gap between *"cool AI demo"* and *"production-ready AI system."*
+I'm Rachit — a solo developer who got tired of the gap between _"cool AI demo"_ and _"production-ready AI system."_
 
 Every agent framework I tried gave me one piece of the puzzle: a ReAct loop here, a vector store there, maybe tracing if I wired it up myself. But nowhere could I find a single repo where I could spin up a full agent factory — agents, skills, prompts, knowledge base, memory, tool servers, workflows, tracing, evaluation, observability — all wired together, all running locally, all under my control.
 
@@ -36,18 +36,18 @@ If you're the kind of person who'd rather understand the full picture than glue 
 
 Most agent repos give you a chatbot. This gives you a **factory**.
 
-| What you get | Why it matters |
-|---|---|
-| **Agent Registry** | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot |
-| **Skills System** | Package a prompt + tools + constraints into a reusable skill. Attach it to any agent. Think: *functions, but intelligent* |
-| **4 LLM Providers** | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes |
-| **Auto-RAG** | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context |
-| **A2A Protocol** | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths |
-| **MCP Protocol** | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime |
-| **Full Traceability** | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes |
-| **Responsible AI** | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on |
-| **15-page Dashboard** | Not a CLI-only project. A real UI for building, running, and monitoring agents |
-| **One-command setup** | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts |
+| What you get          | Why it matters                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Agent Registry**    | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot  |
+| **Skills System**     | Package a prompt + tools + constraints into a reusable skill. Attach it to any agent. Think: _functions, but intelligent_ |
+| **4 LLM Providers**   | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                 |
+| **Auto-RAG**          | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context                  |
+| **A2A Protocol**      | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                 |
+| **MCP Protocol**      | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime             |
+| **Full Traceability** | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                               |
+| **Responsible AI**    | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                |
+| **15-page Dashboard** | Not a CLI-only project. A real UI for building, running, and monitoring agents                                            |
+| **One-command setup** | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                       |
 
 <details>
 <summary><b>📋 Full feature list</b></summary>
@@ -97,17 +97,17 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 
 **Why this specific stack?**
 
-| Layer | Tech | Why |
-|---|---|---|
-| **Agent runtime** | LangGraph + LangChain | State-machine agent with full control over the ReAct loop — not a black-box `agent.run()` |
-| **API layer** | FastAPI | Async, typed, auto-docs — agents need to be APIs, not scripts |
-| **Local LLMs** | Ollama | Zero API costs during development. Pull a model, use it instantly |
-| **Cloud LLMs** | OpenAI / Azure OpenAI / Foundry | When you need GPT-4o or enterprise compliance — just set env vars |
-| **Vector store** | ChromaDB | Embedded, no external infra, persists across restarts. RAG that just works |
-| **Tracing** | Langfuse | See every LLM call: prompt, response, cost, latency. Non-negotiable for production |
-| **Observability** | Prometheus + Grafana + Loki | Industry-standard monitoring. Not a toy dashboard — real SRE tooling |
-| **Workflows** | n8n | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks |
-| **Dashboard** | Express.js + EJS | Server-rendered, fast, no build step. 15 pages for full platform control |
+| Layer             | Tech                            | Why                                                                                       |
+| ----------------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Agent runtime** | LangGraph + LangChain           | State-machine agent with full control over the ReAct loop — not a black-box `agent.run()` |
+| **API layer**     | FastAPI                         | Async, typed, auto-docs — agents need to be APIs, not scripts                             |
+| **Local LLMs**    | Ollama                          | Zero API costs during development. Pull a model, use it instantly                         |
+| **Cloud LLMs**    | OpenAI / Azure OpenAI / Foundry | When you need GPT-4o or enterprise compliance — just set env vars                         |
+| **Vector store**  | ChromaDB                        | Embedded, no external infra, persists across restarts. RAG that just works                |
+| **Tracing**       | Langfuse                        | See every LLM call: prompt, response, cost, latency. Non-negotiable for production        |
+| **Observability** | Prometheus + Grafana + Loki     | Industry-standard monitoring. Not a toy dashboard — real SRE tooling                      |
+| **Workflows**     | n8n                             | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks                |
+| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 15 pages for full platform control                  |
 
 ---
 
@@ -147,40 +147,40 @@ curl -X POST http://localhost:8010/run \
 
 ### Services (12 containers)
 
-| Service | Port | Purpose |
-|---|---|---|
-| **ui-console** | `3000` | Platform dashboard — 15 pages for building, running, monitoring agents |
-| **agent-service** | `8010` | FastAPI + LangGraph — the brain: ReAct agent, registry, auto-RAG, memory |
-| **tools-service** | `8011` | Math, HTTP, file I/O, datetime, web search, code exec, vector ops |
-| **ollama** | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more |
-| **chromadb** | `8200` | Vector store for knowledge base and RAG retrieval |
-| **n8n** | `5678` | Workflow orchestration, webhooks, and scheduled automation |
-| **langfuse** | `3012` | LLM tracing, cost tracking, evaluation, prompt analytics |
-| **grafana** | `3013` | Monitoring dashboards (pre-configured with Prometheus + Loki) |
-| **prometheus** | `9090` | Metrics collection and alerting |
-| **loki** | `3100` | Log aggregation from all services |
-| **otel-collector** | `4317` | OpenTelemetry pipeline — traces, metrics, logs routing |
-| **langfuse-db** | — | PostgreSQL backend for Langfuse (internal) |
+| Service            | Port    | Purpose                                                                  |
+| ------------------ | ------- | ------------------------------------------------------------------------ |
+| **ui-console**     | `3000`  | Platform dashboard — 15 pages for building, running, monitoring agents   |
+| **agent-service**  | `8010`  | FastAPI + LangGraph — the brain: ReAct agent, registry, auto-RAG, memory |
+| **tools-service**  | `8011`  | Math, HTTP, file I/O, datetime, web search, code exec, vector ops        |
+| **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more           |
+| **chromadb**       | `8200`  | Vector store for knowledge base and RAG retrieval                        |
+| **n8n**            | `5678`  | Workflow orchestration, webhooks, and scheduled automation               |
+| **langfuse**       | `3012`  | LLM tracing, cost tracking, evaluation, prompt analytics                 |
+| **grafana**        | `3013`  | Monitoring dashboards (pre-configured with Prometheus + Loki)            |
+| **prometheus**     | `9090`  | Metrics collection and alerting                                          |
+| **loki**           | `3100`  | Log aggregation from all services                                        |
+| **otel-collector** | `4317`  | OpenTelemetry pipeline — traces, metrics, logs routing                   |
+| **langfuse-db**    | —       | PostgreSQL backend for Langfuse (internal)                               |
 
 ### Dashboard Pages (15)
 
-| Page | What you do there |
-|---|---|
-| Overview | Service health, stats, quick-start guide |
-| Run Agent | Execute agents, stream responses, browse sessions |
-| Agents | Create and manage agent definitions |
-| Skills | Build reusable skill packages |
-| Prompts | Prompt template library |
-| Documents | Knowledge base — upload, search, manage RAG docs |
-| A2A | Register peer agents for inter-agent delegation |
-| MCP | Connect external tool servers |
-| Workflows | n8n workflow monitoring |
-| LLM Activity | Usage monitoring and call logs |
-| Traceability | Langfuse trace timeline and deep-dive |
-| Evaluation | Agent quality scoring and model comparison |
-| Observability | Stack health — Prometheus, Grafana, Loki status |
-| Marketplace | Browse and install templates |
-| Admin | Model management and system config |
+| Page          | What you do there                                 |
+| ------------- | ------------------------------------------------- |
+| Overview      | Service health, stats, quick-start guide          |
+| Run Agent     | Execute agents, stream responses, browse sessions |
+| Agents        | Create and manage agent definitions               |
+| Skills        | Build reusable skill packages                     |
+| Prompts       | Prompt template library                           |
+| Documents     | Knowledge base — upload, search, manage RAG docs  |
+| A2A           | Register peer agents for inter-agent delegation   |
+| MCP           | Connect external tool servers                     |
+| Workflows     | n8n workflow monitoring                           |
+| LLM Activity  | Usage monitoring and call logs                    |
+| Traceability  | Langfuse trace timeline and deep-dive             |
+| Evaluation    | Agent quality scoring and model comparison        |
+| Observability | Stack health — Prometheus, Grafana, Loki status   |
+| Marketplace   | Browse and install templates                      |
+| Admin         | Model management and system config                |
 
 ---
 
@@ -219,13 +219,13 @@ cp .env.example .env
 
 Key settings:
 
-| Variable | Default | What it does |
-|---|---|---|
-| `LLM_PROVIDER` | `ollama` | Default LLM backend (`ollama`, `azure-openai`, `openai`, `azure-foundry`) |
-| `OLLAMA_MODEL` | `llama3` | Default local model |
-| `AZURE_OPENAI_API_KEY` | — | Enables Azure OpenAI models |
-| `OPENAI_API_KEY` | — | Enables OpenAI models |
-| `UI_PORT` | `3000` | Dashboard port |
+| Variable               | Default  | What it does                                                              |
+| ---------------------- | -------- | ------------------------------------------------------------------------- |
+| `LLM_PROVIDER`         | `ollama` | Default LLM backend (`ollama`, `azure-openai`, `openai`, `azure-foundry`) |
+| `OLLAMA_MODEL`         | `llama3` | Default local model                                                       |
+| `AZURE_OPENAI_API_KEY` | —        | Enables Azure OpenAI models                                               |
+| `OPENAI_API_KEY`       | —        | Enables OpenAI models                                                     |
+| `UI_PORT`              | `3000`   | Dashboard port                                                            |
 
 > Full configuration reference with 20+ variables: see the **Configuration** section in **[INSTALL.md](INSTALL.md)**
 
@@ -272,11 +272,11 @@ agentic-platform/
 
 ## 📖 Documentation
 
-| Doc | What's in it |
-|---|---|
-| **[INSTALL.md](INSTALL.md)** | Full installation guide — Windows, Mac, Linux, GPU setup, troubleshooting, all 20+ config variables |
-| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Deep-dive — embedding pipeline, LLM providers, telemetry flow, protocol specs, service map |
-| **[CONTRIBUTING.md](CONTRIBUTING.md)** | How to contribute — code style, PR workflow, development setup |
+| Doc                                              | What's in it                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| **[INSTALL.md](INSTALL.md)**                     | Full installation guide — Windows, Mac, Linux, GPU setup, troubleshooting, all 20+ config variables |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Deep-dive — embedding pipeline, LLM providers, telemetry flow, protocol specs, service map          |
+| **[CONTRIBUTING.md](CONTRIBUTING.md)**           | How to contribute — code style, PR workflow, development setup                                      |
 
 ---
 
