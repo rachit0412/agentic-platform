@@ -8,7 +8,7 @@ The Agentic Platform is a containerised agent factory built with:
 - **Frontend**: Express.js + EJS (ui-console)
 - **Agent Runtime**: FastAPI + LangGraph (agent-service)
 - **Tool Runtime**: FastAPI (tools-service)
-- **LLM Providers**: Ollama (local) + Azure OpenAI (cloud)
+- **LLM Providers**: Ollama (local) + Azure OpenAI (cloud) + OpenAI (cloud) + Azure AI Foundry (cloud)
 - **Knowledge Base**: ChromaDB (vector store, RAG)
 - **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers)
 - **Workflows**: n8n (automation, webhooks)
@@ -43,6 +43,29 @@ agent-service → OTel Collector → Prometheus (metrics)
 agent-service → Langfuse SDK   → Langfuse (LLM traces)
 Grafana ← Prometheus + Loki
 ```
+
+## Embedding & RAG Pipeline
+
+```
+Documents (file / URL / text)
+  → Chunking (RecursiveCharacterTextSplitter)
+    → Embedding (Ollama nomic-embed-text)
+      → ChromaDB (vector store, persist)
+
+User Prompt
+  → Query Embedding (nomic-embed-text)
+    → ChromaDB similarity_search (top-k)
+      → Context injection → LLM (ReAct loop)
+```
+
+## LLM Providers (4)
+
+| Provider | Class | Config Env Vars |
+| -------- | ----- | --------------- |
+| Ollama | `ChatOllama` | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` |
+| Azure OpenAI | `AzureChatOpenAI` | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` |
+| OpenAI | `ChatOpenAI` | `OPENAI_API_KEY`, `OPENAI_MODEL` |
+| Azure AI Foundry | `AzureChatOpenAI` | `AZURE_FOUNDRY_ENDPOINT`, `AZURE_FOUNDRY_API_KEY`, `AZURE_FOUNDRY_MODELS` |
 
 ## Protocols
 

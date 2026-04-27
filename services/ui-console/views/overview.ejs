@@ -18,22 +18,22 @@
   <div style="display:grid;grid-template-columns:1fr;gap:0">
 
     <!-- Step 1 -->
-    <a href="/skills" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">1</div>
+    <a href="/prompts" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(167,139,250,0.12);color:#a78bfa;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">1</div>
       <div>
-        <strong style="font-size:0.88rem;color:var(--text-1)">Define Skills</strong>
-        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Skills</span>
-        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Create skills — packaged capabilities with a prompt, tools, and constraints. Think: reusable functions with intelligence. e.g. "Code Reviewer", "Research Analyst", "Data Extractor".</p>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Create Prompts</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Prompts</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Write system prompts that define agent behavior and persona. Templates, variables, and version control built in. e.g. "You are a research analyst that always cites sources."</p>
       </div>
     </a>
 
     <!-- Step 2 -->
-    <a href="/agents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(139,92,246,0.12);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">2</div>
+    <a href="/skills" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">2</div>
       <div>
-        <strong style="font-size:0.88rem;color:var(--text-1)">Build Agents</strong>
-        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Agents</span>
-        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Compose an agent: pick a model, attach skills, select tools, upload a knowledge base, and write the prompt that defines its behavior and persona.</p>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Define Skills</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Skills</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Package capabilities — a prompt, tools, and constraints into a reusable skill. Think: intelligent functions. e.g. "Code Reviewer", "Data Extractor", "Summarizer".</p>
       </div>
     </a>
 
@@ -42,38 +42,48 @@
       <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">3</div>
       <div>
         <strong style="font-size:0.88rem;color:var(--text-1)">Feed Knowledge</strong>
-        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Documents</span>
-        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Upload documents, import from URLs, or paste text — your agent retrieves relevant context via RAG. Supports file upload, URL import, and direct text input.</p>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Knowledge</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Upload documents, import URLs, or paste text → content is <strong style="color:#10b981">chunked → embedded (nomic-embed-text) → stored in ChromaDB</strong>. Your agent retrieves relevant context via vector similarity search at runtime.</p>
       </div>
     </a>
 
     <!-- Step 4 -->
-    <a href="/run-agent" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(6,182,212,0.12);color:#06b6d4;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">4</div>
+    <a href="/agents" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(139,92,246,0.12);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">4</div>
       <div>
-        <strong style="font-size:0.88rem;color:var(--text-1)">Run & Interact</strong>
-        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Run Agent</span>
-        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Send prompts to your agent and watch it work in real-time — the activity panel streams every step: KB retrieval, reasoning, tool calls, and response generation with timing.</p>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Build Agents</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Agents</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Compose an agent: pick a model (<strong style="color:#8b5cf6">Ollama, Azure OpenAI, OpenAI, or Azure AI Foundry</strong>), attach skills, select tools, assign a knowledge base, and configure memory.</p>
       </div>
     </a>
 
     <!-- Step 5 -->
-    <a href="/llm-activity" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(244,63,94,0.12);color:#f43f5e;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">5</div>
-      <div>
-        <strong style="font-size:0.88rem;color:var(--text-1)">Trace & Debug</strong>
-        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">LLM Activity</span>
-        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Inspect every LLM call in Langfuse — see latency, token usage, tool invocations, and full conversation traces. Debug and optimize your agent's behavior.</p>
-      </div>
-    </a>
-
-    <!-- Step 6 -->
-    <a href="/workflows" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s">
-      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">6</div>
+    <a href="/workflows" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">5</div>
       <div>
         <strong style="font-size:0.88rem;color:var(--text-1)">Automate with Workflows</strong>
         <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">n8n</span>
         <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Connect your agent to external triggers — scheduled runs, webhooks, multi-step pipelines. n8n orchestrates the <em>outside world</em> while LangGraph handles the <em>agent brain</em>.</p>
+      </div>
+    </a>
+
+    <!-- Step 6 -->
+    <a href="/run-agent" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s;border-bottom:1px solid var(--glass-border)">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(6,182,212,0.12);color:#06b6d4;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">6</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Run & Interact</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Run Agent</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Send prompts and watch the agent work in real-time — the activity panel streams every step: <strong style="color:#06b6d4">KB retrieval → embedding lookup → reasoning → tool calls → response</strong> with timing for each.</p>
+      </div>
+    </a>
+
+    <!-- Step 7 -->
+    <a href="/traceability" class="get-started-step" style="display:flex;gap:1rem;padding:1rem;border-radius:12px;text-decoration:none;color:inherit;transition:background 0.2s">
+      <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(244,63,94,0.12);color:#f43f5e;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem">7</div>
+      <div>
+        <strong style="font-size:0.88rem;color:var(--text-1)">Trace & Debug</strong>
+        <span class="badge" style="margin-left:0.5rem;font-size:0.65rem;vertical-align:middle">Traceability</span>
+        <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.8rem;line-height:1.5">Inspect every LLM call in Langfuse — latency, token usage, tool invocations, and full conversation traces. Evaluate agent quality and optimize behavior iteratively.</p>
       </div>
     </a>
   </div>
@@ -112,7 +122,7 @@
           <div style="width:28px;height:28px;border-radius:8px;background:rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg>
           </div>
-          <div><strong style="font-size:0.8rem">LLM (brain)</strong> <span style="color:var(--text-3);font-size:0.75rem">— Ollama local or Azure OpenAI cloud</span></div>
+          <div><strong style="font-size:0.8rem">LLM (brain)</strong> <span style="color:var(--text-3);font-size:0.75rem">— Ollama, Azure OpenAI, OpenAI, or Foundry</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem">
           <div style="width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -136,7 +146,7 @@
           <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </div>
-          <div><strong style="font-size:0.8rem">Knowledge Base (RAG)</strong> <span style="color:var(--text-3);font-size:0.75rem">— ChromaDB vector retrieval</span></div>
+          <div><strong style="font-size:0.8rem">Knowledge Base (RAG)</strong> <span style="color:var(--text-3);font-size:0.75rem">— embed → ChromaDB → similarity search</span></div>
         </div>
       </div>
     </div>
@@ -151,7 +161,7 @@
           <span style="font-size:0.65rem;color:var(--text-3)">Agent #1</span>
         </div>
         <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.15);display:flex;justify-content:space-between;align-items:center">
-          <div><strong style="font-size:0.78rem;color:#06b6d4">Code Assistant</strong> <span style="color:var(--text-3);font-size:0.68rem">gpt-4o &bull; code_execute, file_read</span></div>
+          <div><strong style="font-size:0.78rem;color:#06b6d4">Code Assistant</strong> <span style="color:var(--text-3);font-size:0.68rem">gpt-4.1-mini (foundry) &bull; code_execute, file_read</span></div>
           <span style="font-size:0.65rem;color:var(--text-3)">Agent #2</span>
         </div>
         <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);display:flex;justify-content:space-between;align-items:center">
@@ -159,7 +169,7 @@
           <span style="font-size:0.65rem;color:var(--text-3)">Agent #3</span>
         </div>
         <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);display:flex;justify-content:space-between;align-items:center">
-          <div><strong style="font-size:0.78rem;color:#f59e0b">Data Analyst</strong> <span style="color:var(--text-3);font-size:0.68rem">gpt-4o &bull; code_execute, http_fetch</span></div>
+          <div><strong style="font-size:0.78rem;color:#f59e0b">Data Analyst</strong> <span style="color:var(--text-3);font-size:0.68rem">gpt-5-nano (foundry) &bull; code_execute, http_fetch</span></div>
           <span style="font-size:0.65rem;color:var(--text-3)">Agent #4</span>
         </div>
         <div style="padding:0.55rem 0.85rem;border-radius:10px;background:rgba(139,92,246,0.05);border:1px dashed var(--glass-border);display:flex;justify-content:space-between;align-items:center">
@@ -209,7 +219,8 @@
         <p style="color:var(--text-3);font-size:0.78rem;line-height:1.5;margin:0 0 0.5rem">Go to <a href="/agents" style="color:#8b5cf6;text-decoration:none;font-weight:600">Agents</a> → Click <strong>Create Agent</strong></p>
         <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.72rem;color:var(--text-2);line-height:1.6">
           <span style="color:#8b5cf6">Name:</span> Research Analyst<br>
-          <span style="color:#8b5cf6">Provider:</span> ollama &nbsp;|&nbsp; <span style="color:#8b5cf6">Model:</span> llama3<br>
+          <span style="color:#8b5cf6">Provider:</span> ollama | azure-openai | openai | azure-foundry<br>
+          <span style="color:#8b5cf6">Model:</span> llama3<br>
           <span style="color:#8b5cf6">Temperature:</span> 0.3<br>
           <span style="color:#8b5cf6">Skills:</span> ✅ Deep Research<br>
           <span style="color:#8b5cf6">Tools:</span> web_search, file_read<br>
@@ -413,7 +424,7 @@ loadPlatformStats();
 <!-- Architecture Diagram -->
 <div class="card animate-fade-up delay-300" style="margin-top:1.5rem">
   <h3 style="margin-bottom:0.5rem">Platform Architecture</h3>
-  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">One runtime, <strong style="color:#8b5cf6">unlimited agents</strong>. Each agent = <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic + Context</strong> in a <strong style="color:#06b6d4">ReAct loop</strong> that keeps working until the task is done. Register 1 or 100 — they all share the same engine.</p>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">One runtime, <strong style="color:#8b5cf6">unlimited agents</strong>. Each agent = <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic + Context</strong> in a <strong style="color:#06b6d4">ReAct loop</strong>. <strong style="color:#10b981">4 LLM providers</strong> (Ollama, Azure OpenAI, OpenAI, Azure AI Foundry). Embeddings stored in <strong style="color:#10b981">ChromaDB</strong> for RAG retrieval.</p>
 
   <div style="overflow-x:auto">
     <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:960px;margin:0 auto;display:block;font-family:var(--sans)">
@@ -468,7 +479,7 @@ loadPlatformStats();
       <!-- ── Agent B ── -->
       <rect x="495" y="80" width="180" height="110" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5" filter="url(#glow)"/>
       <text x="585" y="100" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">Agent: Code Assistant</text>
-      <text x="585" y="114" text-anchor="middle" fill="var(--text-3)" font-size="8">model: gpt-4o (azure) | temp: 0.1</text>
+      <text x="585" y="114" text-anchor="middle" fill="var(--text-3)" font-size="8">model: gpt-4.1-mini (foundry) | temp: 0.1</text>
       <rect x="505" y="122" width="65" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
       <text x="537" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Code Review</text>
       <rect x="578" y="122" width="55" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
@@ -510,16 +521,18 @@ loadPlatformStats();
 
       <!-- ====== DATA LAYER ====== -->
       <rect x="295" y="375" width="120" height="50" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
-      <text x="355" y="396" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">ChromaDB</text>
-      <text x="355" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Vector Store :8200</text>
+      <text x="355" y="393" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">ChromaDB</text>
+      <text x="355" y="406" text-anchor="middle" fill="var(--text-3)" font-size="7">Vector Store :8200</text>
+      <text x="355" y="417" text-anchor="middle" fill="#10b981" font-size="6.5">embed → store → retrieve</text>
 
       <rect x="430" y="375" width="120" height="50" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
       <text x="490" y="396" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">SQLite</text>
       <text x="490" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Memory + Config</text>
 
       <rect x="565" y="375" width="110" height="50" rx="10" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1"/>
-      <text x="620" y="396" text-anchor="middle" fill="#8b5cf6" font-size="10" font-weight="600">LLM Provider</text>
-      <text x="620" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Ollama / Azure OAI</text>
+      <text x="620" y="393" text-anchor="middle" fill="#8b5cf6" font-size="9" font-weight="600">LLM Providers (4)</text>
+      <text x="620" y="406" text-anchor="middle" fill="var(--text-3)" font-size="7">Ollama | Azure OAI</text>
+      <text x="620" y="417" text-anchor="middle" fill="var(--text-3)" font-size="7">OpenAI | Foundry</text>
 
       <!-- ====== OBSERVABILITY (bottom) ====== -->
       <rect x="295" y="440" width="120" height="46" rx="10" fill="rgba(244,63,94,0.08)" stroke="#f43f5e" stroke-width="1"/>
@@ -577,6 +590,73 @@ loadPlatformStats();
       <rect x="742" y="470" width="10" height="10" rx="2" fill="rgba(6,182,212,0.3)" stroke="#06b6d4"/>
       <text x="758" y="479" fill="var(--text-2)" font-size="8">LangGraph = agent reasoning engine</text>
     </svg>
+  </div>
+</div>
+
+<!-- Embedding & RAG Pipeline -->
+<div class="card animate-fade-up delay-300" style="margin-top:1.5rem;border:1px solid rgba(16,185,129,0.15)">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(6,182,212,0.1));display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    </div>
+    <div>
+      <h3 style="margin:0;font-size:1.05rem">Embedding & RAG Pipeline</h3>
+      <p style="margin:0;color:var(--text-3);font-size:0.78rem">How knowledge gets embedded, stored, and retrieved at runtime</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+    <!-- Ingest flow (left) -->
+    <div style="padding:1.25rem;border-radius:14px;background:linear-gradient(135deg, rgba(16,185,129,0.06), rgba(6,182,212,0.04));border:1px solid var(--glass-border)">
+      <strong style="font-size:0.9rem;color:#10b981;display:block;margin-bottom:0.75rem">Ingest (Write Path)</strong>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#10b981">1</div>
+          <div><strong style="font-size:0.8rem">Upload</strong> <span style="color:var(--text-3);font-size:0.75rem">— files, URLs, or raw text</span></div>
+        </div>
+        <div style="margin-left:14px;border-left:2px solid rgba(16,185,129,0.2);height:8px"></div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#10b981">2</div>
+          <div><strong style="font-size:0.8rem">Chunk</strong> <span style="color:var(--text-3);font-size:0.75rem">— RecursiveCharacterTextSplitter (500 chars, 50 overlap)</span></div>
+        </div>
+        <div style="margin-left:14px;border-left:2px solid rgba(16,185,129,0.2);height:8px"></div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#06b6d4">3</div>
+          <div><strong style="font-size:0.8rem">Embed</strong> <span style="color:var(--text-3);font-size:0.75rem">— Ollama <code style="font-size:0.72rem;background:rgba(6,182,212,0.1);padding:1px 4px;border-radius:3px">nomic-embed-text</code></span></div>
+        </div>
+        <div style="margin-left:14px;border-left:2px solid rgba(16,185,129,0.2);height:8px"></div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#10b981">4</div>
+          <div><strong style="font-size:0.8rem">Store</strong> <span style="color:var(--text-3);font-size:0.75rem">— ChromaDB collection (persisted)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retrieval flow (right) -->
+    <div style="padding:1.25rem;border-radius:14px;background:linear-gradient(135deg, rgba(6,182,212,0.06), rgba(139,92,246,0.04));border:1px solid var(--glass-border)">
+      <strong style="font-size:0.9rem;color:#06b6d4;display:block;margin-bottom:0.75rem">Retrieve (Read Path — at runtime)</strong>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#06b6d4">1</div>
+          <div><strong style="font-size:0.8rem">User prompt</strong> <span style="color:var(--text-3);font-size:0.75rem">— "What are latest AI trends?"</span></div>
+        </div>
+        <div style="margin-left:14px;border-left:2px solid rgba(6,182,212,0.2);height:8px"></div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#06b6d4">2</div>
+          <div><strong style="font-size:0.8rem">Embed query</strong> <span style="color:var(--text-3);font-size:0.75rem">— same <code style="font-size:0.72rem;background:rgba(6,182,212,0.1);padding:1px 4px;border-radius:3px">nomic-embed-text</code> model</span></div>
+        </div>
+        <div style="margin-left:14px;border-left:2px solid rgba(6,182,212,0.2);height:8px"></div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#10b981">3</div>
+          <div><strong style="font-size:0.8rem">Similarity search</strong> <span style="color:var(--text-3);font-size:0.75rem">— ChromaDB top-k nearest vectors</span></div>
+        </div>
+        <div style="margin-left:14px;border-left:2px solid rgba(6,182,212,0.2);height:8px"></div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:0.7rem;color:#8b5cf6">4</div>
+          <div><strong style="font-size:0.8rem">Inject context → LLM</strong> <span style="color:var(--text-3);font-size:0.75rem">— matched chunks enter the ReAct loop</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 ` }) %>
