@@ -254,11 +254,18 @@
           el.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem">' +
             '<span class="step-spinner"></span> ' +
             '<span>' + (icons[d.step]||'\u{1F4CC}') + ' ' + escapeHtml(d.label||d.step) + '</span>' +
-            '</div><span class="mono" style="font-size:0.72rem;color:var(--text-3)">...</span>';
+            '</div><span class="mono step-timer" style="font-size:0.72rem;color:var(--text-3)">0.0s</span>';
           stepsEl.appendChild(el);
           stepElements[key] = el;
+          // Start live elapsed timer
+          const timerEl = el.querySelector('.step-timer');
+          const stepStart = Date.now();
+          el._timerInterval = setInterval(() => {
+            timerEl.textContent = ((Date.now() - stepStart) / 1000).toFixed(1) + 's';
+          }, 100);
         } else if (d.status === 'done' && stepElements[key]) {
           const el = stepElements[key];
+          if (el._timerInterval) clearInterval(el._timerInterval);
           el.querySelector('.step-spinner').outerHTML = '<span style="color:#10b981">\\u2713</span>';
           const dur = el.querySelector('span.mono');
           if (dur) dur.textContent = (d.duration_ms ? (d.duration_ms/1000).toFixed(2) + 's' : '') + (d.detail ? ' — ' + d.detail : '');
@@ -329,7 +336,7 @@
   }
 
   document.getElementById('prompt').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runAgent();
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runAgent(); }
   });
 
   async function loadModels() {
@@ -345,7 +352,7 @@
       d.models.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.provider + ':' + m.model;
-        const provLabel = m.provider === 'azure-openai' ? '☁️ Azure' : '🦙 Ollama';
+        const provLabel = m.provider === 'azure-openai' ? '☁️ Azure' : m.provider === 'openai' ? '🔑 OpenAI' : m.provider === 'azure-foundry' ? '🏭 Foundry' : '🦙 Ollama';
         opt.textContent = provLabel + ' — ' + m.model;
         if (m.active) opt.selected = true;
         sel.appendChild(opt);

@@ -53,8 +53,16 @@
         </select>
       </div>
       <div>
-        <label class="field-label">Temperature</label>
+        <label class="field-label" style="display:flex;align-items:center;gap:0.35rem">Temperature
+          <span class="tc-info-icon" title="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
+        </label>
         <input type="number" id="agent-temp" class="input" min="0" max="2" step="0.1" value="0.7">
+      </div>
+      <div>
+        <label class="field-label" style="display:flex;align-items:center;gap:0.35rem">Top P
+          <span class="tc-info-icon" title="Similar to temperature, this controls randomness but uses a different method. Lowering Top P will narrow the model's token selection to likelier tokens. Increasing Top P will let the model choose from tokens with both high and low likelihood. Try adjusting temperature or Top P but not both.">&#9432;</span>
+        </label>
+        <input type="number" id="agent-top-p" class="input" min="0" max="1" step="0.1" value="1">
       </div>
     </div>
   </div>
@@ -235,6 +243,7 @@
             '<div><strong>Provider:</strong> ' + escapeHtml(a.provider) + '</div>' +
             '<div><strong>Model:</strong> ' + escapeHtml(a.model) + '</div>' +
             '<div><strong>Temp:</strong> ' + a.temperature + '</div>' +
+            '<div><strong>Top P:</strong> ' + (a.top_p != null ? a.top_p : 1) + '</div>' +
             '<div><strong>Max Iter:</strong> ' + a.max_iterations + '</div>' +
             '<div><strong>KB:</strong> ' + escapeHtml(a.kb_collection) + '</div>' +
             '<div><strong>Memory:</strong> ' + (a.memory_enabled ? 'On' : 'Off') + '</div>' +
@@ -252,8 +261,61 @@
     }
   }
 
+  // ── Form state persistence (survives navigation) ──
+  const DRAFT_KEY = 'agentDraft';
+  function saveDraft() {
+    const draft = {
+      id: document.getElementById('agent-edit-id').value,
+      name: document.getElementById('agent-name').value,
+      desc: document.getElementById('agent-desc').value,
+      provider: document.getElementById('agent-provider').value,
+      model: document.getElementById('agent-model').value,
+      temp: document.getElementById('agent-temp').value,
+      prompt: document.getElementById('agent-prompt').value,
+      tools: Array.from(document.getElementById('agent-tools-list').selectedOptions).map(o => o.value),
+      skills: Array.from(document.getElementById('agent-skills-list').selectedOptions).map(o => o.value),
+      kb: document.getElementById('agent-kb').value,
+      iterations: document.getElementById('agent-iterations').value,
+      memory: document.getElementById('agent-memory').value,
+      formTitle: document.getElementById('agent-form-title').textContent,
+    };
+    if (draft.name || draft.prompt || draft.desc) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }
+  function clearAgentDraft() { localStorage.removeItem(DRAFT_KEY); }
+  function restoreAgentDraft() {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      document.getElementById('agent-edit-id').value = d.id || '';
+      document.getElementById('agent-name').value = d.name || '';
+      document.getElementById('agent-desc').value = d.desc || '';
+      document.getElementById('agent-provider').value = d.provider || 'ollama';
+      if (d.model) renderModelDropdown(d.model);
+      document.getElementById('agent-temp').value = d.temp || '0.7';
+      document.getElementById('agent-prompt').value = d.prompt || '';
+      if (d.tools && d.tools.length) renderToolCheckboxes(d.tools);
+      if (d.skills && d.skills.length) renderSkillCheckboxes(d.skills);
+      document.getElementById('agent-kb').value = d.kb || 'agentic_docs';
+      document.getElementById('agent-iterations').value = d.iterations || '5';
+      document.getElementById('agent-memory').value = d.memory || '1';
+      document.getElementById('agent-form-title').textContent = d.formTitle || 'Create Agent';
+      document.getElementById('agent-form').style.display = 'block';
+    } catch(e) { clearAgentDraft(); }
+  }
+  // Auto-save on input
+  ['agent-name','agent-desc','agent-provider','agent-model','agent-temp','agent-prompt','agent-kb','agent-iterations','agent-memory'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener('input', saveDraft); el.addEventListener('change', saveDraft); }
+  });
+  document.getElementById('agent-tools-list').addEventListener('change', saveDraft);
+  document.getElementById('agent-skills-list').addEventListener('change', saveDraft);
+
   async function showAgentForm() {
     await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]);
+    clearAgentDraft();
     document.getElementById('agent-form-title').textContent = 'Create Agent';
     document.getElementById('agent-edit-id').value = '';
     document.getElementById('agent-name').value = '';
@@ -276,6 +338,7 @@
   }
 
   function hideAgentForm() {
+    clearAgentDraft();
     document.getElementById('agent-form').style.display = 'none';
   }
 
@@ -291,6 +354,7 @@
       document.getElementById('agent-provider').value = a.provider || 'ollama';
       renderModelDropdown(a.model || 'llama3');
       document.getElementById('agent-temp').value = a.temperature || 0.7;
+      document.getElementById('agent-top-p').value = a.top_p != null ? a.top_p : 1;
       document.getElementById('agent-prompt').value = a.system_prompt || '';
       renderToolCheckboxes(a.tool_ids || []);
       document.getElementById('agent-kb').value = a.kb_collection || 'agentic_docs';
@@ -314,6 +378,7 @@
       provider: document.getElementById('agent-provider').value,
       model: document.getElementById('agent-model').value.trim(),
       temperature: parseFloat(document.getElementById('agent-temp').value) || 0.7,
+      top_p: parseFloat(document.getElementById('agent-top-p').value),
       system_prompt: document.getElementById('agent-prompt').value.trim(),
       skill_ids: getSelectedSkillIds(),
       tool_ids: getSelectedToolIds(),
@@ -326,6 +391,7 @@
       const url = id ? '/api/agents/' + id : '/api/agents';
       const method = id ? 'PUT' : 'POST';
       await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      clearAgentDraft();
       hideAgentForm();
       loadAgents();
     } catch(e) { alert('Error: ' + e.message); }
@@ -390,7 +456,7 @@
     }
   }
 
-  Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]).then(() => loadAgents());
+  Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]).then(() => { loadAgents(); restoreAgentDraft(); });
 </script>
 
 ` }) %>

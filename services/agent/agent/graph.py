@@ -459,7 +459,9 @@ async def run_agent_stream(
         messages.append(msg)
     messages.append({"role": "user", "content": prompt})
 
-    raw = await _ollama_chat(messages, step="understand")
+    raw = ""
+    async for token in _ollama_chat_stream(messages):
+        raw += token
     logger.info("req=%s understand raw=%s", request_id, raw[:200])
     tool_calls = _parse_tool_calls(raw)
     tools_used = [tc["name"] for tc in tool_calls]

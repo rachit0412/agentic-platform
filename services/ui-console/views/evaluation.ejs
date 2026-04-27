@@ -241,6 +241,10 @@
           <span id="rai-temperature" class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.78rem;color:var(--text-2)">Top P</span>
+          <span id="rai-top-p" class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:0.78rem;color:var(--text-2)">Graceful Degradation</span>
           <span class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">Fallback</span>
         </div>
@@ -455,6 +459,7 @@ function loadRAIForAgent() {
     document.getElementById('rai-temperature').textContent = agent.temperature;
     document.getElementById('rai-temperature').style.color = agent.temperature > 1.0 ? '#f43f5e' : '#f59e0b';
     document.getElementById('rai-temperature').style.background = agent.temperature > 1.0 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
+    document.getElementById('rai-top-p').textContent = agent.top_p != null ? agent.top_p : 1;
   } else {
     document.getElementById('rai-subtitle').textContent = 'Global governance guardrails, fairness checks & safety monitoring';
     document.getElementById('rai-sys-prompt').textContent = 'Per-agent';
@@ -469,6 +474,7 @@ function loadRAIForAgent() {
     document.getElementById('rai-temperature').textContent = 'Per-agent';
     document.getElementById('rai-temperature').style.color = '#f59e0b';
     document.getElementById('rai-temperature').style.background = 'rgba(245,158,11,0.12)';
+    document.getElementById('rai-top-p').textContent = 'Per-agent';
   }
 
   document.getElementById('rai-error-threshold').textContent = errorRate + '%';

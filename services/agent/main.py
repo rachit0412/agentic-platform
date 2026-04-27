@@ -345,34 +345,7 @@ async def documents_fetch_url(body: FetchUrlRequest):
         raise HTTPException(status_code=502, detail=f"Failed to fetch URL: {str(e)}")
 
 
-# ── Model management endpoints ─────────────────────────────────────────────
-
-@app.get("/models")
-async def models_list():
-    """List available Ollama models."""
-    import httpx
-    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(f"{ollama_url}/api/tags")
-            resp.raise_for_status()
-            data = resp.json()
-            models = data.get("models", [])
-            return {
-                "models": [
-                    {
-                        "name": m.get("name", ""),
-                        "size": m.get("size", 0),
-                        "modified_at": m.get("modified_at", ""),
-                        "digest": m.get("digest", "")[:12],
-                    }
-                    for m in models
-                ],
-                "current_model": os.getenv("OLLAMA_MODEL", "llama3"),
-            }
-    except Exception as e:
-        return {"models": [], "error": str(e), "current_model": os.getenv("OLLAMA_MODEL", "llama3")}
-
+# ── Tools endpoint ─────────────────────────────────────────────────────────
 
 @app.get("/tools")
 async def tools_list():
@@ -515,6 +488,7 @@ class AgentCreate(BaseModel):
     provider: str = Field(default="ollama")
     model: str = Field(default="llama3")
     temperature: float = Field(default=0.7, ge=0, le=2)
+    top_p: float = Field(default=1.0, ge=0, le=1)
     system_prompt: str = Field(default="", max_length=20000)
     skill_ids: list[str] = Field(default_factory=list)
     tool_ids: list[str] = Field(default_factory=list)
@@ -528,6 +502,7 @@ class AgentUpdate(BaseModel):
     provider: str | None = None
     model: str | None = None
     temperature: float | None = None
+    top_p: float | None = None
     system_prompt: str | None = None
     skill_ids: list[str] | None = None
     tool_ids: list[str] | None = None
@@ -546,7 +521,8 @@ async def agents_create_endpoint(body: AgentCreate):
     agent = create_agent(
         name=body.name, description=body.description,
         provider=body.provider, model=body.model,
-        temperature=body.temperature, system_prompt=body.system_prompt,
+        temperature=body.temperature, top_p=body.top_p,
+        system_prompt=body.system_prompt,
         skill_ids=body.skill_ids, tool_ids=body.tool_ids,
         kb_collection=body.kb_collection, max_iterations=body.max_iterations,
         memory_enabled=body.memory_enabled,

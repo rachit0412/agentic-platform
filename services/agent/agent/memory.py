@@ -74,6 +74,7 @@ def init_db():
             provider        TEXT DEFAULT 'ollama',
             model           TEXT DEFAULT 'llama3',
             temperature     REAL DEFAULT 0.7,
+            top_p           REAL DEFAULT 1.0,
             system_prompt   TEXT DEFAULT '',
             skill_ids       TEXT DEFAULT '[]',
             tool_ids        TEXT DEFAULT '[]',
@@ -86,6 +87,12 @@ def init_db():
         )
         """
     )
+    # ── Migration: add top_p column if missing (existing DBs) ──
+    try:
+        conn.execute("ALTER TABLE agents ADD COLUMN top_p REAL DEFAULT 1.0")
+        conn.commit()
+    except Exception:
+        pass  # column already exists
     # ── A2A Peers table ──
     conn.execute(
         """
@@ -356,6 +363,7 @@ def _row_to_agent(row) -> dict:
         "provider": row["provider"],
         "model": row["model"],
         "temperature": row["temperature"],
+        "top_p": row["top_p"] if "top_p" in row.keys() else 1.0,
         "system_prompt": row["system_prompt"],
         "skill_ids": json.loads(row["skill_ids"]),
         "tool_ids": json.loads(row["tool_ids"]),
@@ -381,7 +389,7 @@ def get_agent(agent_id: str) -> dict | None:
 
 
 def create_agent(name: str, description: str = "", provider: str = "ollama",
-                 model: str = "llama3", temperature: float = 0.7,
+                 model: str = "llama3", temperature: float = 0.7, top_p: float = 1.0,
                  system_prompt: str = "", skill_ids: list[str] | None = None,
                  tool_ids: list[str] | None = None, kb_collection: str = "agentic_docs",
                  max_iterations: int = 5, memory_enabled: bool = True) -> dict:
@@ -389,8 +397,8 @@ def create_agent(name: str, description: str = "", provider: str = "ollama",
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO agents (id, name, description, provider, model, temperature, system_prompt, skill_ids, tool_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (agent_id, name, description, provider, model, temperature, system_prompt,
+        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (agent_id, name, description, provider, model, temperature, top_p, system_prompt,
          json.dumps(skill_ids or []), json.dumps(tool_ids or []), kb_collection,
          max_iterations, int(memory_enabled), 0, now, now),
     )
@@ -409,7 +417,7 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
-    for key in ("temperature",):
+    for key in ("temperature", "top_p"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(float(kwargs[key]))

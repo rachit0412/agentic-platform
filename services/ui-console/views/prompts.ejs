@@ -116,7 +116,48 @@
     }
   }
 
+  // ── Form state persistence (survives navigation) ──
+  const DRAFT_KEY = 'promptDraft';
+  function saveDraft() {
+    const draft = {
+      id: document.getElementById('edit-id').value,
+      name: document.getElementById('prompt-name').value,
+      category: document.getElementById('prompt-category').value,
+      desc: document.getElementById('prompt-desc').value,
+      content: document.getElementById('prompt-content').value,
+      tags: document.getElementById('prompt-tags').value,
+      formTitle: document.getElementById('form-title').textContent,
+    };
+    if (draft.name || draft.content || draft.desc || draft.tags) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }
+  function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+  function restoreDraft() {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      document.getElementById('edit-id').value = d.id || '';
+      document.getElementById('prompt-name').value = d.name || '';
+      document.getElementById('prompt-category').value = d.category || 'general';
+      document.getElementById('prompt-desc').value = d.desc || '';
+      document.getElementById('prompt-content').value = d.content || '';
+      document.getElementById('prompt-tags').value = d.tags || '';
+      document.getElementById('form-title').textContent = d.formTitle || 'Create Prompt';
+      document.getElementById('prompt-form').style.display = 'block';
+    } catch(e) { clearDraft(); }
+  }
+  // Auto-save on input
+  ['prompt-name','prompt-category','prompt-desc','prompt-content','prompt-tags'].forEach(id => {
+    document.getElementById(id).addEventListener('input', saveDraft);
+    document.getElementById(id).addEventListener('change', saveDraft);
+  });
+  // Restore draft on page load
+  restoreDraft();
+
   function showCreateForm() {
+    clearDraft();
     document.getElementById('form-title').textContent = 'Create Prompt';
     document.getElementById('edit-id').value = '';
     document.getElementById('prompt-name').value = '';
@@ -129,6 +170,7 @@
   }
 
   function hideForm() {
+    clearDraft();
     document.getElementById('prompt-form').style.display = 'none';
   }
 
@@ -163,6 +205,7 @@
       const url = id ? '/api/prompts/' + id : '/api/prompts';
       const method = id ? 'PUT' : 'POST';
       await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      clearDraft();
       hideForm();
       loadPrompts();
     } catch(e) { alert('Error: ' + e.message); }

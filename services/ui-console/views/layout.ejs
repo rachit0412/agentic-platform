@@ -199,5 +199,770 @@
       document.getElementById('topbar-health-text').textContent = 'Disconnected';
     });
   </script>
+
+  <!-- ── Test Agent Chat Panel ── -->
+  <button id="test-chat-fab" onclick="toggleTestChat()" title="Test Agent">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+
+  <div id="test-chat-panel" class="tc-panel" style="display:none">
+    <!-- Header -->
+    <div class="tc-header">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div class="tc-header-icon">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">Test Agent</span>
+        <span id="tc-model-badge" class="tc-model-badge" style="display:none"></span>
+      </div>
+      <div style="display:flex;gap:0.25rem;align-items:center">
+        <button class="tc-icon-btn" onclick="toggleTCConfig()" id="tc-config-toggle" title="Settings">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="tc-icon-btn" onclick="clearTestChat()" title="New conversation">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+        <button class="tc-icon-btn" onclick="toggleTestChat()" title="Close">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Drawer -->
+    <div id="tc-config" class="tc-config" style="display:none">
+      <div class="tc-config-row">
+        <label class="tc-config-label">Agent</label>
+        <select id="tc-agent" class="tc-config-select"></select>
+      </div>
+      <div class="tc-config-row">
+        <label class="tc-config-label">Model</label>
+        <select id="tc-model" class="tc-config-select">
+          <option value="">Platform default</option>
+        </select>
+      </div>
+      <div class="tc-config-row">
+        <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Temperature
+          <span class="tc-info-icon" title="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+          <input type="range" id="tc-temp" min="0" max="1" step="0.1" value="0.7" class="tc-slider" />
+          <span id="tc-temp-val" class="mono" style="font-size:0.72rem;color:var(--text-2);min-width:28px">0.7</span>
+        </div>
+      </div>
+      <div class="tc-config-row">
+        <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Top P
+          <span class="tc-info-icon" title="Similar to temperature, this controls randomness but uses a different method. Lowering Top P will narrow the model's token selection to likelier tokens. Increasing Top P will let the model choose from tokens with both high and low likelihood. Try adjusting temperature or Top P but not both.">&#9432;</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+          <input type="range" id="tc-top-p" min="0" max="1" step="0.1" value="1" class="tc-slider" />
+          <span id="tc-top-p-val" class="mono" style="font-size:0.72rem;color:var(--text-2);min-width:28px">1</span>
+        </div>
+      </div>
+      <div class="tc-config-row" style="flex-direction:column;align-items:stretch;gap:0.25rem">
+        <label class="tc-config-label">System Prompt Override <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
+        <textarea id="tc-sysprompt" rows="2" placeholder="Leave blank to use agent defaults..." class="tc-config-textarea"></textarea>
+      </div>
+    </div>
+
+    <!-- Messages + Activity (split view) -->
+    <div class="tc-body">
+      <!-- Left: Flowchart Activity -->
+      <div id="tc-activity-rail" class="tc-activity-rail" style="display:none">
+        <div class="tc-rail-title">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Activity
+          <span id="tc-elapsed" class="tc-elapsed"></span>
+        </div>
+        <div id="tc-activity-model" class="tc-activity-model" style="display:none"></div>
+        <div id="tc-flowchart" class="tc-flowchart"></div>
+        <div id="tc-activity-summary" class="tc-activity-summary" style="display:none"></div>
+      </div>
+      <!-- Right: Chat Messages -->
+      <div id="tc-messages" class="tc-messages"></div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="tc-input-bar">
+      <div style="flex:1;display:flex;flex-direction:column">
+        <textarea id="tc-prompt" rows="2" placeholder="Type a message..." class="tc-input-textarea"></textarea>
+        <div class="tc-input-hint">Enter to send &middot; Shift+Enter for new line</div>
+      </div>
+      <button id="tc-send" class="tc-send-btn" onclick="sendTestChat()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <style>
+    /* ── FAB ── */
+    #test-chat-fab {
+      position:fixed; bottom:24px; right:24px; z-index:9998;
+      width:48px; height:48px; border-radius:14px;
+      background:var(--accent); border:1px solid rgba(255,255,255,0.15);
+      color:#fff; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 2px 12px rgba(0,0,0,0.2);
+      transition:transform 0.15s, box-shadow 0.15s;
+    }
+    #test-chat-fab:hover { transform:translateY(-2px); box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+    #test-chat-fab.active { display:none; }
+
+    /* ── Panel ── */
+    .tc-panel {
+      position:fixed; bottom:0; right:0; top:0;
+      width:560px; z-index:9999;
+      background:var(--bg);
+      border-left:1px solid var(--divider);
+      display:flex; flex-direction:column;
+      box-shadow:-4px 0 32px rgba(0,0,0,0.12);
+      animation:tc-slide-in 0.2s ease-out;
+    }
+    @keyframes tc-slide-in {
+      from { transform:translateX(100%); opacity:0; }
+      to { transform:translateX(0); opacity:1; }
+    }
+    .tc-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0.5rem 0.75rem;
+      border-bottom:1px solid var(--divider);
+      background:var(--topbar-bg); backdrop-filter:blur(12px);
+      min-height:44px;
+    }
+    .tc-header-icon {
+      width:28px; height:28px; border-radius:8px;
+      background:linear-gradient(135deg, var(--accent), #8b5cf6);
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; flex-shrink:0;
+    }
+    .tc-icon-btn {
+      background:none; border:none; color:var(--text-3); cursor:pointer;
+      padding:5px; border-radius:6px; display:flex; align-items:center;
+      transition:background 0.15s, color 0.15s;
+    }
+    .tc-icon-btn:hover { color:var(--text-1); background:var(--glass-bg); }
+    .tc-icon-btn.active { color:var(--accent); background:rgba(6,182,212,0.1); }
+
+    /* ── Settings Drawer ── */
+    .tc-config {
+      padding:0.625rem 0.75rem;
+      border-bottom:1px solid var(--divider);
+      background:var(--glass-bg);
+      display:flex; flex-direction:column; gap:0.5rem;
+    }
+    .tc-config-row {
+      display:flex; align-items:center; gap:0.5rem;
+    }
+    .tc-config-label {
+      font-size:0.72rem; font-weight:600; color:var(--text-2);
+      min-width:90px; flex-shrink:0;
+    }
+    .tc-info-icon {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:14px; height:14px; font-size:12px; line-height:1;
+      color:var(--text-3); cursor:help; border-radius:50%;
+      transition:color 0.15s;
+    }
+    .tc-info-icon:hover { color:var(--accent); }
+    }
+    .tc-config-select {
+      flex:1; height:30px; font-size:0.75rem; padding:0 0.5rem;
+      background:var(--input-bg); border:1px solid var(--input-border);
+      border-radius:6px; color:var(--text-1);
+      font-family:'DM Sans',sans-serif;
+    }
+    .tc-config-textarea {
+      width:100%; resize:none; font-size:0.75rem;
+      border-radius:6px; padding:0.375rem 0.5rem;
+      background:var(--input-bg); border:1px solid var(--input-border);
+      color:var(--text-1); font-family:'DM Sans',sans-serif;
+      line-height:1.4; outline:none;
+    }
+    .tc-config-textarea:focus { border-color:var(--accent); }
+    .tc-config-textarea::placeholder { color:var(--text-3); }
+    .tc-slider {
+      flex:1; -webkit-appearance:none; appearance:none;
+      height:4px; border-radius:2px;
+      background:var(--divider); outline:none;
+    }
+    .tc-slider::-webkit-slider-thumb {
+      -webkit-appearance:none; width:14px; height:14px;
+      border-radius:50%; background:var(--accent); cursor:pointer;
+      border:2px solid var(--bg);
+      box-shadow:0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ── Body: Activity Rail + Messages ── */
+    .tc-body {
+      flex:1; display:flex; overflow:hidden; min-height:0;
+    }
+    .tc-activity-rail {
+      width:160px; flex-shrink:0;
+      border-right:1px solid var(--divider);
+      overflow-y:auto; padding:0.5rem;
+      background:var(--glass-bg);
+      scrollbar-width:thin;
+    }
+    .tc-rail-title {
+      font-size:0.68rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:0.04em; color:var(--text-3);
+      display:flex; align-items:center; gap:0.35rem;
+      padding-bottom:0.5rem; margin-bottom:0.25rem;
+      border-bottom:1px solid var(--divider);
+    }
+
+    /* ── Flowchart Steps ── */
+    .tc-flowchart { display:flex; flex-direction:column; gap:0; }
+    .tc-flow-step {
+      display:flex; align-items:flex-start; gap:0.4rem;
+      position:relative; padding:0.3rem 0;
+    }
+    .tc-flow-line {
+      position:relative; display:flex; flex-direction:column; align-items:center;
+      width:18px; flex-shrink:0;
+    }
+    .tc-flow-dot {
+      width:10px; height:10px; border-radius:50%;
+      border:2px solid var(--divider);
+      background:var(--bg); z-index:1;
+      flex-shrink:0; position:relative;
+    }
+    .tc-flow-dot.running {
+      border-color:var(--accent);
+      background:var(--accent);
+      box-shadow:0 0 6px rgba(6,182,212,0.4);
+      animation:tc-pulse 1.2s infinite;
+    }
+    .tc-flow-dot.done { border-color:var(--success); background:var(--success); }
+    .tc-flow-dot.waiting { border-color:var(--divider); background:var(--bg); }
+    .tc-flow-connector {
+      width:2px; flex:1; min-height:8px;
+      background:var(--divider);
+    }
+    .tc-flow-connector.done { background:var(--success); }
+    .tc-flow-connector.running {
+      background:linear-gradient(to bottom, var(--accent), var(--divider));
+    }
+    .tc-flow-info {
+      flex:1; min-width:0; padding-top:0;
+    }
+    .tc-flow-label {
+      font-size:0.68rem; font-weight:600; color:var(--text-2);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .tc-flow-label.running { color:var(--accent); }
+    .tc-flow-label.done { color:var(--success); }
+    .tc-flow-detail {
+      font-size:0.62rem; color:var(--text-3);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .tc-flow-time {
+      font-size:0.62rem; color:var(--text-3);
+      font-family:'JetBrains Mono',monospace;
+    }
+    @keyframes tc-pulse {
+      0%,100% { box-shadow:0 0 4px rgba(6,182,212,0.3); }
+      50% { box-shadow:0 0 10px rgba(6,182,212,0.6); }
+    }
+
+    /* ── Model Badge (header) ── */
+    .tc-model-badge {
+      font-size:0.62rem; font-weight:600;
+      padding:0.15rem 0.45rem; border-radius:4px;
+      background:rgba(6,182,212,0.1); color:var(--accent);
+      border:1px solid rgba(6,182,212,0.2);
+      font-family:'JetBrains Mono',monospace;
+      letter-spacing:0.02em;
+    }
+
+    /* ── Activity Rail Enhancements ── */
+    .tc-elapsed {
+      margin-left:auto; font-size:0.62rem; font-weight:400;
+      font-family:'JetBrains Mono',monospace;
+      color:var(--accent); opacity:0.8;
+    }
+    .tc-activity-model {
+      font-size:0.64rem; color:var(--text-3);
+      padding:0.35rem 0.5rem; margin-bottom:0.35rem;
+      background:rgba(6,182,212,0.05);
+      border:1px solid rgba(6,182,212,0.1);
+      border-radius:6px;
+      font-family:'JetBrains Mono',monospace;
+      display:flex; align-items:center; gap:0.3rem;
+    }
+    .tc-activity-summary {
+      margin-top:0.5rem; padding:0.4rem 0.5rem;
+      background:rgba(16,185,129,0.06);
+      border:1px solid rgba(16,185,129,0.15);
+      border-radius:6px; font-size:0.64rem;
+      color:var(--text-2);
+    }
+    .tc-activity-summary .summary-row {
+      display:flex; justify-content:space-between; padding:0.1rem 0;
+    }
+    .tc-activity-summary .summary-label { color:var(--text-3); }
+    .tc-activity-summary .summary-value {
+      font-family:'JetBrains Mono',monospace; font-weight:600;
+      color:var(--success);
+    }
+
+    /* ── Typing Indicator ── */
+    .tc-typing {
+      display:flex; align-items:center; gap:0.35rem;
+      padding:0.5rem 0.75rem; align-self:flex-start;
+    }
+    .tc-typing-dot {
+      width:6px; height:6px; border-radius:50%;
+      background:var(--text-3); animation:tc-bounce 1.4s infinite;
+    }
+    .tc-typing-dot:nth-child(2) { animation-delay:0.16s; }
+    .tc-typing-dot:nth-child(3) { animation-delay:0.32s; }
+    @keyframes tc-bounce {
+      0%,60%,100% { transform:translateY(0); opacity:0.4; }
+      30% { transform:translateY(-4px); opacity:1; }
+    }
+
+    /* ── Messages ── */
+    .tc-messages {
+      flex:1; overflow-y:auto; padding:0.75rem;
+      display:flex; flex-direction:column; gap:0.625rem;
+      scrollbar-width:thin; scrollbar-color:var(--scrollbar-thumb) transparent;
+    }
+    .tc-msg-group { display:flex; flex-direction:column; gap:0.2rem; }
+    .tc-msg-label {
+      font-size:0.66rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:0.04em; padding:0 0.25rem;
+    }
+    .tc-msg-label-user { color:var(--accent); align-self:flex-end; }
+    .tc-msg-label-assistant { color:var(--text-3); }
+    .tc-msg {
+      max-width:92%; padding:0.625rem 0.85rem;
+      border-radius:12px; font-size:0.82rem; line-height:1.6;
+      word-wrap:break-word; white-space:pre-wrap;
+    }
+    .tc-msg-user {
+      align-self:flex-end; background:var(--accent); color:#fff;
+      border-bottom-right-radius:4px;
+      box-shadow:0 1px 4px rgba(6,182,212,0.2);
+    }
+    .dark .tc-msg-user {
+      background:rgba(6,182,212,0.18); color:var(--text-1);
+      border:1px solid rgba(6,182,212,0.25);
+    }
+    .tc-msg-assistant {
+      align-self:flex-start;
+      background:var(--glass-bg); color:var(--text-1);
+      border:1px solid var(--glass-border);
+      border-bottom-left-radius:4px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    }
+    .tc-msg-meta {
+      font-size:0.6rem; color:var(--text-3); padding:0.1rem 0.25rem;
+      font-family:'JetBrains Mono',monospace;
+    }
+    .tc-msg-meta-user { align-self:flex-end; }
+
+    /* ── Input Bar ── */
+    .tc-input-bar {
+      display:flex; gap:0.5rem; padding:0.625rem 0.75rem;
+      border-top:1px solid var(--divider);
+      background:var(--topbar-bg); backdrop-filter:blur(12px);
+      align-items:flex-end;
+    }
+    .tc-input-textarea {
+      flex:1; resize:none; font-size:0.82rem;
+      border-radius:12px; padding:0.55rem 0.75rem;
+      background:var(--input-bg); border:1px solid var(--input-border);
+      color:var(--text-1); font-family:'DM Sans',sans-serif;
+      line-height:1.4; outline:none;
+      transition:border-color 0.15s, box-shadow 0.15s;
+    }
+    .tc-input-textarea:focus {
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(6,182,212,0.1);
+    }
+    .tc-input-textarea::placeholder { color:var(--text-3); }
+    .tc-input-hint {
+      font-size:0.58rem; color:var(--text-3); text-align:right;
+      padding:0.15rem 0.25rem 0; opacity:0.7;
+    }
+    .tc-send-btn {
+      width:36px; height:36px; border-radius:10px;
+      background:var(--accent); border:none; color:#fff; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition:opacity 0.15s, transform 0.1s;
+    }
+    .tc-send-btn:hover { opacity:0.85; }
+    .tc-send-btn:active { transform:scale(0.95); }
+    .tc-send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+    @media (max-width:640px) { .tc-panel { width:100%; } .tc-activity-rail { width:130px; } }
+  </style>
+
+  <script>
+    /* ── Test Chat Panel Logic ── */
+    var TC_NL = String.fromCharCode(10);
+    var TC_STATE_KEY = 'testChatState';
+    var tcSessionId = '';
+    var tcMessages = [];
+    var tcIsOpen = false;
+    var tcConfigOpen = false;
+    var tcFlowSteps = [];
+    var tcStartTime = null;
+    var tcElapsedTimer = null;
+    var tcActiveModel = '';
+
+    function toggleTestChat() {
+      var panel = document.getElementById('test-chat-panel');
+      var fab = document.getElementById('test-chat-fab');
+      tcIsOpen = !tcIsOpen;
+      panel.style.display = tcIsOpen ? 'flex' : 'none';
+      fab.classList.toggle('active', tcIsOpen);
+      if (tcIsOpen) {
+        loadTCAgents();
+        loadTCModels();
+        document.getElementById('tc-prompt').focus();
+      }
+      saveTCState();
+    }
+
+    function toggleTCConfig() {
+      tcConfigOpen = !tcConfigOpen;
+      document.getElementById('tc-config').style.display = tcConfigOpen ? 'flex' : 'none';
+      document.getElementById('tc-config-toggle').classList.toggle('active', tcConfigOpen);
+    }
+
+    document.getElementById('tc-temp').addEventListener('input', function() {
+      document.getElementById('tc-temp-val').textContent = this.value;
+    });
+
+    document.getElementById('tc-top-p').addEventListener('input', function() {
+      document.getElementById('tc-top-p-val').textContent = this.value;
+    });
+
+    function clearTestChat() {
+      tcSessionId = 'tc-' + Math.random().toString(36).slice(2, 8);
+      tcMessages = [];
+      tcFlowSteps = [];
+      tcActiveModel = '';
+      stopElapsedTimer();
+      renderTCMessages();
+      document.getElementById('tc-activity-rail').style.display = 'none';
+      document.getElementById('tc-flowchart').innerHTML = '';
+      document.getElementById('tc-activity-summary').style.display = 'none';
+      document.getElementById('tc-activity-model').style.display = 'none';
+      document.getElementById('tc-model-badge').style.display = 'none';
+      document.getElementById('tc-elapsed').textContent = '';
+      saveTCState();
+    }
+
+    function renderTCMessages() {
+      var el = document.getElementById('tc-messages');
+      if (tcMessages.length === 0) {
+        el.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:0.8rem;margin:auto;padding:2rem 1rem">' +
+          '<div class="tc-header-icon" style="margin:0 auto 0.75rem;width:48px;height:48px;border-radius:14px">' +
+            '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+          '</div>' +
+          '<p style="font-weight:600;color:var(--text-2);margin-bottom:0.25rem;font-size:0.88rem">Test your agent</p>' +
+          '<p style="font-size:0.74rem;opacity:0.7;max-width:220px;margin:0 auto">Configure model and settings, then start chatting</p></div>';
+        return;
+      }
+      var html = '';
+      tcMessages.forEach(function(m, i) {
+        var isUser = m.role === 'user';
+        var isStreaming = !isUser && i === tcMessages.length - 1 && m.content === '' && document.getElementById('tc-send').disabled;
+        html += '<div class="tc-msg-group">';
+        html += '<span class="tc-msg-label tc-msg-label-' + (isUser ? 'user' : 'assistant') + '">' + (isUser ? 'You' : 'Agent') + '</span>';
+        if (isStreaming) {
+          html += '<div class="tc-typing"><div class="tc-typing-dot"></div><div class="tc-typing-dot"></div><div class="tc-typing-dot"></div></div>';
+        } else {
+          html += '<div class="tc-msg tc-msg-' + (isUser ? 'user' : 'assistant') + '">' + escapeHtml(m.content || '...') + '</div>';
+        }
+        if (m.time) {
+          html += '<span class="tc-msg-meta' + (isUser ? ' tc-msg-meta-user' : '') + '">' + escapeHtml(m.time) + '</span>';
+        }
+        html += '</div>';
+      });
+      el.innerHTML = html;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function renderFlowchart() {
+      var el = document.getElementById('tc-flowchart');
+      var html = '';
+      var totalMs = 0;
+      tcFlowSteps.forEach(function(s, i) {
+        var isLast = i === tcFlowSteps.length - 1;
+        var stateClass = s.done ? 'done' : (s.running ? 'running' : 'waiting');
+        var connClass = s.done ? 'done' : (s.running ? 'running' : '');
+        if (s.durationMs) totalMs += s.durationMs;
+        html += '<div class="tc-flow-step">';
+        html += '<div class="tc-flow-line">';
+        html += '<div class="tc-flow-dot ' + stateClass + '"></div>';
+        if (!isLast) html += '<div class="tc-flow-connector ' + connClass + '"></div>';
+        html += '</div>';
+        html += '<div class="tc-flow-info">';
+        html += '<div class="tc-flow-label ' + stateClass + '">' + escapeHtml(s.icon + ' ' + s.label) + '</div>';
+        if (s.detail) html += '<div class="tc-flow-detail">' + escapeHtml(s.detail) + '</div>';
+        if (s.time) html += '<div class="tc-flow-time">' + escapeHtml(s.time) + '</div>';
+        html += '</div></div>';
+      });
+      el.innerHTML = html;
+    }
+
+    function startElapsedTimer() {
+      tcStartTime = Date.now();
+      var elEl = document.getElementById('tc-elapsed');
+      stopElapsedTimer();
+      tcElapsedTimer = setInterval(function() {
+        var sec = ((Date.now() - tcStartTime) / 1000).toFixed(1);
+        elEl.textContent = sec + 's';
+      }, 100);
+    }
+
+    function stopElapsedTimer() {
+      if (tcElapsedTimer) { clearInterval(tcElapsedTimer); tcElapsedTimer = null; }
+    }
+
+    function showActivitySummary(totalMs) {
+      var el = document.getElementById('tc-activity-summary');
+      var steps = tcFlowSteps.length;
+      var html = '<div class="summary-row"><span class="summary-label">Steps</span><span class="summary-value">' + steps + '</span></div>';
+      html += '<div class="summary-row"><span class="summary-label">Total</span><span class="summary-value">' + (totalMs / 1000).toFixed(2) + 's</span></div>';
+      if (tcActiveModel) {
+        html += '<div class="summary-row"><span class="summary-label">Model</span><span class="summary-value">' + escapeHtml(tcActiveModel) + '</span></div>';
+      }
+      el.innerHTML = html;
+      el.style.display = 'block';
+    }
+
+    async function loadTCAgents() {
+      var sel = document.getElementById('tc-agent');
+      if (sel.options.length > 1) return;
+      try {
+        var r = await fetch('/api/agents');
+        var d = await r.json();
+        var agents = d.agents || [];
+        sel.innerHTML = '<option value="">Default agent</option>';
+        agents.forEach(function(a) {
+          var opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = a.name;
+          if (a.is_default) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      } catch(e) {
+        sel.innerHTML = '<option value="">Failed to load</option>';
+      }
+    }
+
+    async function loadTCModels() {
+      var sel = document.getElementById('tc-model');
+      if (sel.options.length > 1) return;
+      try {
+        var r = await fetch('/api/models');
+        var d = await r.json();
+        var models = d.models || [];
+        sel.innerHTML = '<option value="">Platform default</option>';
+        models.forEach(function(m) {
+          if (m.model === 'nomic-embed-text') return;
+          var opt = document.createElement('option');
+          opt.value = m.provider + ':' + m.model;
+          opt.textContent = m.model + ' (' + m.provider + ')';
+          if (m.active) opt.textContent += ' *';
+          sel.appendChild(opt);
+        });
+      } catch(e) {}
+    }
+
+    async function sendTestChat() {
+      var promptEl = document.getElementById('tc-prompt');
+      var prompt = promptEl.value.trim();
+      if (!prompt) return;
+
+      if (!tcSessionId) tcSessionId = 'tc-' + Math.random().toString(36).slice(2, 8);
+
+      var now = new Date();
+      var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+      tcMessages.push({ role: 'user', content: prompt, time: timeStr });
+      renderTCMessages();
+      promptEl.value = '';
+
+      var sendBtn = document.getElementById('tc-send');
+      sendBtn.disabled = true;
+
+      /* Build payload with config parameters */
+      var payload = { prompt: prompt, sessionId: tcSessionId };
+
+      var agentId = document.getElementById('tc-agent').value;
+      if (agentId) payload.agent_id = agentId;
+
+      var modelVal = document.getElementById('tc-model').value;
+      if (modelVal) {
+        var parts = modelVal.split(':');
+        payload.provider = parts[0];
+        payload.model = parts[1];
+        tcActiveModel = parts[1];
+      } else {
+        tcActiveModel = 'default';
+      }
+
+      /* Update model badge in header */
+      var badgeEl = document.getElementById('tc-model-badge');
+      badgeEl.textContent = tcActiveModel;
+      badgeEl.style.display = 'inline-block';
+
+      /* Reset flowchart + start timer */
+      tcFlowSteps = [];
+      document.getElementById('tc-activity-rail').style.display = 'block';
+      document.getElementById('tc-activity-summary').style.display = 'none';
+
+      /* Show model in activity rail */
+      var modelInfoEl = document.getElementById('tc-activity-model');
+      modelInfoEl.innerHTML = '\u{1F916} ' + escapeHtml(tcActiveModel);
+      modelInfoEl.style.display = 'flex';
+
+      startElapsedTimer();
+      renderFlowchart();
+
+      /* Add assistant placeholder */
+      var assistantIdx = tcMessages.length;
+      tcMessages.push({ role: 'assistant', content: '', time: '' });
+      renderTCMessages();
+
+      var fullResponse = '';
+      var STEP_ICONS = {
+        retrieve_context: '\u{1F50D}',
+        load_memory: '\u{1F4AD}',
+        reason: '\u{1F9E0}',
+        tool_call: '\u{1F527}',
+        generate_response: '\u{270D}\uFE0F'
+      };
+
+      try {
+        var resp = await fetch('/api/agent-run/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) {
+          tcMessages[assistantIdx].content = 'Error: Server returned ' + resp.status;
+          renderTCMessages();
+          return;
+        }
+
+        var reader = resp.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        var eventType = '';
+
+        while (true) {
+          var result = await reader.read();
+          if (result.done) break;
+          buffer += decoder.decode(result.value, { stream: true });
+
+          var lines = buffer.split(TC_NL);
+          buffer = lines.pop();
+
+          for (var li = 0; li < lines.length; li++) {
+            var line = lines[li];
+            if (line.indexOf('event: ') === 0) {
+              eventType = line.slice(7).trim();
+            } else if (line.indexOf('data: ') === 0) {
+              var raw = line.slice(6);
+              if (eventType === 'step') {
+                try {
+                  var d = JSON.parse(raw);
+                  var key = d.step + (d.tool || '');
+                  if (d.status === 'started') {
+                    tcFlowSteps.push({
+                      key: key,
+                      icon: STEP_ICONS[d.step] || '\u{1F4CC}',
+                      label: d.label || d.step,
+                      detail: '',
+                      time: '',
+                      durationMs: 0,
+                      running: true,
+                      done: false
+                    });
+                    renderFlowchart();
+                  } else if (d.status === 'done') {
+                    for (var si = tcFlowSteps.length - 1; si >= 0; si--) {
+                      if (tcFlowSteps[si].key === key && !tcFlowSteps[si].done) {
+                        tcFlowSteps[si].done = true;
+                        tcFlowSteps[si].running = false;
+                        tcFlowSteps[si].detail = d.detail || '';
+                        tcFlowSteps[si].durationMs = d.duration_ms || 0;
+                        tcFlowSteps[si].time = d.duration_ms ? (d.duration_ms / 1000).toFixed(1) + 's' : '';
+                        break;
+                      }
+                    }
+                    renderFlowchart();
+                  }
+                } catch(e) {}
+              } else if (eventType === 'token') {
+                fullResponse += raw;
+                tcMessages[assistantIdx].content = fullResponse;
+                renderTCMessages();
+              }
+            }
+          }
+        }
+      } catch(e) {
+        tcMessages[assistantIdx].content = 'Error: ' + e.message;
+        renderTCMessages();
+      } finally {
+        stopElapsedTimer();
+        var totalMs = tcStartTime ? Date.now() - tcStartTime : 0;
+        document.getElementById('tc-elapsed').textContent = (totalMs / 1000).toFixed(1) + 's';
+        var doneTime = new Date();
+        tcMessages[assistantIdx].time = doneTime.getHours().toString().padStart(2,'0') + ':' + doneTime.getMinutes().toString().padStart(2,'0');
+        showActivitySummary(totalMs);
+        sendBtn.disabled = false;
+        renderTCMessages();
+        saveTCState();
+      }
+    }
+
+    function saveTCState() {
+      try {
+        localStorage.setItem(TC_STATE_KEY, JSON.stringify({
+          sessionId: tcSessionId,
+          messages: tcMessages,
+          isOpen: tcIsOpen,
+          agentId: document.getElementById('tc-agent') ? document.getElementById('tc-agent').value : '',
+          modelVal: document.getElementById('tc-model') ? document.getElementById('tc-model').value : '',
+        }));
+      } catch(e) {}
+    }
+
+    function restoreTCState() {
+      var raw = localStorage.getItem(TC_STATE_KEY);
+      if (!raw) return;
+      try {
+        var s = JSON.parse(raw);
+        tcSessionId = s.sessionId || '';
+        tcMessages = s.messages || [];
+        tcIsOpen = s.isOpen || false;
+        renderTCMessages();
+        if (tcIsOpen) {
+          document.getElementById('test-chat-panel').style.display = 'flex';
+          document.getElementById('test-chat-fab').classList.add('active');
+          loadTCAgents().then(function() {
+            if (s.agentId) document.getElementById('tc-agent').value = s.agentId;
+          });
+          loadTCModels().then(function() {
+            if (s.modelVal) document.getElementById('tc-model').value = s.modelVal;
+          });
+        }
+      } catch(e) { localStorage.removeItem(TC_STATE_KEY); }
+    }
+
+    document.getElementById('tc-prompt').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendTestChat(); }
+    });
+
+    restoreTCState();
+  </script>
 </body>
 </html>

@@ -136,7 +136,47 @@
     }
   }
 
+  // ── Form state persistence (survives navigation) ──
+  const DRAFT_KEY = 'skillDraft';
+  function saveDraft() {
+    const draft = {
+      id: document.getElementById('edit-id').value,
+      name: document.getElementById('skill-name').value,
+      desc: document.getElementById('skill-desc').value,
+      prompt: document.getElementById('skill-prompt').value,
+      tools: Array.from(document.getElementById('skill-tools').selectedOptions).map(o => o.value),
+      constraints: document.getElementById('skill-constraints').value,
+      formTitle: document.getElementById('form-title').textContent,
+    };
+    if (draft.name || draft.prompt || draft.desc || draft.constraints) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }
+  function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+  function restoreDraft() {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      document.getElementById('edit-id').value = d.id || '';
+      document.getElementById('skill-name').value = d.name || '';
+      document.getElementById('skill-desc').value = d.desc || '';
+      document.getElementById('skill-prompt').value = d.prompt || '';
+      if (d.tools && d.tools.length) renderToolsDropdown(d.tools);
+      document.getElementById('skill-constraints').value = d.constraints || '';
+      document.getElementById('form-title').textContent = d.formTitle || 'Create Skill';
+      document.getElementById('skill-form').style.display = 'block';
+    } catch(e) { clearDraft(); }
+  }
+  // Auto-save on input
+  ['skill-name','skill-desc','skill-prompt','skill-constraints'].forEach(id => {
+    document.getElementById(id).addEventListener('input', saveDraft);
+    document.getElementById(id).addEventListener('change', saveDraft);
+  });
+  document.getElementById('skill-tools').addEventListener('change', saveDraft);
+
   function showCreateForm() {
+    clearDraft();
     document.getElementById('form-title').textContent = 'Create Skill';
     document.getElementById('edit-id').value = '';
     document.getElementById('skill-name').value = '';
@@ -149,6 +189,7 @@
   }
 
   function hideForm() {
+    clearDraft();
     document.getElementById('skill-form').style.display = 'none';
   }
 
@@ -182,6 +223,7 @@
       const url = id ? '/api/skills/' + id : '/api/skills';
       const method = id ? 'PUT' : 'POST';
       await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      clearDraft();
       hideForm();
       loadSkills();
     } catch(e) { alert('Error: ' + e.message); }
@@ -196,7 +238,7 @@
   }
 
   loadSkills();
-  loadTools();
+  loadTools().then(() => restoreDraft());
   loadLibraryPrompts();
 </script>
 
