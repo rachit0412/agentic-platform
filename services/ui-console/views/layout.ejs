@@ -11,8 +11,71 @@
   <aside class="icon-rail">
     <!-- Logo -->
     <div class="rail-logo">
-      <div class="rail-logo-icon">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <div class="rail-logo-icon" style="background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 40%,#134e4a 100%);border-radius:12px;padding:0;overflow:hidden;position:relative">
+        <svg viewBox="0 0 52 52" width="52" height="52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="logo-aura" cx="50%" cy="28%" r="50%">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#0d9488" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="logo-body" x1="26" y1="4" x2="26" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="60%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#d97706"/>
+            </linearGradient>
+            <linearGradient id="logo-circuit" x1="0" y1="0" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+            </linearGradient>
+            <radialGradient id="logo-crown" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.3"/>
+            </radialGradient>
+          </defs>
+          <!-- Aura glow -->
+          <circle cx="26" cy="18" r="16" fill="url(#logo-aura)" opacity="0.7"/>
+          <!-- Crown chakra -->
+          <circle cx="26" cy="10" r="3.5" fill="url(#logo-crown)" opacity="0.5"/>
+          <circle cx="26" cy="10" r="1.8" fill="#ffffff" opacity="0.85"/>
+          <!-- Head -->
+          <circle cx="26" cy="14" r="4.2" fill="url(#logo-body)" opacity="0.95"/>
+          <!-- Torso -->
+          <path d="M23 18.5C23 18.5 21.8 24 22.2 28L26 30L29.8 28C30.2 24 29 18.5 29 18.5" fill="url(#logo-body)" opacity="0.9"/>
+          <!-- Left arm -->
+          <path d="M22.5 21C20 22.5 15 25 13 28C13 28 15.5 28.5 18 27.5C20.5 26.5 22.5 24.5 22.5 24.5" stroke="url(#logo-body)" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.9"/>
+          <!-- Right arm -->
+          <path d="M29.5 21C32 22.5 37 25 39 28C39 28 36.5 28.5 34 27.5C31.5 26.5 29.5 24.5 29.5 24.5" stroke="url(#logo-body)" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.9"/>
+          <!-- Folded legs - big lotus -->
+          <path d="M22.2 28C20 30 15.5 32.5 13 34C11.5 34.8 11.5 35.5 13 36C15.5 37 19.5 36.5 23 35L26 33.5L29 35C32.5 36.5 36.5 37 39 36C40.5 35.5 40.5 34.8 39 34C36.5 32.5 32 30 29.8 28" fill="url(#logo-body)" opacity="0.9"/>
+          <!-- Left foot detail -->
+          <path d="M13 34.5C14.5 36 17 37.5 19.5 37C21 36.5 21.5 35 23 34.5" stroke="url(#logo-body)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.85"/>
+          <!-- Right foot detail -->
+          <path d="M39 34.5C37.5 36 35 37.5 32.5 37C31 36.5 30.5 35 29 34.5" stroke="url(#logo-body)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.85"/>
+          <!-- Knee bumps -->
+          <circle cx="13" cy="33.5" r="1.5" fill="url(#logo-body)" opacity="0.7"/>
+          <circle cx="39" cy="33.5" r="1.5" fill="url(#logo-body)" opacity="0.7"/>
+          <!-- Ground glow -->
+          <ellipse cx="26" cy="38" rx="14" ry="2.5" fill="#0d9488" opacity="0.3"/>
+          <ellipse cx="26" cy="38" rx="9" ry="1.5" fill="#2dd4bf" opacity="0.2"/>
+          <!-- AI circuit traces -->
+          <line x1="26" y1="9" x2="26" y2="3" stroke="url(#logo-circuit)" stroke-width="0.9" opacity="0.85"/>
+          <circle cx="26" cy="2.5" r="1.2" fill="#2dd4bf" opacity="0.9"/>
+          <line x1="12" y1="27" x2="6" y2="23" stroke="url(#logo-circuit)" stroke-width="0.8" opacity="0.6"/>
+          <circle cx="5" cy="22.5" r="1" fill="#2dd4bf" opacity="0.8"/>
+          <line x1="40" y1="27" x2="46" y2="23" stroke="url(#logo-circuit)" stroke-width="0.8" opacity="0.6"/>
+          <circle cx="47" cy="22.5" r="1" fill="#2dd4bf" opacity="0.8"/>
+          <!-- Neural nodes -->
+          <circle cx="16" cy="7" r="0.8" fill="#2dd4bf" opacity="0.7"/>
+          <circle cx="36" cy="7" r="0.8" fill="#2dd4bf" opacity="0.7"/>
+          <circle cx="8" cy="16" r="0.7" fill="#06b6d4" opacity="0.5"/>
+          <circle cx="44" cy="16" r="0.7" fill="#06b6d4" opacity="0.5"/>
+          <!-- Neural links -->
+          <line x1="16" y1="7" x2="23" y2="12" stroke="#2dd4bf" stroke-width="0.4" opacity="0.4"/>
+          <line x1="36" y1="7" x2="29" y2="12" stroke="#2dd4bf" stroke-width="0.4" opacity="0.4"/>
+          <line x1="8" y1="16" x2="18" y2="19" stroke="#06b6d4" stroke-width="0.3" opacity="0.3"/>
+          <line x1="44" y1="16" x2="34" y2="19" stroke="#06b6d4" stroke-width="0.3" opacity="0.3"/>
+        </svg>
       </div>
       <span class="rail-tooltip">Agentic Platform</span>
     </div>
@@ -44,6 +107,12 @@
         <a href="/skills" class="rail-item <%= page === 'skills' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           <span class="rail-tooltip">Skills</span>
+        </a>
+      </li>
+      <li>
+        <a href="/tools" class="rail-item <%= page === 'tools' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span class="rail-tooltip">Tools</span>
         </a>
       </li>
       <li>
@@ -95,6 +164,12 @@
         </a>
       </li>
       <li>
+        <a href="/guardrails" class="rail-item <%= page === 'guardrails' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="rail-tooltip">Guardrails</span>
+        </a>
+      </li>
+      <li>
         <a href="/observability" class="rail-item <%= page === 'observability' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           <span class="rail-tooltip">Observability</span>
@@ -116,12 +191,8 @@
       </li>
     </ul>
 
-    <!-- Bottom: theme toggle + status -->
+    <!-- Bottom: status -->
     <div class="rail-bottom">
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-        <svg id="theme-icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        <svg id="theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
       <div class="rail-item" id="system-status-dot">
         <span class="pulse-dot-emerald"></span>
         <span class="rail-tooltip">System Healthy</span>
@@ -147,6 +218,12 @@
         </div>
         <div class="topbar-divider"></div>
         <span class="topbar-version">v2.1.0</span>
+        <div class="topbar-divider"></div>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+          <svg id="theme-icon-sun" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;flex-shrink:0"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="theme-icon-moon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span id="theme-label">Light</span>
+        </button>
       </div>
     </header>
 
@@ -182,6 +259,8 @@
       const isDark = document.documentElement.classList.contains('dark');
       document.getElementById('theme-icon-sun').style.display = isDark ? 'block' : 'none';
       document.getElementById('theme-icon-moon').style.display = isDark ? 'none' : 'block';
+      const label = document.getElementById('theme-label');
+      if (label) label.textContent = isDark ? 'Light' : 'Dark';
     }
     // Restore theme
     const savedTheme = localStorage.getItem('theme');
@@ -204,6 +283,61 @@
       document.getElementById('topbar-health-dot').className = 'pulse-dot-rose';
       document.getElementById('topbar-health-text').textContent = 'Disconnected';
     });
+
+    // ── Toast Notifications ──
+    function showToast(message, type = 'info', duration = 3500) {
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:99999;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none';
+        document.body.appendChild(container);
+      }
+      const colors = { success:'#10b981', error:'#ef4444', info:'#06b6d4', warning:'#f59e0b' };
+      const icons = { success:'✓', error:'✕', info:'ℹ', warning:'⚠' };
+      const toast = document.createElement('div');
+      toast.style.cssText = 'pointer-events:auto;display:flex;align-items:center;gap:0.5rem;padding:0.65rem 1rem;border-radius:10px;font-size:0.82rem;color:#fff;background:rgba(15,23,42,0.92);border:1px solid ' + (colors[type]||colors.info) + '40;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.3);transform:translateX(120%);transition:transform 0.3s ease';
+      toast.innerHTML = '<span style="font-size:1rem;color:' + (colors[type]||colors.info) + '">' + (icons[type]||icons.info) + '</span><span>' + escapeHtml(message) + '</span>';
+      container.appendChild(toast);
+      requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
+      setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        setTimeout(() => toast.remove(), 350);
+      }, duration);
+    }
+
+    // ── Global Detail Modal ──
+    function showDetailModal(title, contentHtml) {
+      let overlay = document.getElementById('detail-modal-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'detail-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s ease';
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) closeDetailModal(); });
+        document.body.appendChild(overlay);
+      }
+      overlay.innerHTML = '<div style="background:var(--card-bg);border:1px solid var(--glass-border);border-radius:16px;padding:1.5rem;max-width:640px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.5);transform:scale(0.95);transition:transform 0.2s ease" id="detail-modal-body">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
+          '<h3 style="margin:0;font-size:1.1rem">' + title + '</h3>' +
+          '<button onclick="closeDetailModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem;padding:0.25rem" title="Close">✕</button>' +
+        '</div>' +
+        '<div>' + contentHtml + '</div>' +
+      '</div>';
+      requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        document.getElementById('detail-modal-body').style.transform = 'scale(1)';
+      });
+      document.addEventListener('keydown', _modalEscHandler);
+    }
+    function closeDetailModal() {
+      const overlay = document.getElementById('detail-modal-overlay');
+      if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 200);
+      }
+      document.removeEventListener('keydown', _modalEscHandler);
+    }
+    function _modalEscHandler(e) { if (e.key === 'Escape') closeDetailModal(); }
   </script>
 
   <!-- ── Test Agent Chat Panel ── -->
@@ -248,7 +382,7 @@
       </div>
       <div class="tc-config-row">
         <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Temperature
-          <span class="tc-info-icon" title="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
+          <span class="tc-info-icon" data-tooltip="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
         </label>
         <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
           <input type="range" id="tc-temp" min="0" max="1" step="0.1" value="0.7" class="tc-slider" />
@@ -257,7 +391,7 @@
       </div>
       <div class="tc-config-row">
         <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Top P
-          <span class="tc-info-icon" title="Similar to temperature, this controls randomness but uses a different method. Lowering Top P will narrow the model's token selection to likelier tokens. Increasing Top P will let the model choose from tokens with both high and low likelihood. Try adjusting temperature or Top P but not both.">&#9432;</span>
+          <span class="tc-info-icon" data-tooltip="Similar to temperature, this controls randomness but uses a different method. Lowering Top P narrows token selection to likelier tokens. Increasing Top P lets the model choose from tokens with both high and low likelihood. Adjust temperature or Top P but not both.">&#9432;</span>
         </label>
         <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
           <input type="range" id="tc-top-p" min="0" max="1" step="0.1" value="1" class="tc-slider" />
@@ -267,6 +401,12 @@
       <div class="tc-config-row" style="flex-direction:column;align-items:stretch;gap:0.25rem">
         <label class="tc-config-label">System Prompt Override <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
         <textarea id="tc-sysprompt" rows="2" placeholder="Leave blank to use agent defaults..." class="tc-config-textarea"></textarea>
+      </div>
+      <div class="tc-config-row" style="justify-content:flex-end;padding-top:0.25rem">
+        <button class="btn btn-sm btn-primary" onclick="applyTCSettings()" style="font-size:0.72rem;padding:4px 14px">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Apply Settings
+        </button>
       </div>
     </div>
 
@@ -368,9 +508,26 @@
       display:inline-flex; align-items:center; justify-content:center;
       width:14px; height:14px; font-size:12px; line-height:1;
       color:var(--text-3); cursor:help; border-radius:50%;
-      transition:color 0.15s;
+      transition:color 0.15s; position:relative;
     }
     .tc-info-icon:hover { color:var(--accent); }
+    .tc-info-icon:hover::after {
+      content:attr(data-tooltip);
+      position:absolute; left:50%; bottom:calc(100% + 8px);
+      transform:translateX(-50%);
+      background:var(--card-bg); color:var(--text-1);
+      border:1px solid var(--border); border-radius:8px;
+      padding:8px 12px; font-size:0.72rem; font-weight:400;
+      line-height:1.45; white-space:normal; width:260px;
+      box-shadow:0 4px 16px rgba(0,0,0,0.25);
+      z-index:10000; pointer-events:none;
+    }
+    .tc-info-icon:hover::before {
+      content:''; position:absolute; left:50%; bottom:calc(100% + 4px);
+      transform:translateX(-50%);
+      border:5px solid transparent;
+      border-top-color:var(--border);
+      z-index:10001; pointer-events:none;
     }
     .tc-config-select {
       flex:1; height:30px; font-size:0.75rem; padding:0 0.5rem;
@@ -639,6 +796,13 @@
       document.getElementById('tc-config-toggle').classList.toggle('active', tcConfigOpen);
     }
 
+    function applyTCSettings() {
+      var temp = document.getElementById('tc-temp').value;
+      var topP = document.getElementById('tc-top-p').value;
+      showToast('Settings applied — Temperature: ' + temp + ', Top P: ' + topP, 'success');
+      toggleTCConfig();
+    }
+
     document.getElementById('tc-temp').addEventListener('input', function() {
       document.getElementById('tc-temp-val').textContent = this.value;
     });
@@ -803,6 +967,12 @@
 
       var agentId = document.getElementById('tc-agent').value;
       if (agentId) payload.agent_id = agentId;
+
+      /* Include temperature and top_p from settings */
+      payload.temperature = parseFloat(document.getElementById('tc-temp').value);
+      payload.top_p = parseFloat(document.getElementById('tc-top-p').value);
+      var sysPromptOverride = document.getElementById('tc-sysprompt').value.trim();
+      if (sysPromptOverride) payload.system_prompt = sysPromptOverride;
 
       var modelVal = document.getElementById('tc-model').value;
       if (modelVal) {

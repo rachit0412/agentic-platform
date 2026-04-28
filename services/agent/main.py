@@ -22,6 +22,7 @@ from agent.memory import (
     list_a2a_peers, get_a2a_peer, create_a2a_peer, update_a2a_peer, delete_a2a_peer,
     list_mcp_servers, get_mcp_server, create_mcp_server, update_mcp_server, delete_mcp_server,
     list_prompts, get_prompt, create_prompt, update_prompt, delete_prompt,
+    list_guardrails, get_guardrail, update_guardrail,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
@@ -62,6 +63,9 @@ class RunRequest(BaseModel):
     model: str | None = Field(default=None, description="Model name to use (e.g. llama3, mistral)")
     provider: str | None = Field(default=None, description="Provider: ollama or azure-openai")
     agent_id: str | None = Field(default=None, description="Agent config ID to use")
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, ge=0.0, le=1.0)
+    system_prompt: str | None = Field(default=None, max_length=8192)
 
 
 class RunResponse(BaseModel):
@@ -136,6 +140,7 @@ async def run_stream(body: RunRequest):
         _switch(
             provider=body.provider or "ollama",
             model=body.model or "",
+            temperature=body.temperature,
         )
 
     # Load agent config if specified
@@ -148,7 +153,17 @@ async def run_stream(body: RunRequest):
             _switch(
                 provider=agent_config.get("provider", "ollama"),
                 model=agent_config.get("model", "llama3"),
+                temperature=body.temperature if body.temperature is not None else agent_config.get("temperature"),
             )
+
+    # Override agent config with request-level params
+    if agent_config:
+        if body.temperature is not None:
+            agent_config["temperature"] = body.temperature
+        if body.top_p is not None:
+            agent_config["top_p"] = body.top_p
+        if body.system_prompt:
+            agent_config["system_prompt"] = body.system_prompt
 
     async def event_generator():
         async for event in run_agent_stream(
@@ -844,3 +859,29 @@ async def mcp_invoke_tool(server_id: str, tool_name: str, arguments: dict = {}):
             return {"status": "success", "result": resp.json()}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+
+# ── Guardrails ──────────────────────────────────────────────────────────────
+
+@app.get("/guardrails")
+async def api_list_guardrails():
+    return {"guardrails": list_guardrails()}
+
+
+@app.get("/guardrails/{guardrail_id}")
+async def api_get_guardrail(guardrail_id: str):
+    g = get_guardrail(guardrail_id)
+    if not g:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Guardrail not found"})
+    return g
+
+
+@app.put("/guardrails/{guardrail_id}")
+async def api_update_guardrail(guardrail_id: str, request: Request):
+    data = await request.json()
+    g = update_guardrail(guardrail_id, **data)
+    if not g:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Guardrail not found"})
+    return g

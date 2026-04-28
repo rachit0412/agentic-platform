@@ -54,13 +54,13 @@
       </div>
       <div>
         <label class="field-label" style="display:flex;align-items:center;gap:0.35rem">Temperature
-          <span class="tc-info-icon" title="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
+          <span class="tc-info-icon" data-tooltip="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
         </label>
         <input type="number" id="agent-temp" class="input" min="0" max="2" step="0.1" value="0.7">
       </div>
       <div>
         <label class="field-label" style="display:flex;align-items:center;gap:0.35rem">Top P
-          <span class="tc-info-icon" title="Similar to temperature, this controls randomness but uses a different method. Lowering Top P will narrow the model's token selection to likelier tokens. Increasing Top P will let the model choose from tokens with both high and low likelihood. Try adjusting temperature or Top P but not both.">&#9432;</span>
+          <span class="tc-info-icon" data-tooltip="Similar to temperature, this controls randomness but uses a different method. Lowering Top P narrows token selection to likelier tokens. Increasing Top P lets the model choose from tokens with both high and low likelihood. Adjust temperature or Top P but not both.">&#9432;</span>
         </label>
         <input type="number" id="agent-top-p" class="input" min="0" max="1" step="0.1" value="1">
       </div>
@@ -293,8 +293,9 @@
           (a.system_prompt ? '<div style="margin-top:0.75rem;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.72rem;font-family:var(--mono);color:var(--text-2);max-height:50px;overflow:hidden">' + escapeHtml(a.system_prompt.slice(0,200)) + (a.system_prompt.length > 200 ? '...' : '') + '</div>' : '') +
           '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.75rem">' + skillBadges + ' ' + toolBadges + '</div>' +
           '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
-            '<button class="btn btn-sm" onclick="editAgent(\\'' + escapeHtml(a.id) + '\\')">Edit</button>' +
-            (a.is_default ? '' : '<button class="btn btn-sm btn-danger" onclick="deleteAgent(\\'' + escapeHtml(a.id) + '\\')">Delete</button>') +
+            '<button class="btn btn-sm" onclick="showAgentInfo(\\'' + escapeHtml(a.id) + '\\')">ℹ️ Info</button>' +
+            '<button class="btn btn-sm" onclick="editAgent(\\'' + escapeHtml(a.id) + '\\')">✏️ Edit</button>' +
+            (a.is_default ? '' : '<button class="btn btn-sm btn-danger" onclick="deleteAgent(\\'' + escapeHtml(a.id) + '\\')">🗑️ Delete</button>') +
           '</div>' +
         '</div>';
       }).join('');
@@ -365,6 +366,7 @@
     document.getElementById('agent-provider').value = 'ollama';
     renderModelDropdown('llama3');
     document.getElementById('agent-temp').value = '0.7';
+    document.getElementById('agent-top-p').value = '1';
     document.getElementById('agent-prompt').value = '';
     renderToolCheckboxes([]);
     // Auto-generate isolated collection name (will be finalized on save)
@@ -628,6 +630,57 @@
       resultEl.textContent = 'Upload failed: ' + e.message;
     } finally {
       btn.disabled = false; btn.textContent = 'Upload';
+    }
+  }
+
+  async function showAgentInfo(id) {
+    try {
+      const r = await fetch('/api/agents/' + id);
+      const a = await r.json();
+      const skillNames = (a.skill_ids || []).map(sid => {
+        const sk = allSkillsList.find(s => s.id === sid);
+        return sk ? sk.name : sid;
+      });
+      const toolNames = a.tool_ids || [];
+      const rows = [
+        ['Name', a.name],
+        ['Description', a.description || '—'],
+        ['ID', '<code style="font-size:0.72rem">' + escapeHtml(a.id) + '</code>'],
+        ['Provider', a.provider],
+        ['Model', a.model],
+        ['Temperature', a.temperature],
+        ['Top P', a.top_p != null ? a.top_p : 1],
+        ['Max Iterations', a.max_iterations],
+        ['Memory', a.memory_enabled ? 'Enabled' : 'Disabled'],
+        ['KB Collection', a.kb_collection || 'agentic_docs'],
+        ['Default Agent', a.is_default ? 'Yes' : 'No'],
+        ['Created', a.created_at ? new Date(a.created_at).toLocaleString() : '—'],
+        ['Updated', a.updated_at ? new Date(a.updated_at).toLocaleString() : '—'],
+      ];
+      let html = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem">';
+      rows.forEach(([label, val]) => {
+        html += '<tr style="border-bottom:1px solid var(--glass-border)">' +
+          '<td style="padding:0.45rem 0.75rem 0.45rem 0;font-weight:600;color:var(--text-3);white-space:nowrap;width:130px">' + escapeHtml(label) + '</td>' +
+          '<td style="padding:0.45rem 0;color:var(--text-2)">' + (label === 'ID' ? val : escapeHtml(String(val))) + '</td></tr>';
+      });
+      html += '</table>';
+      if (a.system_prompt) {
+        html += '<div style="margin-top:1rem">' +
+          '<div style="font-weight:600;color:var(--text-3);font-size:0.78rem;margin-bottom:0.35rem">System Prompt</div>' +
+          '<div style="background:var(--input-bg);border-radius:8px;padding:0.75rem;font-size:0.78rem;font-family:var(--mono);color:var(--text-2);white-space:pre-wrap;max-height:200px;overflow-y:auto;line-height:1.5">' + escapeHtml(a.system_prompt) + '</div>' +
+        '</div>';
+      }
+      if (skillNames.length) {
+        html += '<div style="margin-top:0.75rem"><span style="font-weight:600;color:var(--text-3);font-size:0.78rem">Skills: </span>' +
+          skillNames.map(s => '<span class="badge">⚡ ' + escapeHtml(s) + '</span>').join(' ') + '</div>';
+      }
+      if (toolNames.length) {
+        html += '<div style="margin-top:0.5rem"><span style="font-weight:600;color:var(--text-3);font-size:0.78rem">Tools: </span>' +
+          toolNames.map(t => '<span class="badge">🔧 ' + escapeHtml(t) + '</span>').join(' ') + '</div>';
+      }
+      showDetailModal('🤖 ' + escapeHtml(a.name), html);
+    } catch(e) {
+      showToast('Failed to load agent details', 'error');
     }
   }
 

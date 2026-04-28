@@ -1,0 +1,294 @@
+<%- include('layout', { title: 'Guardrails', page: 'guardrails', body: `
+
+<style>
+  .gr-toggle { position:relative;width:44px;height:24px;cursor:pointer }
+  .gr-toggle input { opacity:0;width:0;height:0 }
+  .gr-slider { position:absolute;inset:0;background:rgba(239,68,68,0.25);border:1px solid rgba(239,68,68,0.4);border-radius:24px;transition:all 0.3s ease }
+  .gr-slider::before { content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#ef4444;transition:all 0.3s ease;box-shadow:0 2px 4px rgba(0,0,0,0.2) }
+  .gr-toggle input:checked + .gr-slider { background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.4) }
+  .gr-toggle input:checked + .gr-slider::before { transform:translateX(20px);background:#10b981 }
+  .gr-card { background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:1.25rem;transition:all 0.2s ease }
+  .gr-card:hover { border-color:var(--glass-hover-border);box-shadow:var(--glass-hover-shadow) }
+  .gr-card.disabled { opacity:0.55 }
+  .severity-badge { font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px }
+  .severity-critical { background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3) }
+  .severity-high { background:rgba(249,115,22,0.15);color:#f97316;border:1px solid rgba(249,115,22,0.3) }
+  .severity-medium { background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3) }
+  .severity-low { background:rgba(6,182,212,0.15);color:#06b6d4;border:1px solid rgba(6,182,212,0.3) }
+  .cat-icon { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0 }
+</style>
+
+<h1 class="text-glow-cyan">Guardrails & Responsible AI</h1>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">
+  <strong style="color:var(--text-1)">Runtime safety controls</strong> that enforce content policies, detect risks, and ensure responsible AI behavior — each togglable per-guardrail.
+</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">
+  Guardrails intercept agent <strong style="color:#f59e0b">inputs</strong> and <strong style="color:#10b981">outputs</strong> at runtime. Enable or disable each control independently. Changes take effect immediately.
+</p>
+
+<!-- Stats Row -->
+<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <div class="stat-label">Total Guardrails</div>
+    <div class="stat-number" id="stat-total">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="stat-label">Active</div>
+    <div class="stat-number" id="stat-active" style="color:#10b981">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.08));color:#ef4444">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div class="stat-label">Disabled</div>
+    <div class="stat-number" id="stat-disabled" style="color:#ef4444">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </div>
+    <div class="stat-label">Safety Score</div>
+    <div class="stat-number" id="stat-score">-</div>
+  </div>
+</div>
+
+<!-- Category filter -->
+<div class="flex-between mb-2">
+  <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-sm cat-filter active" data-cat="all" onclick="filterCat('all')">All</button>
+    <button class="btn btn-sm cat-filter" data-cat="content_safety" onclick="filterCat('content_safety')">🛡️ Content Safety</button>
+    <button class="btn btn-sm cat-filter" data-cat="quality" onclick="filterCat('quality')">✨ Quality</button>
+    <button class="btn btn-sm cat-filter" data-cat="fairness" onclick="filterCat('fairness')">⚖️ Fairness</button>
+    <button class="btn btn-sm cat-filter" data-cat="compliance" onclick="filterCat('compliance')">📋 Compliance</button>
+    <button class="btn btn-sm cat-filter" data-cat="operational" onclick="filterCat('operational')">⚙️ Operational</button>
+  </div>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn btn-sm btn-secondary" onclick="toggleAll(true)">Enable All</button>
+    <button class="btn btn-sm" onclick="toggleAll(false)">Disable All</button>
+  </div>
+</div>
+
+<!-- Guardrails Grid -->
+<div id="guardrails-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+  <div style="color:var(--text-3);font-size:0.82rem;grid-column:1/-1;text-align:center;padding:2rem">Loading guardrails...</div>
+</div>
+
+<!-- Architecture: How Guardrails Work -->
+<div class="card animate-fade-up" style="margin-top:1.5rem">
+  <h3>How Guardrails Work</h3>
+  <div style="margin-top:0.75rem;padding:1.25rem;border-radius:12px;background:var(--input-bg);border:1px solid var(--glass-border);font-family:monospace;font-size:0.78rem;line-height:2;color:var(--text-2)">
+    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <span style="background:rgba(139,92,246,0.15);padding:4px 10px;border-radius:8px;color:#8b5cf6;font-weight:600">User Input</span>
+      <span style="color:var(--text-3)">→</span>
+      <span style="background:rgba(239,68,68,0.15);padding:4px 10px;border-radius:8px;color:#ef4444;font-weight:600">🛡️ Input Guards</span>
+      <span style="color:var(--text-3)">→</span>
+      <span style="background:rgba(6,182,212,0.15);padding:4px 10px;border-radius:8px;color:#06b6d4;font-weight:600">LLM Processing</span>
+      <span style="color:var(--text-3)">→</span>
+      <span style="background:rgba(245,158,11,0.15);padding:4px 10px;border-radius:8px;color:#f59e0b;font-weight:600">🛡️ Output Guards</span>
+      <span style="color:var(--text-3)">→</span>
+      <span style="background:rgba(16,185,129,0.15);padding:4px 10px;border-radius:8px;color:#10b981;font-weight:600">Safe Response</span>
+    </div>
+    <div style="margin-top:1rem;font-size:0.78rem;color:var(--text-3);line-height:1.6">
+      <strong style="color:var(--text-2)">Input guards</strong> intercept prompts before reaching the LLM (PII detection, prompt injection, topic restriction).<br>
+      <strong style="color:var(--text-2)">Output guards</strong> filter responses before delivery (toxicity, hallucination, data leakage, bias).<br>
+      <strong style="color:var(--text-2)">Operational guards</strong> enforce system-level limits (rate limiting, output length).
+    </div>
+  </div>
+</div>
+
+<script>
+let allGuardrails = [];
+let activeCat = 'all';
+
+const CAT_ICONS = {
+  content_safety: { icon: '🛡️', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  quality: { icon: '✨', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  fairness: { icon: '⚖️', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  compliance: { icon: '📋', color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
+  operational: { icon: '⚙️', color: '#64748b', bg: 'rgba(100,116,139,0.12)' },
+};
+
+const CAT_LABELS = {
+  content_safety: 'Content Safety',
+  quality: 'Quality',
+  fairness: 'Fairness',
+  compliance: 'Compliance',
+  operational: 'Operational',
+};
+
+async function loadGuardrails() {
+  try {
+    const r = await fetch('/api/guardrails');
+    const d = await r.json();
+    allGuardrails = d.guardrails || [];
+    renderGuardrails();
+    updateStats();
+  } catch(e) {
+    document.getElementById('guardrails-grid').innerHTML =
+      '<div style="color:#ef4444;grid-column:1/-1;text-align:center;padding:2rem">Failed to load guardrails: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function updateStats() {
+  const total = allGuardrails.length;
+  const active = allGuardrails.filter(g => g.enabled).length;
+  const disabled = total - active;
+  const score = total > 0 ? Math.round((active / total) * 100) : 0;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-disabled').textContent = disabled;
+  const scoreEl = document.getElementById('stat-score');
+  scoreEl.textContent = score + '%';
+  scoreEl.style.color = score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
+}
+
+function filterCat(cat) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-filter').forEach(b => b.classList.remove('active'));
+  document.querySelector('.cat-filter[data-cat="' + cat + '"]').classList.add('active');
+  renderGuardrails();
+}
+
+function renderGuardrails() {
+  const grid = document.getElementById('guardrails-grid');
+  const filtered = activeCat === 'all' ? allGuardrails : allGuardrails.filter(g => g.category === activeCat);
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="color:var(--text-3);grid-column:1/-1;text-align:center;padding:2rem">No guardrails in this category</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(g => {
+    const cat = CAT_ICONS[g.category] || CAT_ICONS.operational;
+    const catLabel = CAT_LABELS[g.category] || g.category;
+    return '<div class="gr-card animate-fade-up ' + (g.enabled ? '' : 'disabled') + '" id="gr-card-' + g.id + '">' +
+      '<div style="display:flex;align-items:start;gap:0.75rem;margin-bottom:0.75rem">' +
+        '<div class="cat-icon" style="background:' + cat.bg + '">' +
+          '<span style="font-size:1.2rem">' + cat.icon + '</span>' +
+        '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem">' +
+            '<h4 style="margin:0;font-size:0.92rem;color:var(--text-1)">' + escapeHtml(g.name) + '</h4>' +
+            '<span class="severity-badge severity-' + g.severity + '">' + g.severity + '</span>' +
+            '<span class="badge" style="font-size:0.62rem;background:' + cat.bg + ';color:' + cat.color + '">' + catLabel + '</span>' +
+          '</div>' +
+          '<p style="margin:0;font-size:0.78rem;color:var(--text-3);line-height:1.45">' + escapeHtml(g.description) + '</p>' +
+        '</div>' +
+        '<label class="gr-toggle" title="' + (g.enabled ? 'Disable' : 'Enable') + ' ' + escapeHtml(g.name) + '">' +
+          '<input type="checkbox" ' + (g.enabled ? 'checked' : '') + ' onchange="toggleGuardrail(\\'' + g.id + '\\', this.checked)">' +
+          '<span class="gr-slider"></span>' +
+        '</label>' +
+      '</div>' +
+      '<div style="display:flex;gap:0.5rem">' +
+        '<button class="btn btn-sm" onclick="showGuardrailDetail(\\'' + g.id + '\\')">⚙️ Configure</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function toggleGuardrail(id, enabled) {
+  try {
+    const r = await fetch('/api/guardrails/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: enabled })
+    });
+    const updated = await r.json();
+    const idx = allGuardrails.findIndex(g => g.id === id);
+    if (idx >= 0) allGuardrails[idx] = updated;
+
+    // Update card styling
+    const card = document.getElementById('gr-card-' + id);
+    if (card) {
+      if (enabled) card.classList.remove('disabled');
+      else card.classList.add('disabled');
+    }
+    updateStats();
+    showToast((enabled ? 'Enabled' : 'Disabled') + ': ' + (updated.name || id), enabled ? 'success' : 'warning');
+  } catch(e) {
+    showToast('Failed to update guardrail: ' + e.message, 'error');
+  }
+}
+
+async function toggleAll(enabled) {
+  for (const g of allGuardrails) {
+    if (g.enabled !== enabled) {
+      await toggleGuardrail(g.id, enabled);
+    }
+  }
+}
+
+function showGuardrailDetail(id) {
+  const g = allGuardrails.find(x => x.id === id);
+  if (!g) return;
+  const cat = CAT_ICONS[g.category] || CAT_ICONS.operational;
+  const config = g.config || {};
+
+  let html = '<table style="width:100%;font-size:0.82rem">';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0;width:120px">ID</td><td class="mono" style="font-size:0.78rem">' + escapeHtml(g.id) + '</td></tr>';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Category</td><td>' + cat.icon + ' ' + escapeHtml(CAT_LABELS[g.category] || g.category) + '</td></tr>';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Severity</td><td><span class="severity-badge severity-' + g.severity + '">' + g.severity + '</span></td></tr>';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Status</td><td style="color:' + (g.enabled ? '#10b981' : '#ef4444') + ';font-weight:600">' + (g.enabled ? '● Active' : '○ Disabled') + '</td></tr>';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0;vertical-align:top">Description</td><td style="line-height:1.5">' + escapeHtml(g.description) + '</td></tr>';
+  html += '</table>';
+
+  // Config editor
+  html += '<h4 style="margin:1rem 0 0.5rem;color:var(--text-1);font-size:0.88rem">Configuration</h4>';
+  html += '<textarea id="gr-config-editor" class="input" rows="6" style="font-family:var(--mono);font-size:0.78rem;resize:vertical">' + escapeHtml(JSON.stringify(config, null, 2)) + '</textarea>';
+
+  // Severity selector
+  html += '<div style="display:flex;gap:1rem;align-items:center;margin-top:0.75rem">';
+  html += '<label class="field-label" style="margin:0;font-size:0.78rem">Severity:</label>';
+  html += '<select id="gr-severity-edit" class="input" style="width:140px;height:30px;font-size:0.78rem">';
+  ['critical','high','medium','low'].forEach(s => {
+    html += '<option value="' + s + '"' + (g.severity === s ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+  });
+  html += '</select>';
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:0.5rem;margin-top:1rem">';
+  html += '<button class="btn btn-primary" onclick="_saveGuardrailConfig(\\'' + g.id + '\\')">Save Configuration</button>';
+  html += '<button class="btn" onclick="closeDetailModal()">Cancel</button>';
+  html += '</div>';
+
+  showDetailModal('⚙️ ' + escapeHtml(g.name), html);
+}
+
+async function _saveGuardrailConfig(id) {
+  const configText = document.getElementById('gr-config-editor').value;
+  const severity = document.getElementById('gr-severity-edit').value;
+  let config;
+  try {
+    config = JSON.parse(configText);
+  } catch(e) {
+    showToast('Invalid JSON configuration', 'error');
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/guardrails/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: config, severity: severity })
+    });
+    const updated = await r.json();
+    const idx = allGuardrails.findIndex(g => g.id === id);
+    if (idx >= 0) allGuardrails[idx] = updated;
+    renderGuardrails();
+    updateStats();
+    closeDetailModal();
+    showToast('Guardrail configuration saved', 'success');
+  } catch(e) {
+    showToast('Failed to save: ' + e.message, 'error');
+  }
+}
+
+loadGuardrails();
+</script>
+` }) %>

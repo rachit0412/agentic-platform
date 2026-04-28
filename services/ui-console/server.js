@@ -308,6 +308,26 @@ app.get("/api/tools", async (req, res) => {
 });
 
 // ── API: Documents / RAG (proxy to agent) ─────────────
+
+// ── API: Guardrails (proxy to agent) ──────────────────
+app.get("/api/guardrails", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/guardrails`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/guardrails/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/guardrails/${req.params.id}`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/guardrails/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/guardrails/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
 app.get("/api/documents", async (req, res) => {
   try {
     const qs = req.query.collection ? `?collection=${encodeURIComponent(req.query.collection)}` : '';
@@ -583,6 +603,8 @@ app.get("/workflows", (req, res) => res.render("workflows", { urls: externalUrls
 app.get("/skills", (req, res) => res.render("skills", { urls: externalUrls }));
 app.get("/prompts", (req, res) => res.render("prompts", { urls: externalUrls }));
 app.get("/agents", (req, res) => res.render("agents", { urls: externalUrls }));
+app.get("/tools", (req, res) => res.render("tools", { urls: externalUrls }));
+app.get("/guardrails", (req, res) => res.render("guardrails", { urls: externalUrls }));
 app.get("/a2a", (req, res) => res.render("a2a", { urls: externalUrls }));
 app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));
 app.get("/llm-activity", (req, res) => res.render("llm-activity", { urls: externalUrls }));

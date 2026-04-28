@@ -97,14 +97,7 @@
   <div id="traces-table" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
 </div>
 
-<!-- Trace Detail -->
-<div class="card animate-fade-up delay-200" id="trace-detail-card" style="display:none">
-  <div class="section-header">
-    <h3>Trace Detail</h3>
-    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('trace-detail-card').style.display='none'">Close</button>
-  </div>
-  <div id="trace-detail" class="mt-1 mono" style="font-size:0.78rem;line-height:1.6"></div>
-</div>
+<!-- Trace detail is shown via showDetailModal -->
 
 <script>
 function loadTraces() {
@@ -217,15 +210,14 @@ function loadTraces() {
 }
 
 function viewTrace(traceId) {
-  document.getElementById('trace-detail-card').style.display = 'block';
-  document.getElementById('trace-detail').innerHTML = '<p style="color:var(--text-3)">Loading trace...</p>';
+  showDetailModal('Loading Trace...', '<p style="color:var(--text-3)">Fetching trace detail...</p>');
 
   fetch('/api/traces/' + traceId).then(r=>r.json()).then(d=>{
     const t = d.trace || d;
     let html = '<div style="display:grid;grid-template-columns:140px 1fr;gap:0.5rem 1rem;margin-bottom:1rem">';
-    html += '<span style="color:var(--text-3)">Trace ID</span><span>' + escapeHtml(t.id||'-') + '</span>';
+    html += '<span style="color:var(--text-3)">Trace ID</span><span class="mono" style="font-size:0.82rem">' + escapeHtml(t.id||'-') + '</span>';
     html += '<span style="color:var(--text-3)">Name</span><span>' + escapeHtml(t.name||'-') + '</span>';
-    html += '<span style="color:var(--text-3)">Session</span><span>' + escapeHtml(t.sessionId||'-') + '</span>';
+    html += '<span style="color:var(--text-3)">Session</span><span class="mono" style="font-size:0.82rem">' + escapeHtml(t.sessionId||'-') + '</span>';
     html += '<span style="color:var(--text-3)">Timestamp</span><span>' + (t.timestamp ? new Date(t.timestamp).toLocaleString() : '-') + '</span>';
     html += '<span style="color:var(--text-3)">Latency</span><span>' + (t.latency ? (t.latency/1000).toFixed(2) + 's' : '-') + '</span>';
     html += '<span style="color:var(--text-3)">Input</span><span style="white-space:pre-wrap;max-height:120px;overflow-y:auto;display:block">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input,null,2)).slice(0,500) : '-') + '</span>';
@@ -233,7 +225,7 @@ function viewTrace(traceId) {
     html += '</div>';
 
     if (d.observations && d.observations.length > 0) {
-      html += '<h4 style="margin:1rem 0 0.5rem;color:var(--text-1)">Steps</h4>';
+      html += '<h4 style="margin:1rem 0 0.5rem;color:var(--text-1)">Steps (' + d.observations.length + ')</h4>';
       html += '<div style="border-left:2px solid var(--accent);padding-left:1rem">';
       d.observations.forEach(obs => {
         const icon = obs.type === 'GENERATION' ? '&#x1F9E0;' : (obs.name||'').includes('tool') ? '&#x1F527;' : '&#x1F4CD;';
@@ -250,9 +242,9 @@ function viewTrace(traceId) {
       html += '</div>';
     }
 
-    document.getElementById('trace-detail').innerHTML = html;
+    showDetailModal('&#x1F50D; Trace: ' + escapeHtml((t.name||t.id||'-').slice(0,40)), html);
   }).catch(e => {
-    document.getElementById('trace-detail').innerHTML = '<p style="color:var(--danger)">Failed to load trace detail: ' + escapeHtml(e.message) + '</p>';
+    showDetailModal('Trace Error', '<p style="color:#ef4444">Failed to load trace detail: ' + escapeHtml(e.message) + '</p>');
   });
 }
 

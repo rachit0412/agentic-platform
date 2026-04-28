@@ -677,3 +677,111 @@ def delete_prompt(prompt_id: str) -> bool:
     cursor = conn.execute("DELETE FROM prompts WHERE id = ?", (prompt_id,))
     conn.commit()
     return cursor.rowcount > 0
+
+
+# ── Guardrails ──────────────────────────────────────────────────────────────
+
+def _init_guardrails_table():
+    conn = _get_conn()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS guardrails (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE,
+            category    TEXT DEFAULT 'content_safety',
+            description TEXT DEFAULT '',
+            enabled     INTEGER DEFAULT 1,
+            severity    TEXT DEFAULT 'medium',
+            config      TEXT DEFAULT '{}',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+
+
+def _ensure_default_guardrails():
+    conn = _get_conn()
+    existing = conn.execute("SELECT COUNT(*) as cnt FROM guardrails").fetchone()
+    if existing["cnt"] > 0:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    defaults = [
+        ("gr-pii", "PII Detection", "content_safety", "Detects and redacts personally identifiable information (emails, phone numbers, SSNs, credit cards) from inputs and outputs", 1, "high",
+         json.dumps({"patterns": ["email", "phone", "ssn", "credit_card"], "action": "redact"})),
+        ("gr-toxicity", "Toxicity Filter", "content_safety", "Blocks or flags toxic, harmful, hateful, or violent content in user prompts and agent responses", 1, "high",
+         json.dumps({"threshold": 0.7, "action": "block", "categories": ["hate", "violence", "self_harm", "sexual"]})),
+        ("gr-prompt-injection", "Prompt Injection Guard", "content_safety", "Detects and blocks prompt injection attempts that try to override system instructions", 1, "critical",
+         json.dumps({"action": "block", "patterns": ["ignore previous", "disregard above", "new instructions"]})),
+        ("gr-hallucination", "Hallucination Detection", "quality", "Flags responses that may contain fabricated facts not grounded in the knowledge base or tool results", 0, "medium",
+         json.dumps({"action": "warn", "confidence_threshold": 0.5})),
+        ("gr-bias", "Bias Detection", "fairness", "Monitors for biased language or stereotyping across protected categories", 0, "medium",
+         json.dumps({"categories": ["gender", "race", "age", "religion"], "action": "flag"})),
+        ("gr-topic-restrict", "Topic Restriction", "compliance", "Restricts conversations to approved topics and prevents off-topic discussions", 0, "low",
+         json.dumps({"allowed_topics": [], "blocked_topics": [], "action": "redirect"})),
+        ("gr-output-length", "Output Length Limit", "quality", "Enforces maximum response length to prevent excessively long outputs", 1, "low",
+         json.dumps({"max_tokens": 2048, "action": "truncate"})),
+        ("gr-data-leak", "Data Leakage Prevention", "compliance", "Prevents the agent from revealing system prompts, internal configurations, or training data details", 1, "high",
+         json.dumps({"action": "block", "protected": ["system_prompt", "config", "api_keys"]})),
+        ("gr-citation", "Source Citation Required", "quality", "Requires the agent to cite sources when using knowledge base content", 0, "low",
+         json.dumps({"action": "enforce", "format": "inline"})),
+        ("gr-rate-limit", "Rate Limiting", "operational", "Limits the number of agent calls per session to prevent abuse", 1, "medium",
+         json.dumps({"max_calls_per_minute": 20, "max_calls_per_session": 100, "action": "throttle"})),
+    ]
+    for d in defaults:
+        conn.execute(
+            "INSERT INTO guardrails (id, name, category, description, enabled, severity, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (*d, now, now),
+        )
+    conn.commit()
+
+
+def list_guardrails() -> list[dict]:
+    _init_guardrails_table()
+    _ensure_default_guardrails()
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM guardrails ORDER BY category, name").fetchall()
+    return [_row_to_guardrail(r) for r in rows]
+
+
+def get_guardrail(guardrail_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM guardrails WHERE id = ?", (guardrail_id,)).fetchone()
+    return _row_to_guardrail(row) if row else None
+
+
+def update_guardrail(guardrail_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_guardrail(guardrail_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "category", "description", "severity"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    if "enabled" in kwargs:
+        fields.append("enabled = ?")
+        values.append(1 if kwargs["enabled"] else 0)
+    if "config" in kwargs:
+        fields.append("config = ?")
+        values.append(json.dumps(kwargs["config"]) if isinstance(kwargs["config"], dict) else kwargs["config"])
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(guardrail_id)
+        conn.execute(f"UPDATE guardrails SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_guardrail(guardrail_id)
+
+
+def _row_to_guardrail(row) -> dict:
+    d = dict(row)
+    d["enabled"] = bool(d["enabled"])
+    try:
+        d["config"] = json.loads(d.get("config", "{}"))
+    except (json.JSONDecodeError, TypeError):
+        d["config"] = {}
+    return d

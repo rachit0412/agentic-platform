@@ -220,8 +220,8 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   position: relative;
 }
 .rail-logo-icon {
-  width: 36px;
-  height: 36px;
+  width: 52px;
+  height: 52px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -308,19 +308,30 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
 
 /* ─── Theme Toggle ─── */
 .theme-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 8px;
+  padding: 6px 16px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
-  color: var(--text-3);
-  background: transparent;
-  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.theme-toggle:hover { color: var(--text-1); background: var(--rail-hover-bg); }
+.theme-toggle:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.theme-toggle:active {
+  transform: scale(0.96);
+}
 
 /* ─── Pulse Dot ─── */
 .pulse-dot {

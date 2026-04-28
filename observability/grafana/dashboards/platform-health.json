@@ -13,8 +13,8 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "rate(http_server_request_duration_seconds_count{job=\"agent-service\"}[1m])",
-          "legendFormat": "{{method}} {{http_route}}"
+          "expr": "rate(http_requests_total{job=\"agent-service\"}[1m])",
+          "legendFormat": "{{method}} {{handler}}"
         }
       ],
       "fieldConfig": {
@@ -29,11 +29,11 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, rate(http_server_request_duration_seconds_bucket{job=\"agent-service\"}[5m]))",
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_highr_seconds_bucket{job=\"agent-service\"}[5m]))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(http_server_request_duration_seconds_bucket{job=\"agent-service\"}[5m]))",
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_highr_seconds_bucket{job=\"agent-service\"}[5m]))",
           "legendFormat": "p95"
         }
       ],
@@ -43,14 +43,14 @@
       }
     },
     {
-      "title": "Tool Calls Rate",
+      "title": "Tool Service Request Rate",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "rate(http_server_request_duration_seconds_count{job=\"tools-service\"}[1m])",
-          "legendFormat": "{{http_route}}"
+          "expr": "rate(http_requests_total{job=\"tools-service\"}[1m])",
+          "legendFormat": "{{handler}}"
         }
       ],
       "fieldConfig": {
@@ -65,8 +65,8 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(http_server_request_duration_seconds_bucket{job=\"tools-service\"}[5m]))",
-          "legendFormat": "{{http_route}} p95"
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_highr_seconds_bucket{job=\"tools-service\"}[5m]))",
+          "legendFormat": "{{handler}} p95"
         }
       ],
       "fieldConfig": {
@@ -91,13 +91,29 @@
       }
     },
     {
-      "title": "Error Rate",
-      "type": "stat",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "title": "Agent Tool Calls Total",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"agent-service\",http_status_code=~\"5..\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{job=\"agent-service\"}[5m])) * 100",
+          "expr": "rate(tool_calls_total{job=\"agent-service\"}[5m])",
+          "legendFormat": "{{tool_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"agent-service\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"agent-service\"}[5m])) * 100",
           "legendFormat": "Error %"
         }
       ],
@@ -110,6 +126,48 @@
               { "color": "red", "value": 5 }
             ]
           }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Agent Runs",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "agent_runs_total{job=\"agent-service\"}",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Service Up Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": { "text": "DOWN", "color": "red" },
+                "1": { "text": "UP", "color": "green" }
+              },
+              "type": "value"
+            }
+          ]
         },
         "overrides": []
       }
