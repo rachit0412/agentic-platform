@@ -20,6 +20,7 @@ from langchain_core.messages import (
 from agent.memory import get_history, save_message, get_session_summary, update_session_summary
 from agent.tools import get_all_tools, catalogue_as_text, call_tool, TOOL_CATALOGUE
 from agent.llm import get_llm
+from agent.llm import get_active_model as _get_active_model
 from agent.observability import (
     LangfuseTrace, track_llm_call,
     tool_call_counter, agent_run_counter,
@@ -385,8 +386,10 @@ async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
 
 # ── Streaming support ──────────────────────────────────────────────────────
 
-async def _ollama_chat_stream(messages: list[dict]) -> AsyncIterator[str]:
-    """Stream tokens from ChatOllama."""
+async def _ollama_chat_stream(messages: list[dict], usage_out: dict | None = None) -> AsyncIterator[str]:
+    """Stream tokens from ChatOllama.  If *usage_out* is supplied, the final
+    chunk's ``usage_metadata`` is written into it (keys: prompt_tokens,
+    completion_tokens, total_tokens)."""
     llm = get_llm()
     lc_messages = []
     for m in messages:
@@ -402,6 +405,13 @@ async def _ollama_chat_stream(messages: list[dict]) -> AsyncIterator[str]:
     async for chunk in llm.astream(lc_messages):
         if chunk.content:
             yield chunk.content
+        # Capture token usage from the last chunk (OpenAI/Azure attach it there)
+        if usage_out is not None:
+            um = getattr(chunk, "usage_metadata", None)
+            if um:
+                usage_out["prompt_tokens"] = getattr(um, "input_tokens", 0) or um.get("input_tokens", 0)
+                usage_out["completion_tokens"] = getattr(um, "output_tokens", 0) or um.get("output_tokens", 0)
+                usage_out["total_tokens"] = getattr(um, "total_tokens", 0) or um.get("total_tokens", 0)
 
 
 async def run_agent_stream(
@@ -487,17 +497,33 @@ async def run_agent_stream(
         messages.append(msg)
     messages.append({"role": "user", "content": prompt})
 
+    # Langfuse generation for reasoning LLM call
+    active_info = _get_active_model()
+    lf_gen_reason = lf_trace.generation(
+        name="reasoning",
+        model=agent_config.get("model", active_info["model"]) if agent_config else active_info["model"],
+        input=messages,
+    )
+
     # Stream reasoning tokens — if no tool call is detected, these become
     # the final response and the user sees tokens arriving immediately
     # instead of waiting for the full LLM response before streaming starts.
     raw = ""
-    async for token in _ollama_chat_stream(messages):
+    usage_reason: dict = {}
+    async for token in _ollama_chat_stream(messages, usage_out=usage_reason):
         raw += token
     logger.info("req=%s reason raw=%s", request_id, raw[:200])
     tool_calls = _parse_tool_calls(raw)
     tools_used = [tc["name"] for tc in tool_calls]
 
-    yield {"event": "step", "data": {"step": "reason", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"{'Needs tools: ' + ', '.join(tools_used) if tools_used else 'Direct answer'}"}}
+    reason_ms = int((_time.time()-t0)*1000)
+    lf_gen_reason.end(output=raw[:500], usage={
+        "input": usage_reason.get("prompt_tokens", 0),
+        "output": usage_reason.get("completion_tokens", 0),
+        "total": usage_reason.get("total_tokens", 0),
+    })
+
+    yield {"event": "step", "data": {"step": "reason", "status": "done", "duration_ms": reason_ms, "detail": f"{'Needs tools: ' + ', '.join(tools_used) if tools_used else 'Direct answer'}"}}
 
     # ── Step 4: Tool execution (if needed) ──────────────────────────────
     if tool_calls:
@@ -505,9 +531,11 @@ async def run_agent_stream(
             yield {"event": "step", "data": {"step": "tool_call", "status": "started", "label": f"Calling tool: {tc['name']}", "tool": tc["name"], "args": tc["arguments"]}}
             t0 = _time.time()
             tool_call_counter.labels(tool_name=tc["name"]).inc()
+            lf_tool_span = lf_trace.span(name=f"tool:{tc['name']}", input=tc["arguments"])
             result = await call_tool(tc["name"], tc["arguments"])
             tc["result"] = result
             logger.info("req=%s tool=%s result=%s", request_id, tc["name"], str(result)[:200])
+            lf_tool_span.end(output=str(result)[:500])
             yield {"event": "step", "data": {"step": "tool_call", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "tool": tc["name"], "detail": str(result)[:150]}}
 
     # ── Step 5: Generating response ─────────────────────────────────────
@@ -515,6 +543,7 @@ async def run_agent_stream(
     t0 = _time.time()
 
     full_response = ""
+    usage_synth: dict = {}
     if not tool_calls:
         full_response = raw
         for word in raw.split(" "):
@@ -528,9 +557,26 @@ async def run_agent_stream(
             {"role": "system", "content": "You are a helpful assistant. Synthesise tool results into a clear answer."},
             {"role": "user", "content": FINAL_PROMPT.format(prompt=prompt, tool_results=results_text)},
         ]
-        async for token in _ollama_chat_stream(synth_messages):
+        lf_gen_synth = lf_trace.generation(
+            name="synthesis",
+            model=agent_config.get("model", active_info["model"]) if agent_config else active_info["model"],
+            input=synth_messages,
+        )
+        async for token in _ollama_chat_stream(synth_messages, usage_out=usage_synth):
             full_response += token
             yield {"event": "token", "data": token}
+        lf_gen_synth.end(output=full_response[:500], usage={
+            "input": usage_synth.get("prompt_tokens", 0),
+            "output": usage_synth.get("completion_tokens", 0),
+            "total": usage_synth.get("total_tokens", 0),
+        })
+
+    # Aggregate token usage across LLM calls
+    total_usage = {
+        "prompt_tokens": usage_reason.get("prompt_tokens", 0) + usage_synth.get("prompt_tokens", 0),
+        "completion_tokens": usage_reason.get("completion_tokens", 0) + usage_synth.get("completion_tokens", 0),
+        "total_tokens": usage_reason.get("total_tokens", 0) + usage_synth.get("total_tokens", 0),
+    }
 
     yield {"event": "step", "data": {"step": "generate_response", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"{len(full_response)} chars"}}
 
@@ -542,8 +588,18 @@ async def run_agent_stream(
         pass
 
     agent_run_counter.labels(status="success").inc()
+    lf_trace.update(
+        output=full_response,
+        metadata={
+            "request_id": request_id,
+            "tools_used": tools_used,
+            "model": agent_config.get("model") if agent_config and agent_config.get("model") else active_info["model"],
+            "provider": agent_config.get("provider") if agent_config and agent_config.get("provider") else active_info["provider"],
+            "usage": total_usage,
+        },
+    )
     lf_trace.end(output=full_response)
-    logger.info("req=%s done tools=%s", request_id, tools_used)
+    logger.info("req=%s done tools=%s tokens=%s", request_id, tools_used, total_usage)
     yield {
         "event": "done",
         "data": {
@@ -551,5 +607,8 @@ async def run_agent_stream(
             "tools_used": tools_used,
             "request_id": request_id,
             "trace_id": lf_trace.trace_id,
+            "usage": total_usage,
+            "model": agent_config.get("model") if agent_config and agent_config.get("model") else _get_active_model()["model"],
+            "provider": agent_config.get("provider") if agent_config and agent_config.get("provider") else _get_active_model()["provider"],
         },
     }

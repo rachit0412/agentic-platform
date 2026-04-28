@@ -287,6 +287,26 @@ let allAgents = [];
 let allTraces = [];
 let selectedAgentId = '__all__';
 
+function _evalLatency(t) {
+  if (t.latency && t.latency > 0) return t.latency;
+  if (t.updatedAt && t.timestamp) {
+    var diff = new Date(t.updatedAt) - new Date(t.timestamp);
+    if (diff > 0) return diff;
+  }
+  var meta = t.metadata || {};
+  if (meta.duration_ms) return meta.duration_ms;
+  return 0;
+}
+
+function _evalTokens(t) {
+  var u = t.usage || t.totalUsage || {};
+  var meta = t.metadata || {};
+  if (meta.usage) u = meta.usage;
+  return {
+    total: u.totalTokens || u.total_tokens || u.total || 0,
+  };
+}
+
 function gradeFor(pct) {
   if (pct >= 95) return '<span style="color:#10b981;font-weight:700">A</span>';
   if (pct >= 85) return '<span style="color:#06b6d4;font-weight:700">B</span>';
@@ -304,31 +324,47 @@ function gradeColor(pct) {
 }
 
 function computeScores(traces) {
-  if (traces.length === 0) return { completion: 0, latency: 0, tool: 0, error: 0, overall: 0 };
-  const success = traces.filter(t => t.status !== 'ERROR').length;
-  const completionPct = Math.round(success / traces.length * 100);
-  const durations = traces.filter(t => t.latency != null).map(t => t.latency);
-  const under5s = durations.filter(d => d < 5000).length;
-  const latencyPct = durations.length > 0 ? Math.round(under5s / durations.length * 100) : 0;
-  const toolPct = success > 0 ? Math.round(success / traces.length * 100) : 0;
-  const errorPct = Math.round((1 - (traces.length - success) / traces.length) * 100);
-  const overall = Math.round(completionPct * 0.3 + latencyPct * 0.25 + toolPct * 0.2 + errorPct * 0.25);
-  return { completion: completionPct, latency: latencyPct, tool: toolPct, error: errorPct, overall };
+  if (traces.length === 0) return { completion: 0, latency: 0, tool: 0, error: 0, overall: 0, avgLatMs: 0 };
+  var success = traces.filter(function(t){return t.status !== 'ERROR'}).length;
+  var completionPct = Math.round(success / traces.length * 100);
+  var durations = traces.map(function(t){return _evalLatency(t)}).filter(function(d){return d > 0});
+  var under5s = durations.filter(function(d){return d < 5000}).length;
+  var latencyPct = durations.length > 0 ? Math.round(under5s / durations.length * 100) : 0;
+  var avgLatMs = durations.length > 0 ? durations.reduce(function(a,b){return a+b},0)/durations.length : 0;
+
+  // Tool efficiency: count traces with tool observations that completed successfully
+  var toolTraces = 0, toolSuccess = 0;
+  traces.forEach(function(t) {
+    var meta = t.metadata || {};
+    var hasTools = (meta.tools_used && meta.tools_used.length > 0);
+    if (!hasTools && t.observations) {
+      hasTools = t.observations.some(function(o){return (o.name||'').toLowerCase().includes('tool')});
+    }
+    if (hasTools) {
+      toolTraces++;
+      if (t.status !== 'ERROR') toolSuccess++;
+    }
+  });
+  var toolPct = toolTraces > 0 ? Math.round(toolSuccess / toolTraces * 100) : 100;
+
+  var errorPct = Math.round((1 - (traces.length - success) / traces.length) * 100);
+  var overall = Math.round(completionPct * 0.3 + latencyPct * 0.25 + toolPct * 0.2 + errorPct * 0.25);
+  return { completion: completionPct, latency: latencyPct, tool: toolPct, error: errorPct, overall: overall, avgLatMs: avgLatMs };
 }
 
 async function init() {
   try {
-    const [agentRes, traceRes] = await Promise.all([
-      fetch('/api/agents').then(r => r.json()),
-      fetch('/api/traces').then(r => r.json())
+    var [agentRes, traceRes] = await Promise.all([
+      fetch('/api/agents').then(function(r){return r.json()}),
+      fetch('/api/traces').then(function(r){return r.json()})
     ]);
     allAgents = agentRes.agents || agentRes || [];
     allTraces = traceRes.traces || [];
 
     // Populate agent selector
-    const sel = document.getElementById('agent-select');
-    allAgents.forEach(a => {
-      const opt = document.createElement('option');
+    var sel = document.getElementById('agent-select');
+    allAgents.forEach(function(a) {
+      var opt = document.createElement('option');
       opt.value = a.id;
       opt.textContent = a.name + (a.is_default ? ' (default)' : '');
       sel.appendChild(opt);
@@ -347,13 +383,13 @@ function onAgentChange() {
 
 function getFilteredTraces() {
   if (selectedAgentId === '__all__') return allTraces;
-  const agent = allAgents.find(a => a.id === selectedAgentId);
+  var agent = allAgents.find(function(a){return a.id === selectedAgentId});
   if (!agent) return allTraces;
   // Filter traces by agent name (Langfuse traces use agent name in trace name/metadata)
-  return allTraces.filter(t => {
-    const name = (t.name || '').toLowerCase();
-    const meta = JSON.stringify(t.metadata || {}).toLowerCase();
-    const agentName = agent.name.toLowerCase();
+  return allTraces.filter(function(t) {
+    var name = (t.name || '').toLowerCase();
+    var meta = JSON.stringify(t.metadata || {}).toLowerCase();
+    var agentName = agent.name.toLowerCase();
     return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
   });
 }
@@ -361,18 +397,18 @@ function getFilteredTraces() {
 async function loadEvaluation() {
   // Re-fetch fresh data
   try {
-    const [traceRes, memRes] = await Promise.all([
-      fetch('/api/traces').then(r => r.json()),
-      fetch('/api/memory/stats').then(r => r.json())
+    var [traceRes, memRes] = await Promise.all([
+      fetch('/api/traces').then(function(r){return r.json()}),
+      fetch('/api/memory/stats').then(function(r){return r.json()})
     ]);
     allTraces = traceRes.traces || [];
-    const traces = getFilteredTraces();
-    const scores = computeScores(traces);
+    var traces = getFilteredTraces();
+    var scores = computeScores(traces);
 
     // Update agent info banner
-    const banner = document.getElementById('agent-info-banner');
+    var banner = document.getElementById('agent-info-banner');
     if (selectedAgentId !== '__all__') {
-      const agent = allAgents.find(a => a.id === selectedAgentId);
+      var agent = allAgents.find(function(a){return a.id === selectedAgentId});
       if (agent) {
         banner.style.display = 'block';
         document.getElementById('agent-info-name').textContent = agent.name;
@@ -392,10 +428,10 @@ async function loadEvaluation() {
     document.getElementById('eval-grade-completion').innerHTML = gradeFor(scores.completion);
 
     // Latency score
-    const durations = traces.filter(t => t.latency != null).map(t => t.latency);
+    var durations = traces.map(function(t){return _evalLatency(t)}).filter(function(d){return d > 0});
     document.getElementById('eval-latency').textContent = scores.latency + '%';
     document.getElementById('eval-latency-bar').style.width = scores.latency + '%';
-    const avgLat = durations.length > 0 ? (durations.reduce((a,b)=>a+b,0)/durations.length/1000).toFixed(1) + 's avg' : '-';
+    var avgLat = durations.length > 0 ? (durations.reduce(function(a,b){return a+b},0)/durations.length/1000).toFixed(1) + 's avg' : '-';
     document.getElementById('eval-row-latency').textContent = avgLat;
     document.getElementById('eval-grade-latency').innerHTML = gradeFor(scores.latency);
 
@@ -410,15 +446,15 @@ async function loadEvaluation() {
     document.getElementById('eval-grade-errors').innerHTML = gradeFor(scores.error);
 
     // Memory utilization
-    const mem = memRes.memory || {};
-    const sessionsWithMulti = mem.sessions_with_summary || 0;
-    const totalSess = mem.total_sessions || 1;
-    const memPct = Math.min(100, Math.round(sessionsWithMulti / totalSess * 100));
+    var mem = memRes.memory || {};
+    var sessionsWithMulti = mem.sessions_with_summary || 0;
+    var totalSess = mem.total_sessions || 1;
+    var memPct = Math.min(100, Math.round(sessionsWithMulti / totalSess * 100));
     document.getElementById('eval-row-memory').textContent = memPct + '%';
     document.getElementById('eval-grade-memory').innerHTML = gradeFor(memPct);
 
     // Overall
-    const overall = Math.round(scores.completion * 0.3 + scores.latency * 0.2 + scores.tool * 0.2 + scores.error * 0.2 + memPct * 0.1);
+    var overall = Math.round(scores.completion * 0.3 + scores.latency * 0.2 + scores.tool * 0.2 + scores.error * 0.2 + memPct * 0.1);
     document.getElementById('eval-row-overall').textContent = overall + '%';
     document.getElementById('eval-grade-overall').innerHTML = gradeFor(overall);
 
@@ -439,10 +475,10 @@ async function loadEvaluation() {
 }
 
 function loadRAIForAgent() {
-  const agent = selectedAgentId !== '__all__' ? allAgents.find(a => a.id === selectedAgentId) : null;
-  const traces = getFilteredTraces();
-  const errorCount = traces.filter(t => t.status === 'ERROR').length;
-  const errorRate = traces.length > 0 ? (errorCount / traces.length * 100).toFixed(1) : '0.0';
+  var agent = selectedAgentId !== '__all__' ? allAgents.find(function(a){return a.id === selectedAgentId}) : null;
+  var traces = getFilteredTraces();
+  var errorCount = traces.filter(function(t){return t.status === 'ERROR'}).length;
+  var errorRate = traces.length > 0 ? (errorCount / traces.length * 100).toFixed(1) : '0.0';
 
   // Per-agent config items
   if (agent) {
@@ -508,20 +544,20 @@ function loadAgentComparison() {
   }
 
   let html = '<table><tr><th>Agent</th><th>Model</th><th>Traces</th><th>Completion</th><th>Latency</th><th>Error Rate</th><th>Overall</th><th>RAI Status</th></tr>';
-  allAgents.forEach(agent => {
-    const agentTraces = allTraces.filter(t => {
-      const name = (t.name || '').toLowerCase();
-      const meta = JSON.stringify(t.metadata || {}).toLowerCase();
-      const agentName = agent.name.toLowerCase();
+  allAgents.forEach(function(agent) {
+    var agentTraces = allTraces.filter(function(t) {
+      var name = (t.name || '').toLowerCase();
+      var meta = JSON.stringify(t.metadata || {}).toLowerCase();
+      var agentName = agent.name.toLowerCase();
       return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
     });
-    const scores = computeScores(agentTraces);
-    const raiIssues = [];
+    var scores = computeScores(agentTraces);
+    var raiIssues = [];
     if (!agent.system_prompt) raiIssues.push('no prompt');
     if (agent.temperature > 1.0) raiIssues.push('high temp');
     if (scores.error < 80 && agentTraces.length > 0) raiIssues.push('errors');
 
-    const raiBadge = raiIssues.length === 0
+    var raiBadge = raiIssues.length === 0
       ? '<span class="badge" style="font-size:0.68rem;background:rgba(16,185,129,0.12);color:#10b981">OK</span>'
       : '<span class="badge" style="font-size:0.68rem;background:rgba(245,158,11,0.12);color:#f59e0b">' + raiIssues.length + ' issue(s)</span>';
 

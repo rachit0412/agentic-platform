@@ -88,6 +88,7 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                 max_tokens=mct,
                 streaming=True,
                 timeout=30,
+                model_kwargs={"stream_options": {"include_usage": True}},
             )
             _active_provider = "azure-openai"
             _active_model = m
@@ -109,6 +110,7 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                 max_tokens=mct,
                 streaming=True,
                 timeout=30,
+                model_kwargs={"stream_options": {"include_usage": True}},
             )
             _active_provider = "openai"
             _active_model = m
@@ -131,7 +133,10 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                 api_version=AZURE_FOUNDRY_API_VERSION,
                 streaming=True,
                 timeout=30,
-                model_kwargs={"max_completion_tokens": mct},
+                model_kwargs={
+                    "max_completion_tokens": mct,
+                    "stream_options": {"include_usage": True},
+                },
             )
             if t != OLLAMA_TEMPERATURE:  # only send if explicitly changed
                 foundry_kwargs["temperature"] = t

@@ -142,8 +142,8 @@ app.post("/api/agent-run/stream", async (req, res) => {
   const abortController = new AbortController();
 
   // If the client disconnects (e.g. user clicks Stop), abort the upstream fetch
-  req.on("close", () => {
-    abortController.abort();
+  res.on("close", () => {
+    if (!res.writableFinished) abortController.abort();
   });
 
   try {

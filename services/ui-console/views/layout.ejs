@@ -381,6 +381,14 @@
         </select>
       </div>
       <div class="tc-config-row">
+        <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Max Tokens
+          <span class="tc-info-icon" data-tooltip="Maximum number of tokens the model can generate. Lower = faster, higher = longer answers.">&#9432;</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+          <input type="number" id="tc-max-tokens" value="2048" min="1" max="32768" step="256" class="tc-config-select" style="width:100%;font-size:0.78rem;padding:0.3rem 0.5rem" />
+        </div>
+      </div>
+      <div class="tc-config-row">
         <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Temperature
           <span class="tc-info-icon" data-tooltip="Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.">&#9432;</span>
         </label>
@@ -396,6 +404,17 @@
         <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
           <input type="range" id="tc-top-p" min="0" max="1" step="0.1" value="1" class="tc-slider" />
           <span id="tc-top-p-val" class="mono" style="font-size:0.72rem;color:var(--text-2);min-width:28px">1</span>
+        </div>
+      </div>
+      <div class="tc-config-row">
+        <label class="tc-config-label" style="display:flex;align-items:center;gap:0.35rem">Knowledge Base
+          <span class="tc-info-icon" data-tooltip="Toggle KB retrieval. Disable for faster responses when KB context is not needed.">&#9432;</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1">
+          <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;color:var(--text-2);cursor:pointer;user-select:none">
+            <input type="checkbox" id="tc-use-kb" checked style="accent-color:#06b6d4;width:15px;height:15px;cursor:pointer" />
+            Enable KB retrieval
+          </label>
         </div>
       </div>
       <div class="tc-config-row" style="flex-direction:column;align-items:stretch;gap:0.25rem">
@@ -435,6 +454,9 @@
       </div>
       <button id="tc-send" class="tc-send-btn" onclick="sendTestChat()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+      <button id="tc-stop" class="tc-send-btn" onclick="stopTestChat()" style="display:none;background:rgba(244,63,94,0.15);color:#f43f5e" title="Stop">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       </button>
     </div>
   </div>
@@ -775,6 +797,18 @@
     var tcStartTime = null;
     var tcElapsedTimer = null;
     var tcActiveModel = '';
+    var _tcAbortController = null;
+
+    function stopTestChat() {
+      if (_tcAbortController) {
+        _tcAbortController.abort();
+        _tcAbortController = null;
+      }
+      document.getElementById('tc-send').disabled = false;
+      document.getElementById('tc-send').style.display = '';
+      document.getElementById('tc-stop').style.display = 'none';
+      stopElapsedTimer();
+    }
 
     function toggleTestChat() {
       var panel = document.getElementById('test-chat-panel');
@@ -799,7 +833,9 @@
     function applyTCSettings() {
       var temp = document.getElementById('tc-temp').value;
       var topP = document.getElementById('tc-top-p').value;
-      showToast('Settings applied — Temperature: ' + temp + ', Top P: ' + topP, 'success');
+      var maxTokens = document.getElementById('tc-max-tokens').value;
+      var kb = document.getElementById('tc-use-kb').checked ? 'ON' : 'OFF';
+      showToast('Settings applied — Temp: ' + temp + ', Top P: ' + topP + ', Max Tokens: ' + maxTokens + ', KB: ' + kb, 'success');
       toggleTCConfig();
     }
 
@@ -895,13 +931,41 @@
       if (tcElapsedTimer) { clearInterval(tcElapsedTimer); tcElapsedTimer = null; }
     }
 
-    function showActivitySummary(totalMs) {
+    function _tcEstimateCost(usage, modelStr) {
+      if (!usage || !usage.total_tokens) return null;
+      var m = (modelStr || '').toLowerCase();
+      var pricing = {
+        'gpt-4o': [2.50, 10.00],
+        'gpt-4o-mini': [0.15, 0.60],
+        'gpt-4.1': [2.00, 8.00],
+        'gpt-4.1-mini': [0.40, 1.60],
+        'gpt-4.1-nano': [0.10, 0.40],
+        'gpt-5-nano': [0.10, 0.40],
+        'gpt-5.4-mini': [0.40, 1.60],
+        'gpt-3.5-turbo': [0.50, 1.50]
+      };
+      var rate = null;
+      for (var key in pricing) {
+        if (m.indexOf(key) !== -1) { rate = pricing[key]; break; }
+      }
+      if (!rate) return null;
+      return (usage.prompt_tokens * rate[0] / 1e6) + (usage.completion_tokens * rate[1] / 1e6);
+    }
+
+    function showActivitySummary(totalMs, usageData, modelStr) {
       var el = document.getElementById('tc-activity-summary');
       var steps = tcFlowSteps.length;
       var html = '<div class="summary-row"><span class="summary-label">Steps</span><span class="summary-value">' + steps + '</span></div>';
       html += '<div class="summary-row"><span class="summary-label">Total</span><span class="summary-value">' + (totalMs / 1000).toFixed(2) + 's</span></div>';
       if (tcActiveModel) {
         html += '<div class="summary-row"><span class="summary-label">Model</span><span class="summary-value">' + escapeHtml(tcActiveModel) + '</span></div>';
+      }
+      if (usageData && usageData.total_tokens) {
+        html += '<div class="summary-row"><span class="summary-label">Tokens</span><span class="summary-value">' + usageData.prompt_tokens + ' in / ' + usageData.completion_tokens + ' out (' + usageData.total_tokens + ')</span></div>';
+        var cost = _tcEstimateCost(usageData, modelStr || tcActiveModel);
+        if (cost !== null) {
+          html += '<div class="summary-row"><span class="summary-label">Est. Cost</span><span class="summary-value">~$' + cost.toFixed(6) + '</span></div>';
+        }
       }
       el.innerHTML = html;
       el.style.display = 'block';
@@ -961,6 +1025,7 @@
 
       var sendBtn = document.getElementById('tc-send');
       sendBtn.disabled = true;
+      document.getElementById('tc-stop').style.display = '';
 
       /* Build payload with config parameters */
       var payload = { prompt: prompt, sessionId: tcSessionId };
@@ -968,9 +1033,12 @@
       var agentId = document.getElementById('tc-agent').value;
       if (agentId) payload.agent_id = agentId;
 
-      /* Include temperature and top_p from settings */
+      /* Include temperature, top_p, max_completion_tokens, use_kb from settings */
       payload.temperature = parseFloat(document.getElementById('tc-temp').value);
       payload.top_p = parseFloat(document.getElementById('tc-top-p').value);
+      var tcMaxTokens = parseInt(document.getElementById('tc-max-tokens').value);
+      if (!isNaN(tcMaxTokens) && tcMaxTokens > 0) payload.max_completion_tokens = tcMaxTokens;
+      payload.use_kb = document.getElementById('tc-use-kb').checked;
       var sysPromptOverride = document.getElementById('tc-sysprompt').value.trim();
       if (sysPromptOverride) payload.system_prompt = sysPromptOverride;
 
@@ -1008,6 +1076,8 @@
       renderTCMessages();
 
       var fullResponse = '';
+      var tcUsageData = null;
+      var tcDoneModelInfo = '';
       var STEP_ICONS = {
         retrieve_context: '\u{1F50D}',
         load_memory: '\u{1F4AD}',
@@ -1016,11 +1086,14 @@
         generate_response: '\u{270D}\uFE0F'
       };
 
+      _tcAbortController = new AbortController();
+
       try {
         var resp = await fetch('/api/agent-run/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: _tcAbortController.signal
         });
 
         if (!resp.ok) {
@@ -1082,20 +1155,32 @@
                 fullResponse += raw;
                 tcMessages[assistantIdx].content = fullResponse;
                 renderTCMessages();
+              } else if (eventType === 'done') {
+                try {
+                  var doneData = JSON.parse(raw);
+                  tcUsageData = doneData.usage || null;
+                  tcDoneModelInfo = doneData.model ? ((doneData.provider || '') + '/' + doneData.model) : '';
+                } catch(e) {}
               }
             }
           }
         }
       } catch(e) {
-        tcMessages[assistantIdx].content = 'Error: ' + e.message;
+        if (e.name === 'AbortError') {
+          tcMessages[assistantIdx].content = fullResponse + '\n\n\u23F9 Request stopped by user.';
+        } else {
+          tcMessages[assistantIdx].content = 'Error: ' + e.message;
+        }
         renderTCMessages();
       } finally {
+        _tcAbortController = null;
+        document.getElementById('tc-stop').style.display = 'none';
         stopElapsedTimer();
         var totalMs = tcStartTime ? Date.now() - tcStartTime : 0;
         document.getElementById('tc-elapsed').textContent = (totalMs / 1000).toFixed(1) + 's';
         var doneTime = new Date();
         tcMessages[assistantIdx].time = doneTime.getHours().toString().padStart(2,'0') + ':' + doneTime.getMinutes().toString().padStart(2,'0');
-        showActivitySummary(totalMs);
+        showActivitySummary(totalMs, tcUsageData, tcDoneModelInfo);
         sendBtn.disabled = false;
         renderTCMessages();
         saveTCState();
@@ -1110,6 +1195,10 @@
           isOpen: tcIsOpen,
           agentId: document.getElementById('tc-agent') ? document.getElementById('tc-agent').value : '',
           modelVal: document.getElementById('tc-model') ? document.getElementById('tc-model').value : '',
+          maxTokens: document.getElementById('tc-max-tokens') ? document.getElementById('tc-max-tokens').value : '2048',
+          temperature: document.getElementById('tc-temp') ? document.getElementById('tc-temp').value : '0.7',
+          topP: document.getElementById('tc-top-p') ? document.getElementById('tc-top-p').value : '1',
+          useKb: document.getElementById('tc-use-kb') ? document.getElementById('tc-use-kb').checked : true,
         }));
       } catch(e) {}
     }
@@ -1123,6 +1212,10 @@
         tcMessages = s.messages || [];
         tcIsOpen = s.isOpen || false;
         renderTCMessages();
+        if (s.maxTokens) document.getElementById('tc-max-tokens').value = s.maxTokens;
+        if (s.temperature) { document.getElementById('tc-temp').value = s.temperature; document.getElementById('tc-temp-val').textContent = s.temperature; }
+        if (s.topP) { document.getElementById('tc-top-p').value = s.topP; document.getElementById('tc-top-p-val').textContent = s.topP; }
+        if (typeof s.useKb === 'boolean') document.getElementById('tc-use-kb').checked = s.useKb;
         if (tcIsOpen) {
           document.getElementById('test-chat-panel').style.display = 'flex';
           document.getElementById('test-chat-fab').classList.add('active');
