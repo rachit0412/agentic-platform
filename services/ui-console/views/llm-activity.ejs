@@ -1,40 +1,894 @@
 <%- include('layout', { title: 'LLM Activity', page: 'llm-activity', body: `
 
-<h1 class="text-glow-cyan">LLM Activity</h1>
-<p style="color:var(--text-3);margin-bottom:1.5rem">LLM Activity has been split into dedicated pages for better separation of concerns.</p>
-
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem">
-  <!-- Traceability -->
-  <a href="/traceability" class="card animate-fade-up" style="text-decoration:none;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
-      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));display:flex;align-items:center;justify-content:center">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f43f5e" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <h3 style="margin:0;color:var(--text-1)">Traceability</h3>
-    </div>
-    <p style="color:var(--text-3);font-size:0.82rem;margin:0">LLM traces, Langfuse dashboard, latency distribution, token analytics, and detailed trace inspection.</p>
-  </a>
-
-  <!-- Evaluation -->
-  <a href="/evaluation" class="card animate-fade-up delay-100" style="text-decoration:none;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
-      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      </div>
-      <h3 style="margin:0;color:var(--text-1)">Evaluation</h3>
-    </div>
-    <p style="color:var(--text-3);font-size:0.82rem;margin:0">Per-agent evaluation matrix, quality scoring, Responsible AI controls, and agent comparison.</p>
-  </a>
-
-  <!-- Observability -->
-  <a href="/observability" class="card animate-fade-up delay-200" style="text-decoration:none;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
-      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#06b6d4" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      </div>
-      <h3 style="margin:0;color:var(--text-1)">Observability</h3>
-    </div>
-    <p style="color:var(--text-3);font-size:0.82rem;margin:0">Grafana dashboards, Prometheus metrics, Loki logs, and OpenTelemetry infrastructure.</p>
-  </a>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+  <div>
+    <h1 class="text-glow-cyan" style="margin:0">LLM Activity</h1>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Traces, evaluation scoring, responsible AI &amp; infrastructure observability</p>
+  </div>
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <label style="font-size:0.78rem;color:var(--text-3)">Agent:</label>
+    <select id="la-agent-select" class="input" style="min-width:180px;font-size:0.82rem" onchange="laAgentChanged()">
+      <option value="__all__">All Agents</option>
+    </select>
+    <button class="btn btn-sm" onclick="laRefresh()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
 </div>
+
+<!-- TAB BAR -->
+<div style="display:flex;gap:0;border:1px solid var(--glass-border);border-radius:10px;overflow:hidden;margin-bottom:1.25rem">
+  <button class="la-tab active" id="la-tab-traces" onclick="laTab('traces')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Traces
+  </button>
+  <button class="la-tab" id="la-tab-evaluation" onclick="laTab('evaluation')" style="border-left:1px solid var(--glass-border)">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Evaluation
+  </button>
+  <button class="la-tab" id="la-tab-observability" onclick="laTab('observability')" style="border-left:1px solid var(--glass-border)">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Observability
+  </button>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB: TRACES -->
+<!-- ================================================================== -->
+<div id="la-panel-traces">
+
+<!-- Stats Row -->
+<div class="grid-4 mb-2" style="margin-bottom:1.25rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+    <div class="stat-label">Total Traces</div>
+    <div class="stat-number" id="stat-traces">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="stat-label">Avg Latency</div>
+    <div class="stat-number" id="stat-latency">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+    <div class="stat-label">Tool Calls</div>
+    <div class="stat-number" id="stat-tool-calls">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));color:#f43f5e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+    <div class="stat-label">Errors</div>
+    <div class="stat-number" id="stat-errors">-</div>
+  </div>
+</div>
+
+<!-- Langfuse Dashboard -->
+<div class="card animate-fade-up" style="margin-bottom:1.25rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f43f5e" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9c0 3.9-3.1 7.1-5 8.9a13 13 0 0 1-4 2.1 13 13 0 0 1-4-2.1C6.1 18.1 3 14.9 3 11a9 9 0 0 1 9-9z"/><circle cx="12" cy="11" r="3"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:0.95rem">Langfuse Analytics</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Token usage, latency distribution &amp; trace timeline</p>
+      </div>
+    </div>
+    <a href="\${urls.langfuse}" target="_blank" class="btn btn-primary btn-sm">Open Langfuse</a>
+  </div>
+
+  <!-- KPI row -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.6rem 0.75rem;text-align:center">
+      <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.2rem">Total Tokens</div>
+      <div style="font-size:1.05rem;font-weight:700;color:var(--text-1)" id="lf-tokens">-</div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.6rem 0.75rem;text-align:center">
+      <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.2rem">Avg Tokens/Trace</div>
+      <div style="font-size:1.05rem;font-weight:700;color:var(--text-1)" id="lf-avg-tokens">-</div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.6rem 0.75rem;text-align:center">
+      <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.2rem">Success Rate</div>
+      <div style="font-size:1.05rem;font-weight:700;color:#10b981" id="lf-success">-</div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.6rem 0.75rem;text-align:center">
+      <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.2rem">P95 Latency</div>
+      <div style="font-size:1.05rem;font-weight:700;color:#f59e0b" id="lf-p95">-</div>
+    </div>
+  </div>
+
+  <!-- Latency distribution -->
+  <div style="margin-bottom:1rem">
+    <div style="font-size:0.75rem;font-weight:600;color:var(--text-2);margin-bottom:0.4rem">Latency Distribution</div>
+    <div id="lf-latency-bars" style="display:flex;gap:2px;height:36px;align-items:flex-end;border-radius:6px;overflow:hidden"></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--text-3);margin-top:0.2rem">
+      <span>&lt;1s</span><span>1-3s</span><span>3-5s</span><span>5-10s</span><span>10s+</span>
+    </div>
+  </div>
+
+  <!-- Trace Timeline -->
+  <div>
+    <div style="font-size:0.75rem;font-weight:600;color:var(--text-2);margin-bottom:0.4rem">Trace Timeline</div>
+    <div id="lf-timeline" style="display:flex;flex-direction:column;gap:0.3rem;max-height:160px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- Recent Traces Table -->
+<div class="card animate-fade-up delay-100">
+  <div class="section-header">
+    <h3 style="font-size:0.95rem">Recent Traces</h3>
+    <button class="btn btn-secondary btn-sm" onclick="loadTraces()">Refresh</button>
+  </div>
+  <div id="traces-table" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB: EVALUATION -->
+<!-- ================================================================== -->
+<div id="la-panel-evaluation" style="display:none">
+
+<!-- Agent Info Banner -->
+<div id="agent-info-banner" class="card animate-fade-up" style="margin-bottom:1rem;padding:0.75rem 1.25rem;display:none">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="3"/></svg>
+    </div>
+    <div style="flex:1">
+      <strong id="agent-info-name" style="font-size:0.88rem;color:var(--text-1)">-</strong>
+      <div style="display:flex;gap:0.75rem;margin-top:0.25rem">
+        <span id="agent-info-model" style="font-size:0.72rem;color:var(--text-3)">-</span>
+        <span id="agent-info-provider" style="font-size:0.72rem;color:var(--text-3)">-</span>
+        <span id="agent-info-tools" style="font-size:0.72rem;color:var(--text-3)">-</span>
+      </div>
+    </div>
+    <div id="agent-trace-count" style="text-align:center">
+      <div style="font-size:1.1rem;font-weight:700;color:var(--text-1)">-</div>
+      <div style="font-size:0.68rem;color:var(--text-3)">traces</div>
+    </div>
+  </div>
+</div>
+
+<!-- Evaluation Matrix -->
+<div class="card animate-fade-up" style="margin-bottom:1.25rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:0.95rem">Evaluation Matrix</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Quality scoring across key dimensions from trace data</p>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadEvaluation()">Refresh Scores</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Completion Rate</span>
+        <span id="eval-completion" style="font-size:1.05rem;font-weight:700;color:#10b981">-</span>
+      </div>
+      <div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div id="eval-completion-bar" style="height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;width:0%;transition:width 0.6s"></div></div>
+      <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.35rem">% of traces with successful output</div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Latency Score</span>
+        <span id="eval-latency" style="font-size:1.05rem;font-weight:700;color:#06b6d4">-</span>
+      </div>
+      <div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div id="eval-latency-bar" style="height:100%;background:linear-gradient(90deg,#06b6d4,#8b5cf6);border-radius:3px;width:0%;transition:width 0.6s"></div></div>
+      <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.35rem">% completing under 5s threshold</div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Tool Efficiency</span>
+        <span id="eval-tool-eff" style="font-size:1.05rem;font-weight:700;color:#f59e0b">-</span>
+      </div>
+      <div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div id="eval-tool-bar" style="height:100%;background:linear-gradient(90deg,#f59e0b,#f97316);border-radius:3px;width:0%;transition:width 0.6s"></div></div>
+      <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.35rem">% of tool-using traces that succeeded</div>
+    </div>
+  </div>
+
+  <!-- Detailed Table -->
+  <table class="mt-1" style="font-size:0.82rem">
+    <tr><th>Dimension</th><th>Score</th><th>Grade</th><th>Details</th></tr>
+    <tr><td style="font-weight:600">Completion Rate</td><td id="eval-row-completion" class="mono">-</td><td id="eval-grade-completion">-</td><td style="color:var(--text-3);font-size:0.78rem">Traces with valid non-error output</td></tr>
+    <tr><td style="font-weight:600">Response Latency</td><td id="eval-row-latency" class="mono">-</td><td id="eval-grade-latency">-</td><td style="color:var(--text-3);font-size:0.78rem">Avg response time (target &lt; 5s)</td></tr>
+    <tr><td style="font-weight:600">Tool Usage</td><td id="eval-row-tools" class="mono">-</td><td id="eval-grade-tools">-</td><td style="color:var(--text-3);font-size:0.78rem">Tool call success rate</td></tr>
+    <tr><td style="font-weight:600">Error Rate</td><td id="eval-row-errors" class="mono">-</td><td id="eval-grade-errors">-</td><td style="color:var(--text-3);font-size:0.78rem">Inverted error percentage</td></tr>
+    <tr><td style="font-weight:600">Memory Utilization</td><td id="eval-row-memory" class="mono">-</td><td id="eval-grade-memory">-</td><td style="color:var(--text-3);font-size:0.78rem">Sessions using multi-turn context</td></tr>
+    <tr style="background:rgba(139,92,246,0.05)"><td style="font-weight:700;color:#8b5cf6">Overall Score</td><td id="eval-row-overall" class="mono" style="font-weight:700">-</td><td id="eval-grade-overall" style="font-weight:700">-</td><td style="color:var(--text-3);font-size:0.78rem">Weighted average across all dimensions</td></tr>
+  </table>
+</div>
+
+<!-- Responsible AI Controls -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.25rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:0.95rem">Responsible AI Controls</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem" id="rai-subtitle">Governance guardrails, fairness checks &amp; safety monitoring</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+    <!-- Safety -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <strong style="font-size:0.82rem;color:#10b981">Content Safety</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Input Validation</span><span class="badge" style="font-size:0.65rem;background:rgba(16,185,129,0.12);color:#10b981">Active</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">System Prompt Guard</span><span id="rai-sys-prompt" class="badge" style="font-size:0.65rem;background:rgba(16,185,129,0.12);color:#10b981">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Output Sanitization</span><span class="badge" style="font-size:0.65rem;background:rgba(16,185,129,0.12);color:#10b981">Active</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Error Disclosure Guard</span><span class="badge" style="font-size:0.65rem;background:rgba(16,185,129,0.12);color:#10b981">Active</span></div>
+      </div>
+    </div>
+    <!-- Transparency -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <strong style="font-size:0.82rem;color:#06b6d4">Transparency &amp; Audit</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Full Trace Logging</span><span class="badge" style="font-size:0.65rem;background:rgba(6,182,212,0.12);color:#06b6d4">Langfuse</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Decision Explainability</span><span class="badge" style="font-size:0.65rem;background:rgba(6,182,212,0.12);color:#06b6d4">Step-by-step</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Memory Enabled</span><span id="rai-memory" class="badge" style="font-size:0.65rem;background:rgba(6,182,212,0.12);color:#06b6d4">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Knowledge Base</span><span id="rai-kb" class="badge" style="font-size:0.65rem;background:rgba(6,182,212,0.12);color:#06b6d4">-</span></div>
+      </div>
+    </div>
+    <!-- Access -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <strong style="font-size:0.82rem;color:#8b5cf6">Access Control</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Agent Isolation</span><span class="badge" style="font-size:0.65rem;background:rgba(139,92,246,0.12);color:#8b5cf6">Per-session</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Allowed Tools</span><span id="rai-tools" class="badge" style="font-size:0.65rem;background:rgba(139,92,246,0.12);color:#8b5cf6">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Assigned Skills</span><span id="rai-skills" class="badge" style="font-size:0.65rem;background:rgba(139,92,246,0.12);color:#8b5cf6">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Network Isolation</span><span class="badge" style="font-size:0.65rem;background:rgba(139,92,246,0.12);color:#8b5cf6">Docker net</span></div>
+      </div>
+    </div>
+    <!-- Limits -->
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364"/></svg>
+        <strong style="font-size:0.82rem;color:#f59e0b">Reliability &amp; Limits</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Max Iterations</span><span id="rai-max-iter" class="badge" style="font-size:0.65rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Temperature</span><span id="rai-temperature" class="badge" style="font-size:0.65rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Top P</span><span id="rai-top-p" class="badge" style="font-size:0.65rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:var(--text-2)">Error Rate</span><span id="rai-error-threshold" class="badge" style="font-size:0.65rem;background:rgba(245,158,11,0.12);color:#f59e0b">-</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAI Summary -->
+  <div style="display:flex;align-items:center;gap:0.6rem;padding:0.7rem 0.85rem;background:linear-gradient(135deg,rgba(16,185,129,0.04),rgba(6,182,212,0.04));border:1px solid rgba(16,185,129,0.15);border-radius:10px">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <div>
+      <strong style="font-size:0.78rem;color:var(--text-1)" id="rai-status">Responsible AI: Checking...</strong>
+      <p style="margin:0.1rem 0 0;font-size:0.68rem;color:var(--text-3)" id="rai-detail">Evaluating guardrails and safety controls</p>
+    </div>
+  </div>
+</div>
+
+<!-- Agent Comparison -->
+<div class="card animate-fade-up delay-200" id="agent-comparison-card">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <h3 style="margin:0;font-size:0.95rem">Agent Comparison</h3>
+    </div>
+  </div>
+  <div id="agent-comparison-table" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+</div>
+
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB: OBSERVABILITY -->
+<!-- ================================================================== -->
+<div id="la-panel-observability" style="display:none">
+
+<!-- Obs Stats -->
+<div class="stats-row" id="obs-stats" style="margin-bottom:1.25rem">
+  <div class="stat-card"><div class="stat-value" id="stat-healthy">-</div><div class="stat-label">Healthy</div></div>
+  <div class="stat-card"><div class="stat-value" id="stat-unhealthy">-</div><div class="stat-label">Unhealthy</div></div>
+  <div class="stat-card"><div class="stat-value" id="stat-targets">-</div><div class="stat-label">Scrape Targets</div></div>
+  <div class="stat-card"><div class="stat-value" id="stat-active-series">-</div><div class="stat-label">Active Series</div></div>
+</div>
+
+<!-- Stack Health -->
+<div class="card animate-fade-up" style="margin-bottom:1.25rem">
+  <div class="section-header mb-1">
+    <h3 style="font-size:0.95rem">Stack Health</h3>
+    <button class="btn btn-sm" onclick="obsRefreshHealth()">Refresh</button>
+  </div>
+  <div id="stack-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-top:0.5rem">
+    <div class="stat-card" style="text-align:left">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:0.4rem"><span class="pulse-dot" id="dot-prometheus" style="background:#555"></span><strong style="font-size:0.85rem">Prometheus</strong></div>
+      <div style="color:var(--text-3);font-size:0.72rem">Metrics collection</div>
+      <div class="mono" style="font-size:0.68rem;margin-top:0.2rem;color:var(--text-3)">:9090</div>
+      <div id="status-prometheus" style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-3)">Checking...</div>
+    </div>
+    <div class="stat-card" style="text-align:left">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:0.4rem"><span class="pulse-dot" id="dot-grafana" style="background:#555"></span><strong style="font-size:0.85rem">Grafana</strong></div>
+      <div style="color:var(--text-3);font-size:0.72rem">Dashboards</div>
+      <div class="mono" style="font-size:0.68rem;margin-top:0.2rem;color:var(--text-3)">:3013</div>
+      <div id="status-grafana" style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-3)">Checking...</div>
+    </div>
+    <div class="stat-card" style="text-align:left">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:0.4rem"><span class="pulse-dot" id="dot-loki" style="background:#555"></span><strong style="font-size:0.85rem">Loki</strong></div>
+      <div style="color:var(--text-3);font-size:0.72rem">Log aggregation</div>
+      <div class="mono" style="font-size:0.68rem;margin-top:0.2rem;color:var(--text-3)">:3100</div>
+      <div id="status-loki" style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-3)">Checking...</div>
+    </div>
+    <div class="stat-card" style="text-align:left">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:0.4rem"><span class="pulse-dot" id="dot-otel-collector" style="background:#555"></span><strong style="font-size:0.85rem">OTel Collector</strong></div>
+      <div style="color:var(--text-3);font-size:0.72rem">Trace pipeline</div>
+      <div class="mono" style="font-size:0.68rem;margin-top:0.2rem;color:var(--text-3)">:4317</div>
+      <div id="status-otel-collector" style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-3)">Checking...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Prometheus Targets -->
+<div class="card animate-fade-up delay-100" style="margin-bottom:1.25rem">
+  <h3 style="font-size:0.95rem">Prometheus Scrape Targets</h3>
+  <div id="targets-container" style="margin-top:0.5rem"><div style="color:var(--text-3);font-size:0.82rem">Loading targets...</div></div>
+</div>
+
+<!-- Grafana -->
+<div class="card animate-fade-up delay-200" style="margin-bottom:1.25rem">
+  <div class="section-header mb-1">
+    <h3 style="font-size:0.95rem">Grafana &mdash; Platform Health</h3>
+    <a href="\${urls.grafana}" target="_blank" class="btn btn-primary btn-sm">Open Grafana</a>
+  </div>
+  <iframe id="grafana-iframe" src="\${urls.grafana}/d/agentic-platform-health?orgId=1&kiosk" width="100%" height="500" style="background:var(--surface-1);border-radius:10px;border:1px solid var(--glass-border)" loading="lazy"></iframe>
+</div>
+
+<!-- Pipeline Diagram -->
+<div class="card animate-fade-up delay-300">
+  <h3 style="font-size:0.95rem">Telemetry Pipeline</h3>
+  <div style="margin-top:0.5rem;padding:1rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);font-family:monospace;font-size:0.75rem;line-height:2;color:var(--text-2)">
+    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service</span>
+      <span style="color:var(--text-3)">&rarr;</span>
+      <span style="background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;color:#06b6d4;font-weight:600">OTel Collector</span>
+      <span style="color:var(--text-3)">&rarr;</span>
+      <span style="display:flex;flex-direction:column;gap:3px">
+        <span style="background:rgba(245,158,11,0.15);padding:3px 8px;border-radius:6px;color:#f59e0b;font-weight:600">Prometheus (metrics)</span>
+        <span style="background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:6px;color:#10b981;font-weight:600">Loki (logs)</span>
+      </span>
+      <span style="color:var(--text-3)">&rarr;</span>
+      <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Grafana</span>
+    </div>
+    <div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service</span>
+      <span style="color:var(--text-3)">&rarr;</span>
+      <span style="background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;color:#06b6d4;font-weight:600">Langfuse SDK</span>
+      <span style="color:var(--text-3)">&rarr;</span>
+      <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Langfuse (LLM traces)</span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+<style>
+  .la-tab{flex:1;padding:0.6rem 0.75rem;background:var(--glass-bg);color:var(--text-3);border:none;cursor:pointer;font-size:0.82rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.2s}
+  .la-tab:hover{background:rgba(6,182,212,0.06);color:var(--text-2)}
+  .la-tab.active{background:rgba(6,182,212,0.12);color:#06b6d4}
+</style>
+
+<script>
+/* ── SHARED STATE ── */
+var laAllAgents = [];
+var laAllTraces = [];
+var laSelectedAgent = '__all__';
+var laActiveTab = 'traces';
+var laObsLoaded = false;
+
+/* ── TAB NAVIGATION ── */
+function laTab(tab) {
+  laActiveTab = tab;
+  ['traces','evaluation','observability'].forEach(function(t) {
+    var p = document.getElementById('la-panel-' + t);
+    var b = document.getElementById('la-tab-' + t);
+    if (p) p.style.display = t === tab ? '' : 'none';
+    if (b) b.classList.toggle('active', t === tab);
+  });
+  if (tab === 'observability' && !laObsLoaded) {
+    obsRefreshHealth(); obsLoadTargets(); obsLoadMetrics(); laObsLoaded = true;
+  }
+}
+
+function laAgentChanged() {
+  laSelectedAgent = document.getElementById('la-agent-select').value;
+  loadTraces();
+  loadEvaluation();
+}
+
+function laRefresh() {
+  loadTraces();
+  if (laActiveTab === 'evaluation') loadEvaluation();
+  if (laActiveTab === 'observability') { obsRefreshHealth(); obsLoadTargets(); obsLoadMetrics(); }
+}
+
+/* ── TRACE HELPERS ── */
+function _traceLatency(t) {
+  if (t.latency && t.latency > 0) return t.latency;
+  if (t.updatedAt && t.timestamp) { var diff = new Date(t.updatedAt) - new Date(t.timestamp); if (diff > 0) return diff; }
+  var meta = t.metadata || {};
+  if (meta.duration_ms) return meta.duration_ms;
+  return 0;
+}
+
+function _traceTokens(t) {
+  var u = t.usage || t.totalUsage || {};
+  var meta = t.metadata || {};
+  if (meta.usage) u = meta.usage;
+  return {
+    input: u.promptTokens || u.inputTokens || u.input_tokens || u.prompt_tokens || u.input || 0,
+    output: u.completionTokens || u.outputTokens || u.output_tokens || u.completion_tokens || u.output || 0,
+    total: u.totalTokens || u.total_tokens || u.total || 0
+  };
+}
+
+function _traceModel(t) {
+  var meta = t.metadata || {};
+  if (meta.model) return (meta.provider ? meta.provider + '/' : '') + meta.model;
+  return '';
+}
+
+function getFilteredTraces() {
+  if (laSelectedAgent === '__all__') return laAllTraces;
+  var agent = laAllAgents.find(function(a) { return a.id === laSelectedAgent; });
+  if (!agent) return laAllTraces;
+  return laAllTraces.filter(function(t) {
+    var name = (t.name || '').toLowerCase();
+    var meta = JSON.stringify(t.metadata || {}).toLowerCase();
+    var agentName = agent.name.toLowerCase();
+    return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
+  });
+}
+
+/* ── TRACES TAB ── */
+function loadTraces() {
+  fetch('/api/traces').then(function(r){return r.json()}).then(function(d) {
+    laAllTraces = d.traces || [];
+    var traces = getFilteredTraces();
+    var el = document.getElementById('traces-table');
+
+    document.getElementById('stat-traces').textContent = traces.length;
+    var durations = traces.map(function(t){return _traceLatency(t)}).filter(function(d){return d>0});
+    var avgMs = durations.length ? durations.reduce(function(a,b){return a+b},0)/durations.length : 0;
+    document.getElementById('stat-latency').textContent = durations.length ? (avgMs/1000).toFixed(1) + 's' : '-';
+
+    var toolCount = 0;
+    traces.forEach(function(t) {
+      var meta = t.metadata || {};
+      if (meta.tools_used && Array.isArray(meta.tools_used)) { toolCount += meta.tools_used.length; return; }
+      if (t.observations) toolCount += t.observations.filter(function(o) { return o.type === 'SPAN' && (o.name||'').toLowerCase().includes('tool'); }).length;
+    });
+    document.getElementById('stat-tool-calls').textContent = toolCount;
+    document.getElementById('stat-errors').textContent = traces.filter(function(t){return t.status==='ERROR'}).length;
+
+    var totalTokens = 0, tracesWithTokens = 0;
+    traces.forEach(function(t) { var toks = _traceTokens(t); if (toks.total > 0) { totalTokens += toks.total; tracesWithTokens++; } });
+    document.getElementById('lf-tokens').textContent = totalTokens > 0 ? totalTokens.toLocaleString() : '-';
+    document.getElementById('lf-avg-tokens').textContent = tracesWithTokens > 0 ? Math.round(totalTokens/tracesWithTokens).toLocaleString() : '-';
+
+    var successCount = traces.filter(function(t) { return t.status !== 'ERROR'; }).length;
+    document.getElementById('lf-success').textContent = traces.length > 0 ? Math.round(successCount/traces.length*100) + '%' : '-';
+    document.getElementById('lf-success').style.color = traces.length > 0 && successCount/traces.length < 0.9 ? '#f43f5e' : '#10b981';
+
+    if (durations.length > 0) {
+      var sorted = durations.slice().sort(function(a,b){return a-b});
+      var p95idx = Math.min(Math.floor(sorted.length * 0.95), sorted.length-1);
+      document.getElementById('lf-p95').textContent = (sorted[p95idx]/1000).toFixed(1) + 's';
+    }
+
+    var buckets = [0,0,0,0,0];
+    durations.forEach(function(ms) { var s = ms/1000; if (s < 1) buckets[0]++; else if (s < 3) buckets[1]++; else if (s < 5) buckets[2]++; else if (s < 10) buckets[3]++; else buckets[4]++; });
+    var maxBucket = Math.max.apply(null, buckets.concat([1]));
+    var colors = ['#10b981','#06b6d4','#f59e0b','#f97316','#f43f5e'];
+    document.getElementById('lf-latency-bars').innerHTML = buckets.map(function(b,i) {
+      return '<div style="flex:1;background:' + colors[i] + ';height:' + Math.max(4, b/maxBucket*36) + 'px;border-radius:3px;opacity:0.85;position:relative" title="' + b + ' traces"><span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:0.58rem;color:var(--text-3)">' + b + '</span></div>';
+    }).join('');
+
+    var timelineEl = document.getElementById('lf-timeline');
+    if (traces.length === 0) {
+      timelineEl.innerHTML = '<div style="color:var(--text-3);font-size:0.78rem;padding:0.5rem">No traces yet \\u2014 run an agent prompt to generate data</div>';
+    } else {
+      var maxDuration = Math.max.apply(null, durations.concat([1]));
+      timelineEl.innerHTML = traces.slice(0, 12).map(function(t) {
+        var lat = _traceLatency(t);
+        var dur = lat > 0 ? (lat/1000).toFixed(1) + 's' : '-';
+        var time = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '-';
+        var statusColor = t.status === 'ERROR' ? '#f43f5e' : '#10b981';
+        var barWidth = lat > 0 ? Math.max(8, Math.min(100, lat / maxDuration * 100)) : 8;
+        return '<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></span>' +
+          '<span style="width:55px;flex-shrink:0;color:var(--text-3);font-family:monospace;font-size:0.65rem">' + time + '</span>' +
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)">' + escapeHtml(t.name||t.id?.slice(0,12)||'-') + '</span>' +
+          '<div style="width:90px;height:7px;background:var(--glass-bg);border-radius:4px;overflow:hidden;flex-shrink:0"><div style="width:' + barWidth + '%;height:100%;background:' + (lat > 5000 ? '#f59e0b' : '#06b6d4') + ';border-radius:4px"></div></div>' +
+          '<span style="width:36px;text-align:right;font-family:monospace;font-size:0.65rem;color:var(--text-3);flex-shrink:0">' + dur + '</span></div>';
+      }).join('');
+    }
+
+    if (traces.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">' + (d.error || 'No traces found. Run an agent prompt to generate traces.') + '</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Trace ID</th><th>Name</th><th>Session</th><th>Input</th><th>Model</th><th>Tokens</th><th>Latency</th><th>Status</th><th></th></tr>' +
+      traces.map(function(t) {
+        var lat = _traceLatency(t);
+        var latStr = lat > 0 ? (lat/1000).toFixed(2) + 's' : '-';
+        var toks = _traceTokens(t);
+        var tokStr = toks.total > 0 ? toks.total.toLocaleString() : '-';
+        var model = _traceModel(t);
+        var statusBadge = t.status === 'ERROR'
+          ? '<span style="color:#f43f5e;font-size:0.72rem">\\u2716 Error</span>'
+          : '<span style="color:#10b981;font-size:0.72rem">\\u2714 OK</span>';
+        return '<tr>' +
+        '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.id||'').slice(0,10)) + '</td>' +
+        '<td>' + escapeHtml(t.name||'-') + '</td>' +
+        '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.sessionId||'-').slice(0,12)) + '</td>' +
+        '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input)).slice(0,50) : '-') + '</td>' +
+        '<td class="mono" style="font-size:0.72rem;color:var(--text-3)">' + escapeHtml(model || '-') + '</td>' +
+        '<td class="mono" style="font-size:0.78rem;color:' + (toks.total > 0 ? '#8b5cf6' : 'var(--text-3)') + '">' + tokStr + '</td>' +
+        '<td class="mono" style="font-size:0.78rem;color:' + (lat > 5000 ? '#f59e0b' : lat > 0 ? '#10b981' : 'var(--text-3)') + '">' + latStr + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td><button class="btn btn-secondary btn-sm" onclick="viewTrace(\\'' + escapeHtml(t.id) + '\\')">Detail</button></td></tr>';
+      }).join('') + '</table>';
+  }).catch(function(e) {
+    document.getElementById('traces-table').innerHTML = '<p style="color:var(--danger)">Failed to load traces</p>';
+  });
+}
+
+function viewTrace(traceId) {
+  showDetailModal('Loading Trace...', '<p style="color:var(--text-3)">Fetching trace detail...</p>');
+  fetch('/api/traces/' + traceId).then(function(r){return r.json()}).then(function(d) {
+    var t = d.trace || d;
+    var lat = _traceLatency(t);
+    var toks = _traceTokens(t);
+    var model = _traceModel(t);
+
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">';
+    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem">';
+    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.5rem">Trace Info</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:0.35rem">';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Trace ID</span><span class="mono" style="font-size:0.72rem">' + escapeHtml((t.id||'-').slice(0,16)) + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Session</span><span class="mono" style="font-size:0.72rem">' + escapeHtml(t.sessionId||'-') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Timestamp</span><span style="font-size:0.75rem">' + (t.timestamp ? new Date(t.timestamp).toLocaleString() : '-') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Status</span><span style="color:' + (t.status==='ERROR' ? '#f43f5e' : '#10b981') + ';font-weight:600;font-size:0.75rem">' + (t.status==='ERROR' ? '\\u2716 Error' : '\\u2714 Success') + '</span></div>';
+    html += '</div></div>';
+
+    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem">';
+    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.5rem">Performance</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:0.35rem">';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Latency</span><span style="font-weight:600;font-size:0.78rem;color:' + (lat > 5000 ? '#f59e0b' : '#10b981') + '">' + (lat > 0 ? (lat/1000).toFixed(2) + 's' : '-') + '</span></div>';
+    if (model) html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Model</span><span class="mono" style="font-size:0.72rem">' + escapeHtml(model) + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Tokens In</span><span class="mono" style="font-size:0.75rem;color:#8b5cf6">' + (toks.input > 0 ? toks.input.toLocaleString() : '-') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Tokens Out</span><span class="mono" style="font-size:0.75rem;color:#06b6d4">' + (toks.output > 0 ? toks.output.toLocaleString() : '-') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Total Tokens</span><span class="mono" style="font-size:0.75rem;font-weight:600">' + (toks.total > 0 ? toks.total.toLocaleString() : '-') + '</span></div>';
+    html += '</div></div></div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">';
+    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem"><div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.4rem">Input</div><div style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-1);max-height:120px;overflow-y:auto;word-break:break-word">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input,null,2)).slice(0,500) : '-') + '</div></div>';
+    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem"><div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.4rem">Output</div><div style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-1);max-height:180px;overflow-y:auto;word-break:break-word">' + escapeHtml(t.output ? (typeof t.output==='string'?t.output:JSON.stringify(t.output,null,2)).slice(0,1000) : '-') + '</div></div></div>';
+
+    var obs = d.observations || [];
+    if (obs.length > 0) {
+      html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem">';
+      html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.5rem">Steps (' + obs.length + ')</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:0.4rem">';
+      obs.forEach(function(o) {
+        var isGen = o.type === 'GENERATION';
+        var isTool = (o.name||'').toLowerCase().includes('tool');
+        var color = isGen ? '#8b5cf6' : isTool ? '#f59e0b' : '#06b6d4';
+        var dur = o.endTime && o.startTime ? ((new Date(o.endTime) - new Date(o.startTime))/1000).toFixed(2) + 's' : '';
+        var oUsage = o.usage || {};
+        var oTokens = (oUsage.totalTokens || oUsage.total || 0);
+        html += '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.6rem;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid ' + color + '">';
+        html += '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:0.78rem;color:var(--text-1)">' + escapeHtml(o.name||o.type||'-') + '</strong><div style="display:flex;gap:0.35rem;align-items:center">';
+        if (oTokens > 0) html += '<span class="badge" style="font-size:0.62rem;background:rgba(139,92,246,0.12);color:#8b5cf6">' + oTokens + ' tok</span>';
+        if (dur) html += '<span class="badge" style="font-size:0.62rem;background:rgba(6,182,212,0.12);color:#06b6d4">' + dur + '</span>';
+        html += '</div></div></div></div>';
+      });
+      html += '</div></div>';
+    }
+
+    showDetailModal('Trace: ' + (t.id||'-').slice(0,12), html);
+  }).catch(function(e) {
+    showDetailModal('Error', '<p style="color:#f43f5e">' + escapeHtml(e.message) + '</p>');
+  });
+}
+
+/* ── EVALUATION TAB ── */
+function gradeFor(pct) {
+  if (pct >= 95) return '<span style="color:#10b981;font-weight:700">A</span>';
+  if (pct >= 85) return '<span style="color:#06b6d4;font-weight:700">B</span>';
+  if (pct >= 70) return '<span style="color:#f59e0b;font-weight:700">C</span>';
+  if (pct >= 50) return '<span style="color:#f97316;font-weight:700">D</span>';
+  return '<span style="color:#f43f5e;font-weight:700">F</span>';
+}
+
+function gradeColor(pct) {
+  if (pct >= 95) return '#10b981';
+  if (pct >= 85) return '#06b6d4';
+  if (pct >= 70) return '#f59e0b';
+  if (pct >= 50) return '#f97316';
+  return '#f43f5e';
+}
+
+function computeScores(traces) {
+  if (traces.length === 0) return { completion: 0, latency: 0, tool: 0, error: 0, overall: 0 };
+  var success = traces.filter(function(t){return t.status !== 'ERROR'}).length;
+  var completionPct = Math.round(success / traces.length * 100);
+  var durations = traces.map(function(t){return _traceLatency(t)}).filter(function(d){return d > 0});
+  var under5s = durations.filter(function(d){return d < 5000}).length;
+  var latencyPct = durations.length > 0 ? Math.round(under5s / durations.length * 100) : 0;
+  var toolTraces = 0, toolSuccess = 0;
+  traces.forEach(function(t) {
+    var meta = t.metadata || {};
+    var hasTools = (meta.tools_used && meta.tools_used.length > 0);
+    if (!hasTools && t.observations) hasTools = t.observations.some(function(o){return (o.name||'').toLowerCase().includes('tool')});
+    if (hasTools) { toolTraces++; if (t.status !== 'ERROR') toolSuccess++; }
+  });
+  var toolPct = toolTraces > 0 ? Math.round(toolSuccess / toolTraces * 100) : 100;
+  var errorPct = Math.round((1 - (traces.length - success) / traces.length) * 100);
+  var overall = Math.round(completionPct * 0.3 + latencyPct * 0.25 + toolPct * 0.2 + errorPct * 0.25);
+  return { completion: completionPct, latency: latencyPct, tool: toolPct, error: errorPct, overall: overall };
+}
+
+function loadEvaluation() {
+  Promise.all([
+    fetch('/api/traces').then(function(r){return r.json()}),
+    fetch('/api/memory/stats').then(function(r){return r.json()}).catch(function(){return {}})
+  ]).then(function(results) {
+    laAllTraces = results[0].traces || [];
+    var memRes = results[1];
+    var traces = getFilteredTraces();
+    var scores = computeScores(traces);
+
+    var banner = document.getElementById('agent-info-banner');
+    if (laSelectedAgent !== '__all__') {
+      var agent = laAllAgents.find(function(a){return a.id === laSelectedAgent});
+      if (agent) {
+        banner.style.display = 'block';
+        document.getElementById('agent-info-name').textContent = agent.name;
+        document.getElementById('agent-info-model').textContent = 'Model: ' + agent.provider + '/' + agent.model;
+        document.getElementById('agent-info-provider').textContent = 'Temp: ' + agent.temperature;
+        document.getElementById('agent-info-tools').textContent = 'Tools: ' + (agent.tool_ids || []).length + ' | Skills: ' + (agent.skill_ids || []).length;
+        document.getElementById('agent-trace-count').querySelector('div').textContent = traces.length;
+      }
+    } else { banner.style.display = 'none'; }
+
+    document.getElementById('eval-completion').textContent = scores.completion + '%';
+    document.getElementById('eval-completion-bar').style.width = scores.completion + '%';
+    document.getElementById('eval-row-completion').textContent = scores.completion + '%';
+    document.getElementById('eval-grade-completion').innerHTML = gradeFor(scores.completion);
+
+    var durations = traces.map(function(t){return _traceLatency(t)}).filter(function(d){return d > 0});
+    document.getElementById('eval-latency').textContent = scores.latency + '%';
+    document.getElementById('eval-latency-bar').style.width = scores.latency + '%';
+    var avgLat = durations.length > 0 ? (durations.reduce(function(a,b){return a+b},0)/durations.length/1000).toFixed(1) + 's avg' : '-';
+    document.getElementById('eval-row-latency').textContent = avgLat;
+    document.getElementById('eval-grade-latency').innerHTML = gradeFor(scores.latency);
+
+    document.getElementById('eval-tool-eff').textContent = scores.tool + '%';
+    document.getElementById('eval-tool-bar').style.width = scores.tool + '%';
+    document.getElementById('eval-row-tools').textContent = scores.tool + '%';
+    document.getElementById('eval-grade-tools').innerHTML = gradeFor(scores.tool);
+
+    document.getElementById('eval-row-errors').textContent = scores.error + '%';
+    document.getElementById('eval-grade-errors').innerHTML = gradeFor(scores.error);
+
+    var mem = memRes.memory || {};
+    var memPct = Math.min(100, Math.round((mem.sessions_with_summary || 0) / (mem.total_sessions || 1) * 100));
+    document.getElementById('eval-row-memory').textContent = memPct + '%';
+    document.getElementById('eval-grade-memory').innerHTML = gradeFor(memPct);
+
+    var overall = Math.round(scores.completion * 0.3 + scores.latency * 0.2 + scores.tool * 0.2 + scores.error * 0.2 + memPct * 0.1);
+    document.getElementById('eval-row-overall').textContent = overall + '%';
+    document.getElementById('eval-grade-overall').innerHTML = gradeFor(overall);
+
+    loadRAI();
+
+    if (laSelectedAgent === '__all__') {
+      document.getElementById('agent-comparison-card').style.display = 'block';
+      loadComparison();
+    } else {
+      document.getElementById('agent-comparison-card').style.display = 'none';
+    }
+  }).catch(function(e) { console.error('loadEvaluation failed:', e); });
+}
+
+function loadRAI() {
+  var agent = laSelectedAgent !== '__all__' ? laAllAgents.find(function(a){return a.id === laSelectedAgent}) : null;
+  var traces = getFilteredTraces();
+  var errorCount = traces.filter(function(t){return t.status === 'ERROR'}).length;
+  var errorRate = traces.length > 0 ? (errorCount / traces.length * 100).toFixed(1) : '0.0';
+
+  if (agent) {
+    document.getElementById('rai-subtitle').textContent = 'Governance controls for agent: ' + agent.name;
+    document.getElementById('rai-sys-prompt').textContent = agent.system_prompt ? 'Configured' : 'None';
+    document.getElementById('rai-sys-prompt').style.color = agent.system_prompt ? '#10b981' : '#f59e0b';
+    document.getElementById('rai-sys-prompt').style.background = agent.system_prompt ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)';
+    document.getElementById('rai-memory').textContent = agent.memory_enabled ? 'Enabled' : 'Disabled';
+    document.getElementById('rai-memory').style.color = agent.memory_enabled ? '#06b6d4' : '#f59e0b';
+    document.getElementById('rai-kb').textContent = agent.kb_collection || 'None';
+    document.getElementById('rai-tools').textContent = (agent.tool_ids || []).length + ' tools';
+    document.getElementById('rai-skills').textContent = (agent.skill_ids || []).length + ' skills';
+    document.getElementById('rai-max-iter').textContent = agent.max_iterations + ' loops';
+    document.getElementById('rai-temperature').textContent = agent.temperature;
+    document.getElementById('rai-temperature').style.color = agent.temperature > 1.0 ? '#f43f5e' : '#f59e0b';
+    document.getElementById('rai-temperature').style.background = agent.temperature > 1.0 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
+    document.getElementById('rai-top-p').textContent = agent.top_p != null ? agent.top_p : 1;
+  } else {
+    document.getElementById('rai-subtitle').textContent = 'Global governance guardrails, fairness checks & safety monitoring';
+    ['rai-sys-prompt','rai-memory','rai-kb','rai-tools','rai-skills','rai-max-iter','rai-top-p'].forEach(function(id) {
+      document.getElementById(id).textContent = 'Per-agent';
+    });
+    document.getElementById('rai-temperature').textContent = 'Per-agent';
+    document.getElementById('rai-temperature').style.color = '#f59e0b';
+    document.getElementById('rai-temperature').style.background = 'rgba(245,158,11,0.12)';
+  }
+
+  document.getElementById('rai-error-threshold').textContent = errorRate + '%';
+  document.getElementById('rai-error-threshold').style.color = parseFloat(errorRate) > 10 ? '#f43f5e' : '#f59e0b';
+  document.getElementById('rai-error-threshold').style.background = parseFloat(errorRate) > 10 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
+
+  var issues = [];
+  if (parseFloat(errorRate) > 20) issues.push('high error rate (' + errorRate + '%)');
+  if (traces.length === 0) issues.push('no traces recorded');
+  if (agent && !agent.system_prompt) issues.push('no system prompt');
+  if (agent && agent.temperature > 1.0) issues.push('high temperature');
+
+  var raiEl = document.getElementById('rai-status');
+  var raiDetail = document.getElementById('rai-detail');
+  if (issues.length === 0) {
+    raiEl.textContent = 'Responsible AI: All Controls Active';
+    raiEl.style.color = '#10b981';
+    raiDetail.textContent = traces.length + ' traces monitored \\u2014 ' + errorRate + '% error rate \\u2014 guardrails operational';
+  } else {
+    raiEl.textContent = 'Responsible AI: ' + issues.length + ' concern(s)';
+    raiEl.style.color = '#f59e0b';
+    raiDetail.textContent = issues.join(', ');
+  }
+}
+
+function loadComparison() {
+  if (laAllAgents.length === 0) {
+    document.getElementById('agent-comparison-table').innerHTML = '<p style="color:var(--text-3)">No agents registered yet.</p>';
+    return;
+  }
+  var html = '<table><tr><th>Agent</th><th>Model</th><th>Traces</th><th>Completion</th><th>Latency</th><th>Error Rate</th><th>Overall</th><th>RAI</th></tr>';
+  laAllAgents.forEach(function(agent) {
+    var agentTraces = laAllTraces.filter(function(t) {
+      var name = (t.name || '').toLowerCase();
+      var meta = JSON.stringify(t.metadata || {}).toLowerCase();
+      var agentName = agent.name.toLowerCase();
+      return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
+    });
+    var scores = computeScores(agentTraces);
+    var raiIssues = [];
+    if (!agent.system_prompt) raiIssues.push('no prompt');
+    if (agent.temperature > 1.0) raiIssues.push('high temp');
+    if (scores.error < 80 && agentTraces.length > 0) raiIssues.push('errors');
+    var raiBadge = raiIssues.length === 0
+      ? '<span class="badge" style="font-size:0.65rem;background:rgba(16,185,129,0.12);color:#10b981">OK</span>'
+      : '<span class="badge" style="font-size:0.65rem;background:rgba(245,158,11,0.12);color:#f59e0b">' + raiIssues.length + ' issue(s)</span>';
+    html += '<tr>' +
+      '<td style="font-weight:600">' + escapeHtml(agent.name) + (agent.is_default ? ' <span style="font-size:0.62rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
+      '<td class="mono" style="font-size:0.75rem">' + escapeHtml(agent.provider) + '/' + escapeHtml(agent.model) + '</td>' +
+      '<td class="mono">' + agentTraces.length + '</td>' +
+      '<td><span style="color:' + gradeColor(scores.completion) + ';font-weight:600">' + scores.completion + '%</span></td>' +
+      '<td><span style="color:' + gradeColor(scores.latency) + ';font-weight:600">' + scores.latency + '%</span></td>' +
+      '<td><span style="color:' + gradeColor(scores.error) + ';font-weight:600">' + scores.error + '%</span></td>' +
+      '<td><span style="font-weight:700">' + scores.overall + '% ' + gradeFor(scores.overall) + '</span></td>' +
+      '<td>' + raiBadge + '</td></tr>';
+  });
+  html += '</table>';
+  document.getElementById('agent-comparison-table').innerHTML = html;
+}
+
+/* ── OBSERVABILITY TAB ── */
+function obsRefreshHealth() {
+  fetch('/api/observability/health').then(function(r){return r.json()}).then(function(data) {
+    var healthy = 0, unhealthy = 0;
+    (data.services || []).forEach(function(svc) {
+      var dot = document.getElementById('dot-' + svc.name);
+      var status = document.getElementById('status-' + svc.name);
+      if (svc.status === 'healthy') {
+        healthy++;
+        if (dot) { dot.style.background = '#10b981'; dot.className = 'pulse-dot pulse-dot-emerald'; }
+        if (status) status.innerHTML = '<span style="color:#10b981">Connected</span>';
+      } else {
+        unhealthy++;
+        if (dot) { dot.style.background = '#ef4444'; dot.className = 'pulse-dot'; }
+        if (status) status.innerHTML = '<span style="color:#ef4444">' + escapeHtml(svc.error || 'Unhealthy') + '</span>';
+      }
+    });
+    document.getElementById('stat-healthy').textContent = healthy;
+    document.getElementById('stat-unhealthy').textContent = unhealthy;
+  }).catch(function() {
+    document.getElementById('stat-healthy').textContent = '?';
+    document.getElementById('stat-unhealthy').textContent = '?';
+  });
+}
+
+function obsLoadTargets() {
+  fetch('/api/observability/prometheus/targets').then(function(r){return r.json()}).then(function(data) {
+    var container = document.getElementById('targets-container');
+    if (data.status === 'success' && data.data && data.data.activeTargets) {
+      var targets = data.data.activeTargets;
+      document.getElementById('stat-targets').textContent = targets.length;
+      var html = '<table><tr><th>Job</th><th>Endpoint</th><th>State</th><th>Last Scrape</th></tr>';
+      targets.forEach(function(t) {
+        var stateColor = t.health === 'up' ? '#10b981' : '#ef4444';
+        var lastScrape = t.lastScrape ? new Date(t.lastScrape).toLocaleTimeString() : '-';
+        html += '<tr><td><strong>' + escapeHtml(t.labels.job) + '</strong></td>'
+          + '<td class="mono" style="font-size:0.75rem;color:var(--text-3)">' + escapeHtml(t.scrapeUrl) + '</td>'
+          + '<td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:' + stateColor + ';display:inline-block"></span>' + escapeHtml(t.health) + '</span></td>'
+          + '<td style="color:var(--text-3);font-size:0.75rem">' + lastScrape + '</td></tr>';
+      });
+      html += '</table>';
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem">Could not fetch targets</div>';
+      document.getElementById('stat-targets').textContent = '?';
+    }
+  }).catch(function() {
+    document.getElementById('targets-container').innerHTML = '<div style="color:#ef4444;font-size:0.82rem">Prometheus unreachable</div>';
+    document.getElementById('stat-targets').textContent = '?';
+  });
+}
+
+function obsLoadMetrics() {
+  fetch('/api/observability/prometheus/query?query=count({__name__!=""})').then(function(r){return r.json()}).then(function(data) {
+    if (data.status === 'success' && data.data && data.data.result && data.data.result[0]) {
+      document.getElementById('stat-active-series').textContent = parseInt(data.data.result[0].value[1]).toLocaleString();
+    } else { document.getElementById('stat-active-series').textContent = '-'; }
+  }).catch(function() { document.getElementById('stat-active-series').textContent = '?'; });
+}
+
+/* ── INIT ── */
+(function() {
+  Promise.all([
+    fetch('/api/agents').then(function(r){return r.json()}),
+    fetch('/api/traces').then(function(r){return r.json()})
+  ]).then(function(results) {
+    laAllAgents = results[0].agents || results[0] || [];
+    laAllTraces = results[1].traces || [];
+
+    var sel = document.getElementById('la-agent-select');
+    laAllAgents.forEach(function(a) {
+      var opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.name + (a.is_default ? ' (default)' : '');
+      sel.appendChild(opt);
+    });
+
+    loadTraces();
+    loadEvaluation();
+  }).catch(function(e) { console.error('Init failed:', e); });
+})();
+</script>
 ` }) %>

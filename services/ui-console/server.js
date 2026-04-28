@@ -687,6 +687,7 @@ const externalUrls = {
 
 app.get("/", (req, res) => res.render("overview", { urls: externalUrls }));
 app.get("/run-agent", (req, res) => res.render("run-agent", { urls: externalUrls }));
+app.get("/agent-builder", (req, res) => res.render("agent-builder", { urls: externalUrls }));
 app.get("/documents", (req, res) => res.render("documents", { urls: externalUrls }));
 app.get("/workflows", (req, res) => res.render("workflows", { urls: externalUrls }));
 app.get("/skills", (req, res) => res.render("skills", { urls: externalUrls }));
@@ -697,9 +698,9 @@ app.get("/guardrails", (req, res) => res.render("guardrails", { urls: externalUr
 app.get("/a2a", (req, res) => res.render("a2a", { urls: externalUrls }));
 app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));
 app.get("/llm-activity", (req, res) => res.render("llm-activity", { urls: externalUrls }));
-app.get("/traceability", (req, res) => res.render("traceability", { urls: externalUrls }));
-app.get("/evaluation", (req, res) => res.render("evaluation", { urls: externalUrls }));
-app.get("/observability", (req, res) => res.render("observability", { urls: externalUrls }));
+app.get("/traceability", (req, res) => res.redirect("/llm-activity"));
+app.get("/evaluation", (req, res) => res.redirect("/llm-activity"));
+app.get("/observability", (req, res) => res.redirect("/llm-activity"));
 app.get("/marketplace", (req, res) => res.render("marketplace", { urls: externalUrls }));
 app.get("/admin", (req, res) => res.render("admin", { urls: externalUrls }));
 

@@ -96,6 +96,12 @@
           <span class="rail-tooltip">Run Agent</span>
         </a>
       </li>
+      <li>
+        <a href="/agent-builder" class="rail-item <%= page === 'agent-builder' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 12h18"/><circle cx="12" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>
+          <span class="rail-tooltip">Agent Builder</span>
+        </a>
+      </li>
       <!-- ── Agent Configuration ── -->
       <li>
         <a href="/agents" class="rail-item <%= page === 'agents' ? 'active' : '' %>">
@@ -152,27 +158,15 @@
       <!-- ── Monitoring ── -->
       <li><div class="rail-divider"></div></li>
       <li>
-        <a href="/traceability" class="rail-item <%= page === 'traceability' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M22 12h-4"/><path d="M6 12H2"/><path d="M12 6V2"/><path d="M12 22v-4"/><path d="M20 20l-3-3"/><path d="M7 7L4 4"/><path d="M20 4l-3 3"/><path d="M4 20l3-3"/></svg>
-          <span class="rail-tooltip">Traceability</span>
-        </a>
-      </li>
-      <li>
-        <a href="/evaluation" class="rail-item <%= page === 'evaluation' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          <span class="rail-tooltip">Evaluation</span>
+        <a href="/llm-activity" class="rail-item <%= page === 'llm-activity' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="rail-tooltip">LLM Activity</span>
         </a>
       </li>
       <li>
         <a href="/guardrails" class="rail-item <%= page === 'guardrails' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span class="rail-tooltip">Guardrails</span>
-        </a>
-      </li>
-      <li>
-        <a href="/observability" class="rail-item <%= page === 'observability' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span class="rail-tooltip">Observability</span>
         </a>
       </li>
       <!-- ── System ── -->

@@ -1,0 +1,1088 @@
+<%- include('layout', { title: 'Agent Builder', page: 'agent-builder', body: `
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <div>
+    <h1 class="text-glow-cyan" style="margin:0">Agent Builder</h1>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0.35rem 0 0">Visual end-to-end flow: assemble prompts, skills, knowledge, tools, and controls into a deployable agent.</p>
+  </div>
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <select id="ab-load-agent" class="input" style="min-width:200px;font-size:0.82rem" onchange="abLoadExisting()">
+      <option value="">New Agent</option>
+    </select>
+    <button class="btn btn-secondary btn-sm" onclick="abReset()">Reset</button>
+  </div>
+</div>
+
+<!-- ═══ FLOW PIPELINE ═══ -->
+<div id="ab-pipeline" style="display:flex;align-items:stretch;gap:0;margin-bottom:1.5rem;position:relative">
+
+  <!-- ── STEP 1: Prompt ── -->
+  <div class="ab-step" id="ab-step-1" onclick="abGoTo(1)">
+    <div class="ab-step-num">1</div>
+    <div class="ab-step-icon" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.06))">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>
+    </div>
+    <div class="ab-step-title">System Prompt</div>
+    <div class="ab-step-status" id="ab-status-1">Not configured</div>
+  </div>
+  <div class="ab-connector"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+
+  <!-- ── STEP 2: Skills ── -->
+  <div class="ab-step" id="ab-step-2" onclick="abGoTo(2)">
+    <div class="ab-step-num">2</div>
+    <div class="ab-step-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.06))">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </div>
+    <div class="ab-step-title">Skills</div>
+    <div class="ab-step-status" id="ab-status-2">None selected</div>
+  </div>
+  <div class="ab-connector"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+
+  <!-- ── STEP 3: Knowledge Base ── -->
+  <div class="ab-step" id="ab-step-3" onclick="abGoTo(3)">
+    <div class="ab-step-num">3</div>
+    <div class="ab-step-icon" style="background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.06))">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#06b6d4" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    </div>
+    <div class="ab-step-title">Knowledge Base</div>
+    <div class="ab-step-status" id="ab-status-3">Default</div>
+  </div>
+  <div class="ab-connector"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+
+  <!-- ── STEP 4: Tools ── -->
+  <div class="ab-step" id="ab-step-4" onclick="abGoTo(4)">
+    <div class="ab-step-num">4</div>
+    <div class="ab-step-icon" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.06))">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#10b981" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div class="ab-step-title">Tools</div>
+    <div class="ab-step-status" id="ab-status-4">All enabled</div>
+  </div>
+  <div class="ab-connector"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+
+  <!-- ── STEP 5: Controls ── -->
+  <div class="ab-step" id="ab-step-5" onclick="abGoTo(5)">
+    <div class="ab-step-num">5</div>
+    <div class="ab-step-icon" style="background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.06))">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f43f5e" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </div>
+    <div class="ab-step-title">Controls</div>
+    <div class="ab-step-status" id="ab-status-5">Defaults</div>
+  </div>
+  <div class="ab-connector"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+
+  <!-- ── STEP 6: Deploy ── -->
+  <div class="ab-step" id="ab-step-6" onclick="abGoTo(6)">
+    <div class="ab-step-num">6</div>
+    <div class="ab-step-icon" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.06))">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="ab-step-title">Review & Deploy</div>
+    <div class="ab-step-status" id="ab-status-6">Ready</div>
+  </div>
+</div>
+
+<!-- ═══ STEP PANELS ═══ -->
+
+<!-- ── Panel 1: Prompt ── -->
+<div class="ab-panel card animate-fade-up" id="ab-panel-1">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1rem">System Prompt</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Define agent persona, instructions, and output format. Create new or reuse from library.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="abPrev()" style="opacity:0.5" disabled>Back</button>
+      <button class="btn btn-primary btn-sm" onclick="abNext()">Next: Skills</button>
+    </div>
+  </div>
+
+  <!-- Reuse from library -->
+  <div style="margin-bottom:1rem">
+    <label class="field-label" style="display:flex;align-items:center;gap:0.5rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
+      Reuse from Prompt Library
+    </label>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <select id="ab-prompt-library" class="input" style="flex:1" onchange="abApplyPromptFromLib()">
+        <option value="">-- Write custom or select from library --</option>
+      </select>
+      <button class="btn btn-sm" onclick="abSavePromptToLib()" title="Save current prompt to library">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save to Library
+      </button>
+    </div>
+  </div>
+
+  <!-- Agent identity -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div>
+      <label class="field-label">Agent Name</label>
+      <input type="text" id="ab-name" class="input" placeholder="e.g. Research Agent" maxlength="100">
+    </div>
+    <div>
+      <label class="field-label">Description</label>
+      <input type="text" id="ab-desc" class="input" placeholder="Brief purpose of this agent" maxlength="500">
+    </div>
+  </div>
+
+  <div>
+    <label class="field-label">System Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">Defines agent behavior, persona, and constraints</span></label>
+    <textarea id="ab-prompt" class="input" rows="6" placeholder="You are a helpful assistant that...&#10;&#10;Rules:&#10;1. Always cite sources&#10;2. Be concise&#10;3. Ask clarifying questions when needed" style="resize:vertical;font-family:var(--mono);font-size:0.82rem"></textarea>
+    <div style="display:flex;justify-content:space-between;margin-top:0.25rem">
+      <span style="font-size:0.68rem;color:var(--text-3)" id="ab-prompt-chars">0 chars</span>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-sm" onclick="abInsertTemplate('research')" style="font-size:0.7rem">Research</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('coding')" style="font-size:0.7rem">Coding</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('analysis')" style="font-size:0.7rem">Analysis</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('writing')" style="font-size:0.7rem">Writing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Panel 2: Skills ── -->
+<div class="ab-panel card animate-fade-up" id="ab-panel-2" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1rem">Skills</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Attach reusable skill modules that extend agent capabilities with domain-specific behavior.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="abPrev()">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="abNext()">Next: Knowledge Base</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center">
+    <input type="text" id="ab-skill-search" class="input" placeholder="Search skills..." oninput="abFilterSkills()" style="flex:1;font-size:0.82rem">
+    <span id="ab-skill-count" class="badge" style="font-size:0.72rem">0 selected</span>
+  </div>
+
+  <div id="ab-skills-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.75rem;max-height:400px;overflow-y:auto;padding:0.25rem">
+    <p style="color:var(--text-3);font-size:0.82rem;text-align:center;grid-column:1/-1">Loading skills...</p>
+  </div>
+
+  <div style="margin-top:1rem;padding:0.75rem;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.12);border-radius:10px;display:flex;align-items:center;gap:0.75rem">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="font-size:0.78rem;color:var(--text-3)">Skills are optional. Each skill injects its system prompt and tool bindings into the agent's reasoning loop. <a href="/skills" style="color:#f59e0b">Manage skills library</a></span>
+  </div>
+</div>
+
+<!-- ── Panel 3: Knowledge Base ── -->
+<div class="ab-panel card animate-fade-up" id="ab-panel-3" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1rem">Knowledge Base</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Select or create the agent's knowledge store. Attach documents, collections, or external sources.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="abPrev()">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="abNext()">Next: Tools</button>
+    </div>
+  </div>
+
+  <!-- Collection selector -->
+  <div style="margin-bottom:1rem">
+    <label class="field-label">KB Collection</label>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <select id="ab-kb-collection" class="input" style="flex:1" onchange="abKBChanged()">
+        <option value="agentic_docs">agentic_docs (global)</option>
+      </select>
+      <input type="text" id="ab-kb-new" class="input" placeholder="New collection name" style="flex:1;display:none">
+      <button class="btn btn-sm" id="ab-kb-new-btn" onclick="abToggleNewKB()">+ New</button>
+    </div>
+  </div>
+
+  <!-- Document source tabs -->
+  <div style="display:flex;gap:0;margin-bottom:0.75rem;border:1px solid var(--glass-border);border-radius:8px;overflow:hidden">
+    <button class="btn btn-sm ab-kb-tab active" onclick="abKBTab('docs')" id="ab-kb-tab-docs" style="flex:1;border-radius:0;border:none;font-size:0.78rem">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Documents
+    </button>
+    <button class="btn btn-sm ab-kb-tab" onclick="abKBTab('upload')" id="ab-kb-tab-upload" style="flex:1;border-radius:0;border:none;border-left:1px solid var(--glass-border);font-size:0.78rem">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload
+    </button>
+    <button class="btn btn-sm ab-kb-tab" onclick="abKBTab('connectors')" id="ab-kb-tab-connectors" style="flex:1;border-radius:0;border:none;border-left:1px solid var(--glass-border);font-size:0.78rem">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Connectors / MCP
+    </button>
+  </div>
+
+  <!-- Documents panel -->
+  <div id="ab-kb-panel-docs">
+    <div id="ab-kb-doc-list" style="max-height:250px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:8px;padding:0.5rem">
+      <p style="color:var(--text-3);font-size:0.82rem;text-align:center">Loading documents...</p>
+    </div>
+  </div>
+
+  <!-- Upload panel -->
+  <div id="ab-kb-panel-upload" style="display:none">
+    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+      <label class="btn btn-sm" style="cursor:pointer" for="ab-kb-file">Choose File</label>
+      <input type="file" id="ab-kb-file" accept=".txt,.md,.csv,.json,.pdf,.html,.xml,.yaml,.yml,.py,.js,.ts" style="display:none" onchange="abKBFileSelect(this)">
+      <span id="ab-kb-filename" style="color:var(--text-3);font-size:0.78rem">No file selected</span>
+    </div>
+    <textarea id="ab-kb-text" class="input" rows="4" placeholder="Or paste text content here..." style="resize:vertical;font-size:0.82rem"></textarea>
+    <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
+      <input type="text" id="ab-kb-source" class="input" placeholder="Source name (e.g. faq.md)" style="flex:1">
+      <button class="btn btn-primary btn-sm" onclick="abUploadDoc()">Upload to KB</button>
+    </div>
+    <div id="ab-kb-upload-result" style="font-size:0.75rem;margin-top:0.25rem"></div>
+  </div>
+
+  <!-- Connectors / MCP panel -->
+  <div id="ab-kb-panel-connectors" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+      <!-- MCP Servers -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <strong style="font-size:0.88rem;color:#8b5cf6">MCP Servers</strong>
+        </div>
+        <div id="ab-mcp-list" style="display:flex;flex-direction:column;gap:0.4rem">
+          <p style="color:var(--text-3);font-size:0.78rem">Loading MCP servers...</p>
+        </div>
+        <a href="/mcp" style="font-size:0.72rem;color:#8b5cf6;margin-top:0.5rem;display:inline-block">Manage MCP servers &rarr;</a>
+      </div>
+
+      <!-- Future connectors placeholder -->
+      <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <strong style="font-size:0.88rem;color:#06b6d4">Data Connectors</strong>
+          <span class="badge" style="font-size:0.6rem;background:rgba(6,182,212,0.12);color:#06b6d4">Coming Soon</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem">
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;opacity:0.5">
+            <span style="font-size:0.78rem;color:var(--text-3)">SQL Database</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;opacity:0.5">
+            <span style="font-size:0.78rem;color:var(--text-3)">REST API</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;opacity:0.5">
+            <span style="font-size:0.78rem;color:var(--text-3)">SharePoint / OneDrive</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem;opacity:0.5">
+            <span style="font-size:0.78rem;color:var(--text-3)">Azure Blob Storage</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Panel 4: Tools ── -->
+<div class="ab-panel card animate-fade-up" id="ab-panel-4" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1rem">Tools</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Select which tools this agent can invoke during reasoning. Empty selection = all tools available.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="abPrev()">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="abNext()">Next: Controls</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center">
+    <input type="text" id="ab-tool-search" class="input" placeholder="Search tools..." oninput="abFilterTools()" style="flex:1;font-size:0.82rem">
+    <button class="btn btn-sm" onclick="abSelectAllTools()">Select All</button>
+    <button class="btn btn-sm" onclick="abDeselectAllTools()">Clear</button>
+    <span id="ab-tool-count" class="badge" style="font-size:0.72rem">0 selected</span>
+  </div>
+
+  <div id="ab-tools-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.6rem;max-height:400px;overflow-y:auto;padding:0.25rem">
+    <p style="color:var(--text-3);font-size:0.82rem;text-align:center;grid-column:1/-1">Loading tools...</p>
+  </div>
+</div>
+
+<!-- ── Panel 5: Controls ── -->
+<div class="ab-panel card animate-fade-up" id="ab-panel-5" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f43f5e" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1rem">Controls & Guardrails</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Configure model parameters, iteration limits, memory, and safety controls.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="abPrev()">Back</button>
+      <button class="btn btn-primary btn-sm" onclick="abNext()">Next: Review</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    <!-- Model config -->
+    <div>
+      <h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3);margin-bottom:0.75rem">Model Configuration</h4>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <div>
+          <label class="field-label">Provider</label>
+          <select id="ab-provider" class="input" onchange="abProviderChanged()">
+            <option value="azure-foundry">Azure Foundry</option>
+            <option value="azure-openai">Azure OpenAI</option>
+            <option value="openai">OpenAI</option>
+            <option value="ollama">Ollama (Local)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Model</label>
+          <select id="ab-model" class="input">
+            <option value="gpt-5-nano">gpt-5-nano</option>
+            <option value="gpt-5.4-mini">gpt-5.4-mini</option>
+            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+            <option value="gpt-4o">gpt-4o</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Temperature <span class="mono" style="color:var(--text-3);font-size:0.72rem" id="ab-temp-val">0.7</span></label>
+          <input type="range" id="ab-temperature" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('ab-temp-val').textContent=this.value" style="width:100%">
+        </div>
+        <div>
+          <label class="field-label">Top P <span class="mono" style="color:var(--text-3);font-size:0.72rem" id="ab-topp-val">1.0</span></label>
+          <input type="range" id="ab-top-p" min="0" max="1" step="0.05" value="1" oninput="document.getElementById('ab-topp-val').textContent=this.value" style="width:100%">
+        </div>
+      </div>
+    </div>
+
+    <!-- Behavior controls -->
+    <div>
+      <h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3);margin-bottom:0.75rem">Behavior & Safety</h4>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <div>
+          <label class="field-label">Max Iterations</label>
+          <input type="number" id="ab-max-iter" class="input" min="1" max="20" value="5">
+          <span style="font-size:0.68rem;color:var(--text-3)">Max tool-use reasoning loops before forced stop</span>
+        </div>
+        <div>
+          <label class="field-label">Conversation Memory</label>
+          <select id="ab-memory" class="input">
+            <option value="1">Enabled</option>
+            <option value="0">Disabled</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Guardrails</label>
+          <div id="ab-guardrails-list" style="display:flex;flex-direction:column;gap:0.35rem;max-height:160px;overflow-y:auto">
+            <p style="color:var(--text-3);font-size:0.78rem">Loading guardrails...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Panel 6: Review & Deploy ── -->
+<div class="ab-panel card animate-fade-up" id="ab-panel-6" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:1rem">Review & Deploy</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Review your agent configuration and create or update.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="abPrev()">Back</button>
+      <button class="btn btn-primary" onclick="abDeploy()" id="ab-deploy-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Create Agent
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div id="ab-review-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.25rem">
+  </div>
+
+  <!-- Full config -->
+  <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+      <span style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase">Agent Configuration JSON</span>
+      <button class="btn btn-sm" onclick="abCopyConfig()" style="font-size:0.7rem">Copy</button>
+    </div>
+    <pre id="ab-review-json" style="background:rgba(0,0,0,0.3);border-radius:8px;padding:0.75rem;font-size:0.78rem;color:var(--text-2);max-height:300px;overflow:auto;margin:0;white-space:pre-wrap;font-family:var(--mono)"></pre>
+  </div>
+
+  <div id="ab-deploy-result" style="margin-top:1rem"></div>
+</div>
+
+
+<style>
+  /* Pipeline step styling */
+  #ab-pipeline { overflow-x: auto; padding: 0.5rem 0; }
+  .ab-step {
+    flex: 1; min-width: 120px; max-width: 180px;
+    display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+    padding: 0.75rem 0.5rem; border-radius: 14px; cursor: pointer;
+    border: 2px solid transparent; transition: all 0.25s;
+    position: relative; text-align: center;
+    background: var(--glass-bg);
+  }
+  .ab-step:hover { border-color: rgba(6,182,212,0.2); background: rgba(6,182,212,0.03); }
+  .ab-step.active { border-color: rgba(6,182,212,0.5); background: rgba(6,182,212,0.06); }
+  .ab-step.done { border-color: rgba(16,185,129,0.4); }
+  .ab-step-num {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    width: 18px; height: 18px; border-radius: 50%; font-size: 0.6rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-3);
+  }
+  .ab-step.active .ab-step-num { background: #06b6d4; color: #fff; border-color: #06b6d4; }
+  .ab-step.done .ab-step-num { background: #10b981; color: #fff; border-color: #10b981; }
+  .ab-step-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+  .ab-step-title { font-size: 0.78rem; font-weight: 600; color: var(--text-1); }
+  .ab-step-status { font-size: 0.65rem; color: var(--text-3); }
+  .ab-connector { display: flex; align-items: center; padding: 0 0.15rem; color: var(--text-3); flex-shrink: 0; }
+
+  /* Skills / tools card */
+  .ab-select-card {
+    background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 10px;
+    padding: 0.6rem 0.75rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 0.6rem;
+  }
+  .ab-select-card:hover { border-color: rgba(6,182,212,0.3); }
+  .ab-select-card.selected { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.04); }
+  .ab-select-card .ab-check {
+    width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--glass-border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+    transition: all 0.15s;
+  }
+  .ab-select-card.selected .ab-check { background: #10b981; border-color: #10b981; }
+  .ab-select-card.selected .ab-check::after { content: '\\2714'; color: #fff; font-size: 0.65rem; }
+
+  /* KB tabs */
+  .ab-kb-tab.active { background: rgba(6,182,212,0.15) !important; color: #06b6d4 !important; }
+</style>
+
+<script>
+/* ═══ STATE ═══ */
+var abCurrentStep = 1;
+var abEditingId = '';
+var abData = {
+  skills: [], prompts: [], tools: [], collections: [], guardrails: [], mcpServers: [], agents: [],
+  selectedSkills: [], selectedTools: [], selectedGuardrails: []
+};
+
+/* ═══ INIT ═══ */
+async function abInit() {
+  try {
+    var results = await Promise.all([
+      fetch('/api/skills').then(function(r){return r.json()}),
+      fetch('/api/prompts').then(function(r){return r.json()}),
+      fetch('/api/tools').then(function(r){return r.json()}),
+      fetch('/api/documents/collections').then(function(r){return r.json()}).catch(function(){return {collections:[]}}),
+      fetch('/api/guardrails').then(function(r){return r.json()}).catch(function(){return {guardrails:[]}}),
+      fetch('/api/mcp/servers').then(function(r){return r.json()}).catch(function(){return {servers:[]}}),
+      fetch('/api/agents').then(function(r){return r.json()})
+    ]);
+    abData.skills = results[0].skills || results[0] || [];
+    abData.prompts = results[1].prompts || results[1] || [];
+    abData.tools = results[2].tools || results[2] || [];
+    abData.collections = results[3].collections || [];
+    abData.guardrails = results[4].guardrails || results[4] || [];
+    abData.mcpServers = results[5].servers || results[5] || [];
+    abData.agents = results[6].agents || results[6] || [];
+
+    abRenderPromptLibrary();
+    abRenderSkills();
+    abRenderTools();
+    abRenderCollections();
+    abRenderGuardrails();
+    abRenderMCP();
+    abRenderAgentSelector();
+    abGoTo(1);
+  } catch(e) {
+    console.error('abInit error:', e);
+  }
+}
+
+/* ═══ NAVIGATION ═══ */
+function abGoTo(step) {
+  abCurrentStep = step;
+  for (var i = 1; i <= 6; i++) {
+    var panel = document.getElementById('ab-panel-' + i);
+    var stepEl = document.getElementById('ab-step-' + i);
+    if (panel) panel.style.display = i === step ? 'block' : 'none';
+    if (stepEl) {
+      stepEl.classList.remove('active');
+      if (i === step) stepEl.classList.add('active');
+    }
+  }
+  if (step === 6) abBuildReview();
+  abUpdateStatuses();
+}
+
+function abNext() {
+  if (abCurrentStep < 6) abGoTo(abCurrentStep + 1);
+}
+
+function abPrev() {
+  if (abCurrentStep > 1) abGoTo(abCurrentStep - 1);
+}
+
+function abUpdateStatuses() {
+  // Step 1: Prompt
+  var name = (document.getElementById('ab-name').value || '').trim();
+  var prompt = (document.getElementById('ab-prompt').value || '').trim();
+  document.getElementById('ab-status-1').textContent = name ? name : (prompt ? 'Custom prompt' : 'Not configured');
+  if (name || prompt) document.getElementById('ab-step-1').classList.add('done');
+  else document.getElementById('ab-step-1').classList.remove('done');
+
+  // Step 2: Skills
+  var sc = abData.selectedSkills.length;
+  document.getElementById('ab-status-2').textContent = sc > 0 ? sc + ' skill' + (sc>1?'s':'') : 'None selected';
+  document.getElementById('ab-skill-count').textContent = sc + ' selected';
+  if (sc > 0) document.getElementById('ab-step-2').classList.add('done');
+  else document.getElementById('ab-step-2').classList.remove('done');
+
+  // Step 3: KB
+  var kbSel = document.getElementById('ab-kb-collection');
+  var kbVal = kbSel ? kbSel.value : 'agentic_docs';
+  document.getElementById('ab-status-3').textContent = kbVal || 'Default';
+  document.getElementById('ab-step-3').classList.add('done');
+
+  // Step 4: Tools
+  var tc = abData.selectedTools.length;
+  var totalTools = abData.tools.length;
+  document.getElementById('ab-status-4').textContent = tc === 0 ? 'All (' + totalTools + ')' : tc + ' of ' + totalTools;
+  document.getElementById('ab-tool-count').textContent = (tc === 0 ? totalTools : tc) + ' selected';
+  document.getElementById('ab-step-4').classList.add('done');
+
+  // Step 5: Controls
+  var prov = document.getElementById('ab-provider').value;
+  var model = document.getElementById('ab-model').value;
+  document.getElementById('ab-status-5').textContent = model;
+  document.getElementById('ab-step-5').classList.add('done');
+
+  // Step 6
+  document.getElementById('ab-status-6').textContent = abEditingId ? 'Update' : 'Create';
+  document.getElementById('ab-deploy-btn').innerHTML = (abEditingId
+    ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Update Agent'
+    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Create Agent');
+}
+
+/* ═══ PROMPT LIBRARY ═══ */
+function abRenderPromptLibrary() {
+  var sel = document.getElementById('ab-prompt-library');
+  sel.innerHTML = '<option value="">-- Write custom or select from library --</option>';
+  abData.prompts.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + (p.category ? ' [' + p.category + ']' : '');
+    opt.dataset.content = p.content || '';
+    sel.appendChild(opt);
+  });
+}
+
+function abApplyPromptFromLib() {
+  var sel = document.getElementById('ab-prompt-library');
+  var opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.content) {
+    document.getElementById('ab-prompt').value = opt.dataset.content;
+    abUpdatePromptChars();
+    abUpdateStatuses();
+  }
+}
+
+function abSavePromptToLib() {
+  var content = document.getElementById('ab-prompt').value.trim();
+  if (!content) { alert('Write a prompt first'); return; }
+  var pName = prompt('Prompt name:');
+  if (!pName) return;
+  fetch('/api/prompts', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name: pName, content: content, category: 'custom', description: 'Created from Agent Builder' })
+  }).then(function(r){return r.json()}).then(function(d) {
+    if (d.id || d.prompt) {
+      abData.prompts.push(d.prompt || d);
+      abRenderPromptLibrary();
+      alert('Saved to prompt library!');
+    }
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function abInsertTemplate(type) {
+  var templates = {
+    research: 'You are a senior research analyst. Your goal is to provide thorough, well-sourced answers.\\n\\nRules:\\n1. Always search for recent information before answering\\n2. Cite your sources\\n3. Distinguish between facts and opinions\\n4. If unsure, say so explicitly',
+    coding: 'You are an expert software engineer. Help users write clean, secure, and efficient code.\\n\\nRules:\\n1. Follow best practices and design patterns\\n2. Include error handling\\n3. Add brief inline comments for complex logic\\n4. Consider security implications (OWASP Top 10)',
+    analysis: 'You are a data analyst. Analyze information systematically and provide actionable insights.\\n\\nRules:\\n1. Structure your analysis with clear sections\\n2. Use quantitative reasoning when possible\\n3. Highlight key findings and recommendations\\n4. Note any limitations or assumptions',
+    writing: 'You are a professional writer. Help users create clear, engaging, and well-structured content.\\n\\nRules:\\n1. Match the tone to the audience\\n2. Use active voice and concise language\\n3. Structure content with headers and bullet points\\n4. Proofread for grammar and clarity'
+  };
+  document.getElementById('ab-prompt').value = templates[type] || '';
+  abUpdatePromptChars();
+  abUpdateStatuses();
+}
+
+function abUpdatePromptChars() {
+  var len = (document.getElementById('ab-prompt').value || '').length;
+  document.getElementById('ab-prompt-chars').textContent = len + ' chars';
+}
+document.getElementById('ab-prompt').addEventListener('input', abUpdatePromptChars);
+
+/* ═══ SKILLS ═══ */
+function abRenderSkills() {
+  var grid = document.getElementById('ab-skills-grid');
+  if (abData.skills.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;padding:2rem"><p style="color:var(--text-3);margin-bottom:0.5rem">No skills created yet</p><a href="/skills" class="btn btn-sm">Create Skills</a></div>';
+    return;
+  }
+  grid.innerHTML = abData.skills.map(function(s) {
+    var sel = abData.selectedSkills.indexOf(s.id) >= 0;
+    var toolCount = (s.tool_ids || []).length;
+    return '<div class="ab-select-card' + (sel ? ' selected' : '') + '" onclick="abToggleSkill(\\'' + s.id + '\\')" data-name="' + escapeHtml(s.name.toLowerCase()) + '">' +
+      '<div class="ab-check"></div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:600;font-size:0.82rem;color:var(--text-1)">' + escapeHtml(s.name) + '</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-3);margin-top:0.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(s.description || 'No description') + '</div>' +
+        '<div style="display:flex;gap:0.35rem;margin-top:0.3rem">' +
+          (toolCount > 0 ? '<span class="badge" style="font-size:0.6rem">' + toolCount + ' tools</span>' : '') +
+          ((s.constraints||[]).length > 0 ? '<span class="badge" style="font-size:0.6rem">' + (s.constraints||[]).length + ' constraints</span>' : '') +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+function abToggleSkill(id) {
+  var idx = abData.selectedSkills.indexOf(id);
+  if (idx >= 0) abData.selectedSkills.splice(idx, 1);
+  else abData.selectedSkills.push(id);
+  abRenderSkills();
+  abUpdateStatuses();
+}
+
+function abFilterSkills() {
+  var q = document.getElementById('ab-skill-search').value.toLowerCase();
+  var cards = document.querySelectorAll('#ab-skills-grid .ab-select-card');
+  cards.forEach(function(c) { c.style.display = c.dataset.name.indexOf(q) >= 0 ? '' : 'none'; });
+}
+
+/* ═══ TOOLS ═══ */
+function abRenderTools() {
+  var grid = document.getElementById('ab-tools-grid');
+  if (abData.tools.length === 0) {
+    grid.innerHTML = '<p style="color:var(--text-3);text-align:center;grid-column:1/-1">No tools found</p>';
+    return;
+  }
+  grid.innerHTML = abData.tools.map(function(t) {
+    var id = t.name || t.id;
+    var sel = abData.selectedTools.indexOf(id) >= 0;
+    var badge = t.type === 'custom' ? '<span class="badge" style="font-size:0.6rem;background:rgba(139,92,246,0.12);color:#8b5cf6">custom</span>' :
+                t.type === 'mcp' ? '<span class="badge" style="font-size:0.6rem;background:rgba(6,182,212,0.12);color:#06b6d4">MCP</span>' :
+                '<span class="badge" style="font-size:0.6rem">built-in</span>';
+    return '<div class="ab-select-card' + (sel ? ' selected' : '') + '" onclick="abToggleTool(\\'' + escapeHtml(id) + '\\')" data-name="' + escapeHtml((t.name||'').toLowerCase()) + '">' +
+      '<div class="ab-check"></div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:center;gap:0.35rem"><span style="font-weight:600;font-size:0.82rem;color:var(--text-1)">' + escapeHtml(t.name||t.id) + '</span>' + badge + '</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-3);margin-top:0.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(t.description || '-') + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+function abToggleTool(id) {
+  var idx = abData.selectedTools.indexOf(id);
+  if (idx >= 0) abData.selectedTools.splice(idx, 1);
+  else abData.selectedTools.push(id);
+  abRenderTools();
+  abUpdateStatuses();
+}
+
+function abSelectAllTools() {
+  abData.selectedTools = abData.tools.map(function(t) { return t.name || t.id; });
+  abRenderTools();
+  abUpdateStatuses();
+}
+
+function abDeselectAllTools() {
+  abData.selectedTools = [];
+  abRenderTools();
+  abUpdateStatuses();
+}
+
+function abFilterTools() {
+  var q = document.getElementById('ab-tool-search').value.toLowerCase();
+  var cards = document.querySelectorAll('#ab-tools-grid .ab-select-card');
+  cards.forEach(function(c) { c.style.display = c.dataset.name.indexOf(q) >= 0 ? '' : 'none'; });
+}
+
+/* ═══ KNOWLEDGE BASE ═══ */
+function abRenderCollections() {
+  var sel = document.getElementById('ab-kb-collection');
+  sel.innerHTML = '<option value="agentic_docs">agentic_docs (global)</option>';
+  abData.collections.forEach(function(c) {
+    var name = typeof c === 'string' ? c : c.name;
+    if (name === 'agentic_docs') return;
+    var opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  abLoadKBDocs();
+}
+
+function abKBChanged() {
+  abLoadKBDocs();
+  abUpdateStatuses();
+}
+
+function abToggleNewKB() {
+  var inp = document.getElementById('ab-kb-new');
+  var btn = document.getElementById('ab-kb-new-btn');
+  if (inp.style.display === 'none') {
+    inp.style.display = '';
+    btn.textContent = 'Use Existing';
+  } else {
+    inp.style.display = 'none';
+    btn.textContent = '+ New';
+    inp.value = '';
+  }
+}
+
+function abLoadKBDocs() {
+  var col = document.getElementById('ab-kb-collection').value || 'agentic_docs';
+  fetch('/api/documents?collection=' + encodeURIComponent(col)).then(function(r){return r.json()}).then(function(d) {
+    var docs = d.documents || d || [];
+    var el = document.getElementById('ab-kb-doc-list');
+    if (docs.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem;text-align:center;padding:1rem">No documents in this collection. Upload some via the Upload tab.</p>';
+      return;
+    }
+    el.innerHTML = docs.map(function(doc) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.5rem;border-bottom:1px solid var(--glass-border)">' +
+        '<div style="display:flex;align-items:center;gap:0.5rem">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+          '<span style="font-size:0.82rem;color:var(--text-1)">' + escapeHtml(doc.source || doc.name || '-') + '</span>' +
+        '</div>' +
+        '<span class="badge" style="font-size:0.65rem">' + (doc.chunks || doc.chunk_count || '?') + ' chunks</span>' +
+      '</div>';
+    }).join('');
+  }).catch(function() {
+    document.getElementById('ab-kb-doc-list').innerHTML = '<p style="color:var(--text-3);font-size:0.78rem;text-align:center">Could not load documents</p>';
+  });
+}
+
+function abKBTab(tab) {
+  var tabs = ['docs', 'upload', 'connectors'];
+  tabs.forEach(function(t) {
+    document.getElementById('ab-kb-panel-' + t).style.display = t === tab ? '' : 'none';
+    document.getElementById('ab-kb-tab-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function abKBFileSelect(input) {
+  document.getElementById('ab-kb-filename').textContent = input.files[0] ? input.files[0].name : 'No file selected';
+  if (input.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function(e) { document.getElementById('ab-kb-text').value = e.target.result; };
+    reader.readAsText(input.files[0]);
+    if (!document.getElementById('ab-kb-source').value) {
+      document.getElementById('ab-kb-source').value = input.files[0].name;
+    }
+  }
+}
+
+function abUploadDoc() {
+  var text = document.getElementById('ab-kb-text').value.trim();
+  var source = document.getElementById('ab-kb-source').value.trim() || 'uploaded-doc';
+  var newCol = document.getElementById('ab-kb-new').value.trim();
+  var collection = newCol || document.getElementById('ab-kb-collection').value || 'agentic_docs';
+  if (!text) { alert('Provide text content or select a file'); return; }
+
+  fetch('/api/documents/ingest', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ text: text, source: source, collection: collection })
+  }).then(function(r){return r.json()}).then(function(d) {
+    document.getElementById('ab-kb-upload-result').innerHTML = '<span style="color:#10b981">Uploaded ' + source + ' to ' + collection + '</span>';
+    document.getElementById('ab-kb-text').value = '';
+    document.getElementById('ab-kb-source').value = '';
+    if (newCol && abData.collections.indexOf(newCol) < 0) {
+      abData.collections.push(newCol);
+      abRenderCollections();
+      document.getElementById('ab-kb-collection').value = newCol;
+    }
+    abLoadKBDocs();
+  }).catch(function(e) {
+    document.getElementById('ab-kb-upload-result').innerHTML = '<span style="color:#f43f5e">Upload failed: ' + e.message + '</span>';
+  });
+}
+
+/* ═══ MCP ═══ */
+function abRenderMCP() {
+  var el = document.getElementById('ab-mcp-list');
+  if (abData.mcpServers.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem">No MCP servers registered. <a href="/mcp" style="color:#8b5cf6">Add one</a></p>';
+    return;
+  }
+  el.innerHTML = abData.mcpServers.map(function(s) {
+    var statusColor = s.status === 'connected' ? '#10b981' : '#f59e0b';
+    var toolCount = (s.tools || []).length;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0">' +
+      '<div style="display:flex;align-items:center;gap:0.4rem">' +
+        '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + '"></span>' +
+        '<span style="font-size:0.78rem;color:var(--text-1)">' + escapeHtml(s.name) + '</span>' +
+      '</div>' +
+      '<span class="badge" style="font-size:0.6rem">' + toolCount + ' tools</span>' +
+    '</div>';
+  }).join('');
+}
+
+/* ═══ GUARDRAILS ═══ */
+function abRenderGuardrails() {
+  var el = document.getElementById('ab-guardrails-list');
+  if (abData.guardrails.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem">No guardrails configured. <a href="/guardrails" style="color:#f43f5e">Set up guardrails</a></p>';
+    return;
+  }
+  el.innerHTML = abData.guardrails.map(function(g) {
+    var checked = g.enabled ? ' checked' : '';
+    var sevColor = g.severity === 'high' ? '#f43f5e' : g.severity === 'medium' ? '#f59e0b' : '#10b981';
+    return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0">' +
+      '<input type="checkbox" data-gid="' + g.id + '"' + checked + ' style="accent-color:#10b981">' +
+      '<span style="font-size:0.78rem;color:var(--text-1);flex:1">' + escapeHtml(g.name) + '</span>' +
+      '<span class="badge" style="font-size:0.6rem;color:' + sevColor + '">' + (g.severity||'medium') + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+/* ═══ AGENT SELECTOR ═══ */
+function abRenderAgentSelector() {
+  var sel = document.getElementById('ab-load-agent');
+  sel.innerHTML = '<option value="">New Agent</option>';
+  abData.agents.forEach(function(a) {
+    var opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name + (a.is_default ? ' (default)' : '');
+    sel.appendChild(opt);
+  });
+}
+
+function abLoadExisting() {
+  var id = document.getElementById('ab-load-agent').value;
+  if (!id) { abReset(); return; }
+  var agent = abData.agents.find(function(a) { return a.id === id; });
+  if (!agent) return;
+
+  abEditingId = id;
+  document.getElementById('ab-name').value = agent.name || '';
+  document.getElementById('ab-desc').value = agent.description || '';
+  document.getElementById('ab-prompt').value = agent.system_prompt || '';
+  abUpdatePromptChars();
+
+  abData.selectedSkills = (agent.skill_ids || []).slice();
+  abData.selectedTools = (agent.tool_ids || []).slice();
+
+  document.getElementById('ab-provider').value = agent.provider || 'azure-foundry';
+  abProviderChanged();
+  document.getElementById('ab-model').value = agent.model || 'gpt-5-nano';
+  document.getElementById('ab-temperature').value = agent.temperature || 0.7;
+  document.getElementById('ab-temp-val').textContent = agent.temperature || 0.7;
+  document.getElementById('ab-top-p').value = agent.top_p != null ? agent.top_p : 1;
+  document.getElementById('ab-topp-val').textContent = agent.top_p != null ? agent.top_p : 1;
+  document.getElementById('ab-max-iter').value = agent.max_iterations || 5;
+  document.getElementById('ab-memory').value = agent.memory_enabled ? '1' : '0';
+
+  // KB collection
+  if (agent.kb_collection) {
+    var kbSel = document.getElementById('ab-kb-collection');
+    var found = false;
+    for (var i = 0; i < kbSel.options.length; i++) {
+      if (kbSel.options[i].value === agent.kb_collection) { found = true; break; }
+    }
+    if (!found) {
+      var opt = document.createElement('option');
+      opt.value = agent.kb_collection;
+      opt.textContent = agent.kb_collection;
+      kbSel.appendChild(opt);
+    }
+    kbSel.value = agent.kb_collection;
+    abLoadKBDocs();
+  }
+
+  abRenderSkills();
+  abRenderTools();
+  abUpdateStatuses();
+  abGoTo(1);
+}
+
+function abReset() {
+  abEditingId = '';
+  document.getElementById('ab-load-agent').value = '';
+  document.getElementById('ab-name').value = '';
+  document.getElementById('ab-desc').value = '';
+  document.getElementById('ab-prompt').value = '';
+  document.getElementById('ab-prompt-library').value = '';
+  abUpdatePromptChars();
+  abData.selectedSkills = [];
+  abData.selectedTools = [];
+  document.getElementById('ab-provider').value = 'azure-foundry';
+  abProviderChanged();
+  document.getElementById('ab-model').value = 'gpt-5-nano';
+  document.getElementById('ab-temperature').value = 0.7;
+  document.getElementById('ab-temp-val').textContent = '0.7';
+  document.getElementById('ab-top-p').value = 1;
+  document.getElementById('ab-topp-val').textContent = '1';
+  document.getElementById('ab-max-iter').value = 5;
+  document.getElementById('ab-memory').value = '1';
+  document.getElementById('ab-kb-collection').value = 'agentic_docs';
+  document.getElementById('ab-deploy-result').innerHTML = '';
+  abRenderSkills();
+  abRenderTools();
+  abLoadKBDocs();
+  abUpdateStatuses();
+  abGoTo(1);
+}
+
+/* ═══ PROVIDER / MODEL ═══ */
+function abProviderChanged() {
+  var prov = document.getElementById('ab-provider').value;
+  var modelSel = document.getElementById('ab-model');
+  var models = {
+    'azure-foundry': ['gpt-5-nano','gpt-5.4-mini','gpt-4.1-mini','gpt-4o'],
+    'azure-openai': ['gpt-4o','gpt-4o-mini','gpt-4','gpt-35-turbo'],
+    'openai': ['gpt-4o','gpt-4o-mini','gpt-4-turbo','gpt-3.5-turbo'],
+    'ollama': ['llama3','mistral','codellama','phi3','gemma']
+  };
+  var list = models[prov] || ['llama3'];
+  modelSel.innerHTML = list.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
+}
+
+/* ═══ REVIEW ═══ */
+function abBuildReview() {
+  var cfg = abGetConfig();
+  var summary = document.getElementById('ab-review-summary');
+
+  summary.innerHTML = [
+    { label: 'Agent', value: cfg.name || '(unnamed)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>' },
+    { label: 'Model', value: cfg.provider + '/' + cfg.model, color: '#f43f5e', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>' },
+    { label: 'Prompt', value: cfg.system_prompt ? cfg.system_prompt.length + ' chars' : 'None', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
+    { label: 'Skills', value: cfg.skill_ids.length + ' attached', color: '#f59e0b', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' },
+    { label: 'Tools', value: cfg.tool_ids.length === 0 ? 'All (' + abData.tools.length + ')' : cfg.tool_ids.length + ' selected', color: '#10b981', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' },
+    { label: 'Knowledge Base', value: cfg.kb_collection, color: '#06b6d4', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' }
+  ].map(function(item) {
+    return '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.75rem;display:flex;align-items:center;gap:0.6rem">' +
+      '<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,' + item.color + '22,' + item.color + '08);display:flex;align-items:center;justify-content:center;color:' + item.color + '">' + item.icon + '</div>' +
+      '<div><div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + item.label + '</div><div style="font-size:0.88rem;font-weight:600;color:var(--text-1)">' + escapeHtml(item.value) + '</div></div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('ab-review-json').textContent = JSON.stringify(cfg, null, 2);
+}
+
+function abGetConfig() {
+  var newCol = document.getElementById('ab-kb-new').value.trim();
+  var name = document.getElementById('ab-name').value.trim();
+  return {
+    name: name || 'Untitled Agent',
+    description: document.getElementById('ab-desc').value.trim(),
+    system_prompt: document.getElementById('ab-prompt').value.trim(),
+    provider: document.getElementById('ab-provider').value,
+    model: document.getElementById('ab-model').value,
+    temperature: parseFloat(document.getElementById('ab-temperature').value) || 0.7,
+    top_p: parseFloat(document.getElementById('ab-top-p').value) || 1,
+    skill_ids: abData.selectedSkills.slice(),
+    tool_ids: abData.selectedTools.slice(),
+    kb_collection: newCol || document.getElementById('ab-kb-collection').value || 'agentic_docs',
+    max_iterations: parseInt(document.getElementById('ab-max-iter').value) || 5,
+    memory_enabled: document.getElementById('ab-memory').value === '1'
+  };
+}
+
+function abCopyConfig() {
+  var text = document.getElementById('ab-review-json').textContent;
+  navigator.clipboard.writeText(text).then(function() { alert('Copied!'); });
+}
+
+/* ═══ DEPLOY ═══ */
+async function abDeploy() {
+  var cfg = abGetConfig();
+  if (!cfg.name || cfg.name === 'Untitled Agent') {
+    alert('Please provide an agent name in Step 1');
+    abGoTo(1);
+    return;
+  }
+
+  var btn = document.getElementById('ab-deploy-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> ' + (abEditingId ? 'Updating...' : 'Creating...');
+
+  try {
+    var url = abEditingId ? '/api/agents/' + abEditingId : '/api/agents';
+    var method = abEditingId ? 'PUT' : 'POST';
+    var res = await fetch(url, {
+      method: method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(cfg)
+    });
+    var data = await res.json();
+
+    if (res.ok) {
+      var agentId = data.id || (data.agent && data.agent.id) || abEditingId;
+      document.getElementById('ab-deploy-result').innerHTML =
+        '<div style="padding:1rem;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:12px;display:flex;align-items:center;gap:1rem">' +
+          '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+          '<div>' +
+            '<strong style="color:#10b981;font-size:0.92rem">Agent ' + (abEditingId ? 'Updated' : 'Created') + ' Successfully!</strong>' +
+            '<div style="font-size:0.78rem;color:var(--text-3);margin-top:0.25rem">ID: ' + escapeHtml(agentId || '-') + '</div>' +
+            '<div style="display:flex;gap:0.5rem;margin-top:0.5rem">' +
+              '<a href="/run-agent" class="btn btn-primary btn-sm">Run Agent</a>' +
+              '<a href="/agents" class="btn btn-secondary btn-sm">View Registry</a>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+
+      // Refresh agent list
+      var agentsRes = await fetch('/api/agents').then(function(r){return r.json()});
+      abData.agents = agentsRes.agents || agentsRes || [];
+      abRenderAgentSelector();
+      if (!abEditingId && agentId) {
+        abEditingId = agentId;
+        document.getElementById('ab-load-agent').value = agentId;
+      }
+    } else {
+      document.getElementById('ab-deploy-result').innerHTML =
+        '<div style="padding:0.75rem;background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.2);border-radius:10px;color:#f43f5e;font-size:0.82rem">' +
+          'Error: ' + escapeHtml(data.detail || data.error || JSON.stringify(data)) +
+        '</div>';
+    }
+  } catch(e) {
+    document.getElementById('ab-deploy-result').innerHTML =
+      '<div style="padding:0.75rem;background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.2);border-radius:10px;color:#f43f5e;font-size:0.82rem">' +
+        'Error: ' + escapeHtml(e.message) +
+      '</div>';
+  }
+
+  btn.disabled = false;
+  abUpdateStatuses();
+}
+
+abInit();
+</script>
+` }) %>
