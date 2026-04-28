@@ -785,3 +785,113 @@ def _row_to_guardrail(row) -> dict:
     except (json.JSONDecodeError, TypeError):
         d["config"] = {}
     return d
+
+
+# ── Custom Tools CRUD ──────────────────────────────────────────────────────
+
+def _init_custom_tools_table():
+    conn = _get_conn()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS custom_tools (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE,
+            description TEXT DEFAULT '',
+            category    TEXT DEFAULT 'proxy',
+            endpoint    TEXT DEFAULT '',
+            method      TEXT DEFAULT 'POST',
+            headers     TEXT DEFAULT '{}',
+            body_template TEXT DEFAULT '{}',
+            parameters  TEXT DEFAULT '[]',
+            enabled     INTEGER DEFAULT 1,
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+
+
+def _row_to_custom_tool(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "description": row["description"],
+        "category": row["category"],
+        "endpoint": row["endpoint"],
+        "method": row["method"],
+        "headers": json.loads(row["headers"]),
+        "body_template": json.loads(row["body_template"]),
+        "parameters": json.loads(row["parameters"]),
+        "enabled": bool(row["enabled"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_custom_tools() -> list[dict]:
+    _init_custom_tools_table()
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM custom_tools ORDER BY name").fetchall()
+    return [_row_to_custom_tool(r) for r in rows]
+
+
+def get_custom_tool(tool_id: str) -> dict | None:
+    _init_custom_tools_table()
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM custom_tools WHERE id = ?", (tool_id,)).fetchone()
+    return _row_to_custom_tool(row) if row else None
+
+
+def create_custom_tool(name: str, description: str = "", category: str = "proxy",
+                       endpoint: str = "", method: str = "POST",
+                       headers: dict | None = None, body_template: dict | None = None,
+                       parameters: list[dict] | None = None) -> dict:
+    _init_custom_tools_table()
+    conn = _get_conn()
+    tool_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO custom_tools (id, name, description, category, endpoint, method, headers, body_template, parameters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (tool_id, name, description, category, endpoint, method,
+         json.dumps(headers or {}), json.dumps(body_template or {}),
+         json.dumps(parameters or []), now, now),
+    )
+    conn.commit()
+    return get_custom_tool(tool_id)
+
+
+def update_custom_tool(tool_id: str, **kwargs) -> dict | None:
+    _init_custom_tools_table()
+    conn = _get_conn()
+    existing = get_custom_tool(tool_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "description", "category", "endpoint", "method"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    for key in ("headers", "body_template", "parameters"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    if "enabled" in kwargs:
+        fields.append("enabled = ?")
+        values.append(1 if kwargs["enabled"] else 0)
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(tool_id)
+        conn.execute(f"UPDATE custom_tools SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_custom_tool(tool_id)
+
+
+def delete_custom_tool(tool_id: str) -> bool:
+    _init_custom_tools_table()
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM custom_tools WHERE id = ?", (tool_id,))
+    conn.commit()
+    return cursor.rowcount > 0

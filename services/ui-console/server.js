@@ -307,6 +307,40 @@ app.get("/api/tools", async (req, res) => {
   }
 });
 
+// ── API: Custom Tools CRUD (proxy to agent) ───────────
+app.get("/api/custom-tools", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/custom-tools`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/custom-tools", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/custom-tools`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body), signal: AbortSignal.timeout(10000),
+    });
+    res.status(resp.status).json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/custom-tools/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/custom-tools/${req.params.id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body), signal: AbortSignal.timeout(10000),
+    });
+    res.status(resp.status).json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/custom-tools/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/custom-tools/${req.params.id}`, {
+      method: "DELETE", signal: AbortSignal.timeout(5000),
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: Documents / RAG (proxy to agent) ─────────────
 
 // ── API: Guardrails (proxy to agent) ──────────────────

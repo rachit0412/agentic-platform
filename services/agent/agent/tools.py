@@ -112,8 +112,8 @@ async def vector_store(text: str, source: str) -> str:
 # ── Tool registry ───────────────────────────────────────────────────────────
 
 def get_all_tools() -> list:
-    """Return all available LangChain tools."""
-    return [
+    """Return all available LangChain tools (built-in + custom dynamic)."""
+    builtin = [
         math,
         http_fetch,
         file_write,
@@ -124,6 +124,76 @@ def get_all_tools() -> list:
         vector_search,
         vector_store,
     ]
+    try:
+        from agent.memory import list_custom_tools
+        custom = list_custom_tools()
+        for ct in custom:
+            if not ct.get("enabled", True):
+                continue
+            t = _make_custom_tool(ct)
+            if t:
+                builtin.append(t)
+    except Exception as e:
+        logger.warning("Failed to load custom tools: %s", e)
+    return builtin
+
+
+def _make_custom_tool(ct: dict):
+    """Build a LangChain StructuredTool from a custom tool DB record."""
+    name = ct["name"]
+    description = ct["description"] or f"Custom tool: {name}"
+    endpoint = ct.get("endpoint", "")
+    method = ct.get("method", "POST").upper()
+    headers = ct.get("headers", {})
+
+    async def _invoke(**kwargs) -> str:
+        if not endpoint:
+            return json.dumps({"error": "No endpoint configured for this tool"})
+        url = endpoint
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                if method == "GET":
+                    resp = await client.get(url, params=kwargs, headers=headers)
+                else:
+                    resp = await client.request(method, url, json=kwargs, headers=headers)
+                resp.raise_for_status()
+                try:
+                    return json.dumps(resp.json())
+                except Exception:
+                    return resp.text[:4000]
+            except httpx.HTTPStatusError as exc:
+                return json.dumps({"error": f"HTTP {exc.response.status_code}"})
+            except httpx.RequestError as exc:
+                return json.dumps({"error": f"Request failed: {exc}"})
+
+    # Build input schema from parameters
+    params = ct.get("parameters", [])
+    fields = {}
+    for p in params:
+        pname = p.get("name", "input")
+        ptype = p.get("type", "string")
+        pdesc = p.get("desc", p.get("description", ""))
+        if ptype == "int":
+            fields[pname] = (Optional[int], None)
+        elif ptype == "float":
+            fields[pname] = (Optional[float], None)
+        elif ptype == "bool":
+            fields[pname] = (Optional[bool], None)
+        else:
+            fields[pname] = (Optional[str], None)
+
+    if not fields:
+        fields["input"] = (Optional[str], None)
+
+    from pydantic import create_model
+    InputModel = create_model(f"{name}_Input", **fields)
+
+    return StructuredTool.from_function(
+        coroutine=_invoke,
+        name=name,
+        description=description,
+        args_schema=InputModel,
+    )
 
 
 # ── Legacy compatibility ────────────────────────────────────────────────────

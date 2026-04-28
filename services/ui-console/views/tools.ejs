@@ -2,7 +2,7 @@
 
 <h1 class="text-glow-cyan">Tools</h1>
 <p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Tools are <strong style="color:var(--text-1)">executable capabilities</strong> that agents invoke to interact with the outside world — APIs, databases, files, search, and more.</p>
-<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Each tool has a <strong style="color:#06b6d4">name</strong>, <strong style="color:#f59e0b">description</strong> (used by the LLM to decide when to call it), and a <strong style="color:#10b981">backend endpoint</strong> it proxies to. Tools are assigned to agents via Skills or directly.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5"><strong style="color:#06b6d4">Built-in tools</strong> ship with the platform. <strong style="color:#f59e0b">Custom tools</strong> connect to any HTTP endpoint you define — add new capabilities without code changes.</p>
 
 <!-- Stats Row -->
 <div class="grid-4 mb-2" style="margin-bottom:1.5rem">
@@ -17,15 +17,15 @@
     <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </div>
-    <div class="stat-label">Proxy Tools</div>
-    <div class="stat-number" id="stat-proxy">-</div>
+    <div class="stat-label">Built-in</div>
+    <div class="stat-number" id="stat-builtin">-</div>
   </div>
   <div class="stat-card animate-fade-up delay-200">
     <div class="stat-icon stat-icon-violet">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
     </div>
-    <div class="stat-label">Local Tools</div>
-    <div class="stat-number" id="stat-local">-</div>
+    <div class="stat-label">Custom</div>
+    <div class="stat-number" id="stat-custom">-</div>
   </div>
   <div class="stat-card animate-fade-up delay-300">
     <div class="stat-icon" style="background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));color:#f43f5e">
@@ -41,11 +41,22 @@
   <div style="display:flex;gap:0.5rem;align-items:center">
     <span id="tool-count" class="badge" style="font-size:0.78rem">0 tools</span>
     <input type="text" id="tool-search" class="input" placeholder="Search tools..." style="width:220px;height:34px;font-size:0.82rem" oninput="filterTools()">
+    <select id="tool-type-filter" class="input" style="width:130px;height:34px;font-size:0.82rem" onchange="filterTools()">
+      <option value="all">All Types</option>
+      <option value="builtin">Built-in</option>
+      <option value="custom">Custom</option>
+    </select>
   </div>
-  <button class="btn btn-secondary" onclick="loadTools()">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    Refresh
-  </button>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn btn-primary" onclick="showCreateToolModal()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      New Tool
+    </button>
+    <button class="btn btn-secondary" onclick="loadTools()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
 </div>
 
 <!-- Tools Grid -->
@@ -69,8 +80,8 @@
       <span style="background:rgba(244,63,94,0.15);padding:4px 10px;border-radius:8px;color:#f43f5e;font-weight:600">Response</span>
     </div>
     <div style="margin-top:1rem;font-size:0.78rem;color:var(--text-3);line-height:1.6">
-      <strong style="color:var(--text-2)">Proxy tools</strong> call the external <code style="color:#06b6d4">tools-service</code> (math, http-fetch, file-write, file-read, datetime, web-search, code-execute).<br>
-      <strong style="color:var(--text-2)">Local tools</strong> run inside the agent process (vector-search, vector-store — ChromaDB operations).
+      <strong style="color:var(--text-2)">Built-in tools</strong> are shipped with the platform (math, http-fetch, file I/O, web-search, code-execute, vector ops).<br>
+      <strong style="color:var(--text-2)">Custom tools</strong> call any HTTP endpoint you configure — add new APIs, webhooks, or microservices as tools.
     </div>
   </div>
 </div>
@@ -79,51 +90,35 @@
 let allToolsData = [];
 
 const TOOL_ICONS = {
-  'math': '🧮',
-  'http_fetch': '🌐',
-  'file_write': '💾',
-  'file_read': '📄',
-  'datetime_tool': '🕐',
-  'web_search': '🔍',
-  'code_execute': '💻',
-  'vector_search': '🔎',
-  'vector_store': '📦'
+  'math': '🧮', 'http_fetch': '🌐', 'file_write': '💾', 'file_read': '📄',
+  'datetime_tool': '🕐', 'web_search': '🔍', 'code_execute': '💻',
+  'vector_search': '🔎', 'vector_store': '📦'
 };
 
-const TOOL_CATEGORIES = {
-  'math': 'proxy',
-  'http_fetch': 'proxy',
-  'file_write': 'proxy',
-  'file_read': 'proxy',
-  'datetime_tool': 'proxy',
-  'web_search': 'proxy',
-  'code_execute': 'proxy',
-  'vector_search': 'local',
-  'vector_store': 'local'
+const BUILTIN_CATEGORIES = {
+  'math': 'proxy', 'http_fetch': 'proxy', 'file_write': 'proxy', 'file_read': 'proxy',
+  'datetime_tool': 'proxy', 'web_search': 'proxy', 'code_execute': 'proxy',
+  'vector_search': 'local', 'vector_store': 'local'
 };
 
-const TOOL_ENDPOINTS = {
-  'math': 'POST /tools/math',
-  'http_fetch': 'POST /tools/http-fetch',
-  'file_write': 'POST /tools/file-write',
-  'file_read': 'POST /tools/file-read',
-  'datetime_tool': 'POST /tools/datetime',
-  'web_search': 'POST /tools/web-search',
+const BUILTIN_ENDPOINTS = {
+  'math': 'POST /tools/math', 'http_fetch': 'POST /tools/http-fetch',
+  'file_write': 'POST /tools/file-write', 'file_read': 'POST /tools/file-read',
+  'datetime_tool': 'POST /tools/datetime', 'web_search': 'POST /tools/web-search',
   'code_execute': 'POST /tools/code-execute',
-  'vector_search': 'In-process (ChromaDB)',
-  'vector_store': 'In-process (ChromaDB)'
+  'vector_search': 'In-process (ChromaDB)', 'vector_store': 'In-process (ChromaDB)'
 };
 
-const TOOL_PARAMS = {
-  'math': [{ name: 'expression', type: 'string', desc: 'Arithmetic expression like 2+2 or (10*5)/3' }],
-  'http_fetch': [{ name: 'url', type: 'string', desc: 'URL to fetch (allowed: httpbin.org, jsonplaceholder.typicode.com)' }],
-  'file_write': [{ name: 'filename', type: 'string', desc: 'Simple filename (no path separators)' }, { name: 'content', type: 'string', desc: 'Text content to save' }],
-  'file_read': [{ name: 'filename', type: 'string', desc: 'Previously saved filename' }],
+const BUILTIN_PARAMS = {
+  'math': [{ name: 'expression', type: 'string', desc: 'Arithmetic expression like 2+2' }],
+  'http_fetch': [{ name: 'url', type: 'string', desc: 'URL to fetch' }],
+  'file_write': [{ name: 'filename', type: 'string', desc: 'Filename' }, { name: 'content', type: 'string', desc: 'Text content' }],
+  'file_read': [{ name: 'filename', type: 'string', desc: 'Filename to read' }],
   'datetime_tool': [],
   'web_search': [{ name: 'query', type: 'string', desc: 'Search query' }, { name: 'max_results', type: 'int', desc: 'Max results (default: 5)' }],
   'code_execute': [{ name: 'code', type: 'string', desc: 'Code to execute' }, { name: 'language', type: 'string', desc: 'Language (default: python)' }],
-  'vector_search': [{ name: 'query', type: 'string', desc: 'Semantic search query' }, { name: 'k', type: 'int', desc: 'Number of results (default: 5)' }],
-  'vector_store': [{ name: 'text', type: 'string', desc: 'Document text content' }, { name: 'source', type: 'string', desc: 'Source name / label' }]
+  'vector_search': [{ name: 'query', type: 'string', desc: 'Semantic search query' }, { name: 'k', type: 'int', desc: 'Number of results' }],
+  'vector_store': [{ name: 'text', type: 'string', desc: 'Document text' }, { name: 'source', type: 'string', desc: 'Source label' }]
 };
 
 async function loadTools() {
@@ -141,45 +136,53 @@ async function loadTools() {
 
 function updateStats(tools) {
   document.getElementById('stat-total').textContent = tools.length;
-  const proxy = tools.filter(t => TOOL_CATEGORIES[t.name] === 'proxy').length;
-  const local = tools.filter(t => TOOL_CATEGORIES[t.name] === 'local').length;
-  document.getElementById('stat-proxy').textContent = proxy;
-  document.getElementById('stat-local').textContent = local;
+  var builtinCount = tools.filter(t => t.type === 'builtin').length;
+  var customCount = tools.filter(t => t.type === 'custom').length;
+  document.getElementById('stat-builtin').textContent = builtinCount;
+  document.getElementById('stat-custom').textContent = customCount;
 
-  // Tools service health
   fetch('/api/health-check').then(r=>r.json()).then(d=>{
-    const ts = (d.services||[]).find(s=>s.name==='tools-service');
-    const el = document.getElementById('stat-svc-status');
-    if (ts && ts.status === 'healthy') {
-      el.textContent = 'Healthy';
-      el.style.color = '#10b981';
-    } else {
-      el.textContent = 'Down';
-      el.style.color = '#ef4444';
-    }
-  }).catch(()=>{
-    document.getElementById('stat-svc-status').textContent = '?';
-  });
+    var ts = (d.services||[]).find(s=>s.name==='tools-service');
+    var el = document.getElementById('stat-svc-status');
+    if (ts && ts.status === 'healthy') { el.textContent = 'Healthy'; el.style.color = '#10b981'; }
+    else { el.textContent = 'Down'; el.style.color = '#ef4444'; }
+  }).catch(()=>{ document.getElementById('stat-svc-status').textContent = '?'; });
 }
 
 function renderTools(tools) {
-  const grid = document.getElementById('tools-grid');
+  var grid = document.getElementById('tools-grid');
   if (!tools.length) {
     grid.innerHTML = '<div style="color:var(--text-3);grid-column:1/-1;text-align:center;padding:2rem">No tools available</div>';
     return;
   }
-  grid.innerHTML = tools.map(t => {
-    const icon = TOOL_ICONS[t.name] || '🔧';
-    const cat = TOOL_CATEGORIES[t.name] || 'unknown';
-    const catColor = cat === 'proxy' ? '#06b6d4' : cat === 'local' ? '#8b5cf6' : '#666';
-    const endpoint = TOOL_ENDPOINTS[t.name] || '-';
+  grid.innerHTML = tools.map(function(t) {
+    var isCustom = t.type === 'custom';
+    var icon = isCustom ? '🔌' : (TOOL_ICONS[t.name] || '🔧');
+    var cat = isCustom ? (t.category || 'custom') : (BUILTIN_CATEGORIES[t.name] || 'unknown');
+    var catColor = cat === 'proxy' ? '#06b6d4' : cat === 'local' ? '#8b5cf6' : cat === 'api' ? '#f59e0b' : cat === 'webhook' ? '#f43f5e' : '#10b981';
+    var endpoint = isCustom ? (t.method + ' ' + (t.endpoint || '-')) : (BUILTIN_ENDPOINTS[t.name] || '-');
+    var typeBadge = isCustom
+      ? '<span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)">custom</span>'
+      : '<span class="badge" style="font-size:0.6rem;background:rgba(6,182,212,0.15);color:#06b6d4;border:1px solid rgba(6,182,212,0.3)">built-in</span>';
+    var enabledBadge = '';
+    if (isCustom && !t.enabled) {
+      enabledBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:#ef4444">disabled</span>';
+    }
+    var actions = '<button class="btn btn-sm" onclick="showToolDetail(\\'' + escapeHtml(t.name) + '\\')">Details</button>' +
+      ' <button class="btn btn-sm btn-secondary" onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">Test</button>';
+    if (isCustom) {
+      actions += ' <button class="btn btn-sm" style="color:#f59e0b" onclick="editCustomTool(\\'' + escapeHtml(t.id) + '\\')">Edit</button>';
+      actions += ' <button class="btn btn-sm" style="color:#ef4444" onclick="deleteCustomTool(\\'' + escapeHtml(t.id) + '\\', \\'' + escapeHtml(t.name) + '\\')">Delete</button>';
+    }
     return '<div class="card animate-fade-up" style="position:relative">' +
       '<div style="display:flex;align-items:start;gap:0.75rem;margin-bottom:0.75rem">' +
         '<div style="font-size:1.5rem;line-height:1">' + icon + '</div>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">' +
             '<h4 style="margin:0;font-size:0.95rem;color:var(--text-1)">' + escapeHtml(t.name) + '</h4>' +
-            '<span class="badge" style="font-size:0.65rem;background:' + catColor + '20;color:' + catColor + ';border:1px solid ' + catColor + '30">' + cat + '</span>' +
+            typeBadge +
+            '<span class="badge" style="font-size:0.6rem;background:' + catColor + '20;color:' + catColor + ';border:1px solid ' + catColor + '30">' + cat + '</span>' +
+            enabledBadge +
           '</div>' +
           '<p style="margin:0.25rem 0 0;font-size:0.8rem;color:var(--text-3);line-height:1.4">' + escapeHtml(t.description) + '</p>' +
         '</div>' +
@@ -187,67 +190,67 @@ function renderTools(tools) {
       '<div style="font-size:0.72rem;color:var(--text-3);font-family:var(--mono);margin-bottom:0.5rem">' +
         '<span style="color:var(--text-2);font-weight:600">Endpoint:</span> ' + escapeHtml(endpoint) +
       '</div>' +
-      '<div style="display:flex;gap:0.5rem">' +
-        '<button class="btn btn-sm" onclick="showToolDetail(\\'' + escapeHtml(t.name) + '\\')">ℹ️ Details</button>' +
-        '<button class="btn btn-sm btn-secondary" onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">▶ Test</button>' +
-      '</div>' +
+      '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' + actions + '</div>' +
     '</div>';
   }).join('');
 }
 
 function filterTools() {
-  const q = document.getElementById('tool-search').value.toLowerCase();
-  const filtered = allToolsData.filter(t =>
-    t.name.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q)
-  );
+  var q = document.getElementById('tool-search').value.toLowerCase();
+  var typeFilter = document.getElementById('tool-type-filter').value;
+  var filtered = allToolsData.filter(function(t) {
+    var matchText = t.name.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q);
+    var matchType = typeFilter === 'all' || t.type === typeFilter;
+    return matchText && matchType;
+  });
   renderTools(filtered);
 }
 
 function showToolDetail(name) {
-  const t = allToolsData.find(x => x.name === name);
+  var t = allToolsData.find(function(x) { return x.name === name; });
   if (!t) return;
-  const icon = TOOL_ICONS[name] || '🔧';
-  const cat = TOOL_CATEGORIES[name] || 'unknown';
-  const endpoint = TOOL_ENDPOINTS[name] || '-';
-  const params = TOOL_PARAMS[name] || [];
+  var isCustom = t.type === 'custom';
+  var icon = isCustom ? '🔌' : (TOOL_ICONS[name] || '🔧');
+  var cat = isCustom ? (t.category || 'custom') : (BUILTIN_CATEGORIES[name] || 'unknown');
+  var endpoint = isCustom ? (t.method + ' ' + (t.endpoint || '-')) : (BUILTIN_ENDPOINTS[name] || '-');
+  var params = isCustom ? (t.parameters || []) : (BUILTIN_PARAMS[name] || []);
 
-  let html = '<table style="width:100%;font-size:0.82rem">';
+  var html = '<table style="width:100%;font-size:0.82rem">';
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0;width:120px">Name</td><td><strong>' + escapeHtml(name) + '</strong></td></tr>';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Type</td><td>' + (isCustom ? '<span class="badge" style="font-size:0.72rem;background:rgba(245,158,11,0.15);color:#f59e0b">custom</span>' : '<span class="badge" style="font-size:0.72rem;background:rgba(6,182,212,0.15);color:#06b6d4">built-in</span>') + '</td></tr>';
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Category</td><td><span class="badge" style="font-size:0.72rem">' + cat + '</span></td></tr>';
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Endpoint</td><td class="mono" style="font-size:0.78rem">' + escapeHtml(endpoint) + '</td></tr>';
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0;vertical-align:top">Description</td><td style="line-height:1.5">' + escapeHtml(t.description) + '</td></tr>';
+  if (isCustom && t.enabled !== undefined) {
+    html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Enabled</td><td>' + (t.enabled ? '<span style="color:#10b981">Yes</span>' : '<span style="color:#ef4444">No</span>') + '</td></tr>';
+  }
   html += '</table>';
 
   if (params.length) {
     html += '<h4 style="margin:1rem 0 0.5rem;color:var(--text-1);font-size:0.88rem">Parameters</h4>';
     html += '<table style="width:100%;font-size:0.78rem"><tr><th style="text-align:left;padding:0.3rem 0.5rem;border-bottom:1px solid var(--glass-border)">Name</th><th style="text-align:left;padding:0.3rem 0.5rem;border-bottom:1px solid var(--glass-border)">Type</th><th style="text-align:left;padding:0.3rem 0.5rem;border-bottom:1px solid var(--glass-border)">Description</th></tr>';
-    params.forEach(p => {
-      html += '<tr><td style="padding:0.3rem 0.5rem;color:#06b6d4;font-family:var(--mono)">' + escapeHtml(p.name) + '</td><td style="padding:0.3rem 0.5rem;color:var(--text-3)">' + escapeHtml(p.type) + '</td><td style="padding:0.3rem 0.5rem;color:var(--text-2)">' + escapeHtml(p.desc) + '</td></tr>';
+    params.forEach(function(p) {
+      html += '<tr><td style="padding:0.3rem 0.5rem;color:#06b6d4;font-family:var(--mono)">' + escapeHtml(p.name) + '</td><td style="padding:0.3rem 0.5rem;color:var(--text-3)">' + escapeHtml(p.type) + '</td><td style="padding:0.3rem 0.5rem;color:var(--text-2)">' + escapeHtml(p.desc || p.description || '') + '</td></tr>';
     });
     html += '</table>';
-  } else {
-    html += '<p style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-3)"><em>No parameters required</em></p>';
   }
-
-  html += '<h4 style="margin:1rem 0 0.5rem;color:var(--text-1);font-size:0.88rem">Usage in Agent</h4>';
-  html += '<div style="background:var(--input-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;font-family:var(--mono);font-size:0.75rem;color:var(--text-2);line-height:1.6">';
-  html += 'The LLM automatically decides to call <span style="color:#06b6d4">' + escapeHtml(name) + '</span> based on the user prompt.<br>Assign via <strong>Skills</strong> or directly in the <strong>Agent</strong> config.';
-  html += '</div>';
 
   showDetailModal(icon + ' ' + escapeHtml(name), html);
 }
 
 function testTool(name) {
-  const params = TOOL_PARAMS[name] || [];
-  let html = '<div style="font-size:0.82rem;margin-bottom:1rem;color:var(--text-3)">Send a test call to <strong style="color:var(--text-1)">' + escapeHtml(name) + '</strong></div>';
+  var t = allToolsData.find(function(x) { return x.name === name; });
+  var isCustom = t && t.type === 'custom';
+  var params = isCustom ? (t.parameters || []) : (BUILTIN_PARAMS[name] || []);
+  var html = '<div style="font-size:0.82rem;margin-bottom:1rem;color:var(--text-3)">Send a test call to <strong style="color:var(--text-1)">' + escapeHtml(name) + '</strong></div>';
 
   if (params.length === 0) {
     html += '<p style="font-size:0.78rem;color:var(--text-3)"><em>No parameters — will call directly</em></p>';
   } else {
-    params.forEach(p => {
+    params.forEach(function(p) {
       html += '<div style="margin-bottom:0.75rem">';
       html += '<label class="field-label" style="font-size:0.78rem">' + escapeHtml(p.name) + ' <span style="color:var(--text-3);font-weight:400">(' + escapeHtml(p.type) + ')</span></label>';
-      html += '<input type="text" class="input" id="test-param-' + escapeHtml(p.name) + '" placeholder="' + escapeHtml(p.desc) + '" style="font-size:0.82rem">';
+      html += '<input type="text" class="input" id="test-param-' + escapeHtml(p.name) + '" placeholder="' + escapeHtml(p.desc || p.description || '') + '" style="font-size:0.82rem">';
       html += '</div>';
     });
   }
@@ -259,34 +262,196 @@ function testTool(name) {
 }
 
 async function _runToolTest(name) {
-  const params = TOOL_PARAMS[name] || [];
-  const payload = {};
-  params.forEach(p => {
-    const el = document.getElementById('test-param-' + p.name);
+  var t = allToolsData.find(function(x) { return x.name === name; });
+  var isCustom = t && t.type === 'custom';
+  var params = isCustom ? (t.parameters || []) : (BUILTIN_PARAMS[name] || []);
+  var payload = {};
+  params.forEach(function(p) {
+    var el = document.getElementById('test-param-' + p.name);
     if (el) {
-      let val = el.value;
+      var val = el.value;
       if (p.type === 'int') val = parseInt(val) || 0;
       payload[p.name] = val;
     }
   });
 
-  const resultEl = document.getElementById('test-result');
+  var resultEl = document.getElementById('test-result');
   resultEl.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem">Running...</p>';
 
   try {
-    const prompt = 'Use the ' + name + ' tool with: ' + JSON.stringify(payload);
-    const r = await fetch('/api/agent-run', {
+    var prompt = 'Use the ' + name + ' tool with: ' + JSON.stringify(payload);
+    var r = await fetch('/api/agent-run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: prompt })
     });
-    const d = await r.json();
+    var d = await r.json();
     resultEl.innerHTML = '<div style="background:var(--input-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;font-size:0.78rem;max-height:200px;overflow-y:auto">' +
       '<strong style="color:var(--text-1)">Result:</strong><br>' +
       '<pre style="margin:0.5rem 0 0;white-space:pre-wrap;color:var(--text-2)">' + escapeHtml(d.response || d.error || JSON.stringify(d, null, 2)) + '</pre>' +
       '</div>';
   } catch(e) {
     resultEl.innerHTML = '<p style="color:#ef4444;font-size:0.78rem">Error: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+// ── Custom Tool CRUD ──────────────────────────────────────────────
+
+function _toolFormHtml(tool) {
+  var isEdit = !!tool;
+  var name = isEdit ? tool.name : '';
+  var desc = isEdit ? tool.description : '';
+  var cat = isEdit ? tool.category : 'proxy';
+  var endpoint = isEdit ? tool.endpoint : '';
+  var method = isEdit ? tool.method : 'POST';
+  var headers = isEdit ? JSON.stringify(tool.headers || {}, null, 2) : '{}';
+  var bodyTpl = isEdit ? JSON.stringify(tool.body_template || {}, null, 2) : '{}';
+  var params = isEdit ? (tool.parameters || []) : [];
+  var enabled = isEdit ? tool.enabled : true;
+
+  var html = '';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+  html += '<div><label class="field-label">Name *</label><input type="text" class="input" id="ct-name" value="' + escapeHtml(name) + '" placeholder="e.g. weather_api" style="font-size:0.82rem"></div>';
+  html += '<div><label class="field-label">Category</label><select class="input" id="ct-category" style="font-size:0.82rem"><option value="proxy"' + (cat==='proxy'?' selected':'') + '>Proxy</option><option value="api"' + (cat==='api'?' selected':'') + '>API</option><option value="webhook"' + (cat==='webhook'?' selected':'') + '>Webhook</option><option value="local"' + (cat==='local'?' selected':'') + '>Local</option></select></div>';
+  html += '</div>';
+  html += '<div style="margin-top:0.75rem"><label class="field-label">Description *</label><textarea class="input" id="ct-description" rows="2" placeholder="What does this tool do? The LLM reads this to decide when to use it." style="font-size:0.82rem">' + escapeHtml(desc) + '</textarea></div>';
+  html += '<div style="display:grid;grid-template-columns:100px 1fr;gap:0.75rem;margin-top:0.75rem">';
+  html += '<div><label class="field-label">Method</label><select class="input" id="ct-method" style="font-size:0.82rem"><option value="GET"' + (method==='GET'?' selected':'') + '>GET</option><option value="POST"' + (method==='POST'?' selected':'') + '>POST</option><option value="PUT"' + (method==='PUT'?' selected':'') + '>PUT</option><option value="PATCH"' + (method==='PATCH'?' selected':'') + '>PATCH</option><option value="DELETE"' + (method==='DELETE'?' selected':'') + '>DELETE</option></select></div>';
+  html += '<div><label class="field-label">Endpoint URL *</label><input type="text" class="input" id="ct-endpoint" value="' + escapeHtml(endpoint) + '" placeholder="https://api.example.com/v1/action" style="font-size:0.82rem"></div>';
+  html += '</div>';
+  html += '<div style="margin-top:0.75rem"><label class="field-label">Headers <span style="color:var(--text-3);font-weight:400">(JSON)</span></label><textarea class="input" id="ct-headers" rows="2" placeholder=\\'{}\\'  style="font-size:0.78rem;font-family:var(--mono)">' + escapeHtml(headers) + '</textarea></div>';
+  html += '<div style="margin-top:0.75rem"><label class="field-label">Body Template <span style="color:var(--text-3);font-weight:400">(JSON)</span></label><textarea class="input" id="ct-body-template" rows="2" placeholder=\\'{}\\'  style="font-size:0.78rem;font-family:var(--mono)">' + escapeHtml(bodyTpl) + '</textarea></div>';
+
+  // Parameters section
+  html += '<div style="margin-top:0.75rem"><label class="field-label">Parameters</label>';
+  html += '<div id="ct-params-list">';
+  if (params.length) {
+    params.forEach(function(p, i) {
+      html += _paramRowHtml(i, p);
+    });
+  }
+  html += '</div>';
+  html += '<button type="button" class="btn btn-sm btn-secondary" onclick="addParamRow()" style="margin-top:0.5rem">+ Add Parameter</button>';
+  html += '</div>';
+
+  if (isEdit) {
+    html += '<div style="margin-top:0.75rem"><label class="field-label" style="display:flex;align-items:center;gap:0.5rem"><input type="checkbox" id="ct-enabled" ' + (enabled ? 'checked' : '') + '> Enabled</label></div>';
+  }
+
+  html += '<div style="margin-top:1rem;display:flex;gap:0.5rem">';
+  if (isEdit) {
+    html += '<button class="btn btn-primary" onclick="saveCustomTool(\\'' + escapeHtml(tool.id) + '\\')">Save Changes</button>';
+  } else {
+    html += '<button class="btn btn-primary" onclick="saveCustomTool(null)">Create Tool</button>';
+  }
+  html += '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>';
+  html += '</div>';
+  return html;
+}
+
+function _paramRowHtml(idx, p) {
+  p = p || { name: '', type: 'string', desc: '' };
+  return '<div class="ct-param-row" style="display:grid;grid-template-columns:1fr 90px 2fr 30px;gap:0.5rem;margin-bottom:0.5rem;align-items:center">' +
+    '<input type="text" class="input ct-p-name" value="' + escapeHtml(p.name) + '" placeholder="name" style="font-size:0.78rem">' +
+    '<select class="input ct-p-type" style="font-size:0.78rem"><option value="string"' + (p.type==='string'?' selected':'') + '>string</option><option value="int"' + (p.type==='int'?' selected':'') + '>int</option><option value="float"' + (p.type==='float'?' selected':'') + '>float</option><option value="bool"' + (p.type==='bool'?' selected':'') + '>bool</option></select>' +
+    '<input type="text" class="input ct-p-desc" value="' + escapeHtml(p.desc || p.description || '') + '" placeholder="description" style="font-size:0.78rem">' +
+    '<button class="btn btn-sm" style="color:#ef4444;padding:2px 6px" onclick="this.parentElement.remove()">✕</button>' +
+  '</div>';
+}
+
+function addParamRow() {
+  var container = document.getElementById('ct-params-list');
+  var div = document.createElement('div');
+  div.innerHTML = _paramRowHtml(container.children.length, null);
+  container.appendChild(div.firstChild);
+}
+
+function _collectParams() {
+  var rows = document.querySelectorAll('.ct-param-row');
+  var params = [];
+  rows.forEach(function(row) {
+    var name = row.querySelector('.ct-p-name').value.trim();
+    var type = row.querySelector('.ct-p-type').value;
+    var desc = row.querySelector('.ct-p-desc').value.trim();
+    if (name) params.push({ name: name, type: type, desc: desc });
+  });
+  return params;
+}
+
+function showCreateToolModal() {
+  var html = _toolFormHtml(null);
+  showDetailModal('🔌 Create Custom Tool', html);
+}
+
+function editCustomTool(id) {
+  var t = allToolsData.find(function(x) { return x.id === id; });
+  if (!t) return;
+  var html = _toolFormHtml(t);
+  showDetailModal('✏️ Edit: ' + escapeHtml(t.name), html);
+}
+
+async function saveCustomTool(id) {
+  var name = document.getElementById('ct-name').value.trim();
+  var description = document.getElementById('ct-description').value.trim();
+  var category = document.getElementById('ct-category').value;
+  var method = document.getElementById('ct-method').value;
+  var endpoint = document.getElementById('ct-endpoint').value.trim();
+
+  if (!name || !description) {
+    showToast('Name and description are required', 'error');
+    return;
+  }
+  if (!endpoint) {
+    showToast('Endpoint URL is required', 'error');
+    return;
+  }
+
+  var headers = {};
+  try { headers = JSON.parse(document.getElementById('ct-headers').value || '{}'); } catch(e) { showToast('Invalid headers JSON', 'error'); return; }
+  var body_template = {};
+  try { body_template = JSON.parse(document.getElementById('ct-body-template').value || '{}'); } catch(e) { showToast('Invalid body template JSON', 'error'); return; }
+
+  var parameters = _collectParams();
+  var payload = { name: name, description: description, category: category, method: method, endpoint: endpoint, headers: headers, body_template: body_template, parameters: parameters };
+
+  if (id) {
+    var enabledEl = document.getElementById('ct-enabled');
+    if (enabledEl) payload.enabled = enabledEl.checked;
+  }
+
+  try {
+    var url = id ? '/api/custom-tools/' + id : '/api/custom-tools';
+    var r = await fetch(url, {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) {
+      var err = await r.json();
+      showToast(err.detail || err.error || 'Failed to save tool', 'error');
+      return;
+    }
+    showToast(id ? 'Tool updated' : 'Tool created', 'success');
+    closeModal();
+    loadTools();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function deleteCustomTool(id, name) {
+  if (!confirm('Delete custom tool "' + name + '"?')) return;
+  try {
+    var r = await fetch('/api/custom-tools/' + id, { method: 'DELETE' });
+    var d = await r.json();
+    if (d.deleted) {
+      showToast('Tool deleted', 'success');
+      loadTools();
+    } else {
+      showToast('Failed to delete tool', 'error');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
   }
 }
 

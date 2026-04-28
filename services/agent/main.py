@@ -23,6 +23,7 @@ from agent.memory import (
     list_mcp_servers, get_mcp_server, create_mcp_server, update_mcp_server, delete_mcp_server,
     list_prompts, get_prompt, create_prompt, update_prompt, delete_prompt,
     list_guardrails, get_guardrail, update_guardrail,
+    list_custom_tools, get_custom_tool, create_custom_tool, update_custom_tool, delete_custom_tool,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
@@ -385,15 +386,89 @@ async def documents_copy(body: CopyDocsRequest):
 
 @app.get("/tools")
 async def tools_list():
-    """List available tools."""
+    """List all tools (built-in + custom)."""
     from agent.tools import get_all_tools
-    tools = get_all_tools()
-    return {
-        "tools": [
-            {"name": t.name, "description": t.description}
-            for t in tools
-        ]
-    }
+    builtin = get_all_tools()
+    builtin_list = [
+        {"name": t.name, "description": t.description, "type": "builtin"}
+        for t in builtin
+    ]
+    custom = list_custom_tools()
+    custom_list = [
+        {
+            "id": t["id"], "name": t["name"], "description": t["description"],
+            "type": "custom", "category": t["category"], "endpoint": t["endpoint"],
+            "method": t["method"], "headers": t["headers"],
+            "body_template": t["body_template"], "parameters": t["parameters"],
+            "enabled": t["enabled"], "created_at": t["created_at"], "updated_at": t["updated_at"],
+        }
+        for t in custom
+    ]
+    return {"tools": builtin_list + custom_list}
+
+
+# ── Custom Tools CRUD endpoints ───────────────────────────────────────────
+
+class CustomToolCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(default="", max_length=2000)
+    category: str = Field(default="proxy", pattern="^(proxy|local|api|webhook)$")
+    endpoint: str = Field(default="", max_length=500)
+    method: str = Field(default="POST", pattern="^(GET|POST|PUT|PATCH|DELETE)$")
+    headers: dict = Field(default_factory=dict)
+    body_template: dict = Field(default_factory=dict)
+    parameters: list[dict] = Field(default_factory=list)
+
+class CustomToolUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    category: str | None = None
+    endpoint: str | None = None
+    method: str | None = None
+    headers: dict | None = None
+    body_template: dict | None = None
+    parameters: list[dict] | None = None
+    enabled: bool | None = None
+
+
+@app.get("/custom-tools")
+async def custom_tools_list_endpoint():
+    return {"tools": list_custom_tools()}
+
+
+@app.post("/custom-tools")
+async def custom_tools_create_endpoint(body: CustomToolCreate):
+    tool = create_custom_tool(
+        name=body.name, description=body.description, category=body.category,
+        endpoint=body.endpoint, method=body.method, headers=body.headers,
+        body_template=body.body_template, parameters=body.parameters,
+    )
+    return tool
+
+
+@app.get("/custom-tools/{tool_id}")
+async def custom_tools_get_endpoint(tool_id: str):
+    tool = get_custom_tool(tool_id)
+    if not tool:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Custom tool not found")
+    return tool
+
+
+@app.put("/custom-tools/{tool_id}")
+async def custom_tools_update_endpoint(tool_id: str, body: CustomToolUpdate):
+    updates = body.model_dump(exclude_none=True)
+    tool = update_custom_tool(tool_id, **updates)
+    if not tool:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Custom tool not found")
+    return tool
+
+
+@app.delete("/custom-tools/{tool_id}")
+async def custom_tools_delete_endpoint(tool_id: str):
+    ok = delete_custom_tool(tool_id)
+    return {"deleted": ok}
 
 
 # ── Skills CRUD endpoints ─────────────────────────────────────────────────
