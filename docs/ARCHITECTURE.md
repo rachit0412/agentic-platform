@@ -27,7 +27,7 @@ The Agentic Platform is a containerised agent factory built with:
 
 `agent-service` `chroma-data` `chromadb` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
 
-## UI Pages (17 pages)
+## UI Pages (18 pages)
 
 
 
