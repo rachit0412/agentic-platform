@@ -1,0 +1,238 @@
+<%- include('layout', { title: 'Intelligence Hub', page: 'intelligence-hub', body: `
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+  <div>
+    <h1 class="text-glow-cyan" style="margin:0">Intelligence Hub</h1>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Traceability, evaluation scoring &amp; infrastructure observability</p>
+  </div>
+  <button class="btn btn-sm" onclick="ihRefresh()">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Refresh
+  </button>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid-4 mb-2" style="margin-bottom:1.25rem">
+  <a href="/traceability" style="text-decoration:none">
+    <div class="stat-card animate-fade-up" style="cursor:pointer">
+      <div class="stat-icon stat-icon-cyan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="stat-label">Total Traces</div>
+      <div class="stat-number" id="ih-traces">-</div>
+    </div>
+  </a>
+  <a href="/evaluation" style="text-decoration:none">
+    <div class="stat-card animate-fade-up delay-100" style="cursor:pointer">
+      <div class="stat-icon stat-icon-violet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <div class="stat-label">Eval Score</div>
+      <div class="stat-number" id="ih-eval-score">-</div>
+    </div>
+  </a>
+  <a href="/observability" style="text-decoration:none">
+    <div class="stat-card animate-fade-up delay-200" style="cursor:pointer">
+      <div class="stat-icon stat-icon-emerald">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="stat-label">Stack Health</div>
+      <div class="stat-number" id="ih-health">-</div>
+    </div>
+  </a>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));color:#f59e0b">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="stat-label">Avg Latency</div>
+    <div class="stat-number" id="ih-latency">-</div>
+  </div>
+</div>
+
+<!-- Quick Access Cards -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+
+  <!-- Traceability Card -->
+  <div class="card animate-fade-up">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Traceability</h3>
+      </div>
+      <a href="/traceability" class="btn btn-primary btn-sm">View</a>
+    </div>
+    <div id="ih-traces-list" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+  <!-- Evaluation Card -->
+  <div class="card animate-fade-up delay-100">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Evaluation</h3>
+      </div>
+      <a href="/evaluation" class="btn btn-primary btn-sm">View</a>
+    </div>
+    <div id="ih-eval-summary" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+  <!-- Observability Card -->
+  <div class="card animate-fade-up delay-200">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Observability</h3>
+      </div>
+      <a href="/observability" class="btn btn-primary btn-sm">View</a>
+    </div>
+    <div id="ih-obs-summary" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+</div>
+
+<!-- Agent Performance Overview -->
+<div class="card animate-fade-up delay-300">
+  <div class="section-header mb-1">
+    <h3 style="font-size:0.95rem">Agent Performance Overview</h3>
+  </div>
+  <div id="ih-agent-table" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+</div>
+
+<script>
+function ihRefresh() { ihLoad(); }
+
+function ihLoad() {
+  Promise.all([
+    fetch('/api/traces').then(function(r) { return r.json(); }).catch(function() { return { traces: [] }; }),
+    fetch('/api/agents').then(function(r) { return r.json(); }).catch(function() { return []; }),
+    fetch('/api/observability/health').then(function(r) { return r.json(); }).catch(function() { return {}; })
+  ]).then(function(results) {
+    var traces = results[0].traces || [];
+    var agents = (results[1].agents || results[1] || []);
+    var healthData = results[2];
+
+    /* Stats */
+    document.getElementById('ih-traces').textContent = traces.length;
+
+    var durations = traces.map(function(t) {
+      if (t.latency && t.latency > 0) return t.latency;
+      if (t.updatedAt && t.timestamp) { var d = new Date(t.updatedAt) - new Date(t.timestamp); if (d > 0) return d; }
+      var m = t.metadata || {}; if (m.duration_ms) return m.duration_ms;
+      return 0;
+    }).filter(function(d) { return d > 0; });
+    var avgMs = durations.length ? durations.reduce(function(a, b) { return a + b; }, 0) / durations.length : 0;
+    document.getElementById('ih-latency').textContent = durations.length ? (avgMs / 1000).toFixed(1) + 's' : '-';
+
+    /* Eval score */
+    if (traces.length > 0) {
+      var success = traces.filter(function(t) { return t.status !== 'ERROR'; }).length;
+      var completionPct = Math.round(success / traces.length * 100);
+      var under5s = durations.filter(function(d) { return d < 5000; }).length;
+      var latencyPct = durations.length > 0 ? Math.round(under5s / durations.length * 100) : 0;
+      var errorPct = Math.round((1 - (traces.length - success) / traces.length) * 100);
+      var overall = Math.round(completionPct * 0.35 + latencyPct * 0.3 + errorPct * 0.35);
+      document.getElementById('ih-eval-score').textContent = overall + '%';
+      document.getElementById('ih-eval-score').style.color = overall >= 85 ? '#10b981' : overall >= 70 ? '#f59e0b' : '#f43f5e';
+    } else {
+      document.getElementById('ih-eval-score').textContent = '-';
+    }
+
+    /* Health */
+    var services = healthData.services || [];
+    var healthyCount = services.filter(function(s) { return s.status === 'healthy'; }).length;
+    document.getElementById('ih-health').textContent = services.length > 0 ? healthyCount + '/' + services.length : '-';
+    if (services.length > 0) {
+      document.getElementById('ih-health').style.color = healthyCount === services.length ? '#10b981' : '#f59e0b';
+    }
+
+    /* Recent traces list */
+    if (traces.length === 0) {
+      document.getElementById('ih-traces-list').innerHTML = '<p>No traces yet. <a href="/run-agent">Run an agent</a> to generate data.</p>';
+    } else {
+      document.getElementById('ih-traces-list').innerHTML = traces.slice(0, 5).map(function(t) {
+        var statusColor = t.status === 'ERROR' ? '#f43f5e' : '#10b981';
+        var lat = 0;
+        if (t.latency && t.latency > 0) lat = t.latency;
+        else if (t.updatedAt && t.timestamp) { var d = new Date(t.updatedAt) - new Date(t.timestamp); if (d > 0) lat = d; }
+        var latStr = lat > 0 ? (lat / 1000).toFixed(1) + 's' : '-';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--glass-border)">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem"><span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + '"></span>' +
+          '<span style="color:var(--text-1);font-size:0.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">' + escapeHtml(t.name || (t.id || '-').slice(0, 12)) + '</span></div>' +
+          '<span class="mono" style="font-size:0.72rem;color:var(--text-3)">' + latStr + '</span></div>';
+      }).join('') + '<a href="/traceability" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#06b6d4">View all ' + traces.length + ' traces</a>';
+    }
+
+    /* Eval summary */
+    if (traces.length === 0) {
+      document.getElementById('ih-eval-summary').innerHTML = '<p>No data to evaluate yet.</p>';
+    } else {
+      var success = traces.filter(function(t) { return t.status !== 'ERROR'; }).length;
+      var errorCount = traces.length - success;
+      document.getElementById('ih-eval-summary').innerHTML =
+        '<div style="display:flex;flex-direction:column;gap:0.5rem">' +
+        '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)"><span>Completion Rate</span><span style="font-weight:600;color:#10b981">' + Math.round(success / traces.length * 100) + '%</span></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)"><span>Error Rate</span><span style="font-weight:600;color:' + (errorCount > 0 ? '#f43f5e' : '#10b981') + '">' + Math.round(errorCount / traces.length * 100) + '%</span></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)"><span>Avg Latency</span><span class="mono" style="font-weight:600">' + (avgMs > 0 ? (avgMs / 1000).toFixed(1) + 's' : '-') + '</span></div>' +
+        '</div>' +
+        '<a href="/evaluation" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#8b5cf6">Full evaluation</a>';
+    }
+
+    /* Obs summary */
+    if (services.length === 0) {
+      document.getElementById('ih-obs-summary').innerHTML = '<p>Observability stack not detected.</p>';
+    } else {
+      document.getElementById('ih-obs-summary').innerHTML = services.map(function(svc) {
+        var color = svc.status === 'healthy' ? '#10b981' : '#f43f5e';
+        var icon = svc.status === 'healthy' ? '\\u2714' : '\\u2716';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)">' +
+          '<span style="color:var(--text-1);text-transform:capitalize">' + escapeHtml(svc.name) + '</span>' +
+          '<span style="color:' + color + ';font-size:0.78rem">' + icon + ' ' + svc.status + '</span></div>';
+      }).join('') +
+        '<a href="/observability" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#10b981">Full observability</a>';
+    }
+
+    /* Agent table */
+    if (agents.length === 0) {
+      document.getElementById('ih-agent-table').innerHTML = '<p>No agents registered yet. <a href="/agents">Create one</a></p>';
+    } else {
+      var html = '<table><tr><th>Agent</th><th>Model</th><th>Traces</th><th>Error Rate</th><th>Avg Latency</th></tr>';
+      agents.forEach(function(agent) {
+        var agentName = agent.name.toLowerCase();
+        var agentId = agent.id.toLowerCase();
+        var agentTraces = traces.filter(function(t) {
+          var n = (t.name || '').toLowerCase();
+          var m = JSON.stringify(t.metadata || {}).toLowerCase();
+          return n.indexOf(agentName) !== -1 || m.indexOf(agentName) !== -1 || m.indexOf(agentId) !== -1;
+        });
+        var errs = agentTraces.filter(function(t) { return t.status === 'ERROR'; }).length;
+        var errRate = agentTraces.length > 0 ? Math.round(errs / agentTraces.length * 100) : 0;
+        var durs = agentTraces.map(function(t) {
+          if (t.latency && t.latency > 0) return t.latency;
+          if (t.updatedAt && t.timestamp) { var d = new Date(t.updatedAt) - new Date(t.timestamp); if (d > 0) return d; }
+          return 0;
+        }).filter(function(d) { return d > 0; });
+        var avg = durs.length > 0 ? (durs.reduce(function(a, b) { return a + b; }, 0) / durs.length / 1000).toFixed(1) + 's' : '-';
+        html += '<tr>' +
+          '<td style="font-weight:600">' + escapeHtml(agent.name) + (agent.is_default ? ' <span style="font-size:0.62rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
+          '<td class="mono" style="font-size:0.75rem">' + escapeHtml((agent.provider || '') + '/' + (agent.model || '')) + '</td>' +
+          '<td class="mono">' + agentTraces.length + '</td>' +
+          '<td><span style="color:' + (errRate > 10 ? '#f43f5e' : '#10b981') + ';font-weight:600">' + errRate + '%</span></td>' +
+          '<td class="mono">' + avg + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('ih-agent-table').innerHTML = html;
+    }
+  }).catch(function(e) {
+    console.error('Intelligence Hub load failed:', e);
+  });
+}
+
+ihLoad();
+</script>
+` }) %>

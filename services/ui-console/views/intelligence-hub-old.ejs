@@ -1,36 +1,30 @@
-<%- include('layout', { title: 'LLM Activity', page: 'llm-activity', body: `
+<%- include('layout', { title: 'Intelligence Hub', page: 'intelligence-hub', body: `
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
   <div>
-    <h1 class="text-glow-cyan" style="margin:0">LLM Activity</h1>
-    <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Traces, evaluation scoring, responsible AI &amp; infrastructure observability</p>
+    <h1 class="text-glow-cyan" style="margin:0">Intelligence Hub</h1>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Traceability, evaluation scoring &amp; infrastructure observability</p>
   </div>
-  <div style="display:flex;gap:0.5rem;align-items:center">
-    <label style="font-size:0.78rem;color:var(--text-3)">Agent:</label>
-    <select id="la-agent-select" class="input" style="min-width:180px;font-size:0.82rem" onchange="laAgentChanged()">
-      <option value="__all__">All Agents</option>
-    </select>
-    <button class="btn btn-sm" onclick="laRefresh()">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      Refresh
-    </button>
-  </div>
+  <button class="btn btn-sm" onclick="ihRefresh()">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Refresh
+  </button>
 </div>
 
 <!-- TAB BAR -->
-<div style="display:flex;gap:0;border:1px solid var(--glass-border);border-radius:10px;overflow:hidden;margin-bottom:1.25rem">
-  <button class="la-tab active" id="la-tab-traces" onclick="laTab('traces')">
+<div id="la-tab-bar" style="display:flex;gap:0;border:1px solid var(--glass-border);border-radius:10px;overflow:hidden;margin-bottom:1.25rem">
+  <a href="/intelligence-hub?tab=traces" class="la-tab" id="la-tab-traces" style="text-decoration:none">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     Traces
-  </button>
-  <button class="la-tab" id="la-tab-evaluation" onclick="laTab('evaluation')" style="border-left:1px solid var(--glass-border)">
+  </a>
+  <a href="/intelligence-hub?tab=evaluation" class="la-tab" id="la-tab-evaluation" style="text-decoration:none;border-left:1px solid var(--glass-border)">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     Evaluation
-  </button>
-  <button class="la-tab" id="la-tab-observability" onclick="laTab('observability')" style="border-left:1px solid var(--glass-border)">
+  </a>
+  <a href="/intelligence-hub?tab=observability" class="la-tab" id="la-tab-observability" style="text-decoration:none;border-left:1px solid var(--glass-border)">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     Observability
-  </button>
+  </a>
 </div>
 
 <!-- ================================================================== -->
@@ -144,7 +138,7 @@
       </div>
     </div>
     <div id="agent-trace-count" style="text-align:center">
-      <div style="font-size:1.1rem;font-weight:700;color:var(--text-1)">-</div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--text-1)" id="agent-trace-num">-</div>
       <div style="font-size:0.68rem;color:var(--text-3)">traces</div>
     </div>
   </div>
@@ -304,11 +298,27 @@
 <div id="la-panel-observability" style="display:none">
 
 <!-- Obs Stats -->
-<div class="stats-row" id="obs-stats" style="margin-bottom:1.25rem">
-  <div class="stat-card"><div class="stat-value" id="stat-healthy">-</div><div class="stat-label">Healthy</div></div>
-  <div class="stat-card"><div class="stat-value" id="stat-unhealthy">-</div><div class="stat-label">Unhealthy</div></div>
-  <div class="stat-card"><div class="stat-value" id="stat-targets">-</div><div class="stat-label">Scrape Targets</div></div>
-  <div class="stat-card"><div class="stat-value" id="stat-active-series">-</div><div class="stat-label">Active Series</div></div>
+<div class="grid-4 mb-2" style="margin-bottom:1.25rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <div class="stat-label">Healthy</div>
+    <div class="stat-number" id="stat-healthy">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon" style="background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));color:#f43f5e"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+    <div class="stat-label">Unhealthy</div>
+    <div class="stat-number" id="stat-unhealthy">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg></div>
+    <div class="stat-label">Scrape Targets</div>
+    <div class="stat-number" id="stat-targets">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon stat-icon-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+    <div class="stat-label">Active Series</div>
+    <div class="stat-number" id="stat-active-series">-</div>
+  </div>
 </div>
 
 <!-- Stack Health -->
@@ -357,7 +367,19 @@
     <h3 style="font-size:0.95rem">Grafana &mdash; Platform Health</h3>
     <a href="\${urls.grafana}" target="_blank" class="btn btn-primary btn-sm">Open Grafana</a>
   </div>
-  <iframe id="grafana-iframe" src="\${urls.grafana}/d/agentic-platform-health?orgId=1&kiosk" width="100%" height="500" style="background:var(--surface-1);border-radius:10px;border:1px solid var(--glass-border)" loading="lazy"></iframe>
+  <div id="grafana-container" style="position:relative;min-height:500px">
+    <iframe id="grafana-iframe"
+      src="\${urls.grafana}/d/agentic-platform-health/platform-health?orgId=1&kiosk&refresh=30s"
+      width="100%" height="500"
+      style="background:var(--surface-1);border-radius:10px;border:1px solid var(--glass-border)"
+      loading="lazy"
+      allow="fullscreen"></iframe>
+    <div id="grafana-fallback" style="display:none;position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:0.75rem;background:var(--glass-bg);border-radius:10px;border:1px solid var(--glass-border)">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--text-3)" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <p style="color:var(--text-3);font-size:0.82rem;margin:0">Grafana dashboard loading...</p>
+      <a href="\${urls.grafana}" target="_blank" class="btn btn-primary btn-sm" style="margin-top:0.25rem">Open Grafana Directly</a>
+    </div>
+  </div>
 </div>
 
 <!-- Pipeline Diagram -->
@@ -402,6 +424,7 @@ var laAllTraces = [];
 var laSelectedAgent = '__all__';
 var laActiveTab = 'traces';
 var laObsLoaded = false;
+var laMemoryStats = {};
 
 /* ── TAB NAVIGATION ── */
 function laTab(tab) {
@@ -409,24 +432,61 @@ function laTab(tab) {
   ['traces','evaluation','observability'].forEach(function(t) {
     var p = document.getElementById('la-panel-' + t);
     var b = document.getElementById('la-tab-' + t);
-    if (p) p.style.display = t === tab ? '' : 'none';
-    if (b) b.classList.toggle('active', t === tab);
+    if (p) p.style.display = (t === tab) ? '' : 'none';
+    if (b) { if (t === tab) b.classList.add('active'); else b.classList.remove('active'); }
   });
   if (tab === 'observability' && !laObsLoaded) {
-    obsRefreshHealth(); obsLoadTargets(); obsLoadMetrics(); laObsLoaded = true;
+    laObsLoaded = true;
+    obsRefreshHealth();
+    obsLoadTargets();
+    obsLoadMetrics();
   }
 }
 
 function laAgentChanged() {
   laSelectedAgent = document.getElementById('la-agent-select').value;
-  loadTraces();
-  loadEvaluation();
+  /* Re-render everything for current tab */
+  if (laActiveTab === 'traces') { renderTraces(); }
+  else if (laActiveTab === 'evaluation') { renderEvaluation(); renderRAI(); renderComparison(); }
 }
 
 function laRefresh() {
-  loadTraces();
-  if (laActiveTab === 'evaluation') loadEvaluation();
-  if (laActiveTab === 'observability') { obsRefreshHealth(); obsLoadTargets(); obsLoadMetrics(); }
+  fetchAllData();
+}
+
+/* ── DATA FETCH (single source of truth) ── */
+function fetchAllData() {
+  Promise.all([
+    fetch('/api/agents').then(function(r) { return r.json(); }).catch(function() { return []; }),
+    fetch('/api/traces').then(function(r) { return r.json(); }).catch(function() { return { traces: [] }; }),
+    fetch('/api/memory/stats').then(function(r) { return r.json(); }).catch(function() { return {}; })
+  ]).then(function(results) {
+    laAllAgents = results[0].agents || results[0] || [];
+    laAllTraces = results[1].traces || [];
+    laMemoryStats = results[2];
+
+    /* populate agent selector */
+    var sel = document.getElementById('la-agent-select');
+    var curVal = sel.value;
+    var html = '<option value="__all__">All Agents</option>';
+    laAllAgents.forEach(function(a) {
+      html += '<option value="' + escapeHtml(a.id) + '"' + (a.id === curVal ? ' selected' : '') + '>' + escapeHtml(a.name) + (a.is_default ? ' (default)' : '') + '</option>';
+    });
+    sel.innerHTML = html;
+    if (curVal && curVal !== '__all__') sel.value = curVal;
+    laSelectedAgent = sel.value;
+
+    renderTraces();
+    renderEvaluation();
+    renderRAI();
+    renderComparison();
+
+    if (laObsLoaded) {
+      obsRefreshHealth();
+      obsLoadTargets();
+      obsLoadMetrics();
+    }
+  }).catch(function(e) { console.error('fetchAllData failed:', e); });
 }
 
 /* ── TRACE HELPERS ── */
@@ -459,111 +519,120 @@ function getFilteredTraces() {
   if (laSelectedAgent === '__all__') return laAllTraces;
   var agent = laAllAgents.find(function(a) { return a.id === laSelectedAgent; });
   if (!agent) return laAllTraces;
+  var agentName = agent.name.toLowerCase();
+  var agentId = agent.id.toLowerCase();
   return laAllTraces.filter(function(t) {
     var name = (t.name || '').toLowerCase();
     var meta = JSON.stringify(t.metadata || {}).toLowerCase();
-    var agentName = agent.name.toLowerCase();
-    return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
+    return name.indexOf(agentName) !== -1 || meta.indexOf(agentName) !== -1 || meta.indexOf(agentId) !== -1;
   });
 }
 
-/* ── TRACES TAB ── */
-function loadTraces() {
-  fetch('/api/traces').then(function(r){return r.json()}).then(function(d) {
-    laAllTraces = d.traces || [];
-    var traces = getFilteredTraces();
-    var el = document.getElementById('traces-table');
+/* ── RENDER TRACES TAB ── */
+function renderTraces() {
+  var traces = getFilteredTraces();
+  var el = document.getElementById('traces-table');
 
-    document.getElementById('stat-traces').textContent = traces.length;
-    var durations = traces.map(function(t){return _traceLatency(t)}).filter(function(d){return d>0});
-    var avgMs = durations.length ? durations.reduce(function(a,b){return a+b},0)/durations.length : 0;
-    document.getElementById('stat-latency').textContent = durations.length ? (avgMs/1000).toFixed(1) + 's' : '-';
+  document.getElementById('stat-traces').textContent = traces.length;
+  var durations = traces.map(_traceLatency).filter(function(d) { return d > 0; });
+  var avgMs = durations.length ? durations.reduce(function(a, b) { return a + b; }, 0) / durations.length : 0;
+  document.getElementById('stat-latency').textContent = durations.length ? (avgMs / 1000).toFixed(1) + 's' : '-';
 
-    var toolCount = 0;
-    traces.forEach(function(t) {
-      var meta = t.metadata || {};
-      if (meta.tools_used && Array.isArray(meta.tools_used)) { toolCount += meta.tools_used.length; return; }
-      if (t.observations) toolCount += t.observations.filter(function(o) { return o.type === 'SPAN' && (o.name||'').toLowerCase().includes('tool'); }).length;
-    });
-    document.getElementById('stat-tool-calls').textContent = toolCount;
-    document.getElementById('stat-errors').textContent = traces.filter(function(t){return t.status==='ERROR'}).length;
+  var toolCount = 0;
+  traces.forEach(function(t) {
+    var meta = t.metadata || {};
+    if (meta.tools_used && Array.isArray(meta.tools_used)) { toolCount += meta.tools_used.length; return; }
+    if (t.observations) toolCount += t.observations.filter(function(o) { return o.type === 'SPAN' && (o.name || '').toLowerCase().indexOf('tool') !== -1; }).length;
+  });
+  document.getElementById('stat-tool-calls').textContent = toolCount;
+  document.getElementById('stat-errors').textContent = traces.filter(function(t) { return t.status === 'ERROR'; }).length;
 
-    var totalTokens = 0, tracesWithTokens = 0;
-    traces.forEach(function(t) { var toks = _traceTokens(t); if (toks.total > 0) { totalTokens += toks.total; tracesWithTokens++; } });
-    document.getElementById('lf-tokens').textContent = totalTokens > 0 ? totalTokens.toLocaleString() : '-';
-    document.getElementById('lf-avg-tokens').textContent = tracesWithTokens > 0 ? Math.round(totalTokens/tracesWithTokens).toLocaleString() : '-';
+  /* Langfuse KPIs */
+  var totalTokens = 0, tracesWithTokens = 0;
+  traces.forEach(function(t) { var toks = _traceTokens(t); if (toks.total > 0) { totalTokens += toks.total; tracesWithTokens++; } });
+  document.getElementById('lf-tokens').textContent = totalTokens > 0 ? totalTokens.toLocaleString() : '-';
+  document.getElementById('lf-avg-tokens').textContent = tracesWithTokens > 0 ? Math.round(totalTokens / tracesWithTokens).toLocaleString() : '-';
 
-    var successCount = traces.filter(function(t) { return t.status !== 'ERROR'; }).length;
-    document.getElementById('lf-success').textContent = traces.length > 0 ? Math.round(successCount/traces.length*100) + '%' : '-';
-    document.getElementById('lf-success').style.color = traces.length > 0 && successCount/traces.length < 0.9 ? '#f43f5e' : '#10b981';
+  var successCount = traces.filter(function(t) { return t.status !== 'ERROR'; }).length;
+  document.getElementById('lf-success').textContent = traces.length > 0 ? Math.round(successCount / traces.length * 100) + '%' : '-';
+  document.getElementById('lf-success').style.color = (traces.length > 0 && successCount / traces.length < 0.9) ? '#f43f5e' : '#10b981';
 
-    if (durations.length > 0) {
-      var sorted = durations.slice().sort(function(a,b){return a-b});
-      var p95idx = Math.min(Math.floor(sorted.length * 0.95), sorted.length-1);
-      document.getElementById('lf-p95').textContent = (sorted[p95idx]/1000).toFixed(1) + 's';
-    }
+  if (durations.length > 0) {
+    var sorted = durations.slice().sort(function(a, b) { return a - b; });
+    var p95idx = Math.min(Math.floor(sorted.length * 0.95), sorted.length - 1);
+    document.getElementById('lf-p95').textContent = (sorted[p95idx] / 1000).toFixed(1) + 's';
+  } else {
+    document.getElementById('lf-p95').textContent = '-';
+  }
 
-    var buckets = [0,0,0,0,0];
-    durations.forEach(function(ms) { var s = ms/1000; if (s < 1) buckets[0]++; else if (s < 3) buckets[1]++; else if (s < 5) buckets[2]++; else if (s < 10) buckets[3]++; else buckets[4]++; });
-    var maxBucket = Math.max.apply(null, buckets.concat([1]));
-    var colors = ['#10b981','#06b6d4','#f59e0b','#f97316','#f43f5e'];
-    document.getElementById('lf-latency-bars').innerHTML = buckets.map(function(b,i) {
-      return '<div style="flex:1;background:' + colors[i] + ';height:' + Math.max(4, b/maxBucket*36) + 'px;border-radius:3px;opacity:0.85;position:relative" title="' + b + ' traces"><span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:0.58rem;color:var(--text-3)">' + b + '</span></div>';
+  /* Latency bars */
+  var buckets = [0, 0, 0, 0, 0];
+  durations.forEach(function(ms) { var s = ms / 1000; if (s < 1) buckets[0]++; else if (s < 3) buckets[1]++; else if (s < 5) buckets[2]++; else if (s < 10) buckets[3]++; else buckets[4]++; });
+  var maxBucket = Math.max.apply(null, buckets.concat([1]));
+  var colors = ['#10b981', '#06b6d4', '#f59e0b', '#f97316', '#f43f5e'];
+  document.getElementById('lf-latency-bars').innerHTML = buckets.map(function(b, i) {
+    var h = Math.max(4, b / maxBucket * 36);
+    return '<div style="flex:1;background:' + colors[i] + ';height:' + h + 'px;border-radius:3px;opacity:0.85;position:relative" title="' + b + ' traces"><span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:0.58rem;color:var(--text-3)">' + b + '</span></div>';
+  }).join('');
+
+  /* Timeline */
+  var timelineEl = document.getElementById('lf-timeline');
+  if (traces.length === 0) {
+    timelineEl.innerHTML = '<div style="color:var(--text-3);font-size:0.78rem;padding:0.5rem">No traces yet \\u2014 run an agent prompt to generate data</div>';
+  } else {
+    var maxDuration = Math.max.apply(null, durations.concat([1]));
+    timelineEl.innerHTML = traces.slice(0, 12).map(function(t) {
+      var lat = _traceLatency(t);
+      var dur = lat > 0 ? (lat / 1000).toFixed(1) + 's' : '-';
+      var time = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '-';
+      var statusColor = t.status === 'ERROR' ? '#f43f5e' : '#10b981';
+      var barWidth = lat > 0 ? Math.max(8, Math.min(100, lat / maxDuration * 100)) : 8;
+      return '<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem">' +
+        '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></span>' +
+        '<span style="width:55px;flex-shrink:0;color:var(--text-3);font-family:monospace;font-size:0.65rem">' + time + '</span>' +
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)">' + escapeHtml(t.name || (t.id ? t.id.slice(0, 12) : '-')) + '</span>' +
+        '<div style="width:90px;height:7px;background:var(--glass-bg);border-radius:4px;overflow:hidden;flex-shrink:0"><div style="width:' + barWidth + '%;height:100%;background:' + (lat > 5000 ? '#f59e0b' : '#06b6d4') + ';border-radius:4px"></div></div>' +
+        '<span style="width:36px;text-align:right;font-family:monospace;font-size:0.65rem;color:var(--text-3);flex-shrink:0">' + dur + '</span></div>';
     }).join('');
+  }
 
-    var timelineEl = document.getElementById('lf-timeline');
-    if (traces.length === 0) {
-      timelineEl.innerHTML = '<div style="color:var(--text-3);font-size:0.78rem;padding:0.5rem">No traces yet \\u2014 run an agent prompt to generate data</div>';
-    } else {
-      var maxDuration = Math.max.apply(null, durations.concat([1]));
-      timelineEl.innerHTML = traces.slice(0, 12).map(function(t) {
-        var lat = _traceLatency(t);
-        var dur = lat > 0 ? (lat/1000).toFixed(1) + 's' : '-';
-        var time = t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '-';
-        var statusColor = t.status === 'ERROR' ? '#f43f5e' : '#10b981';
-        var barWidth = lat > 0 ? Math.max(8, Math.min(100, lat / maxDuration * 100)) : 8;
-        return '<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem">' +
-          '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></span>' +
-          '<span style="width:55px;flex-shrink:0;color:var(--text-3);font-family:monospace;font-size:0.65rem">' + time + '</span>' +
-          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)">' + escapeHtml(t.name||t.id?.slice(0,12)||'-') + '</span>' +
-          '<div style="width:90px;height:7px;background:var(--glass-bg);border-radius:4px;overflow:hidden;flex-shrink:0"><div style="width:' + barWidth + '%;height:100%;background:' + (lat > 5000 ? '#f59e0b' : '#06b6d4') + ';border-radius:4px"></div></div>' +
-          '<span style="width:36px;text-align:right;font-family:monospace;font-size:0.65rem;color:var(--text-3);flex-shrink:0">' + dur + '</span></div>';
-      }).join('');
-    }
-
-    if (traces.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">' + (d.error || 'No traces found. Run an agent prompt to generate traces.') + '</p>';
-      return;
-    }
-    el.innerHTML = '<table><tr><th>Trace ID</th><th>Name</th><th>Session</th><th>Input</th><th>Model</th><th>Tokens</th><th>Latency</th><th>Status</th><th></th></tr>' +
-      traces.map(function(t) {
-        var lat = _traceLatency(t);
-        var latStr = lat > 0 ? (lat/1000).toFixed(2) + 's' : '-';
-        var toks = _traceTokens(t);
-        var tokStr = toks.total > 0 ? toks.total.toLocaleString() : '-';
-        var model = _traceModel(t);
-        var statusBadge = t.status === 'ERROR'
-          ? '<span style="color:#f43f5e;font-size:0.72rem">\\u2716 Error</span>'
-          : '<span style="color:#10b981;font-size:0.72rem">\\u2714 OK</span>';
-        return '<tr>' +
-        '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.id||'').slice(0,10)) + '</td>' +
-        '<td>' + escapeHtml(t.name||'-') + '</td>' +
-        '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.sessionId||'-').slice(0,12)) + '</td>' +
-        '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input)).slice(0,50) : '-') + '</td>' +
-        '<td class="mono" style="font-size:0.72rem;color:var(--text-3)">' + escapeHtml(model || '-') + '</td>' +
-        '<td class="mono" style="font-size:0.78rem;color:' + (toks.total > 0 ? '#8b5cf6' : 'var(--text-3)') + '">' + tokStr + '</td>' +
-        '<td class="mono" style="font-size:0.78rem;color:' + (lat > 5000 ? '#f59e0b' : lat > 0 ? '#10b981' : 'var(--text-3)') + '">' + latStr + '</td>' +
-        '<td>' + statusBadge + '</td>' +
-        '<td><button class="btn btn-secondary btn-sm" onclick="viewTrace(\\'' + escapeHtml(t.id) + '\\')">Detail</button></td></tr>';
-      }).join('') + '</table>';
-  }).catch(function(e) {
-    document.getElementById('traces-table').innerHTML = '<p style="color:var(--danger)">Failed to load traces</p>';
+  /* Table */
+  if (traces.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-3)">No traces found. Run an agent prompt to generate traces.</p>';
+    return;
+  }
+  var rows = traces.map(function(t) {
+    var lat = _traceLatency(t);
+    var latStr = lat > 0 ? (lat / 1000).toFixed(2) + 's' : '-';
+    var toks = _traceTokens(t);
+    var tokStr = toks.total > 0 ? toks.total.toLocaleString() : '-';
+    var model = _traceModel(t);
+    var statusBadge = t.status === 'ERROR'
+      ? '<span style="color:#f43f5e;font-size:0.72rem">\\u2716 Error</span>'
+      : '<span style="color:#10b981;font-size:0.72rem">\\u2714 OK</span>';
+    var inputText = '-';
+    if (t.input) { inputText = (typeof t.input === 'string' ? t.input : JSON.stringify(t.input)).slice(0, 50); }
+    return '<tr>' +
+      '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.id || '').slice(0, 10)) + '</td>' +
+      '<td>' + escapeHtml(t.name || '-') + '</td>' +
+      '<td class="mono" style="font-size:0.78rem">' + escapeHtml((t.sessionId || '-').slice(0, 12)) + '</td>' +
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(inputText) + '</td>' +
+      '<td class="mono" style="font-size:0.72rem;color:var(--text-3)">' + escapeHtml(model || '-') + '</td>' +
+      '<td class="mono" style="font-size:0.78rem;color:' + (toks.total > 0 ? '#8b5cf6' : 'var(--text-3)') + '">' + tokStr + '</td>' +
+      '<td class="mono" style="font-size:0.78rem;color:' + (lat > 5000 ? '#f59e0b' : lat > 0 ? '#10b981' : 'var(--text-3)') + '">' + latStr + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td><button class="btn btn-secondary btn-sm" onclick="viewTrace(\\'' + escapeHtml(t.id || '') + '\\')">Detail</button></td></tr>';
   });
+  el.innerHTML = '<table><tr><th>Trace ID</th><th>Name</th><th>Session</th><th>Input</th><th>Model</th><th>Tokens</th><th>Latency</th><th>Status</th><th></th></tr>' + rows.join('') + '</table>';
 }
+
+/* kept for backward compat */
+function loadTraces() { fetchAllData(); }
 
 function viewTrace(traceId) {
+  if (!traceId) return;
   showDetailModal('Loading Trace...', '<p style="color:var(--text-3)">Fetching trace detail...</p>');
-  fetch('/api/traces/' + traceId).then(function(r){return r.json()}).then(function(d) {
+  fetch('/api/traces/' + encodeURIComponent(traceId)).then(function(r) { return r.json(); }).then(function(d) {
     var t = d.trace || d;
     var lat = _traceLatency(t);
     var toks = _traceTokens(t);
@@ -573,16 +642,16 @@ function viewTrace(traceId) {
     html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem">';
     html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.5rem">Trace Info</div>';
     html += '<div style="display:flex;flex-direction:column;gap:0.35rem">';
-    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Trace ID</span><span class="mono" style="font-size:0.72rem">' + escapeHtml((t.id||'-').slice(0,16)) + '</span></div>';
-    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Session</span><span class="mono" style="font-size:0.72rem">' + escapeHtml(t.sessionId||'-') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Trace ID</span><span class="mono" style="font-size:0.72rem">' + escapeHtml((t.id || '-').slice(0, 16)) + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Session</span><span class="mono" style="font-size:0.72rem">' + escapeHtml(t.sessionId || '-') + '</span></div>';
     html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Timestamp</span><span style="font-size:0.75rem">' + (t.timestamp ? new Date(t.timestamp).toLocaleString() : '-') + '</span></div>';
-    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Status</span><span style="color:' + (t.status==='ERROR' ? '#f43f5e' : '#10b981') + ';font-weight:600;font-size:0.75rem">' + (t.status==='ERROR' ? '\\u2716 Error' : '\\u2714 Success') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Status</span><span style="color:' + (t.status === 'ERROR' ? '#f43f5e' : '#10b981') + ';font-weight:600;font-size:0.75rem">' + (t.status === 'ERROR' ? '\\u2716 Error' : '\\u2714 Success') + '</span></div>';
     html += '</div></div>';
 
     html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem">';
     html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.5rem">Performance</div>';
     html += '<div style="display:flex;flex-direction:column;gap:0.35rem">';
-    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Latency</span><span style="font-weight:600;font-size:0.78rem;color:' + (lat > 5000 ? '#f59e0b' : '#10b981') + '">' + (lat > 0 ? (lat/1000).toFixed(2) + 's' : '-') + '</span></div>';
+    html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Latency</span><span style="font-weight:600;font-size:0.78rem;color:' + (lat > 5000 ? '#f59e0b' : '#10b981') + '">' + (lat > 0 ? (lat / 1000).toFixed(2) + 's' : '-') + '</span></div>';
     if (model) html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Model</span><span class="mono" style="font-size:0.72rem">' + escapeHtml(model) + '</span></div>';
     html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Tokens In</span><span class="mono" style="font-size:0.75rem;color:#8b5cf6">' + (toks.input > 0 ? toks.input.toLocaleString() : '-') + '</span></div>';
     html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--text-3);font-size:0.75rem">Tokens Out</span><span class="mono" style="font-size:0.75rem;color:#06b6d4">' + (toks.output > 0 ? toks.output.toLocaleString() : '-') + '</span></div>';
@@ -590,8 +659,10 @@ function viewTrace(traceId) {
     html += '</div></div></div>';
 
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">';
-    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem"><div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.4rem">Input</div><div style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-1);max-height:120px;overflow-y:auto;word-break:break-word">' + escapeHtml(t.input ? (typeof t.input==='string'?t.input:JSON.stringify(t.input,null,2)).slice(0,500) : '-') + '</div></div>';
-    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem"><div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.4rem">Output</div><div style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-1);max-height:180px;overflow-y:auto;word-break:break-word">' + escapeHtml(t.output ? (typeof t.output==='string'?t.output:JSON.stringify(t.output,null,2)).slice(0,1000) : '-') + '</div></div></div>';
+    var inputStr = t.input ? (typeof t.input === 'string' ? t.input : JSON.stringify(t.input, null, 2)).slice(0, 500) : '-';
+    var outputStr = t.output ? (typeof t.output === 'string' ? t.output : JSON.stringify(t.output, null, 2)).slice(0, 1000) : '-';
+    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem"><div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.4rem">Input</div><div style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-1);max-height:120px;overflow-y:auto;word-break:break-word">' + escapeHtml(inputStr) + '</div></div>';
+    html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.85rem"><div style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:0.4rem">Output</div><div style="white-space:pre-wrap;font-size:0.78rem;color:var(--text-1);max-height:180px;overflow-y:auto;word-break:break-word">' + escapeHtml(outputStr) + '</div></div></div>';
 
     var obs = d.observations || [];
     if (obs.length > 0) {
@@ -600,13 +671,13 @@ function viewTrace(traceId) {
       html += '<div style="display:flex;flex-direction:column;gap:0.4rem">';
       obs.forEach(function(o) {
         var isGen = o.type === 'GENERATION';
-        var isTool = (o.name||'').toLowerCase().includes('tool');
+        var isTool = (o.name || '').toLowerCase().indexOf('tool') !== -1;
         var color = isGen ? '#8b5cf6' : isTool ? '#f59e0b' : '#06b6d4';
-        var dur = o.endTime && o.startTime ? ((new Date(o.endTime) - new Date(o.startTime))/1000).toFixed(2) + 's' : '';
+        var dur = o.endTime && o.startTime ? ((new Date(o.endTime) - new Date(o.startTime)) / 1000).toFixed(2) + 's' : '';
         var oUsage = o.usage || {};
-        var oTokens = (oUsage.totalTokens || oUsage.total || 0);
+        var oTokens = oUsage.totalTokens || oUsage.total || 0;
         html += '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.6rem;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid ' + color + '">';
-        html += '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:0.78rem;color:var(--text-1)">' + escapeHtml(o.name||o.type||'-') + '</strong><div style="display:flex;gap:0.35rem;align-items:center">';
+        html += '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:0.78rem;color:var(--text-1)">' + escapeHtml(o.name || o.type || '-') + '</strong><div style="display:flex;gap:0.35rem;align-items:center">';
         if (oTokens > 0) html += '<span class="badge" style="font-size:0.62rem;background:rgba(139,92,246,0.12);color:#8b5cf6">' + oTokens + ' tok</span>';
         if (dur) html += '<span class="badge" style="font-size:0.62rem;background:rgba(6,182,212,0.12);color:#06b6d4">' + dur + '</span>';
         html += '</div></div></div></div>';
@@ -614,13 +685,13 @@ function viewTrace(traceId) {
       html += '</div></div>';
     }
 
-    showDetailModal('Trace: ' + (t.id||'-').slice(0,12), html);
+    showDetailModal('Trace: ' + (t.id || '-').slice(0, 12), html);
   }).catch(function(e) {
     showDetailModal('Error', '<p style="color:#f43f5e">' + escapeHtml(e.message) + '</p>');
   });
 }
 
-/* ── EVALUATION TAB ── */
+/* ── EVALUATION HELPERS ── */
 function gradeFor(pct) {
   if (pct >= 95) return '<span style="color:#10b981;font-weight:700">A</span>';
   if (pct >= 85) return '<span style="color:#06b6d4;font-weight:700">B</span>';
@@ -639,16 +710,16 @@ function gradeColor(pct) {
 
 function computeScores(traces) {
   if (traces.length === 0) return { completion: 0, latency: 0, tool: 0, error: 0, overall: 0 };
-  var success = traces.filter(function(t){return t.status !== 'ERROR'}).length;
+  var success = traces.filter(function(t) { return t.status !== 'ERROR'; }).length;
   var completionPct = Math.round(success / traces.length * 100);
-  var durations = traces.map(function(t){return _traceLatency(t)}).filter(function(d){return d > 0});
-  var under5s = durations.filter(function(d){return d < 5000}).length;
+  var durations = traces.map(_traceLatency).filter(function(d) { return d > 0; });
+  var under5s = durations.filter(function(d) { return d < 5000; }).length;
   var latencyPct = durations.length > 0 ? Math.round(under5s / durations.length * 100) : 0;
   var toolTraces = 0, toolSuccess = 0;
   traces.forEach(function(t) {
     var meta = t.metadata || {};
     var hasTools = (meta.tools_used && meta.tools_used.length > 0);
-    if (!hasTools && t.observations) hasTools = t.observations.some(function(o){return (o.name||'').toLowerCase().includes('tool')});
+    if (!hasTools && t.observations) hasTools = t.observations.some(function(o) { return (o.name || '').toLowerCase().indexOf('tool') !== -1; });
     if (hasTools) { toolTraces++; if (t.status !== 'ERROR') toolSuccess++; }
   });
   var toolPct = toolTraces > 0 ? Math.round(toolSuccess / toolTraces * 100) : 100;
@@ -657,73 +728,65 @@ function computeScores(traces) {
   return { completion: completionPct, latency: latencyPct, tool: toolPct, error: errorPct, overall: overall };
 }
 
-function loadEvaluation() {
-  Promise.all([
-    fetch('/api/traces').then(function(r){return r.json()}),
-    fetch('/api/memory/stats').then(function(r){return r.json()}).catch(function(){return {}})
-  ]).then(function(results) {
-    laAllTraces = results[0].traces || [];
-    var memRes = results[1];
-    var traces = getFilteredTraces();
-    var scores = computeScores(traces);
+/* ── RENDER EVALUATION TAB ── */
+function renderEvaluation() {
+  var traces = getFilteredTraces();
+  var scores = computeScores(traces);
+  var memRes = laMemoryStats;
 
-    var banner = document.getElementById('agent-info-banner');
-    if (laSelectedAgent !== '__all__') {
-      var agent = laAllAgents.find(function(a){return a.id === laSelectedAgent});
-      if (agent) {
-        banner.style.display = 'block';
-        document.getElementById('agent-info-name').textContent = agent.name;
-        document.getElementById('agent-info-model').textContent = 'Model: ' + agent.provider + '/' + agent.model;
-        document.getElementById('agent-info-provider').textContent = 'Temp: ' + agent.temperature;
-        document.getElementById('agent-info-tools').textContent = 'Tools: ' + (agent.tool_ids || []).length + ' | Skills: ' + (agent.skill_ids || []).length;
-        document.getElementById('agent-trace-count').querySelector('div').textContent = traces.length;
-      }
-    } else { banner.style.display = 'none'; }
-
-    document.getElementById('eval-completion').textContent = scores.completion + '%';
-    document.getElementById('eval-completion-bar').style.width = scores.completion + '%';
-    document.getElementById('eval-row-completion').textContent = scores.completion + '%';
-    document.getElementById('eval-grade-completion').innerHTML = gradeFor(scores.completion);
-
-    var durations = traces.map(function(t){return _traceLatency(t)}).filter(function(d){return d > 0});
-    document.getElementById('eval-latency').textContent = scores.latency + '%';
-    document.getElementById('eval-latency-bar').style.width = scores.latency + '%';
-    var avgLat = durations.length > 0 ? (durations.reduce(function(a,b){return a+b},0)/durations.length/1000).toFixed(1) + 's avg' : '-';
-    document.getElementById('eval-row-latency').textContent = avgLat;
-    document.getElementById('eval-grade-latency').innerHTML = gradeFor(scores.latency);
-
-    document.getElementById('eval-tool-eff').textContent = scores.tool + '%';
-    document.getElementById('eval-tool-bar').style.width = scores.tool + '%';
-    document.getElementById('eval-row-tools').textContent = scores.tool + '%';
-    document.getElementById('eval-grade-tools').innerHTML = gradeFor(scores.tool);
-
-    document.getElementById('eval-row-errors').textContent = scores.error + '%';
-    document.getElementById('eval-grade-errors').innerHTML = gradeFor(scores.error);
-
-    var mem = memRes.memory || {};
-    var memPct = Math.min(100, Math.round((mem.sessions_with_summary || 0) / (mem.total_sessions || 1) * 100));
-    document.getElementById('eval-row-memory').textContent = memPct + '%';
-    document.getElementById('eval-grade-memory').innerHTML = gradeFor(memPct);
-
-    var overall = Math.round(scores.completion * 0.3 + scores.latency * 0.2 + scores.tool * 0.2 + scores.error * 0.2 + memPct * 0.1);
-    document.getElementById('eval-row-overall').textContent = overall + '%';
-    document.getElementById('eval-grade-overall').innerHTML = gradeFor(overall);
-
-    loadRAI();
-
-    if (laSelectedAgent === '__all__') {
-      document.getElementById('agent-comparison-card').style.display = 'block';
-      loadComparison();
-    } else {
-      document.getElementById('agent-comparison-card').style.display = 'none';
+  var banner = document.getElementById('agent-info-banner');
+  if (laSelectedAgent !== '__all__') {
+    var agent = laAllAgents.find(function(a) { return a.id === laSelectedAgent; });
+    if (agent) {
+      banner.style.display = 'block';
+      document.getElementById('agent-info-name').textContent = agent.name;
+      document.getElementById('agent-info-model').textContent = 'Model: ' + (agent.provider || '') + '/' + (agent.model || '');
+      document.getElementById('agent-info-provider').textContent = 'Temp: ' + (agent.temperature != null ? agent.temperature : '-');
+      document.getElementById('agent-info-tools').textContent = 'Tools: ' + (agent.tool_ids || []).length + ' | Skills: ' + (agent.skill_ids || []).length;
+      document.getElementById('agent-trace-num').textContent = traces.length;
     }
-  }).catch(function(e) { console.error('loadEvaluation failed:', e); });
+  } else {
+    banner.style.display = 'none';
+  }
+
+  document.getElementById('eval-completion').textContent = scores.completion + '%';
+  document.getElementById('eval-completion-bar').style.width = scores.completion + '%';
+  document.getElementById('eval-row-completion').textContent = scores.completion + '%';
+  document.getElementById('eval-grade-completion').innerHTML = gradeFor(scores.completion);
+
+  var durations = traces.map(_traceLatency).filter(function(d) { return d > 0; });
+  document.getElementById('eval-latency').textContent = scores.latency + '%';
+  document.getElementById('eval-latency-bar').style.width = scores.latency + '%';
+  var avgLat = durations.length > 0 ? (durations.reduce(function(a, b) { return a + b; }, 0) / durations.length / 1000).toFixed(1) + 's avg' : '-';
+  document.getElementById('eval-row-latency').textContent = avgLat;
+  document.getElementById('eval-grade-latency').innerHTML = gradeFor(scores.latency);
+
+  document.getElementById('eval-tool-eff').textContent = scores.tool + '%';
+  document.getElementById('eval-tool-bar').style.width = scores.tool + '%';
+  document.getElementById('eval-row-tools').textContent = scores.tool + '%';
+  document.getElementById('eval-grade-tools').innerHTML = gradeFor(scores.tool);
+
+  document.getElementById('eval-row-errors').textContent = scores.error + '%';
+  document.getElementById('eval-grade-errors').innerHTML = gradeFor(scores.error);
+
+  var mem = memRes.memory || {};
+  var memPct = Math.min(100, Math.round((mem.sessions_with_summary || 0) / Math.max(mem.total_sessions || 1, 1) * 100));
+  document.getElementById('eval-row-memory').textContent = memPct + '%';
+  document.getElementById('eval-grade-memory').innerHTML = gradeFor(memPct);
+
+  var overall = Math.round(scores.completion * 0.3 + scores.latency * 0.2 + scores.tool * 0.2 + scores.error * 0.2 + memPct * 0.1);
+  document.getElementById('eval-row-overall').textContent = overall + '%';
+  document.getElementById('eval-grade-overall').innerHTML = gradeFor(overall);
 }
 
-function loadRAI() {
-  var agent = laSelectedAgent !== '__all__' ? laAllAgents.find(function(a){return a.id === laSelectedAgent}) : null;
+/* kept for backward compat */
+function loadEvaluation() { fetchAllData(); }
+
+/* ── RENDER RAI ── */
+function renderRAI() {
+  var agent = (laSelectedAgent !== '__all__') ? laAllAgents.find(function(a) { return a.id === laSelectedAgent; }) : null;
   var traces = getFilteredTraces();
-  var errorCount = traces.filter(function(t){return t.status === 'ERROR'}).length;
+  var errorCount = traces.filter(function(t) { return t.status === 'ERROR'; }).length;
   var errorRate = traces.length > 0 ? (errorCount / traces.length * 100).toFixed(1) : '0.0';
 
   if (agent) {
@@ -736,15 +799,16 @@ function loadRAI() {
     document.getElementById('rai-kb').textContent = agent.kb_collection || 'None';
     document.getElementById('rai-tools').textContent = (agent.tool_ids || []).length + ' tools';
     document.getElementById('rai-skills').textContent = (agent.skill_ids || []).length + ' skills';
-    document.getElementById('rai-max-iter').textContent = agent.max_iterations + ' loops';
-    document.getElementById('rai-temperature').textContent = agent.temperature;
-    document.getElementById('rai-temperature').style.color = agent.temperature > 1.0 ? '#f43f5e' : '#f59e0b';
-    document.getElementById('rai-temperature').style.background = agent.temperature > 1.0 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
-    document.getElementById('rai-top-p').textContent = agent.top_p != null ? agent.top_p : 1;
+    document.getElementById('rai-max-iter').textContent = (agent.max_iterations || 10) + ' loops';
+    document.getElementById('rai-temperature').textContent = agent.temperature != null ? agent.temperature : '-';
+    document.getElementById('rai-temperature').style.color = (agent.temperature || 0) > 1.0 ? '#f43f5e' : '#f59e0b';
+    document.getElementById('rai-temperature').style.background = (agent.temperature || 0) > 1.0 ? 'rgba(244,63,94,0.12)' : 'rgba(245,158,11,0.12)';
+    document.getElementById('rai-top-p').textContent = agent.top_p != null ? agent.top_p : '1';
   } else {
     document.getElementById('rai-subtitle').textContent = 'Global governance guardrails, fairness checks & safety monitoring';
     ['rai-sys-prompt','rai-memory','rai-kb','rai-tools','rai-skills','rai-max-iter','rai-top-p'].forEach(function(id) {
-      document.getElementById(id).textContent = 'Per-agent';
+      var el = document.getElementById(id);
+      if (el) el.textContent = 'Per-agent';
     });
     document.getElementById('rai-temperature').textContent = 'Per-agent';
     document.getElementById('rai-temperature').style.color = '#f59e0b';
@@ -759,7 +823,7 @@ function loadRAI() {
   if (parseFloat(errorRate) > 20) issues.push('high error rate (' + errorRate + '%)');
   if (traces.length === 0) issues.push('no traces recorded');
   if (agent && !agent.system_prompt) issues.push('no system prompt');
-  if (agent && agent.temperature > 1.0) issues.push('high temperature');
+  if (agent && (agent.temperature || 0) > 1.0) issues.push('high temperature');
 
   var raiEl = document.getElementById('rai-status');
   var raiDetail = document.getElementById('rai-detail');
@@ -774,30 +838,37 @@ function loadRAI() {
   }
 }
 
-function loadComparison() {
+/* ── RENDER COMPARISON ── */
+function renderComparison() {
+  if (laSelectedAgent !== '__all__') {
+    document.getElementById('agent-comparison-card').style.display = 'none';
+    return;
+  }
+  document.getElementById('agent-comparison-card').style.display = 'block';
   if (laAllAgents.length === 0) {
     document.getElementById('agent-comparison-table').innerHTML = '<p style="color:var(--text-3)">No agents registered yet.</p>';
     return;
   }
   var html = '<table><tr><th>Agent</th><th>Model</th><th>Traces</th><th>Completion</th><th>Latency</th><th>Error Rate</th><th>Overall</th><th>RAI</th></tr>';
   laAllAgents.forEach(function(agent) {
+    var agentName = agent.name.toLowerCase();
+    var agentId = agent.id.toLowerCase();
     var agentTraces = laAllTraces.filter(function(t) {
       var name = (t.name || '').toLowerCase();
       var meta = JSON.stringify(t.metadata || {}).toLowerCase();
-      var agentName = agent.name.toLowerCase();
-      return name.includes(agentName) || meta.includes(agentName) || meta.includes(agent.id);
+      return name.indexOf(agentName) !== -1 || meta.indexOf(agentName) !== -1 || meta.indexOf(agentId) !== -1;
     });
     var scores = computeScores(agentTraces);
     var raiIssues = [];
     if (!agent.system_prompt) raiIssues.push('no prompt');
-    if (agent.temperature > 1.0) raiIssues.push('high temp');
+    if ((agent.temperature || 0) > 1.0) raiIssues.push('high temp');
     if (scores.error < 80 && agentTraces.length > 0) raiIssues.push('errors');
     var raiBadge = raiIssues.length === 0
       ? '<span class="badge" style="font-size:0.65rem;background:rgba(16,185,129,0.12);color:#10b981">OK</span>'
       : '<span class="badge" style="font-size:0.65rem;background:rgba(245,158,11,0.12);color:#f59e0b">' + raiIssues.length + ' issue(s)</span>';
     html += '<tr>' +
       '<td style="font-weight:600">' + escapeHtml(agent.name) + (agent.is_default ? ' <span style="font-size:0.62rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
-      '<td class="mono" style="font-size:0.75rem">' + escapeHtml(agent.provider) + '/' + escapeHtml(agent.model) + '</td>' +
+      '<td class="mono" style="font-size:0.75rem">' + escapeHtml(agent.provider || '') + '/' + escapeHtml(agent.model || '') + '</td>' +
       '<td class="mono">' + agentTraces.length + '</td>' +
       '<td><span style="color:' + gradeColor(scores.completion) + ';font-weight:600">' + scores.completion + '%</span></td>' +
       '<td><span style="color:' + gradeColor(scores.latency) + ';font-weight:600">' + scores.latency + '%</span></td>' +
@@ -811,7 +882,7 @@ function loadComparison() {
 
 /* ── OBSERVABILITY TAB ── */
 function obsRefreshHealth() {
-  fetch('/api/observability/health').then(function(r){return r.json()}).then(function(data) {
+  fetch('/api/observability/health').then(function(r) { return r.json(); }).then(function(data) {
     var healthy = 0, unhealthy = 0;
     (data.services || []).forEach(function(svc) {
       var dot = document.getElementById('dot-' + svc.name);
@@ -823,7 +894,7 @@ function obsRefreshHealth() {
       } else {
         unhealthy++;
         if (dot) { dot.style.background = '#ef4444'; dot.className = 'pulse-dot'; }
-        if (status) status.innerHTML = '<span style="color:#ef4444">' + escapeHtml(svc.error || 'Unhealthy') + '</span>';
+        if (status) status.innerHTML = '<span style="color:#ef4444">' + escapeHtml(svc.error || svc.status || 'Unhealthy') + '</span>';
       }
     });
     document.getElementById('stat-healthy').textContent = healthy;
@@ -835,7 +906,7 @@ function obsRefreshHealth() {
 }
 
 function obsLoadTargets() {
-  fetch('/api/observability/prometheus/targets').then(function(r){return r.json()}).then(function(data) {
+  fetch('/api/observability/prometheus/targets').then(function(r) { return r.json(); }).then(function(data) {
     var container = document.getElementById('targets-container');
     if (data.status === 'success' && data.data && data.data.activeTargets) {
       var targets = data.data.activeTargets;
@@ -844,9 +915,9 @@ function obsLoadTargets() {
       targets.forEach(function(t) {
         var stateColor = t.health === 'up' ? '#10b981' : '#ef4444';
         var lastScrape = t.lastScrape ? new Date(t.lastScrape).toLocaleTimeString() : '-';
-        html += '<tr><td><strong>' + escapeHtml(t.labels.job) + '</strong></td>'
-          + '<td class="mono" style="font-size:0.75rem;color:var(--text-3)">' + escapeHtml(t.scrapeUrl) + '</td>'
-          + '<td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:' + stateColor + ';display:inline-block"></span>' + escapeHtml(t.health) + '</span></td>'
+        html += '<tr><td><strong>' + escapeHtml(t.labels ? t.labels.job : '-') + '</strong></td>'
+          + '<td class="mono" style="font-size:0.75rem;color:var(--text-3)">' + escapeHtml(t.scrapeUrl || '-') + '</td>'
+          + '<td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:' + stateColor + ';display:inline-block"></span>' + escapeHtml(t.health || '-') + '</span></td>'
           + '<td style="color:var(--text-3);font-size:0.75rem">' + lastScrape + '</td></tr>';
       });
       html += '</table>';
@@ -862,33 +933,39 @@ function obsLoadTargets() {
 }
 
 function obsLoadMetrics() {
-  fetch('/api/observability/prometheus/query?query=count({__name__!=""})').then(function(r){return r.json()}).then(function(data) {
+  fetch('/api/observability/prometheus/query?query=count(%7B__name__!%3D%22%22%7D)').then(function(r) { return r.json(); }).then(function(data) {
     if (data.status === 'success' && data.data && data.data.result && data.data.result[0]) {
       document.getElementById('stat-active-series').textContent = parseInt(data.data.result[0].value[1]).toLocaleString();
-    } else { document.getElementById('stat-active-series').textContent = '-'; }
+    } else {
+      document.getElementById('stat-active-series').textContent = '-';
+    }
   }).catch(function() { document.getElementById('stat-active-series').textContent = '?'; });
 }
 
 /* ── INIT ── */
 (function() {
-  Promise.all([
-    fetch('/api/agents').then(function(r){return r.json()}),
-    fetch('/api/traces').then(function(r){return r.json()})
-  ]).then(function(results) {
-    laAllAgents = results[0].agents || results[0] || [];
-    laAllTraces = results[1].traces || [];
+  /* Read tab from URL params */
+  var params = new URLSearchParams(window.location.search);
+  var tabParam = params.get('tab');
+  if (tabParam && ['traces','evaluation','observability'].indexOf(tabParam) !== -1) {
+    laTab(tabParam);
+  }
 
-    var sel = document.getElementById('la-agent-select');
-    laAllAgents.forEach(function(a) {
-      var opt = document.createElement('option');
-      opt.value = a.id;
-      opt.textContent = a.name + (a.is_default ? ' (default)' : '');
-      sel.appendChild(opt);
-    });
+  /* Update heading based on active tab */
+  var headings = { traces: 'Traceability', evaluation: 'Evaluation', observability: 'Observability' };
+  var subtitles = {
+    traces: 'Trace analysis, latency distribution & token usage across all LLM interactions',
+    evaluation: 'Quality scoring, responsible AI controls & agent comparison metrics',
+    observability: 'Infrastructure health, Prometheus targets, Grafana dashboards & telemetry pipeline'
+  };
+  if (tabParam && headings[tabParam]) {
+    var h1 = document.querySelector('h1.text-glow-cyan');
+    var sub = h1 ? h1.nextElementSibling : null;
+    if (h1) h1.textContent = headings[tabParam];
+    if (sub) sub.textContent = subtitles[tabParam];
+  }
 
-    loadTraces();
-    loadEvaluation();
-  }).catch(function(e) { console.error('Init failed:', e); });
+  fetchAllData();
 })();
 </script>
 ` }) %>

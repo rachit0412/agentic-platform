@@ -303,6 +303,62 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
 }
 .rail-item:hover .rail-tooltip { opacity: 1; transform: translateX(0); }
 
+/* ─── Rail Group Flyout ─── */
+.rail-group { position: relative; }
+.rail-group > .rail-item > .rail-tooltip { display: none; }
+.rail-submenu {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 170px;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 10px;
+  padding: 0.45rem 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  box-shadow: var(--tooltip-shadow);
+  z-index: 60;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.rail-group:hover .rail-submenu { opacity: 1; visibility: visible; pointer-events: auto; }
+.rail-submenu::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 0;
+  width: 12px;
+  height: 100%;
+}
+.rail-submenu-title {
+  padding: 0.25rem 0.85rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #06b6d4;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 0.2rem;
+}
+.rail-submenu a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.rail-submenu a:hover { color: #e2e8f0; background: rgba(6,182,212,0.08); }
+.rail-submenu a.sub-active { color: #06b6d4; }
+.rail-submenu a svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+
 /* ─── Rail Bottom ─── */
 .rail-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 

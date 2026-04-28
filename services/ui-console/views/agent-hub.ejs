@@ -1,0 +1,207 @@
+<%- include('layout', { title: 'Agent Hub', page: 'agent-hub', body: `
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+  <div>
+    <h1 class="text-glow-cyan" style="margin:0">Agent Hub</h1>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Manage agents, skills, prompts &amp; tools from a single dashboard</p>
+  </div>
+  <button class="btn btn-sm" onclick="ahRefresh()">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Refresh
+  </button>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid-4 mb-2" style="margin-bottom:1.25rem">
+  <a href="/agents" style="text-decoration:none">
+    <div class="stat-card animate-fade-up" style="cursor:pointer">
+      <div class="stat-icon stat-icon-cyan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/></svg>
+      </div>
+      <div class="stat-label">Agents</div>
+      <div class="stat-number" id="ah-agent-count">-</div>
+    </div>
+  </a>
+  <a href="/skills" style="text-decoration:none">
+    <div class="stat-card animate-fade-up delay-100" style="cursor:pointer">
+      <div class="stat-icon stat-icon-emerald">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div class="stat-label">Skills</div>
+      <div class="stat-number" id="ah-skill-count">-</div>
+    </div>
+  </a>
+  <a href="/prompts" style="text-decoration:none">
+    <div class="stat-card animate-fade-up delay-200" style="cursor:pointer">
+      <div class="stat-icon stat-icon-violet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="stat-label">Prompts</div>
+      <div class="stat-number" id="ah-prompt-count">-</div>
+    </div>
+  </a>
+  <a href="/tools" style="text-decoration:none">
+    <div class="stat-card animate-fade-up delay-300" style="cursor:pointer">
+      <div class="stat-icon" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));color:#f59e0b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div class="stat-label">Tools</div>
+      <div class="stat-number" id="ah-tool-count">-</div>
+    </div>
+  </a>
+</div>
+
+<!-- Quick Access -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+  <!-- Agents Card -->
+  <div class="card animate-fade-up">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Agents</h3>
+      </div>
+      <a href="/agents" class="btn btn-primary btn-sm">Manage</a>
+    </div>
+    <div id="ah-agents-list" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+  <!-- Skills Card -->
+  <div class="card animate-fade-up delay-100">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Skills</h3>
+      </div>
+      <a href="/skills" class="btn btn-primary btn-sm">Manage</a>
+    </div>
+    <div id="ah-skills-list" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+  <!-- Prompts Card -->
+  <div class="card animate-fade-up delay-200">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Prompts</h3>
+      </div>
+      <a href="/prompts" class="btn btn-primary btn-sm">Manage</a>
+    </div>
+    <div id="ah-prompts-list" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+  <!-- Tools Card -->
+  <div class="card animate-fade-up delay-300">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Tools</h3>
+      </div>
+      <a href="/tools" class="btn btn-primary btn-sm">Manage</a>
+    </div>
+    <div id="ah-tools-list" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+</div>
+
+<!-- Agent Relationships -->
+<div class="card animate-fade-up delay-300">
+  <div class="section-header mb-1">
+    <h3 style="font-size:0.95rem">Agent Configuration Overview</h3>
+  </div>
+  <div id="ah-config-table" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+</div>
+
+<script>
+function ahRefresh() { ahLoad(); }
+
+function ahLoad() {
+  Promise.all([
+    fetch('/api/agents').then(function(r) { return r.json(); }).catch(function() { return []; }),
+    fetch('/api/agents/skills').then(function(r) { return r.json(); }).catch(function() { return []; }),
+    fetch('/api/agents/prompts').then(function(r) { return r.json(); }).catch(function() { return []; }),
+    fetch('/api/agents/tools').then(function(r) { return r.json(); }).catch(function() { return []; })
+  ]).then(function(results) {
+    var agents = results[0].agents || results[0] || [];
+    var skills = results[1].skills || results[1] || [];
+    var prompts = results[2].prompts || results[2] || [];
+    var tools = results[3].tools || results[3] || [];
+
+    document.getElementById('ah-agent-count').textContent = agents.length;
+    document.getElementById('ah-skill-count').textContent = skills.length;
+    document.getElementById('ah-prompt-count').textContent = prompts.length;
+    document.getElementById('ah-tool-count').textContent = tools.length;
+
+    /* Agents list */
+    if (agents.length === 0) {
+      document.getElementById('ah-agents-list').innerHTML = '<p>No agents configured yet. <a href="/agents">Create one</a></p>';
+    } else {
+      document.getElementById('ah-agents-list').innerHTML = agents.slice(0, 5).map(function(a) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--glass-border)">' +
+          '<div><strong style="color:var(--text-1)">' + escapeHtml(a.name) + '</strong>' + (a.is_default ? ' <span class="badge" style="font-size:0.6rem;background:rgba(6,182,212,0.12);color:#06b6d4">default</span>' : '') +
+          '<div style="font-size:0.72rem;color:var(--text-3)">' + escapeHtml((a.provider || '') + '/' + (a.model || '')) + '</div></div>' +
+          '<div style="display:flex;gap:0.3rem">' +
+          '<span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.12);color:#f59e0b">' + (a.tool_ids || []).length + ' tools</span>' +
+          '<span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981">' + (a.skill_ids || []).length + ' skills</span>' +
+          '</div></div>';
+      }).join('') + (agents.length > 5 ? '<a href="/agents" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#06b6d4">View all ' + agents.length + ' agents</a>' : '');
+    }
+
+    /* Skills list */
+    if (skills.length === 0) {
+      document.getElementById('ah-skills-list').innerHTML = '<p>No skills configured. <a href="/skills">Create one</a></p>';
+    } else {
+      document.getElementById('ah-skills-list').innerHTML = skills.slice(0, 4).map(function(s) {
+        return '<div style="padding:0.4rem 0;border-bottom:1px solid var(--glass-border)"><strong style="color:var(--text-1)">' + escapeHtml(s.name) + '</strong><div style="font-size:0.72rem;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml((s.description || '').slice(0, 80)) + '</div></div>';
+      }).join('') + (skills.length > 4 ? '<a href="/skills" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#06b6d4">View all ' + skills.length + '</a>' : '');
+    }
+
+    /* Prompts list */
+    if (prompts.length === 0) {
+      document.getElementById('ah-prompts-list').innerHTML = '<p>No prompts saved. <a href="/prompts">Create one</a></p>';
+    } else {
+      document.getElementById('ah-prompts-list').innerHTML = prompts.slice(0, 4).map(function(p) {
+        return '<div style="padding:0.4rem 0;border-bottom:1px solid var(--glass-border)"><strong style="color:var(--text-1)">' + escapeHtml(p.name) + '</strong> <span class="badge" style="font-size:0.6rem;background:rgba(139,92,246,0.12);color:#8b5cf6">' + escapeHtml(p.category || 'general') + '</span></div>';
+      }).join('') + (prompts.length > 4 ? '<a href="/prompts" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#06b6d4">View all ' + prompts.length + '</a>' : '');
+    }
+
+    /* Tools list */
+    if (tools.length === 0) {
+      document.getElementById('ah-tools-list').innerHTML = '<p>No tools registered. <a href="/tools">Add one</a></p>';
+    } else {
+      document.getElementById('ah-tools-list').innerHTML = tools.slice(0, 4).map(function(t) {
+        return '<div style="padding:0.4rem 0;border-bottom:1px solid var(--glass-border)"><strong style="color:var(--text-1)">' + escapeHtml(t.name) + '</strong> <span class="badge" style="font-size:0.6rem">' + escapeHtml(t.type || 'function') + '</span></div>';
+      }).join('') + (tools.length > 4 ? '<a href="/tools" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#06b6d4">View all ' + tools.length + '</a>' : '');
+    }
+
+    /* Config table */
+    if (agents.length === 0) {
+      document.getElementById('ah-config-table').innerHTML = '<p>No agents to display.</p>';
+    } else {
+      var html = '<table><tr><th>Agent</th><th>Model</th><th>Tools</th><th>Skills</th><th>Memory</th><th>Temperature</th></tr>';
+      agents.forEach(function(a) {
+        html += '<tr>' +
+          '<td style="font-weight:600">' + escapeHtml(a.name) + (a.is_default ? ' <span style="font-size:0.62rem;color:var(--text-3)">(default)</span>' : '') + '</td>' +
+          '<td class="mono" style="font-size:0.75rem">' + escapeHtml((a.provider || '') + '/' + (a.model || '')) + '</td>' +
+          '<td class="mono">' + (a.tool_ids || []).length + '</td>' +
+          '<td class="mono">' + (a.skill_ids || []).length + '</td>' +
+          '<td>' + (a.memory_enabled ? '<span style="color:#10b981">On</span>' : '<span style="color:var(--text-3)">Off</span>') + '</td>' +
+          '<td class="mono">' + (a.temperature != null ? a.temperature : '-') + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('ah-config-table').innerHTML = html;
+    }
+  }).catch(function(e) {
+    console.error('Agent Hub load failed:', e);
+  });
+}
+
+ahLoad();
+</script>
+` }) %>

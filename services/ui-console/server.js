@@ -14,7 +14,7 @@ const CHROMA_URL = process.env.CHROMA_URL || "http://chromadb:8000";
 // External URLs (browser-accessible)
 const N8N_EXTERNAL = process.env.N8N_EXTERNAL_URL || "http://localhost:5678";
 const LANGFUSE_EXTERNAL = process.env.LANGFUSE_EXTERNAL_URL || "http://localhost:3002";
-const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || "http://localhost:3003";
+const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || "http://localhost:3013";
 const AGENT_EXTERNAL = process.env.AGENT_EXTERNAL_URL || "http://localhost:8010";
 
 app.set("view engine", "ejs");
@@ -697,10 +697,12 @@ app.get("/tools", (req, res) => res.render("tools", { urls: externalUrls }));
 app.get("/guardrails", (req, res) => res.render("guardrails", { urls: externalUrls }));
 app.get("/a2a", (req, res) => res.render("a2a", { urls: externalUrls }));
 app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));
-app.get("/llm-activity", (req, res) => res.render("llm-activity", { urls: externalUrls }));
-app.get("/traceability", (req, res) => res.redirect("/llm-activity"));
-app.get("/evaluation", (req, res) => res.redirect("/llm-activity"));
-app.get("/observability", (req, res) => res.redirect("/llm-activity"));
+app.get("/intelligence-hub", (req, res) => res.render("intelligence-hub", { urls: externalUrls }));
+app.get("/agent-hub", (req, res) => res.render("agent-hub", { urls: externalUrls }));
+app.get("/llm-activity", (req, res) => res.redirect("/intelligence-hub"));
+app.get("/traceability", (req, res) => res.render("traceability", { urls: externalUrls }));
+app.get("/evaluation", (req, res) => res.render("evaluation", { urls: externalUrls }));
+app.get("/observability", (req, res) => res.render("observability", { urls: externalUrls }));
 app.get("/marketplace", (req, res) => res.render("marketplace", { urls: externalUrls }));
 app.get("/admin", (req, res) => res.render("admin", { urls: externalUrls }));
 

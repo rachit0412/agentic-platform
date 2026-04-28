@@ -265,6 +265,7 @@ services:
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_SECURITY_COOKIE_SAMESITE=disabled
       - GF_SECURITY_COOKIE_SECURE=false
+      - GF_SECURITY_CONTENT_SECURITY_POLICY=false
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
