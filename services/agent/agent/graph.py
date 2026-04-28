@@ -139,26 +139,43 @@ async def _ollama_chat(messages: list[dict], step: str = "default") -> str:
 
 async def retrieve_context(state: AgentState) -> dict:
     """Auto-retrieve relevant KB docs and build memory summary before reasoning."""
+    import time as _time
     prompt = state["prompt"]
     session_id = state["session_id"]
 
     # ── Knowledge base retrieval ────────────────────────────────────────
+    # Only run the expensive embedding + search when there are actually
+    # chunks in the collection.  get_collection_stats() is a cheap
+    # metadata call that does NOT invoke the embedding model.
+    # Skip KB for very short queries (greetings, etc.) — embedding
+    # "hi" through Ollama costs 3-4 s with zero useful context.
     kb_context = ""
-    try:
-        from agent.vectorstore import search_similar, get_collection_stats
-        stats = get_collection_stats()
-        if stats.get("total_chunks", 0) > 0:
-            results = search_similar(prompt, k=3)
-            if results:
-                kb_snippets = []
-                for r in results:
-                    if r.get("score", 1.0) < 0.8:  # cosine distance threshold
-                        source = r.get("metadata", {}).get("source", "unknown")
-                        kb_snippets.append(f"[{source}]: {r['content'][:500]}")
-                if kb_snippets:
-                    kb_context = "\n---\n".join(kb_snippets)
-    except Exception as e:
-        logger.warning("KB retrieval failed: %s", e)
+    skip_kb = len(prompt.strip()) < 20
+    if skip_kb:
+        logger.info("req=%s kb_search SKIPPED (short query: %r)", state["request_id"], prompt)
+    else:
+        try:
+            from agent.vectorstore import search_similar, get_collection_stats
+            t0 = _time.time()
+            stats = get_collection_stats()
+            total_chunks = stats.get("total_chunks", 0)
+            logger.info("req=%s kb_stats check took %dms  chunks=%d",
+                         state["request_id"], int((_time.time()-t0)*1000), total_chunks)
+            if total_chunks > 0:
+                t0 = _time.time()
+                results = search_similar(prompt, k=3)
+                logger.info("req=%s kb_search took %dms  results=%d",
+                             state["request_id"], int((_time.time()-t0)*1000), len(results))
+                if results:
+                    kb_snippets = []
+                    for r in results:
+                        if r.get("score", 1.0) < 0.8:  # cosine distance threshold
+                            source = r.get("metadata", {}).get("source", "unknown")
+                            kb_snippets.append(f"[{source}]: {r['content'][:500]}")
+                    if kb_snippets:
+                        kb_context = "\n---\n".join(kb_snippets)
+        except Exception as e:
+            logger.warning("KB retrieval failed: %s", e)
 
     # ── Memory summary ──────────────────────────────────────────────────
     memory_summary = ""
@@ -179,6 +196,7 @@ async def retrieve_context(state: AgentState) -> dict:
 
 async def reason(state: AgentState) -> dict:
     """Send the prompt + history + prior tool results to LLM; decide if more tools are needed."""
+    import time as _time
     kb_context = state.get("kb_context", "")
     memory_summary = state.get("memory_summary", "")
 
@@ -215,8 +233,10 @@ async def reason(state: AgentState) -> dict:
         )
         messages.append({"role": "assistant", "content": f"I called some tools. Results:\n{results_text}\n\nLet me decide if I need more tools or can answer now."})
 
+    t0 = _time.time()
     raw = await _ollama_chat(messages, step=f"reason_iter_{iteration}")
-    logger.info("req=%s reason iter=%d raw=%s", state["request_id"], iteration, raw[:200])
+    logger.info("req=%s reason iter=%d took %dms raw=%s",
+                state["request_id"], iteration, int((_time.time()-t0)*1000), raw[:200])
 
     new_tool_calls = _parse_tool_calls(raw)
 
@@ -332,7 +352,7 @@ async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
     """Run the agent graph and return {response, tools_used, trace_id}."""
     lf_trace = LangfuseTrace("agent-run", session_id, request_id, prompt)
 
-    history = get_history(session_id, limit=10)
+    history = get_history(session_id, limit=5)
     initial_state: AgentState = {
         "prompt": prompt,
         "session_id": session_id,
@@ -396,7 +416,7 @@ async def run_agent_stream(
     import time as _time
 
     lf_trace = LangfuseTrace("agent-run-stream", session_id, request_id, prompt)
-    history = get_history(session_id, limit=10)
+    history = get_history(session_id, limit=5)
 
     # Build merged system prompt from agent config + skills
     extra_system_parts = []
@@ -415,26 +435,34 @@ async def run_agent_stream(
     agent_extra_prompt = "\n\n".join(extra_system_parts) if extra_system_parts else ""
 
     # ── Step 1: Retrieve context ────────────────────────────────────────
-    yield {"event": "step", "data": {"step": "retrieve_context", "status": "started", "label": "Retrieving from Knowledge Base"}}
+    use_kb = agent_config.get("use_kb", True) if agent_config else True
+    yield {"event": "step", "data": {"step": "retrieve_context", "status": "started", "label": "Retrieving from Knowledge Base" if use_kb else "KB retrieval skipped (disabled)"}}
     t0 = _time.time()
 
     kb_context = ""
     kb_chunks = 0
     kb_coll = agent_config.get("kb_collection") if agent_config else None
-    try:
-        from agent.vectorstore import search_similar, get_collection_stats
-        stats = get_collection_stats(collection_name=kb_coll)
-        if stats.get("total_chunks", 0) > 0:
-            results = search_similar(prompt, k=3, collection_name=kb_coll)
-            snippets = [f"[{r.get('metadata',{}).get('source','unknown')}]: {r['content'][:500]}"
-                        for r in results if r.get("score", 1.0) < 0.8]
-            if snippets:
-                kb_context = "\n---\n".join(snippets)
-                kb_chunks = len(snippets)
-    except Exception:
-        pass
+    # Skip KB entirely if user toggled it off, or for very short queries
+    skip_kb = (not use_kb) or len(prompt.strip()) < 20
+    if skip_kb:
+        logger.info("req=%s stream kb_search SKIPPED (use_kb=%s, short=%s)", request_id, use_kb, len(prompt.strip()) < 20)
+    else:
+        try:
+            from agent.vectorstore import search_similar, get_collection_stats
+            stats = get_collection_stats(collection_name=kb_coll)
+            total_chunks = stats.get("total_chunks", 0)
+            logger.info("req=%s stream kb_stats chunks=%d", request_id, total_chunks)
+            if total_chunks > 0:
+                results = search_similar(prompt, k=3, collection_name=kb_coll)
+                snippets = [f"[{r.get('metadata',{}).get('source','unknown')}]: {r['content'][:500]}"
+                            for r in results if r.get("score", 1.0) < 0.8]
+                if snippets:
+                    kb_context = "\n---\n".join(snippets)
+                    kb_chunks = len(snippets)
+        except Exception:
+            logger.warning("req=%s stream KB retrieval skipped (unavailable)", request_id)
 
-    yield {"event": "step", "data": {"step": "retrieve_context", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"Found {kb_chunks} chunks"}}
+    yield {"event": "step", "data": {"step": "retrieve_context", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": "Disabled" if not use_kb else f"Found {kb_chunks} chunks"}}
 
     # ── Step 2: Load memory ─────────────────────────────────────────────
     yield {"event": "step", "data": {"step": "load_memory", "status": "started", "label": "Loading conversation memory"}}
@@ -459,10 +487,13 @@ async def run_agent_stream(
         messages.append(msg)
     messages.append({"role": "user", "content": prompt})
 
+    # Stream reasoning tokens — if no tool call is detected, these become
+    # the final response and the user sees tokens arriving immediately
+    # instead of waiting for the full LLM response before streaming starts.
     raw = ""
     async for token in _ollama_chat_stream(messages):
         raw += token
-    logger.info("req=%s understand raw=%s", request_id, raw[:200])
+    logger.info("req=%s reason raw=%s", request_id, raw[:200])
     tool_calls = _parse_tool_calls(raw)
     tools_used = [tc["name"] for tc in tool_calls]
 

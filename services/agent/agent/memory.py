@@ -895,3 +895,194 @@ def delete_custom_tool(tool_id: str) -> bool:
     cursor = conn.execute("DELETE FROM custom_tools WHERE id = ?", (tool_id,))
     conn.commit()
     return cursor.rowcount > 0
+
+
+# ── Document Registry ──────────────────────────────────────────────────────
+
+def _init_documents_table():
+    conn = _get_conn()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS documents (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            source      TEXT NOT NULL,
+            collection  TEXT NOT NULL DEFAULT 'agentic_docs',
+            folder      TEXT DEFAULT '/',
+            agent_tags  TEXT DEFAULT '[]',
+            file_type   TEXT DEFAULT '',
+            file_size   INTEGER DEFAULT 0,
+            chunk_count INTEGER DEFAULT 0,
+            metadata    TEXT DEFAULT '{}',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+
+
+def _row_to_doc(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "source": row["source"],
+        "collection": row["collection"],
+        "folder": row["folder"],
+        "agent_tags": json.loads(row["agent_tags"] or "[]"),
+        "file_type": row["file_type"],
+        "file_size": row["file_size"],
+        "chunk_count": row["chunk_count"],
+        "metadata": json.loads(row["metadata"] or "{}"),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_documents_registry(folder: str | None = None, agent_id: str | None = None, search: str | None = None, collection: str | None = None) -> list[dict]:
+    _init_documents_table()
+    conn = _get_conn()
+    query = "SELECT * FROM documents WHERE 1=1"
+    params: list = []
+    if folder and folder != "/":
+        query += " AND folder = ?"
+        params.append(folder)
+    if collection:
+        query += " AND collection = ?"
+        params.append(collection)
+    if agent_id:
+        query += " AND agent_tags LIKE ?"
+        params.append(f'%"{agent_id}"%')
+    if search:
+        query += " AND (name LIKE ? OR source LIKE ?)"
+        params.extend([f"%{search}%", f"%{search}%"])
+    query += " ORDER BY folder, name"
+    rows = conn.execute(query, params).fetchall()
+    return [_row_to_doc(r) for r in rows]
+
+
+def get_document_registry(doc_id: str) -> dict | None:
+    _init_documents_table()
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM documents WHERE id = ?", (doc_id,)).fetchone()
+    return _row_to_doc(row) if row else None
+
+
+def create_document_registry(name: str, source: str, collection: str = "agentic_docs",
+                             folder: str = "/", agent_tags: list | None = None,
+                             file_type: str = "", file_size: int = 0,
+                             chunk_count: int = 0, metadata: dict | None = None) -> dict:
+    _init_documents_table()
+    conn = _get_conn()
+    doc_id = str(uuid.uuid4())[:12]
+    now = datetime.now(timezone.utc).isoformat()
+    # Normalize folder path
+    if not folder.startswith("/"):
+        folder = "/" + folder
+    if not folder.endswith("/"):
+        folder = folder + "/"
+    conn.execute(
+        "INSERT INTO documents (id, name, source, collection, folder, agent_tags, file_type, file_size, chunk_count, metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (doc_id, name, source, collection, folder, json.dumps(agent_tags or []), file_type, file_size, chunk_count, json.dumps(metadata or {}), now, now),
+    )
+    conn.commit()
+    return get_document_registry(doc_id)
+
+
+def update_document_registry(doc_id: str, **kwargs) -> dict | None:
+    _init_documents_table()
+    conn = _get_conn()
+    allowed = {"name", "source", "folder", "agent_tags", "file_type", "chunk_count", "metadata"}
+    fields, values = [], []
+    for k, v in kwargs.items():
+        if k not in allowed:
+            continue
+        if k in ("agent_tags",):
+            v = json.dumps(v) if isinstance(v, list) else v
+        if k == "metadata":
+            v = json.dumps(v) if isinstance(v, dict) else v
+        if k == "folder":
+            if not v.startswith("/"):
+                v = "/" + v
+            if not v.endswith("/"):
+                v = v + "/"
+        fields.append(f"{k} = ?")
+        values.append(v)
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(doc_id)
+        conn.execute(f"UPDATE documents SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_document_registry(doc_id)
+
+
+def delete_document_registry(doc_id: str) -> bool:
+    _init_documents_table()
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def delete_document_registry_by_source(source: str, collection: str = "agentic_docs") -> int:
+    """Delete registry records matching a source + collection."""
+    _init_documents_table()
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM documents WHERE source = ? AND collection = ?", (source, collection))
+    conn.commit()
+    return cursor.rowcount
+
+
+def list_folders() -> list[dict]:
+    """Return all unique folder paths with document counts."""
+    _init_documents_table()
+    conn = _get_conn()
+    rows = conn.execute("SELECT folder, COUNT(*) as count FROM documents GROUP BY folder ORDER BY folder").fetchall()
+    return [{"path": r["folder"], "count": r["count"]} for r in rows]
+
+
+def tag_document_to_agent(doc_id: str, agent_id: str) -> dict | None:
+    """Add an agent tag to a document."""
+    doc = get_document_registry(doc_id)
+    if not doc:
+        return None
+    tags = doc["agent_tags"]
+    if agent_id not in tags:
+        tags.append(agent_id)
+        return update_document_registry(doc_id, agent_tags=tags)
+    return doc
+
+
+def untag_document_from_agent(doc_id: str, agent_id: str) -> dict | None:
+    """Remove an agent tag from a document."""
+    doc = get_document_registry(doc_id)
+    if not doc:
+        return None
+    tags = [t for t in doc["agent_tags"] if t != agent_id]
+    return update_document_registry(doc_id, agent_tags=tags)
+
+
+def untag_all_for_agent(agent_id: str) -> int:
+    """Remove an agent tag from ALL documents that reference it."""
+    _init_documents_table()
+    conn = _get_conn()
+    rows = conn.execute("SELECT id, agent_tags FROM documents WHERE agent_tags LIKE ?", (f'%"{agent_id}"%',)).fetchall()
+    count = 0
+    now = datetime.now(timezone.utc).isoformat()
+    for row in rows:
+        tags = json.loads(row["agent_tags"] or "[]")
+        tags = [t for t in tags if t != agent_id]
+        conn.execute("UPDATE documents SET agent_tags = ?, updated_at = ? WHERE id = ?", (json.dumps(tags), now, row["id"]))
+        count += 1
+    conn.commit()
+    return count
+
+
+def delete_documents_by_collection(collection: str) -> int:
+    """Delete all registry records for a given collection."""
+    _init_documents_table()
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM documents WHERE collection = ?", (collection,))
+    conn.commit()
+    return cursor.rowcount

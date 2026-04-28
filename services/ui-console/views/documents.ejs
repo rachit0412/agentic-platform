@@ -22,111 +22,280 @@
     <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
     </div>
-    <div class="stat-label">Collection</div>
-    <div class="stat-number" id="stat-collection" style="font-size:1rem">-</div>
+    <div class="stat-label">Folders</div>
+    <div class="stat-number" id="stat-folders">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon" style="background:rgba(244,63,94,0.12);color:#f43f5e">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    </div>
+    <div class="stat-label">Tagged</div>
+    <div class="stat-number" id="stat-tagged">-</div>
   </div>
 </div>
 
-<!-- Ingest Form — Multi-Source Importer -->
-<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
-  <h3 style="margin-bottom:0.75rem">Import Data</h3>
+<!-- Main Layout: Folder Sidebar + Content -->
+<div style="display:flex;gap:1.25rem;align-items:flex-start">
 
-  <!-- Tabs -->
-  <div style="display:flex;gap:0;border-bottom:2px solid var(--glass-border);margin-bottom:1.25rem">
-    <button class="importer-tab active" onclick="switchTab('file')" id="tab-file" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      File Upload
-    </button>
-    <button class="importer-tab" onclick="switchTab('url')" id="tab-url" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      URL Import
-    </button>
-    <button class="importer-tab" onclick="switchTab('text')" id="tab-text" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Paste Text
-    </button>
-  </div>
-
-  <!-- Tab: File Upload -->
-  <div id="panel-file" class="importer-panel">
-    <div id="drop-zone" style="border:2px dashed rgba(6,182,212,0.3);border-radius:14px;padding:2.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(6,182,212,0.02)" ondragover="event.preventDefault();this.style.borderColor='#06b6d4';this.style.background='rgba(6,182,212,0.06)'" ondragleave="this.style.borderColor='rgba(6,182,212,0.3)';this.style.background='rgba(6,182,212,0.02)'" ondrop="handleDrop(event)" onclick="document.getElementById('file-input').click()">
-      <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#06b6d4" stroke-width="1.5" style="margin-bottom:0.75rem"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <p style="color:var(--text-2);font-size:0.88rem;margin:0 0 0.25rem;font-weight:600">Drop files here or click to browse</p>
-      <p style="color:var(--text-3);font-size:0.75rem;margin:0">.txt, .md, .json, .csv, .pdf (text-based) — max 5 MB</p>
-      <input type="file" id="file-input" multiple accept=".txt,.md,.json,.csv,.pdf,.log,.yaml,.yml,.xml,.html" style="display:none" onchange="handleFiles(this.files)" />
-    </div>
-    <div id="file-list" style="margin-top:0.75rem"></div>
-  </div>
-
-  <!-- Tab: URL Import -->
-  <div id="panel-url" class="importer-panel" style="display:none">
-    <div class="mt-1">
-      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">URL to Import</label>
-      <input id="import-url" placeholder="https://example.com/article or https://docs.example.com/page" style="margin-top:0.375rem" />
-    </div>
-    <div class="mt-1">
-      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name (optional)</label>
-      <input id="url-source" placeholder="Auto-detected from URL if empty" style="max-width:400px;margin-top:0.375rem" />
-    </div>
-    <div class="flex mt-1" style="align-items:center;gap:0.75rem">
-      <button class="btn btn-primary" id="fetchUrlBtn" onclick="fetchAndIngestUrl()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Fetch & Ingest
-      </button>
-      <span id="url-status" style="font-size:0.78rem;color:var(--text-3)"></span>
-    </div>
-  </div>
-
-  <!-- Tab: Paste Text -->
-  <div id="panel-text" class="importer-panel" style="display:none">
-    <div class="mt-1">
-      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name</label>
-      <input id="ingest-source" placeholder="e.g. company-policy.pdf" style="max-width:400px;margin-top:0.375rem" />
-    </div>
-    <div class="mt-1">
-      <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Document Text</label>
-      <textarea id="ingest-text" rows="6" placeholder="Paste document text here..." style="margin-top:0.375rem"></textarea>
-    </div>
-    <div class="flex mt-1" style="align-items:center">
-      <button class="btn btn-primary" id="ingestBtn" onclick="ingestDoc()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Ingest
+  <!-- Folder Sidebar -->
+  <div class="card animate-fade-up delay-100" style="width:220px;min-width:200px;flex-shrink:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <h4 style="font-size:0.82rem;margin:0;color:var(--text-2)">Folders</h4>
+      <button class="btn btn-sm" onclick="promptNewFolder()" title="New Folder" style="padding:0.2rem 0.4rem;font-size:0.72rem">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
     </div>
+    <div id="folder-tree" style="font-size:0.78rem"></div>
   </div>
 
-  <!-- Shared chunk controls -->
-  <div class="flex mt-1" style="align-items:center;padding-top:0.75rem;border-top:1px solid var(--glass-border);margin-top:1rem">
-    <label style="font-size:0.82rem;color:var(--text-2)">Chunk Size: <input id="chunk-size" type="number" value="1000" style="width:80px" /></label>
-    <label style="font-size:0.82rem;color:var(--text-2)">Overlap: <input id="chunk-overlap" type="number" value="200" style="width:80px" /></label>
+  <!-- Main Content -->
+  <div style="flex:1;min-width:0">
+
+    <!-- Ingest Form — Multi-Source Importer -->
+    <div class="card animate-fade-up delay-100" style="margin-bottom:1.25rem">
+      <h3 style="margin-bottom:0.75rem">Import Data</h3>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--glass-border);margin-bottom:1.25rem">
+        <button class="importer-tab active" onclick="switchTab('file')" id="tab-file" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          File Upload
+        </button>
+        <button class="importer-tab" onclick="switchTab('url')" id="tab-url" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          URL Import
+        </button>
+        <button class="importer-tab" onclick="switchTab('text')" id="tab-text" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Paste Text
+        </button>
+      </div>
+
+      <!-- Tab: File Upload -->
+      <div id="panel-file" class="importer-panel">
+        <div id="drop-zone" style="border:2px dashed rgba(6,182,212,0.3);border-radius:14px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(6,182,212,0.02)" ondragover="event.preventDefault();this.style.borderColor='#06b6d4';this.style.background='rgba(6,182,212,0.06)'" ondragleave="this.style.borderColor='rgba(6,182,212,0.3)';this.style.background='rgba(6,182,212,0.02)'" ondrop="handleDrop(event)" onclick="document.getElementById('file-input').click()">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#06b6d4" stroke-width="1.5" style="margin-bottom:0.5rem"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p style="color:var(--text-2);font-size:0.85rem;margin:0 0 0.15rem;font-weight:600">Drop files here or click to browse</p>
+          <p style="color:var(--text-3);font-size:0.72rem;margin:0">.txt, .md, .json, .csv, .pdf — max 5 MB</p>
+          <input type="file" id="file-input" multiple accept=".txt,.md,.json,.csv,.pdf,.log,.yaml,.yml,.xml,.html" style="display:none" onchange="handleFiles(this.files)" />
+        </div>
+        <div id="file-list" style="margin-top:0.75rem"></div>
+      </div>
+
+      <!-- Tab: URL Import -->
+      <div id="panel-url" class="importer-panel" style="display:none">
+        <div class="mt-1">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">URL to Import</label>
+          <input id="import-url" placeholder="https://example.com/article" style="margin-top:0.375rem" />
+        </div>
+        <div class="mt-1">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name (optional)</label>
+          <input id="url-source" placeholder="Auto-detected from URL if empty" style="max-width:400px;margin-top:0.375rem" />
+        </div>
+        <div class="flex mt-1" style="align-items:center;gap:0.75rem">
+          <button class="btn btn-primary" id="fetchUrlBtn" onclick="fetchAndIngestUrl()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Fetch & Ingest
+          </button>
+          <span id="url-status" style="font-size:0.78rem;color:var(--text-3)"></span>
+        </div>
+      </div>
+
+      <!-- Tab: Paste Text -->
+      <div id="panel-text" class="importer-panel" style="display:none">
+        <div class="mt-1">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name</label>
+          <input id="ingest-source" placeholder="e.g. company-policy.pdf" style="max-width:400px;margin-top:0.375rem" />
+        </div>
+        <div class="mt-1">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Document Text</label>
+          <textarea id="ingest-text" rows="5" placeholder="Paste document text here..." style="margin-top:0.375rem"></textarea>
+        </div>
+        <div class="flex mt-1" style="align-items:center">
+          <button class="btn btn-primary" id="ingestBtn" onclick="ingestDoc()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Ingest
+          </button>
+        </div>
+      </div>
+
+      <!-- Shared: Folder & Agent Tag + Chunk Controls -->
+      <div style="display:flex;gap:1rem;align-items:flex-end;padding-top:0.75rem;border-top:1px solid var(--glass-border);margin-top:1rem;flex-wrap:wrap">
+        <div>
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-3)">Target Folder</label>
+          <select id="ingest-folder" style="font-size:0.82rem;min-width:150px;margin-top:0.2rem">
+            <option value="/">/  (root)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;font-weight:600;color:var(--text-3)">Tag to Agent (optional)</label>
+          <select id="ingest-agent" style="font-size:0.82rem;min-width:150px;margin-top:0.2rem">
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-3)">Chunk Size</label>
+          <input id="chunk-size" type="number" value="1000" style="width:75px;font-size:0.82rem;margin-top:0.2rem" />
+        </div>
+        <div>
+          <label style="font-size:0.75rem;color:var(--text-3)">Overlap</label>
+          <input id="chunk-overlap" type="number" value="200" style="width:75px;font-size:0.82rem;margin-top:0.2rem" />
+        </div>
+      </div>
+      <div id="ingest-result" class="mono mt-1" style="color:var(--success);font-size:0.82rem"></div>
+    </div>
+
+    <!-- Semantic Search -->
+    <div class="card animate-fade-up delay-200" style="margin-bottom:1.25rem">
+      <h3>Semantic Search</h3>
+      <div class="flex mt-1">
+        <input id="search-query" placeholder="Search your documents..." />
+        <input id="search-k" type="number" value="5" style="width:60px" placeholder="k" />
+        <button class="btn btn-primary" onclick="searchDocs()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </button>
+      </div>
+      <div id="search-results" class="mt-1"></div>
+    </div>
+
+    <!-- Indexed Documents -->
+    <div class="card animate-fade-up delay-300">
+      <div class="section-header">
+        <h3>Indexed Documents</h3>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <input id="doc-search-filter" placeholder="Filter by name..." style="width:180px;font-size:0.78rem;padding:0.35rem 0.6rem" oninput="loadDocs()">
+          <button class="btn btn-secondary btn-sm" onclick="refreshAll()">Refresh</button>
+        </div>
+      </div>
+      <div id="doc-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+    </div>
+
   </div>
-  <div id="ingest-result" class="mono mt-1" style="color:var(--success);font-size:0.82rem"></div>
 </div>
 
-<!-- Semantic Search -->
-<div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
-  <h3>Semantic Search</h3>
-  <div class="flex mt-1">
-    <input id="search-query" placeholder="Search your documents..." />
-    <input id="search-k" type="number" value="5" style="width:60px" placeholder="k" />
-    <button class="btn btn-primary" onclick="searchDocs()">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Search
-    </button>
+<!-- Move-to-Folder Modal -->
+<div id="move-folder-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div class="card" style="width:380px;max-width:90vw">
+    <h3 style="margin-bottom:1rem">Move to Folder</h3>
+    <input type="hidden" id="move-doc-id">
+    <select id="move-folder-select" style="width:100%;margin-bottom:1rem"></select>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+      <button class="btn" onclick="closeMoveModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmMoveFolder()">Move</button>
+    </div>
   </div>
-  <div id="search-results" class="mt-1"></div>
 </div>
 
-<!-- Indexed Documents -->
-<div class="card animate-fade-up delay-300">
-  <div class="section-header">
-    <h3>Indexed Documents</h3>
-    <button class="btn btn-secondary btn-sm" onclick="loadStats();loadDocs()">Refresh</button>
+<!-- Tag-Agent Modal -->
+<div id="tag-agent-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div class="card" style="width:380px;max-width:90vw">
+    <h3 style="margin-bottom:0.5rem">Manage Agent Tags</h3>
+    <p style="font-size:0.75rem;color:var(--text-3);margin-bottom:1rem">Select agents to tag this document to:</p>
+    <input type="hidden" id="tag-doc-id">
+    <div id="tag-agent-checkboxes" style="max-height:220px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:8px;padding:0.5rem;margin-bottom:1rem"></div>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+      <button class="btn" onclick="closeTagModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmTagAgent()">Save Tags</button>
+    </div>
   </div>
-  <div id="doc-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
 </div>
 
 <script>
+let allAgents = [];
+let allFolders = [];
+let currentFolder = null;
+
+// ── Init ──
+async function init() {
+  await Promise.all([loadAgentsList(), loadFolders()]);
+  populateIngestSelectors();
+  loadStats();
+  loadDocs();
+}
+
+async function loadAgentsList() {
+  try {
+    const r = await fetch('/api/agents');
+    const d = await r.json();
+    allAgents = d.agents || [];
+  } catch(e) { allAgents = []; }
+}
+
+async function loadFolders() {
+  try {
+    const r = await fetch('/api/documents/folders');
+    const d = await r.json();
+    allFolders = d.folders || [];
+  } catch(e) { allFolders = []; }
+  renderFolderTree();
+}
+
+function populateIngestSelectors() {
+  const folderSel = document.getElementById('ingest-folder');
+  let html = '<option value="/">/  (root)</option>';
+  allFolders.forEach(f => {
+    if (f.path !== '/') html += '<option value="' + escapeHtml(f.path) + '">' + escapeHtml(f.path) + '</option>';
+  });
+  folderSel.innerHTML = html;
+
+  const agentSel = document.getElementById('ingest-agent');
+  let aHtml = '<option value="">— None —</option>';
+  allAgents.forEach(a => { aHtml += '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name) + '</option>'; });
+  agentSel.innerHTML = aHtml;
+}
+
+// ── Folder Tree ──
+function renderFolderTree() {
+  const el = document.getElementById('folder-tree');
+  const totalDocs = allFolders.reduce((s, f) => s + f.count, 0);
+  let html = '<div onclick="selectFolder(null)" style="cursor:pointer;padding:0.35rem 0.5rem;border-radius:6px;display:flex;align-items:center;gap:0.4rem;' + (currentFolder === null ? 'background:rgba(6,182,212,0.12);color:#06b6d4' : 'color:var(--text-2)') + ';font-weight:600;margin-bottom:0.25rem">';
+  html += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+  html += 'All Documents <span style="font-size:0.68rem;opacity:0.7;margin-left:auto">' + totalDocs + '</span></div>';
+
+  const sorted = [...allFolders].sort((a, b) => a.path.localeCompare(b.path));
+  sorted.forEach(f => {
+    const isActive = currentFolder === f.path;
+    const depth = (f.path.match(/\//g) || []).length - 1;
+    const indent = Math.max(0, depth - 1) * 12;
+    const folderName = f.path === '/' ? '/ (root)' : f.path.replace(/^\//, '').replace(/\/$/, '').split('/').pop();
+    html += '<div onclick="selectFolder(\'' + escapeHtml(f.path) + '\')" style="cursor:pointer;padding:0.3rem 0.5rem;padding-left:' + (8 + indent) + 'px;border-radius:6px;display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;' + (isActive ? 'background:rgba(6,182,212,0.12);color:#06b6d4;font-weight:600' : 'color:var(--text-2)') + ';margin-bottom:0.15rem">';
+    html += '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+    html += escapeHtml(folderName) + ' <span style="font-size:0.65rem;opacity:0.6;margin-left:auto">' + f.count + '</span></div>';
+  });
+
+  if (!allFolders.length) {
+    html += '<p style="font-size:0.72rem;color:var(--text-3);padding:0.5rem;text-align:center">No folders yet</p>';
+  }
+  el.innerHTML = html;
+}
+
+function selectFolder(path) {
+  currentFolder = path;
+  renderFolderTree();
+  loadDocs();
+}
+
+function promptNewFolder() {
+  const name = prompt('Enter folder path (e.g. hr-policies or projects/2024):');
+  if (!name) return;
+  if (!/^[a-zA-Z0-9_\-\/]+$/.test(name)) {
+    alert('Folder names can only contain letters, numbers, hyphens, underscores, and slashes');
+    return;
+  }
+  let path = '/' + name.replace(/^\/+/, '').replace(/\/+$/, '') + '/';
+  const folderSel = document.getElementById('ingest-folder');
+  const exists = Array.from(folderSel.options).some(o => o.value === path);
+  if (!exists) {
+    const opt = document.createElement('option');
+    opt.value = path;
+    opt.textContent = path;
+    folderSel.appendChild(opt);
+  }
+  folderSel.value = path;
+  showToast('Folder "' + path + '" ready. Upload a document to create it.', 'success');
+}
+
 // ── Tab Switching ──
 function switchTab(tab) {
   document.querySelectorAll('.importer-tab').forEach(t => {
@@ -141,8 +310,14 @@ function switchTab(tab) {
   btn.style.color = 'var(--text-1)';
   document.getElementById('panel-' + tab).style.display = 'block';
 }
-// Init active tab
 switchTab('file');
+
+// ── Helpers ──
+function getIngestExtras() {
+  const folder = document.getElementById('ingest-folder').value || '/';
+  const agentId = document.getElementById('ingest-agent').value || undefined;
+  return { folder, agent_id: agentId };
+}
 
 // ── File Upload ──
 function handleDrop(e) {
@@ -156,7 +331,7 @@ function handleFiles(files) {
   const list = document.getElementById('file-list');
   Array.from(files).forEach(file => {
     if (file.size > 5 * 1024 * 1024) {
-      list.innerHTML += '<p style="color:var(--danger);font-size:0.8rem">⚠ ' + escapeHtml(file.name) + ' exceeds 5 MB limit</p>';
+      list.innerHTML += '<p style="color:var(--danger);font-size:0.8rem">Warning: ' + escapeHtml(file.name) + ' exceeds 5 MB</p>';
       return;
     }
     const id = 'file-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -175,6 +350,7 @@ function readAndIngestFile(file, id) {
   const reader = new FileReader();
   reader.onload = async function(e) {
     statusEl.textContent = 'Ingesting...';
+    const extras = getIngestExtras();
     try {
       const r = await fetch('/api/documents/ingest', {
         method: 'POST',
@@ -184,21 +360,19 @@ function readAndIngestFile(file, id) {
           text: e.target.result,
           chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
           chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+          ...extras,
         })
       });
       const d = await r.json();
-      statusEl.textContent = '✓ ' + (d.chunks || 0) + ' chunks';
+      statusEl.textContent = 'Done: ' + (d.chunks || 0) + ' chunks';
       statusEl.style.color = '#10b981';
-      loadStats(); loadDocs();
+      refreshAll();
     } catch(err) {
-      statusEl.textContent = '✗ ' + err.message;
+      statusEl.textContent = 'Error: ' + err.message;
       statusEl.style.color = '#f43f5e';
     }
   };
-  reader.onerror = function() {
-    statusEl.textContent = '✗ Read error';
-    statusEl.style.color = '#f43f5e';
-  };
+  reader.onerror = function() { statusEl.textContent = 'Read error'; statusEl.style.color = '#f43f5e'; };
   reader.readAsText(file);
 }
 
@@ -211,6 +385,7 @@ async function fetchAndIngestUrl() {
   btn.disabled = true;
   statusEl.textContent = 'Fetching content...';
   statusEl.style.color = '#f59e0b';
+  const extras = getIngestExtras();
   try {
     const r = await fetch('/api/documents/fetch-url', {
       method: 'POST',
@@ -229,52 +404,22 @@ async function fetchAndIngestUrl() {
         text: fetched.text,
         chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
         chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+        ...extras,
       })
     });
     const d = await ingestR.json();
-    statusEl.textContent = '✓ Ingested ' + (d.chunks || 0) + ' chunks from ' + source;
+    statusEl.textContent = 'Done: ' + (d.chunks || 0) + ' chunks from ' + source;
     statusEl.style.color = '#10b981';
     document.getElementById('import-url').value = '';
     document.getElementById('url-source').value = '';
-    loadStats(); loadDocs();
+    refreshAll();
   } catch(e) {
-    statusEl.textContent = '✗ ' + e.message;
+    statusEl.textContent = 'Error: ' + e.message;
     statusEl.style.color = '#f43f5e';
-  } finally {
-    btn.disabled = false;
-  }
-}
-async function loadStats() {
-  try {
-    const r = await fetch('/api/documents/stats');
-    const d = await r.json();
-    document.getElementById('stat-chunks').textContent = d.total_chunks || 0;
-    document.getElementById('stat-docs').textContent = d.unique_documents || 0;
-    document.getElementById('stat-collection').textContent = d.collection || '-';
-  } catch(e) {
-    document.getElementById('stat-chunks').textContent = 'Error';
-  }
+  } finally { btn.disabled = false; }
 }
 
-async function loadDocs() {
-  try {
-    const r = await fetch('/api/documents');
-    const d = await r.json();
-    const el = document.getElementById('doc-list');
-    if (!d.documents || d.documents.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">No documents ingested yet.</p>';
-      return;
-    }
-    el.innerHTML = '<table><tr><th>Source</th><th>Actions</th></tr>' +
-      d.documents.map(doc => \`<tr>
-        <td class="mono">\${escapeHtml(doc.source)}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteDoc('\${escapeHtml(doc.source)}')">Delete</button></td>
-      </tr>\`).join('') + '</table>';
-  } catch(e) {
-    document.getElementById('doc-list').innerHTML = '<p style="color:var(--danger)">Failed to load</p>';
-  }
-}
-
+// ── Paste Text ──
 async function ingestDoc() {
   const source = document.getElementById('ingest-source').value.trim();
   const text = document.getElementById('ingest-text').value.trim();
@@ -282,12 +427,12 @@ async function ingestDoc() {
   document.getElementById('ingestBtn').disabled = true;
   document.getElementById('ingest-result').textContent = 'Ingesting...';
   document.getElementById('ingest-result').style.color = 'var(--text-3)';
+  const extras = getIngestExtras();
   try {
     const r = await fetch('/api/documents/ingest', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        source, text,
+      body: JSON.stringify({ source, text, ...extras,
         chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
         chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
       })
@@ -295,15 +440,91 @@ async function ingestDoc() {
     const d = await r.json();
     document.getElementById('ingest-result').style.color = 'var(--success)';
     document.getElementById('ingest-result').textContent = 'Ingested: ' + (d.chunks || 0) + ' chunks from ' + (d.source || source);
-    loadStats(); loadDocs();
+    document.getElementById('ingest-source').value = '';
+    document.getElementById('ingest-text').value = '';
+    refreshAll();
   } catch(e) {
     document.getElementById('ingest-result').textContent = 'Error: ' + e.message;
     document.getElementById('ingest-result').style.color = 'var(--danger)';
-  } finally {
-    document.getElementById('ingestBtn').disabled = false;
+  } finally { document.getElementById('ingestBtn').disabled = false; }
+}
+
+// ── Stats ──
+async function loadStats() {
+  try {
+    const r = await fetch('/api/documents/stats');
+    const d = await r.json();
+    document.getElementById('stat-chunks').textContent = d.total_chunks || 0;
+    document.getElementById('stat-docs').textContent = d.unique_documents || 0;
+  } catch(e) { document.getElementById('stat-chunks').textContent = 'Err'; }
+  document.getElementById('stat-folders').textContent = allFolders.length || 0;
+  try {
+    const r = await fetch('/api/documents/registry');
+    const d = await r.json();
+    const tagged = (d.documents || []).filter(doc => doc.agent_tags && doc.agent_tags.length > 0).length;
+    document.getElementById('stat-tagged').textContent = tagged;
+  } catch(e) { document.getElementById('stat-tagged').textContent = '-'; }
+}
+
+// ── Document List (Registry) ──
+async function loadDocs() {
+  const el = document.getElementById('doc-list');
+  const searchFilter = (document.getElementById('doc-search-filter').value || '').trim();
+  try {
+    const params = new URLSearchParams();
+    if (currentFolder) params.append('folder', currentFolder);
+    if (searchFilter) params.append('search', searchFilter);
+    const qs = params.toString() ? '?' + params.toString() : '';
+    const r = await fetch('/api/documents/registry' + qs);
+    const d = await r.json();
+    const docs = d.documents || [];
+    if (!docs.length) {
+      el.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:1.5rem 0">No documents' + (currentFolder ? ' in this folder' : '') + '.</p>';
+      return;
+    }
+    let html = '<table style="width:100%"><thead><tr>' +
+      '<th style="text-align:left">Name</th>' +
+      '<th style="text-align:left">Folder</th>' +
+      '<th style="text-align:left">Agents</th>' +
+      '<th style="text-align:center">Chunks</th>' +
+      '<th style="text-align:right">Actions</th>' +
+      '</tr></thead><tbody>';
+    docs.forEach(doc => {
+      const agentBadges = (doc.agent_tags || []).map(aid => {
+        const agent = allAgents.find(a => a.id === aid);
+        const name = agent ? agent.name : aid;
+        return '<span style="display:inline-block;padding:0.1rem 0.45rem;border-radius:4px;font-size:0.68rem;font-weight:600;background:rgba(139,92,246,0.15);color:#a78bfa;margin-right:0.25rem;white-space:nowrap" title="Agent: ' + escapeHtml(name) + '">' + escapeHtml(name) + '</span>';
+      }).join('');
+      const ext = doc.file_type ? '<span style="display:inline-block;padding:0.05rem 0.35rem;border-radius:3px;font-size:0.65rem;background:rgba(6,182,212,0.1);color:#06b6d4;margin-left:0.35rem">' + escapeHtml(doc.file_type) + '</span>' : '';
+      const folderDisplay = doc.folder === '/' ? '/' : doc.folder.replace(/^\//, '').replace(/\/$/, '');
+      const tagsJson = JSON.stringify(doc.agent_tags || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      html += '<tr>' +
+        '<td class="mono" style="font-size:0.8rem">' + escapeHtml(doc.name) + ext + '</td>' +
+        '<td style="font-size:0.75rem;color:var(--text-3)">' +
+          '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
+          escapeHtml(folderDisplay) + '</td>' +
+        '<td>' + (agentBadges || '<span style="font-size:0.72rem;color:var(--text-3)">—</span>') + '</td>' +
+        '<td style="text-align:center;font-size:0.78rem;color:var(--text-2)">' + (doc.chunk_count || 0) + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn btn-sm" onclick="openMoveModal(\'' + escapeHtml(doc.id) + '\')" title="Move to folder" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
+          '</button>' +
+          '<button class="btn btn-sm" onclick="openTagModal(\'' + escapeHtml(doc.id) + '\', JSON.parse(this.dataset.tags))" data-tags="' + tagsJson + '" title="Manage agent tags" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>' +
+          '</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteRegistryDoc(\'' + escapeHtml(doc.id) + '\', \'' + escapeHtml(doc.name) + '\')" title="Delete" style="padding:0.2rem 0.4rem;font-size:0.7rem">' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</td></tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--danger)">Failed to load documents</p>';
   }
 }
 
+// ── Search ──
 async function searchDocs() {
   const query = document.getElementById('search-query').value.trim();
   if (!query) return;
@@ -320,29 +541,108 @@ async function searchDocs() {
       el.innerHTML = '<p style="color:var(--text-3)">No results found.</p>';
       return;
     }
-    el.innerHTML = d.results.map((r, i) => \`
-      <div class="glass-hover" style="padding:1rem;border-radius:14px;margin-top:0.75rem">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong style="color:var(--text-1)">#\${i+1} — \${escapeHtml(r.metadata?.source || 'unknown')}</strong>
-          <span class="mono" style="color:var(--text-3);font-size:0.72rem">score: \${(r.score||0).toFixed(4)}</span>
-        </div>
-        <p style="font-size:0.82rem;margin-top:0.5rem;white-space:pre-wrap;color:var(--text-2);line-height:1.6">\${escapeHtml(r.content)}</p>
-      </div>
-    \`).join('');
+    let registryDocs = [];
+    try { const rr = await fetch('/api/documents/registry'); registryDocs = (await rr.json()).documents || []; } catch(e) {}
+    el.innerHTML = d.results.map((r, i) => {
+      const source = r.metadata?.source || 'unknown';
+      const regDoc = registryDocs.find(rd => rd.source === source);
+      const agentBadges = regDoc && regDoc.agent_tags && regDoc.agent_tags.length
+        ? regDoc.agent_tags.map(aid => {
+            const agent = allAgents.find(a => a.id === aid);
+            return '<span style="display:inline-block;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;background:rgba(139,92,246,0.15);color:#a78bfa;margin-left:0.35rem">' + escapeHtml(agent ? agent.name : aid) + '</span>';
+          }).join('')
+        : '';
+      return '<div class="glass-hover" style="padding:0.85rem;border-radius:12px;margin-top:0.6rem">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<strong style="color:var(--text-1);font-size:0.85rem">#' + (i+1) + ' — ' + escapeHtml(source) + agentBadges + '</strong>' +
+        '<span class="mono" style="color:var(--text-3);font-size:0.72rem">score: ' + (r.score||0).toFixed(4) + '</span>' +
+        '</div>' +
+        '<p style="font-size:0.8rem;margin-top:0.4rem;white-space:pre-wrap;color:var(--text-2);line-height:1.55">' + escapeHtml(r.content) + '</p></div>';
+    }).join('');
   } catch(e) {
     document.getElementById('search-results').innerHTML = '<p style="color:var(--danger)">Search failed</p>';
   }
 }
 
-async function deleteDoc(source) {
-  if (!confirm('Delete all chunks for ' + source + '?')) return;
+// ── Delete ──
+async function deleteRegistryDoc(docId, name) {
+  if (!confirm('Delete "' + name + '" and all its chunks?')) return;
   try {
-    await fetch('/api/documents/' + encodeURIComponent(source), { method: 'DELETE' });
-    loadStats(); loadDocs();
+    await fetch('/api/documents/registry/' + docId, { method: 'DELETE' });
+    showToast('Document deleted', 'success');
+    refreshAll();
   } catch(e) { alert('Delete failed: ' + e.message); }
 }
 
-loadStats();
-loadDocs();
+// ── Move to Folder Modal ──
+function openMoveModal(docId) {
+  document.getElementById('move-doc-id').value = docId;
+  const sel = document.getElementById('move-folder-select');
+  let html = '<option value="/">/  (root)</option>';
+  allFolders.forEach(f => {
+    if (f.path !== '/') html += '<option value="' + escapeHtml(f.path) + '">' + escapeHtml(f.path) + '</option>';
+  });
+  sel.innerHTML = html;
+  document.getElementById('move-folder-modal').style.display = 'flex';
+}
+function closeMoveModal() { document.getElementById('move-folder-modal').style.display = 'none'; }
+
+async function confirmMoveFolder() {
+  const docId = document.getElementById('move-doc-id').value;
+  const folder = document.getElementById('move-folder-select').value;
+  try {
+    await fetch('/api/documents/registry/' + docId + '/folder', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ folder })
+    });
+    showToast('Document moved', 'success');
+    closeMoveModal();
+    refreshAll();
+  } catch(e) { alert('Move failed: ' + e.message); }
+}
+
+// ── Tag Agent Modal ──
+function openTagModal(docId, currentTags) {
+  document.getElementById('tag-doc-id').value = docId;
+  const container = document.getElementById('tag-agent-checkboxes');
+  if (!allAgents.length) {
+    container.innerHTML = '<p style="font-size:0.78rem;color:var(--text-3);text-align:center">No agents available</p>';
+  } else {
+    container.innerHTML = allAgents.map(a => {
+      const checked = currentTags.includes(a.id) ? 'checked' : '';
+      return '<label style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;cursor:pointer;font-size:0.8rem;color:var(--text-2)">' +
+        '<input type="checkbox" class="tag-agent-cb" value="' + escapeHtml(a.id) + '" ' + checked + '>' +
+        escapeHtml(a.name) + '</label>';
+    }).join('');
+  }
+  document.getElementById('tag-agent-modal').style.display = 'flex';
+}
+function closeTagModal() { document.getElementById('tag-agent-modal').style.display = 'none'; }
+
+async function confirmTagAgent() {
+  const docId = document.getElementById('tag-doc-id').value;
+  const tags = Array.from(document.querySelectorAll('.tag-agent-cb:checked')).map(cb => cb.value);
+  try {
+    await fetch('/api/documents/registry/' + docId + '/tags', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ agent_tags: tags })
+    });
+    showToast('Agent tags updated', 'success');
+    closeTagModal();
+    refreshAll();
+  } catch(e) { alert('Tag update failed: ' + e.message); }
+}
+
+// ── Refresh ──
+async function refreshAll() {
+  await loadFolders();
+  populateIngestSelectors();
+  loadStats();
+  loadDocs();
+}
+
+init();
 </script>
 ` }) %>

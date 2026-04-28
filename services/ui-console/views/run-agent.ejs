@@ -48,14 +48,64 @@
         <select id="model-select" style="max-width:220px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
           <option value="">Loading models...</option>
         </select>
+        <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;color:var(--text-2);cursor:pointer;user-select:none;padding:0.35rem 0.6rem;background:var(--glass-bg);border:1px solid var(--divider);border-radius:8px" title="Toggle Knowledge Base retrieval. Disable for faster responses when KB context is not needed.">
+          <input type="checkbox" id="use-kb-toggle" checked style="accent-color:#06b6d4;width:15px;height:15px;cursor:pointer" />
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          KB
+        </label>
         <button class="btn btn-primary" id="sendBtn" onclick="runAgent()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Send
         </button>
+        <button class="btn btn-secondary" id="stopBtn" onclick="stopAgent()" style="display:none;background:rgba(244,63,94,0.12);color:#f43f5e;border-color:#f43f5e">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Stop
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAdvanced()" style="font-size:0.75rem;padding:0.4rem 0.6rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+      </div>
+
+      <!-- Advanced LLM Settings -->
+      <div id="advanced-settings" style="display:none;margin-top:0.75rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--divider);border-radius:10px">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--accent-text);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          LLM Parameters
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+          <div>
+            <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.25rem">
+              Max Tokens
+              <span title="Maximum number of tokens the model can generate in the response. Lower = faster, higher = longer answers. gpt-5-nano supports up to 16384." style="cursor:help;color:var(--accent-text)">&#9432;</span>
+            </label>
+            <input id="adv-max-tokens" type="number" value="2048" min="1" max="32768" step="256" style="width:100%;font-size:0.82rem;padding:0.35rem 0.5rem" />
+            <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.15rem">Recommended: 1024–4096</div>
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.25rem">
+              Temperature
+              <span title="Controls randomness. 0 = deterministic, 1 = creative, 2 = very random. Default 0.7 is a good balance." style="cursor:help;color:var(--accent-text)">&#9432;</span>
+            </label>
+            <input id="adv-temperature" type="number" value="0.7" min="0" max="2" step="0.1" style="width:100%;font-size:0.82rem;padding:0.35rem 0.5rem" />
+            <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.15rem">Recommended: 0.3–0.7</div>
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.25rem">
+              Top P
+              <span title="Nucleus sampling: only tokens within the top P probability mass are considered. 1.0 = no filtering. Lower values make output more focused." style="cursor:help;color:var(--accent-text)">&#9432;</span>
+            </label>
+            <input id="adv-top-p" type="number" value="1.0" min="0" max="1" step="0.05" style="width:100%;font-size:0.82rem;padding:0.35rem 0.5rem" />
+            <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.15rem">Recommended: 0.9–1.0</div>
+          </div>
+        </div>
+        <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--divider)">
+          💡 <strong>Tip:</strong> These values are sent per-request. To change defaults permanently, update environment variables in <code>docker-compose.yml</code> or <code>.env</code>.
+        </div>
       </div>
       <div class="mono" style="font-size:0.72rem;color:var(--text-3);margin-top:0.5rem">
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        Agent auto-retrieves from knowledge base & uses conversation memory
+        Use the <strong>KB</strong> toggle to enable/disable Knowledge Base retrieval. Disable it for faster responses.
       </div>
     </div>
 
@@ -103,6 +153,30 @@
 </div>
 
 <script>
+  let _abortController = null;
+
+  function toggleAdvanced() {
+    const el = document.getElementById('advanced-settings');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function stopAgent() {
+    if (_abortController) {
+      _abortController.abort();
+      _abortController = null;
+    }
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('sendBtn').style.opacity = '1';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('activity-status').textContent = 'stopped';
+    document.getElementById('activity-status').style.background = 'rgba(245,158,11,0.15)';
+    document.getElementById('activity-status').style.color = '#f59e0b';
+    // Clear any live step timers
+    document.querySelectorAll('#activity-steps div').forEach(el => {
+      if (el._timerInterval) clearInterval(el._timerInterval);
+    });
+  }
+
   async function loadMemoryStats() {
     try {
       const r = await fetch('/api/memory/stats');
@@ -153,6 +227,7 @@
 
     document.getElementById('sendBtn').disabled = true;
     document.getElementById('sendBtn').style.opacity = '0.6';
+    document.getElementById('stopBtn').style.display = 'inline-flex';
     document.getElementById('result-card').style.display = 'block';
     document.getElementById('response').textContent = '';
     document.getElementById('response').style.color = 'var(--text-1)';
@@ -175,10 +250,22 @@
       if (model) payload.model = model;
       if (agentId) payload.agent_id = agentId;
 
+      // Advanced LLM params
+      const advMaxTokens = parseInt(document.getElementById('adv-max-tokens').value);
+      const advTemp = parseFloat(document.getElementById('adv-temperature').value);
+      const advTopP = parseFloat(document.getElementById('adv-top-p').value);
+      if (!isNaN(advMaxTokens) && advMaxTokens > 0) payload.max_completion_tokens = advMaxTokens;
+      if (!isNaN(advTemp)) payload.temperature = advTemp;
+      if (!isNaN(advTopP)) payload.top_p = advTopP;
+      payload.use_kb = document.getElementById('use-kb-toggle').checked;
+
+      _abortController = new AbortController();
+
       const resp = await fetch('/api/agent-run/stream', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: _abortController.signal,
       });
 
       const reader = resp.body.getReader();
@@ -225,14 +312,28 @@
       loadMemoryStats();
       loadSessionSummary(session);
     } catch(e) {
-      document.getElementById('response').style.color = 'var(--danger)';
-      document.getElementById('response').textContent = 'Error: ' + e.message;
-      document.getElementById('activity-status').textContent = 'error';
-      document.getElementById('activity-status').style.background = 'rgba(244,63,94,0.15)';
-      document.getElementById('activity-status').style.color = '#f43f5e';
+      if (e.name === 'AbortError') {
+        document.getElementById('response').style.color = 'var(--warning, #f59e0b)';
+        document.getElementById('response').textContent += '\n\n⏹ Request stopped by user.';
+        document.getElementById('activity-status').textContent = 'stopped';
+        document.getElementById('activity-status').style.background = 'rgba(245,158,11,0.15)';
+        document.getElementById('activity-status').style.color = '#f59e0b';
+      } else {
+        document.getElementById('response').style.color = 'var(--danger)';
+        document.getElementById('response').textContent = 'Error: ' + e.message;
+        document.getElementById('activity-status').textContent = 'error';
+        document.getElementById('activity-status').style.background = 'rgba(244,63,94,0.15)';
+        document.getElementById('activity-status').style.color = '#f43f5e';
+      }
     } finally {
+      _abortController = null;
       document.getElementById('sendBtn').disabled = false;
       document.getElementById('sendBtn').style.opacity = '1';
+      document.getElementById('stopBtn').style.display = 'none';
+      // Clear any remaining live timers
+      document.querySelectorAll('#activity-steps div').forEach(el => {
+        if (el._timerInterval) clearInterval(el._timerInterval);
+      });
     }
   }
 

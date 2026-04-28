@@ -104,12 +104,33 @@ def search_similar(query: str, k: int = 5, filter_dict: Optional[dict] = None, c
 
 
 def get_collection_stats(collection_name: str | None = None) -> dict:
-    """Get stats about the vector store collection."""
+    """Get stats about the vector store collection.
+
+    Uses the raw ChromaDB HTTP client for the count check so we avoid
+    initialising the (potentially slow) Ollama embedding model just to
+    see if the collection is empty.
+    """
     coll = collection_name or CHROMA_COLLECTION
     try:
-        vs = get_vectorstore(collection_name)
-        collection = vs._collection
+        import chromadb
+        if CHROMA_URL:
+            client = chromadb.HttpClient(
+                host=CHROMA_URL.replace("http://", "").split(":")[0],
+                port=int(CHROMA_URL.split(":")[-1]),
+            )
+        else:
+            client = chromadb.Client()
+
+        try:
+            collection = client.get_collection(coll)
+        except Exception:
+            # Collection doesn't exist yet — nothing to search
+            return {"collection": coll, "total_chunks": 0, "unique_documents": 0, "sources": []}
+
         count = collection.count()
+        if count == 0:
+            return {"collection": coll, "total_chunks": 0, "unique_documents": 0, "sources": []}
+
         # Get unique sources
         all_meta = collection.get(include=["metadatas"])
         sources = set()

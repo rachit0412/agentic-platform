@@ -470,10 +470,10 @@
   }
 
   async function deleteAgent(id) {
-    if (!confirm('Delete this agent? This will also permanently delete its isolated knowledge base and all associated documents.')) return;
+    if (!confirm('Delete this agent? Its isolated KB documents will be removed. Any shared/global documents will keep their content but lose the agent tag.')) return;
     try {
       await fetch('/api/agents/' + id, { method: 'DELETE' });
-      showToast('Agent and its knowledge base deleted', 'success');
+      showToast('Agent deleted. KB removed, global doc tags cleared.', 'success');
       loadAgents();
     } catch(e) { alert('Error: ' + e.message); }
   }
@@ -612,10 +612,11 @@
     btn.disabled = true; btn.textContent = 'Uploading...';
     resultEl.textContent = '';
     try {
+      const agentId = document.getElementById('agent-edit-id').value || '';
       const r = await fetch('/api/documents/ingest', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ text, source, collection, chunk_size: 1000, chunk_overlap: 200 })
+        body: JSON.stringify({ text, source, collection, chunk_size: 1000, chunk_overlap: 200, agent_id: agentId || undefined })
       });
       const d = await r.json();
       resultEl.style.color='var(--success)';

@@ -138,12 +138,20 @@ app.post("/api/agent-run/stream", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
+
+  const abortController = new AbortController();
+
+  // If the client disconnects (e.g. user clicks Stop), abort the upstream fetch
+  req.on("close", () => {
+    abortController.abort();
+  });
+
   try {
     const resp = await fetch(`${AGENT_URL}/run/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req.body),
-      signal: AbortSignal.timeout(120000),
+      signal: abortController.signal,
     });
     if (!resp.ok) {
       res.write(`event: error\ndata: ${JSON.stringify({error: "Agent returned " + resp.status})}\n\n`);
@@ -159,8 +167,13 @@ app.post("/api/agent-run/stream", async (req, res) => {
     }
     res.end();
   } catch (e) {
-    res.write(`event: error\ndata: ${JSON.stringify({error: e.message})}\n\n`);
-    res.end();
+    if (e.name === "AbortError") {
+      // Client disconnected — normal stop
+      res.end();
+    } else {
+      res.write(`event: error\ndata: ${JSON.stringify({error: e.message})}\n\n`);
+      res.end();
+    }
   }
 });
 
@@ -459,6 +472,48 @@ app.post("/api/documents/copy", async (req, res) => {
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
+});
+
+// ── API: Document Registry / Folders / Tags ───────────
+app.get("/api/documents/registry", async (req, res) => {
+  try {
+    const params = new URLSearchParams();
+    if (req.query.folder) params.append("folder", req.query.folder);
+    if (req.query.agent_id) params.append("agent_id", req.query.agent_id);
+    if (req.query.search) params.append("search", req.query.search);
+    if (req.query.collection) params.append("collection", req.query.collection);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    const resp = await fetch(`${AGENT_URL}/documents/registry${qs}`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.json({ documents: [], error: e.message }); }
+});
+app.get("/api/documents/folders", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/folders`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.json({ folders: [], error: e.message }); }
+});
+app.put("/api/documents/registry/:id/tags", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/registry/${req.params.id}/tags`, {
+      method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body)
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/documents/registry/:id/folder", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/registry/${req.params.id}/folder`, {
+      method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body)
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/documents/registry/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/registry/${req.params.id}`, { method: "DELETE" });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
 // ── API: A2A Protocol ─────────────────────────────────

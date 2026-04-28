@@ -24,6 +24,10 @@ from agent.memory import (
     list_prompts, get_prompt, create_prompt, update_prompt, delete_prompt,
     list_guardrails, get_guardrail, update_guardrail,
     list_custom_tools, get_custom_tool, create_custom_tool, update_custom_tool, delete_custom_tool,
+    list_documents_registry, get_document_registry, create_document_registry,
+    update_document_registry, delete_document_registry, delete_document_registry_by_source,
+    list_folders, tag_document_to_agent, untag_document_from_agent,
+    untag_all_for_agent, delete_documents_by_collection,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
@@ -67,6 +71,8 @@ class RunRequest(BaseModel):
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, ge=0.0, le=1.0)
     system_prompt: str | None = Field(default=None, max_length=8192)
+    max_completion_tokens: int | None = Field(default=None, ge=1, le=32768, description="Max tokens in response")
+    use_kb: bool = Field(default=True, description="Whether to search the Knowledge Base for context")
 
 
 class RunResponse(BaseModel):
@@ -142,6 +148,7 @@ async def run_stream(body: RunRequest):
             provider=body.provider or "ollama",
             model=body.model or "",
             temperature=body.temperature,
+            max_completion_tokens=body.max_completion_tokens,
         )
 
     # Load agent config if specified
@@ -155,16 +162,19 @@ async def run_stream(body: RunRequest):
                 provider=agent_config.get("provider", "ollama"),
                 model=agent_config.get("model", "llama3"),
                 temperature=body.temperature if body.temperature is not None else agent_config.get("temperature"),
+                max_completion_tokens=body.max_completion_tokens,
             )
 
     # Override agent config with request-level params
-    if agent_config:
-        if body.temperature is not None:
-            agent_config["temperature"] = body.temperature
-        if body.top_p is not None:
-            agent_config["top_p"] = body.top_p
-        if body.system_prompt:
-            agent_config["system_prompt"] = body.system_prompt
+    if agent_config is None:
+        agent_config = {}
+    agent_config["use_kb"] = body.use_kb
+    if body.temperature is not None:
+        agent_config["temperature"] = body.temperature
+    if body.top_p is not None:
+        agent_config["top_p"] = body.top_p
+    if body.system_prompt:
+        agent_config["system_prompt"] = body.system_prompt
 
     async def event_generator():
         async for event in run_agent_stream(
@@ -261,6 +271,8 @@ class DocumentIngestRequest(BaseModel):
     chunk_size: int = Field(default=1000, ge=100, le=5000)
     chunk_overlap: int = Field(default=200, ge=0, le=1000)
     collection: str = Field(default="agentic_docs", max_length=200)
+    folder: str = Field(default="/", max_length=500)
+    agent_id: str | None = Field(default=None, max_length=100)
 
 
 class DocumentSearchRequest(BaseModel):
@@ -278,6 +290,20 @@ async def documents_ingest(body: DocumentIngestRequest):
         chunk_size=body.chunk_size,
         chunk_overlap=body.chunk_overlap,
         collection_name=body.collection,
+    )
+    # Create registry record
+    file_ext = body.source.rsplit(".", 1)[-1].lower() if "." in body.source else ""
+    agent_tags = [body.agent_id] if body.agent_id else []
+    create_document_registry(
+        name=body.source,
+        source=body.source,
+        collection=body.collection,
+        folder=body.folder,
+        agent_tags=agent_tags,
+        file_type=file_ext,
+        file_size=len(body.text),
+        chunk_count=result.get("chunks", 0),
+        metadata=body.metadata,
     )
     return result
 
@@ -302,9 +328,12 @@ async def documents_stats():
 
 
 @app.delete("/documents/{source}")
-async def documents_delete(source: str):
+async def documents_delete(source: str, collection: str | None = None):
     from agent.vectorstore import delete_document
-    return delete_document(source)
+    coll = collection or "agentic_docs"
+    result = delete_document(source, collection_name=coll if coll != "agentic_docs" else None)
+    delete_document_registry_by_source(source, coll)
+    return result
 
 
 class FetchUrlRequest(BaseModel):
@@ -380,6 +409,66 @@ async def documents_copy(body: CopyDocsRequest):
     from agent.vectorstore import copy_documents_to_collection
     result = copy_documents_to_collection(body.sources, body.from_collection, body.to_collection)
     return result
+
+
+# ── Document Registry endpoints ────────────────────────────────────────────
+
+@app.get("/documents/registry")
+async def documents_registry(folder: str | None = None, agent_id: str | None = None,
+                              search: str | None = None, collection: str | None = None):
+    """List all documents in the registry with optional filters."""
+    docs = list_documents_registry(folder=folder, agent_id=agent_id, search=search, collection=collection)
+    return {"documents": docs}
+
+
+@app.get("/documents/folders")
+async def documents_folders():
+    """List all unique folder paths with document counts."""
+    folders = list_folders()
+    return {"folders": folders}
+
+
+class UpdateDocTagsRequest(BaseModel):
+    agent_tags: list[str] = Field(default_factory=list)
+
+
+@app.put("/documents/registry/{doc_id}/tags")
+async def documents_update_tags(doc_id: str, body: UpdateDocTagsRequest):
+    """Set the agent tags for a document."""
+    doc = update_document_registry(doc_id, agent_tags=body.agent_tags)
+    if not doc:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Document not found"})
+    return doc
+
+
+class UpdateDocFolderRequest(BaseModel):
+    folder: str = Field(..., min_length=1, max_length=500)
+
+
+@app.put("/documents/registry/{doc_id}/folder")
+async def documents_update_folder(doc_id: str, body: UpdateDocFolderRequest):
+    """Move a document to a different folder."""
+    doc = update_document_registry(doc_id, folder=body.folder)
+    if not doc:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Document not found"})
+    return doc
+
+
+@app.delete("/documents/registry/{doc_id}")
+async def documents_registry_delete(doc_id: str):
+    """Delete a document from registry and ChromaDB."""
+    doc = get_document_registry(doc_id)
+    if not doc:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Document not found"})
+    # Delete from ChromaDB
+    from agent.vectorstore import delete_document
+    delete_document(doc["source"], collection_name=doc["collection"] if doc["collection"] != "agentic_docs" else None)
+    # Delete from registry
+    delete_document_registry(doc_id)
+    return {"deleted": True, "source": doc["source"]}
 
 
 # ── Tools endpoint ─────────────────────────────────────────────────────────
@@ -670,11 +759,14 @@ async def agents_delete_endpoint(agent_id: str):
     if not ok:
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=404, content={"error": "Agent not found or is default"})
-    # Clean up the agent's isolated KB collection
+    # Remove agent tags from global documents (keeps the docs, just removes the tag)
+    untag_all_for_agent(agent_id)
+    # Clean up the agent's isolated KB collection and its registry records
     kb = agent.get("kb_collection", "")
     if kb and kb != "agentic_docs" and kb.startswith("agent_"):
         from agent.vectorstore import delete_collection
         delete_collection(kb)
+        delete_documents_by_collection(kb)
     return {"deleted": True}
 
 

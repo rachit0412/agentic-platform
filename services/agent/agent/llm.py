@@ -60,14 +60,15 @@ _llm = None
 _embeddings = None
 
 
-def get_llm(provider: str | None = None, model: str | None = None, temperature: float | None = None, top_p: float | None = None):
+def get_llm(provider: str | None = None, model: str | None = None, temperature: float | None = None, top_p: float | None = None, max_completion_tokens: int | None = None):
     """Return a chat LLM instance for the given provider."""
     global _llm, _active_provider, _active_model
 
     p = provider or _active_provider
     t = temperature if temperature is not None else OLLAMA_TEMPERATURE
     tp = top_p if top_p is not None else 1.0
-    rebuild = _llm is None or provider is not None or model is not None or temperature is not None or top_p is not None
+    mct = max_completion_tokens or 2048
+    rebuild = _llm is None or provider is not None or model is not None or temperature is not None or top_p is not None or max_completion_tokens is not None
 
     if p == "azure-openai":
         m = model or AZURE_OPENAI_DEPLOYMENT
@@ -84,7 +85,9 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                 api_version=AZURE_OPENAI_API_VERSION,
                 temperature=t,
                 top_p=tp,
-                max_tokens=2048,
+                max_tokens=mct,
+                streaming=True,
+                timeout=30,
             )
             _active_provider = "azure-openai"
             _active_model = m
@@ -103,7 +106,9 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                 api_key=OPENAI_API_KEY,
                 temperature=t,
                 top_p=tp,
-                max_tokens=2048,
+                max_tokens=mct,
+                streaming=True,
+                timeout=30,
             )
             _active_provider = "openai"
             _active_model = m
@@ -116,13 +121,17 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                     "Azure Foundry requires valid AZURE_FOUNDRY_API_KEY and AZURE_FOUNDRY_ENDPOINT env vars"
                 )
             from langchain_openai import AzureChatOpenAI
-            # Some Foundry models (e.g. gpt-5-nano) only support default temperature/top_p
+            # gpt-5-nano and newer models require max_completion_tokens
+            # (not max_tokens).  Pass via model_kwargs so LangChain doesn't
+            # try to map it to the legacy parameter.
             foundry_kwargs = dict(
                 azure_deployment=m,
                 azure_endpoint=AZURE_FOUNDRY_ENDPOINT,
                 api_key=AZURE_FOUNDRY_API_KEY,
                 api_version=AZURE_FOUNDRY_API_VERSION,
-                max_completion_tokens=2048,
+                streaming=True,
+                timeout=30,
+                model_kwargs={"max_completion_tokens": mct},
             )
             if t != OLLAMA_TEMPERATURE:  # only send if explicitly changed
                 foundry_kwargs["temperature"] = t
@@ -142,7 +151,7 @@ def get_llm(provider: str | None = None, model: str | None = None, temperature: 
                 base_url=OLLAMA_BASE_URL,
                 temperature=t,
                 top_p=tp,
-                num_predict=2048,
+                num_predict=mct,
             )
             _active_provider = "ollama"
             _active_model = m
@@ -236,7 +245,7 @@ def get_active_model() -> dict:
     }
 
 
-def set_active_model(provider: str, model: str, temperature: float | None = None, top_p: float | None = None):
+def set_active_model(provider: str, model: str, temperature: float | None = None, top_p: float | None = None, max_completion_tokens: int | None = None):
     """Switch the active LLM provider and model."""
-    get_llm(provider=provider, model=model, temperature=temperature, top_p=top_p)
+    get_llm(provider=provider, model=model, temperature=temperature, top_p=top_p, max_completion_tokens=max_completion_tokens)
     return get_active_model()
