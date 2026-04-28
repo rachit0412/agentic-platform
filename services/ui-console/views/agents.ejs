@@ -89,33 +89,66 @@
   <!-- Knowledge Base & Settings -->
   <div style="margin-top:1.25rem">
     <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Knowledge Base</h4></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">
-      <div>
-        <label class="field-label">Collection Name</label>
-        <input type="text" id="agent-kb" class="input" value="agentic_docs" placeholder="ChromaDB collection name">
-        <p style="color:var(--text-3);font-size:0.7rem;margin:0.25rem 0 0">The ChromaDB collection this agent retrieves knowledge from</p>
+    <p style="color:var(--text-3);font-size:0.72rem;margin:0.35rem 0 0.75rem;line-height:1.4">Each agent gets its own isolated knowledge base. Upload new documents or reuse existing ones from other collections.</p>
+
+    <!-- Tab switcher -->
+    <div style="display:flex;gap:0;margin-bottom:0.75rem;border:1px solid var(--glass-border);border-radius:8px;overflow:hidden">
+      <button type="button" class="btn btn-sm" id="kb-tab-upload" onclick="switchKBTab('upload')" style="flex:1;border-radius:0;border:none;background:rgba(6,182,212,0.15);color:#06b6d4;font-size:0.78rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload New
+      </button>
+      <button type="button" class="btn btn-sm" id="kb-tab-reuse" onclick="switchKBTab('reuse')" style="flex:1;border-radius:0;border:none;border-left:1px solid var(--glass-border);font-size:0.78rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Reuse Existing
+      </button>
+    </div>
+
+    <!-- Upload tab -->
+    <div id="kb-panel-upload">
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+        <label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem" for="agent-kb-file">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Choose File
+        </label>
+        <input type="file" id="agent-kb-file" accept=".txt,.md,.csv,.json,.pdf,.html,.htm,.xml,.yaml,.yml,.log,.py,.js,.ts,.sql" style="display:none" onchange="handleFileSelect(this)">
+        <span id="agent-kb-filename" style="color:var(--text-3);font-size:0.78rem">No file selected</span>
       </div>
-      <div>
-        <label class="field-label">Upload Knowledge <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— upload a file or paste text</span></label>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
-          <label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem" for="agent-kb-file">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Choose File
-          </label>
-          <input type="file" id="agent-kb-file" accept=".txt,.md,.csv,.json,.pdf,.html,.htm,.xml,.yaml,.yml,.log,.py,.js,.ts,.sql" style="display:none" onchange="handleFileSelect(this)">
-          <span id="agent-kb-filename" style="color:var(--text-3);font-size:0.78rem">No file selected</span>
-        </div>
-        <textarea id="agent-kb-text" class="input" rows="3" placeholder="Or paste document text here... it will be chunked and embedded into the collection above." style="resize:vertical;font-size:0.82rem"></textarea>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
-          <input type="text" id="agent-kb-source" class="input" placeholder="Source name (e.g. faq.pdf)" style="flex:1;font-size:0.82rem">
-          <button type="button" class="btn btn-sm" onclick="uploadKB()" id="kb-upload-btn" style="white-space:nowrap">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload
-          </button>
-        </div>
-        <div id="kb-upload-result" style="font-size:0.75rem;margin-top:0.25rem;color:var(--success)"></div>
+      <textarea id="agent-kb-text" class="input" rows="3" placeholder="Or paste document text here... it will be chunked and embedded into this agent's isolated collection." style="resize:vertical;font-size:0.82rem"></textarea>
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
+        <input type="text" id="agent-kb-source" class="input" placeholder="Source name (e.g. faq.pdf)" style="flex:1;font-size:0.82rem">
+        <button type="button" class="btn btn-sm" onclick="uploadKB()" id="kb-upload-btn" style="white-space:nowrap">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </button>
+      </div>
+      <div id="kb-upload-result" style="font-size:0.75rem;margin-top:0.25rem;color:var(--success)"></div>
+    </div>
+
+    <!-- Reuse existing KB tab -->
+    <div id="kb-panel-reuse" style="display:none">
+      <p style="color:var(--text-3);font-size:0.72rem;margin:0 0 0.5rem">Select documents from existing knowledge bases to copy into this agent's collection:</p>
+      <div id="kb-reuse-list" style="max-height:220px;overflow-y:auto;border:1px solid var(--glass-border);border-radius:8px;padding:0.5rem">
+        <p style="color:var(--text-3);font-size:0.78rem;text-align:center">Loading collections...</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
+        <button type="button" class="btn btn-sm" onclick="copySelectedDocs()" id="kb-copy-btn" style="white-space:nowrap">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Selected to Agent KB
+        </button>
+        <span id="kb-copy-result" style="font-size:0.75rem;color:var(--success)"></span>
       </div>
     </div>
+
+    <!-- Agent's KB documents -->
+    <div id="agent-kb-docs" style="margin-top:0.75rem;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+        <span style="font-size:0.75rem;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.03em">Agent's Documents</span>
+        <span id="agent-kb-doc-count" class="badge" style="font-size:0.7rem">0 docs</span>
+      </div>
+      <div id="agent-kb-doc-list" style="display:flex;flex-wrap:wrap;gap:0.35rem"></div>
+    </div>
+
+    <input type="hidden" id="agent-kb" value="">
   </div>
 
   <!-- Settings -->
@@ -149,6 +182,7 @@
   let allSkillsList = [];
   let allToolsList = [];
   let allModelsList = [];
+  let allCollections = [];
 
   async function loadSkillsList() {
     try {
@@ -172,6 +206,14 @@
       const d = await r.json();
       allModelsList = (d.models || []).map(m => m.name || m.model || m);
     } catch(e) {}
+  }
+
+  async function loadCollections() {
+    try {
+      const r = await fetch('/api/documents/collections');
+      const d = await r.json();
+      allCollections = (d.collections || []).filter(c => c.unique_documents > 0);
+    } catch(e) { allCollections = []; }
   }
 
   function renderModelDropdown(selectedModel) {
@@ -314,7 +356,7 @@
   document.getElementById('agent-skills-list').addEventListener('change', saveDraft);
 
   async function showAgentForm() {
-    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]);
+    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList(), loadCollections()]);
     clearAgentDraft();
     document.getElementById('agent-form-title').textContent = 'Create Agent';
     document.getElementById('agent-edit-id').value = '';
@@ -325,7 +367,8 @@
     document.getElementById('agent-temp').value = '0.7';
     document.getElementById('agent-prompt').value = '';
     renderToolCheckboxes([]);
-    document.getElementById('agent-kb').value = 'agentic_docs';
+    // Auto-generate isolated collection name (will be finalized on save)
+    document.getElementById('agent-kb').value = '';
     document.getElementById('agent-iterations').value = '5';
     document.getElementById('agent-memory').value = '1';
     renderSkillCheckboxes([]);
@@ -333,6 +376,9 @@
     document.getElementById('agent-kb-text').value = '';
     document.getElementById('agent-kb-source').value = '';
     document.getElementById('kb-upload-result').textContent = '';
+    switchKBTab('upload');
+    renderKBReuse();
+    hideAgentKBDocs();
     document.getElementById('agent-form').style.display = 'block';
     document.getElementById('agent-name').focus();
   }
@@ -343,7 +389,7 @@
   }
 
   async function editAgent(id) {
-    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]);
+    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList(), loadCollections()]);
     try {
       const r = await fetch('/api/agents/' + id);
       const a = await r.json();
@@ -357,7 +403,7 @@
       document.getElementById('agent-top-p').value = a.top_p != null ? a.top_p : 1;
       document.getElementById('agent-prompt').value = a.system_prompt || '';
       renderToolCheckboxes(a.tool_ids || []);
-      document.getElementById('agent-kb').value = a.kb_collection || 'agentic_docs';
+      document.getElementById('agent-kb').value = a.kb_collection || '';
       document.getElementById('agent-iterations').value = a.max_iterations || 5;
       document.getElementById('agent-memory').value = a.memory_enabled ? '1' : '0';
       renderSkillCheckboxes(a.skill_ids || []);
@@ -365,13 +411,27 @@
       document.getElementById('agent-kb-text').value = '';
       document.getElementById('agent-kb-source').value = '';
       document.getElementById('kb-upload-result').textContent = '';
+      switchKBTab('upload');
+      renderKBReuse(a.kb_collection);
+      loadAgentKBDocs(a.kb_collection);
       document.getElementById('agent-form').style.display = 'block';
       document.getElementById('agent-name').focus();
     } catch(e) { alert('Error: ' + e.message); }
   }
 
+  function getAgentCollectionName() {
+    const existing = document.getElementById('agent-kb').value.trim();
+    if (existing) return existing;
+    const editId = document.getElementById('agent-edit-id').value;
+    if (editId) return 'agent_' + editId + '_kb';
+    // For new agents, generate a temp name; will be re-generated after save with actual ID
+    const tempId = Date.now().toString(36);
+    return 'agent_' + tempId + '_kb';
+  }
+
   async function saveAgent() {
     const id = document.getElementById('agent-edit-id').value;
+    const kbVal = document.getElementById('agent-kb').value.trim();
     const payload = {
       name: document.getElementById('agent-name').value.trim(),
       description: document.getElementById('agent-desc').value.trim(),
@@ -382,7 +442,7 @@
       system_prompt: document.getElementById('agent-prompt').value.trim(),
       skill_ids: getSelectedSkillIds(),
       tool_ids: getSelectedToolIds(),
-      kb_collection: document.getElementById('agent-kb').value.trim() || 'agentic_docs',
+      kb_collection: kbVal || (id ? 'agent_' + id + '_kb' : ''),
       max_iterations: parseInt(document.getElementById('agent-iterations').value) || 5,
       memory_enabled: document.getElementById('agent-memory').value === '1',
     };
@@ -390,7 +450,17 @@
     try {
       const url = id ? '/api/agents/' + id : '/api/agents';
       const method = id ? 'PUT' : 'POST';
-      await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const resp = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const result = await resp.json();
+      // For new agents, update kb_collection with actual agent ID
+      if (!id && result.id && !kbVal) {
+        const newKb = 'agent_' + result.id + '_kb';
+        await fetch('/api/agents/' + result.id, {
+          method: 'PUT',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ...payload, kb_collection: newKb })
+        });
+      }
       clearAgentDraft();
       hideAgentForm();
       loadAgents();
@@ -398,11 +468,113 @@
   }
 
   async function deleteAgent(id) {
-    if (!confirm('Delete this agent?')) return;
+    if (!confirm('Delete this agent? This will also permanently delete its isolated knowledge base and all associated documents.')) return;
     try {
       await fetch('/api/agents/' + id, { method: 'DELETE' });
+      showToast('Agent and its knowledge base deleted', 'success');
       loadAgents();
     } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  // ── KB Tab / Reuse helpers ──
+  function switchKBTab(tab) {
+    document.getElementById('kb-panel-upload').style.display = tab === 'upload' ? '' : 'none';
+    document.getElementById('kb-panel-reuse').style.display = tab === 'reuse' ? '' : 'none';
+    const btnUp = document.getElementById('kb-tab-upload');
+    const btnRe = document.getElementById('kb-tab-reuse');
+    btnUp.style.background = tab === 'upload' ? 'rgba(6,182,212,0.15)' : 'transparent';
+    btnUp.style.color = tab === 'upload' ? '#06b6d4' : 'var(--text-3)';
+    btnRe.style.background = tab === 'reuse' ? 'rgba(6,182,212,0.15)' : 'transparent';
+    btnRe.style.color = tab === 'reuse' ? '#06b6d4' : 'var(--text-3)';
+  }
+
+  function renderKBReuse(excludeCollection) {
+    const container = document.getElementById('kb-reuse-list');
+    const collections = allCollections.filter(c => c.name !== excludeCollection);
+    if (!collections.length) {
+      container.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem;text-align:center">No existing knowledge bases with documents found.</p>';
+      return;
+    }
+    let html = '';
+    for (const coll of collections) {
+      html += '<div style="margin-bottom:0.6rem;border-bottom:1px solid var(--glass-border);padding-bottom:0.5rem">';
+      html += '<div style="font-size:0.78rem;font-weight:600;color:var(--text-2);margin-bottom:0.25rem">';
+      html += '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+      html += coll.name + ' <span style="font-weight:400;color:var(--text-3)">(' + coll.unique_documents + ' docs)</span></div>';
+      for (const src of coll.sources) {
+        const cbId = 'kb-reuse-' + coll.name + '--' + src;
+        html += '<label style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;color:var(--text-2);padding:0.15rem 0 0.15rem 1rem;cursor:pointer">';
+        html += '<input type="checkbox" class="kb-reuse-cb" data-collection="' + coll.name + '" data-source="' + src + '" id="' + cbId + '">';
+        html += '<span>' + src + '</span></label>';
+      }
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  async function copySelectedDocs() {
+    const checkboxes = document.querySelectorAll('.kb-reuse-cb:checked');
+    if (!checkboxes.length) { showToast('Select at least one document to copy', 'error'); return; }
+    const targetCollection = getAgentCollectionName();
+    // Update the hidden field
+    document.getElementById('agent-kb').value = targetCollection;
+    // Group by source collection
+    const groups = {};
+    checkboxes.forEach(cb => {
+      const from = cb.dataset.collection;
+      if (!groups[from]) groups[from] = [];
+      groups[from].push(cb.dataset.source);
+    });
+    const btn = document.getElementById('kb-copy-btn');
+    btn.disabled = true; btn.textContent = 'Copying...';
+    const resultEl = document.getElementById('kb-copy-result');
+    let totalCopied = 0;
+    try {
+      for (const [fromColl, sources] of Object.entries(groups)) {
+        const r = await fetch('/api/documents/copy', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ sources, from_collection: fromColl, to_collection: targetCollection })
+        });
+        const d = await r.json();
+        totalCopied += (d.chunks_copied || 0);
+      }
+      resultEl.style.color = 'var(--success)';
+      resultEl.textContent = 'Copied ' + totalCopied + ' chunks to "' + targetCollection + '"';
+      // Uncheck all
+      checkboxes.forEach(cb => cb.checked = false);
+      loadAgentKBDocs(targetCollection);
+    } catch(e) {
+      resultEl.style.color = 'var(--danger)';
+      resultEl.textContent = 'Copy failed: ' + e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Copy Selected to Agent KB';
+    }
+  }
+
+  async function loadAgentKBDocs(collection) {
+    const wrap = document.getElementById('agent-kb-docs');
+    const list = document.getElementById('agent-kb-doc-list');
+    const countEl = document.getElementById('agent-kb-doc-count');
+    if (!collection) { wrap.style.display = 'none'; return; }
+    try {
+      const r = await fetch('/api/documents?collection=' + encodeURIComponent(collection));
+      const d = await r.json();
+      const docs = d.documents || [];
+      if (!docs.length) { wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+      countEl.textContent = docs.length + ' doc' + (docs.length !== 1 ? 's' : '');
+      list.innerHTML = docs.map(doc =>
+        '<span class="badge" style="font-size:0.72rem;display:inline-flex;align-items:center;gap:0.25rem">' +
+        '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+        doc.source + '</span>'
+      ).join('');
+    } catch(e) { wrap.style.display = 'none'; }
+  }
+
+  function hideAgentKBDocs() {
+    document.getElementById('agent-kb-docs').style.display = 'none';
+    document.getElementById('agent-kb-doc-list').innerHTML = '';
   }
 
   function handleFileSelect(input) {
@@ -428,7 +600,9 @@
   async function uploadKB() {
     const text = document.getElementById('agent-kb-text').value.trim();
     const source = document.getElementById('agent-kb-source').value.trim();
-    const collection = document.getElementById('agent-kb').value.trim() || 'agentic_docs';
+    const collection = getAgentCollectionName();
+    // Store the collection name so it persists
+    document.getElementById('agent-kb').value = collection;
     const resultEl = document.getElementById('kb-upload-result');
     if (!text) { resultEl.style.color='var(--danger)'; resultEl.textContent='Upload a file or paste text first'; return; }
     if (!source) { resultEl.style.color='var(--danger)'; resultEl.textContent='Enter a source name'; return; }
@@ -448,6 +622,7 @@
       document.getElementById('agent-kb-source').value = '';
       document.getElementById('agent-kb-filename').textContent = 'No file selected';
       document.getElementById('agent-kb-file').value = '';
+      loadAgentKBDocs(collection);
     } catch(e) {
       resultEl.style.color='var(--danger)';
       resultEl.textContent = 'Upload failed: ' + e.message;
@@ -456,7 +631,7 @@
     }
   }
 
-  Promise.all([loadSkillsList(), loadToolsList(), loadModelsList()]).then(() => { loadAgents(); restoreAgentDraft(); });
+  Promise.all([loadSkillsList(), loadToolsList(), loadModelsList(), loadCollections()]).then(() => { loadAgents(); restoreAgentDraft(); });
 </script>
 
 ` }) %>

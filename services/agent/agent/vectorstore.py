@@ -127,10 +127,10 @@ def get_collection_stats(collection_name: str | None = None) -> dict:
         return {"collection": coll, "total_chunks": 0, "unique_documents": 0, "sources": [], "error": str(e)}
 
 
-def delete_document(source: str) -> dict:
+def delete_document(source: str, collection_name: str | None = None) -> dict:
     """Delete all chunks for a given source document."""
     try:
-        vs = get_vectorstore()
+        vs = get_vectorstore(collection_name)
         collection = vs._collection
         # Get IDs matching this source
         results = collection.get(where={"source": source}, include=[])
@@ -144,7 +144,88 @@ def delete_document(source: str) -> dict:
         return {"source": source, "deleted_chunks": 0, "error": str(e)}
 
 
-def list_documents() -> list[dict]:
+def delete_collection(collection_name: str) -> dict:
+    """Delete an entire ChromaDB collection (used when deleting an agent)."""
+    global _vectorstores
+    try:
+        import chromadb
+        host = CHROMA_URL.replace("http://", "").split(":")[0]
+        port = int(CHROMA_URL.split(":")[-1])
+        client = chromadb.HttpClient(host=host, port=port)
+        client.delete_collection(name=collection_name)
+        _vectorstores.pop(collection_name, None)
+        logger.info("Deleted collection: %s", collection_name)
+        return {"collection": collection_name, "deleted": True}
+    except Exception as e:
+        logger.warning("Failed to delete collection %s: %s", collection_name, e)
+        return {"collection": collection_name, "deleted": False, "error": str(e)}
+
+
+def list_collections() -> list[dict]:
+    """List all ChromaDB collections with document counts."""
+    try:
+        import chromadb
+        host = CHROMA_URL.replace("http://", "").split(":")[0]
+        port = int(CHROMA_URL.split(":")[-1])
+        client = chromadb.HttpClient(host=host, port=port)
+        collections = client.list_collections()
+        result = []
+        for coll in collections:
+            try:
+                count = coll.count()
+                all_meta = coll.get(include=["metadatas"])
+                sources = set()
+                for m in (all_meta.get("metadatas") or []):
+                    if m and "source" in m:
+                        sources.add(m["source"])
+                result.append({
+                    "name": coll.name,
+                    "total_chunks": count,
+                    "unique_documents": len(sources),
+                    "sources": sorted(sources),
+                })
+            except Exception:
+                result.append({"name": coll.name, "total_chunks": 0, "unique_documents": 0, "sources": []})
+        return result
+    except Exception as e:
+        logger.warning("Failed to list collections: %s", e)
+        return []
+
+
+def copy_documents_to_collection(sources: list[str], from_collection: str, to_collection: str) -> dict:
+    """Copy documents (by source name) from one collection to another."""
+    try:
+        import chromadb
+        host = CHROMA_URL.replace("http://", "").split(":")[0]
+        port = int(CHROMA_URL.split(":")[-1])
+        client = chromadb.HttpClient(host=host, port=port)
+        src_coll = client.get_or_create_collection(name=from_collection, metadata={"hnsw:space": "cosine"})
+
+        copied = 0
+        for source in sources:
+            results = src_coll.get(where={"source": source}, include=["documents", "metadatas", "embeddings"])
+            ids = results.get("ids", [])
+            if not ids:
+                continue
+            documents = results.get("documents", [])
+            metadatas = results.get("metadatas", [])
+            embeddings = results.get("embeddings", [])
+            # Create new IDs for the target collection
+            new_ids = [f"{to_collection}__{id_}" for id_ in ids]
+            dst_coll = client.get_or_create_collection(name=to_collection, metadata={"hnsw:space": "cosine"})
+            dst_coll.add(ids=new_ids, documents=documents, metadatas=metadatas, embeddings=embeddings)
+            copied += len(ids)
+
+        # Invalidate cache for target collection
+        _vectorstores.pop(to_collection, None)
+        logger.info("Copied %d chunks from %s to %s (sources=%s)", copied, from_collection, to_collection, sources)
+        return {"from": from_collection, "to": to_collection, "chunks_copied": copied, "sources": sources}
+    except Exception as e:
+        logger.error("Failed to copy documents: %s", e)
+        return {"error": str(e), "chunks_copied": 0}
+
+
+def list_documents(collection_name: str | None = None) -> list[dict]:
     """List all unique documents in the collection."""
-    stats = get_collection_stats()
+    stats = get_collection_stats(collection_name)
     return [{"source": s} for s in stats.get("sources", [])]

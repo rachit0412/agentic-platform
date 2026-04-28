@@ -274,9 +274,9 @@ async def documents_search(body: DocumentSearchRequest):
 
 
 @app.get("/documents")
-async def documents_list():
+async def documents_list(collection: str | None = None):
     from agent.vectorstore import list_documents
-    return {"documents": list_documents()}
+    return {"documents": list_documents(collection)}
 
 
 @app.get("/documents/stats")
@@ -343,6 +343,27 @@ async def documents_fetch_url(body: FetchUrlRequest):
     except httpx.RequestError as e:
         from fastapi import HTTPException
         raise HTTPException(status_code=502, detail=f"Failed to fetch URL: {str(e)}")
+
+
+@app.get("/documents/collections")
+async def documents_collections():
+    """List all ChromaDB collections with doc counts."""
+    from agent.vectorstore import list_collections
+    return {"collections": list_collections()}
+
+
+class CopyDocsRequest(BaseModel):
+    sources: list[str] = Field(..., min_length=1)
+    from_collection: str = Field(..., min_length=1, max_length=200)
+    to_collection: str = Field(..., min_length=1, max_length=200)
+
+
+@app.post("/documents/copy")
+async def documents_copy(body: CopyDocsRequest):
+    """Copy documents from one collection to another (for KB reuse)."""
+    from agent.vectorstore import copy_documents_to_collection
+    result = copy_documents_to_collection(body.sources, body.from_collection, body.to_collection)
+    return result
 
 
 # ── Tools endpoint ─────────────────────────────────────────────────────────
@@ -551,10 +572,19 @@ async def agents_update_endpoint(agent_id: str, body: AgentUpdate):
 
 @app.delete("/agents/{agent_id}")
 async def agents_delete_endpoint(agent_id: str):
+    agent = get_agent(agent_id)
+    if not agent:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Agent not found"})
     ok = delete_agent(agent_id)
     if not ok:
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=404, content={"error": "Agent not found or is default"})
+    # Clean up the agent's isolated KB collection
+    kb = agent.get("kb_collection", "")
+    if kb and kb != "agentic_docs" and kb.startswith("agent_"):
+        from agent.vectorstore import delete_collection
+        delete_collection(kb)
     return {"deleted": True}
 
 

@@ -310,7 +310,8 @@ app.get("/api/tools", async (req, res) => {
 // ── API: Documents / RAG (proxy to agent) ─────────────
 app.get("/api/documents", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/documents`, { signal: AbortSignal.timeout(5000) });
+    const qs = req.query.collection ? `?collection=${encodeURIComponent(req.query.collection)}` : '';
+    const resp = await fetch(`${AGENT_URL}/documents${qs}`, { signal: AbortSignal.timeout(5000) });
     const data = await resp.json();
     res.json(data);
   } catch (e) {
@@ -379,6 +380,28 @@ app.post("/api/documents/fetch-url", async (req, res) => {
     const data = await resp.json();
     if (!resp.ok) return res.status(resp.status).json(data);
     res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+app.get("/api/documents/collections", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/collections`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) {
+    res.json({ collections: [], error: e.message });
+  }
+});
+
+app.post("/api/documents/copy", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/copy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    res.json(await resp.json());
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
