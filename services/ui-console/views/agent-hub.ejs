@@ -1,8 +1,8 @@
-<%- include('layout', { title: 'Agent Hub', page: 'agent-hub', body: `
+<%- include('layout', { title: 'Agent Factory', page: 'agent-hub', body: `
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
   <div>
-    <h1 class="text-glow-cyan" style="margin:0">Agent Hub</h1>
+    <h1 class="text-glow-cyan" style="margin:0">Agent Factory</h1>
     <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Manage agents, skills, prompts &amp; tools from a single dashboard</p>
   </div>
   <button class="btn btn-sm" onclick="ahRefresh()">
@@ -121,17 +121,39 @@
 <script>
 function ahRefresh() { ahLoad(); }
 
+function ahSafeFetch(url, key) {
+  return fetch(url).then(function(r) {
+    if (!r.ok) return [];
+    return r.json().then(function(d) {
+      var arr = key ? (d[key] || d) : d;
+      return Array.isArray(arr) ? arr : [];
+    });
+  }).catch(function() { return []; });
+}
+
+function ahClearLoading(msg) {
+  var ids = ['ah-agents-list','ah-skills-list','ah-prompts-list','ah-tools-list','ah-config-table'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.textContent === 'Loading...') el.innerHTML = '<p style="color:var(--text-3)">' + (msg || 'Unable to load data. <a href="javascript:ahRefresh()">Retry</a>') + '</p>';
+  });
+  ['ah-agent-count','ah-skill-count','ah-prompt-count','ah-tool-count'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.textContent === '-') el.textContent = '0';
+  });
+}
+
 function ahLoad() {
   Promise.all([
-    fetch('/api/agents').then(function(r) { return r.json(); }).catch(function() { return []; }),
-    fetch('/api/agents/skills').then(function(r) { return r.json(); }).catch(function() { return []; }),
-    fetch('/api/agents/prompts').then(function(r) { return r.json(); }).catch(function() { return []; }),
-    fetch('/api/agents/tools').then(function(r) { return r.json(); }).catch(function() { return []; })
+    ahSafeFetch('/api/agents', 'agents'),
+    ahSafeFetch('/api/skills', 'skills'),
+    ahSafeFetch('/api/prompts', 'prompts'),
+    ahSafeFetch('/api/tools', 'tools')
   ]).then(function(results) {
-    var agents = results[0].agents || results[0] || [];
-    var skills = results[1].skills || results[1] || [];
-    var prompts = results[2].prompts || results[2] || [];
-    var tools = results[3].tools || results[3] || [];
+    var agents = results[0];
+    var skills = results[1];
+    var prompts = results[2];
+    var tools = results[3];
 
     document.getElementById('ah-agent-count').textContent = agents.length;
     document.getElementById('ah-skill-count').textContent = skills.length;
@@ -198,7 +220,8 @@ function ahLoad() {
       document.getElementById('ah-config-table').innerHTML = html;
     }
   }).catch(function(e) {
-    console.error('Agent Hub load failed:', e);
+    console.error('Agent Factory load failed:', e);
+    ahClearLoading();
   });
 }
 
