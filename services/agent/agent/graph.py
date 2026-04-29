@@ -25,10 +25,141 @@ from agent.observability import (
     LangfuseTrace, track_llm_call,
     tool_call_counter, agent_run_counter,
 )
+import re as _re
 
 logger = logging.getLogger("agent-service.graph")
 
 MAX_ITERATIONS = int(os.getenv("MAX_REACT_ITERATIONS", "5"))
+
+
+# ── Guardrail enforcement ───────────────────────────────────────────────────
+
+_PII_PATTERNS = {
+    "email": _re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'),
+    "phone": _re.compile(r'\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b'),
+    "ssn": _re.compile(r'\b\d{3}-\d{2}-\d{4}\b'),
+    "credit_card": _re.compile(r'\b(?:\d{4}[-\s]?){3}\d{4}\b'),
+}
+
+_INJECTION_PATTERNS = [
+    "ignore previous", "ignore all previous", "disregard above",
+    "disregard all", "new instructions", "override system",
+    "forget everything", "you are now", "act as if",
+]
+
+
+def _check_guardrails_input(text: str) -> list[dict]:
+    """Run enabled input guardrails. Returns list of {guardrail, status, detail}."""
+    results = []
+    try:
+        from agent.memory import list_guardrails
+        guardrails = list_guardrails()
+    except Exception:
+        return results
+
+    for gr in guardrails:
+        if not gr.get("enabled"):
+            continue
+        gid = gr["id"]
+        name = gr["name"]
+
+        if gid == "gr-prompt-injection":
+            lower = text.lower()
+            for pat in _INJECTION_PATTERNS:
+                if pat in lower:
+                    results.append({"guardrail": name, "id": gid, "status": "blocked",
+                                    "detail": f"Prompt injection pattern detected: '{pat}'"})
+                    break
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "No injection detected"})
+
+        elif gid == "gr-pii":
+            found = []
+            for ptype, regex in _PII_PATTERNS.items():
+                if regex.search(text):
+                    found.append(ptype)
+            if found:
+                results.append({"guardrail": name, "id": gid, "status": "flagged",
+                                "detail": f"PII detected: {', '.join(found)}"})
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "No PII detected"})
+
+        elif gid == "gr-topic-restrict":
+            cfg = gr.get("config", {})
+            blocked = cfg.get("blocked_topics", [])
+            lower = text.lower()
+            for topic in blocked:
+                if topic.lower() in lower:
+                    results.append({"guardrail": name, "id": gid, "status": "blocked",
+                                    "detail": f"Blocked topic: '{topic}'"})
+                    break
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "Topic allowed"})
+
+    return results
+
+
+def _check_guardrails_output(text: str) -> list[dict]:
+    """Run enabled output guardrails. Returns list of {guardrail, status, detail}."""
+    results = []
+    try:
+        from agent.memory import list_guardrails
+        guardrails = list_guardrails()
+    except Exception:
+        return results
+
+    for gr in guardrails:
+        if not gr.get("enabled"):
+            continue
+        gid = gr["id"]
+        name = gr["name"]
+
+        if gid == "gr-pii":
+            found = []
+            for ptype, regex in _PII_PATTERNS.items():
+                if regex.search(text):
+                    found.append(ptype)
+            if found:
+                results.append({"guardrail": name, "id": gid, "status": "flagged",
+                                "detail": f"PII in output: {', '.join(found)}"})
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "Clean"})
+
+        elif gid == "gr-output-length":
+            cfg = gr.get("config", {})
+            max_len = cfg.get("max_tokens", 2048)
+            word_count = len(text.split())
+            if word_count > max_len:
+                results.append({"guardrail": name, "id": gid, "status": "flagged",
+                                "detail": f"Output {word_count} words exceeds limit {max_len}"})
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed",
+                                "detail": f"{word_count} words (limit: {max_len})"})
+
+        elif gid == "gr-data-leak":
+            lower = text.lower()
+            leak_patterns = ["system prompt:", "api_key", "internal configuration",
+                             "you are a helpful ai assistant with access to tools"]
+            for pat in leak_patterns:
+                if pat in lower:
+                    results.append({"guardrail": name, "id": gid, "status": "flagged",
+                                    "detail": f"Potential data leak: system prompt fragment"})
+                    break
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "No leakage detected"})
+
+        elif gid == "gr-toxicity":
+            toxic_words = ["kill", "hate", "destroy all"]
+            lower = text.lower()
+            for w in toxic_words:
+                if w in lower:
+                    results.append({"guardrail": name, "id": gid, "status": "flagged",
+                                    "detail": f"Potentially toxic content detected"})
+                    break
+            else:
+                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "Content safe"})
+
+    return results
 
 # ── Prompt templates ────────────────────────────────────────────────────────
 
@@ -444,6 +575,27 @@ async def run_agent_stream(
 
     agent_extra_prompt = "\n\n".join(extra_system_parts) if extra_system_parts else ""
 
+    # ── Step 0: Input guardrails ────────────────────────────────────────
+    yield {"event": "step", "data": {"step": "guardrails_input", "status": "started", "label": "Running input guardrails"}}
+    t0 = _time.time()
+    input_gr_results = _check_guardrails_input(prompt)
+    blocked = [g for g in input_gr_results if g["status"] == "blocked"]
+    yield {"event": "guardrails", "data": {"phase": "input", "results": input_gr_results}}
+    yield {"event": "step", "data": {"step": "guardrails_input", "status": "done",
+           "duration_ms": int((_time.time()-t0)*1000),
+           "detail": f"{len(input_gr_results)} checks, {len(blocked)} blocked"}}
+
+    if blocked:
+        block_msg = "Request blocked by guardrails: " + "; ".join([g["detail"] for g in blocked])
+        yield {"event": "token", "data": block_msg}
+        yield {"event": "done", "data": {
+            "response": block_msg, "tools_used": [], "request_id": request_id,
+            "trace_id": "", "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            "model": "", "provider": "",
+            "guardrails": {"input": input_gr_results, "output": []},
+        }}
+        return
+
     # ── Step 1: Retrieve context ────────────────────────────────────────
     use_kb = agent_config.get("use_kb", True) if agent_config else True
     yield {"event": "step", "data": {"step": "retrieve_context", "status": "started", "label": "Retrieving from Knowledge Base" if use_kb else "KB retrieval skipped (disabled)"}}
@@ -588,6 +740,16 @@ async def run_agent_stream(
         pass
 
     agent_run_counter.labels(status="success").inc()
+
+    # ── Output guardrails ───────────────────────────────────────────────
+    yield {"event": "step", "data": {"step": "guardrails_output", "status": "started", "label": "Running output guardrails"}}
+    t0 = _time.time()
+    output_gr_results = _check_guardrails_output(full_response)
+    yield {"event": "guardrails", "data": {"phase": "output", "results": output_gr_results}}
+    yield {"event": "step", "data": {"step": "guardrails_output", "status": "done",
+           "duration_ms": int((_time.time()-t0)*1000),
+           "detail": f"{len(output_gr_results)} checks"}}
+
     lf_trace.update(
         output=full_response,
         metadata={
@@ -610,5 +772,6 @@ async def run_agent_stream(
             "usage": total_usage,
             "model": agent_config.get("model") if agent_config and agent_config.get("model") else _get_active_model()["model"],
             "provider": agent_config.get("provider") if agent_config and agent_config.get("provider") else _get_active_model()["provider"],
+            "guardrails": {"input": input_gr_results, "output": output_gr_results},
         },
     }

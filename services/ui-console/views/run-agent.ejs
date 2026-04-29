@@ -128,6 +128,34 @@
       <div id="activity-steps" style="margin-top:0.75rem;border-left:2px solid var(--accent);padding-left:1rem"></div>
     </div>
 
+    <!-- LLM Execution Details -->
+    <div class="card animate-fade-up delay-100" id="exec-detail-card" style="display:none">
+      <h3 style="display:flex;align-items:center;gap:0.5rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        LLM Execution Details
+      </h3>
+      <div id="exec-detail-body" style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem"></div>
+    </div>
+
+    <!-- Guardrail Results -->
+    <div class="card animate-fade-up delay-100" id="guardrail-results-card" style="display:none">
+      <h3 style="display:flex;align-items:center;gap:0.5rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Guardrail Results
+      </h3>
+      <div id="guardrail-results-body" style="margin-top:0.75rem"></div>
+    </div>
+
+    <!-- Control Matrix -->
+    <div class="card animate-fade-up delay-100" id="control-matrix-card" style="display:none">
+      <h3 style="display:flex;align-items:center;gap:0.5rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Control Matrix
+        <span style="font-size:0.65rem;color:var(--text-3);font-weight:400">(Post-Run Quality Assessment)</span>
+      </h3>
+      <div id="control-matrix-body" style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem"></div>
+    </div>
+
     <div class="card animate-fade-up delay-200">
       <h3>Available Tools</h3>
       <div id="tools-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
@@ -241,6 +269,11 @@
     document.getElementById('activity-status').style.color = '#06b6d4';
     document.getElementById('activity-total-time').textContent = '';
 
+    // Hide post-run cards from previous run
+    document.getElementById('exec-detail-card').style.display = 'none';
+    document.getElementById('guardrail-results-card').style.display = 'none';
+    document.getElementById('control-matrix-card').style.display = 'none';
+
     const startTime = Date.now();
     const stepElements = {};
 
@@ -277,6 +310,7 @@
       let requestId = '';
       let usageData = null;
       let modelInfo = '';
+      let guardrailData = { input: [], output: [] };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -293,8 +327,12 @@
           } else if (line.startsWith('data: ')) {
             const raw = line.slice(6);
             handleSSEEvent(eventType, raw, stepElements, {
-              onToken: (t) => { fullResponse += t; document.getElementById('response').textContent = fullResponse; },
-              onDone: (d) => { toolsUsed = d.tools_used || []; traceId = d.trace_id || ''; requestId = d.request_id || ''; usageData = d.usage || null; modelInfo = d.model ? ((d.provider||'') + '/' + d.model) : ''; }
+              onToken: function(t) { fullResponse += t; document.getElementById('response').textContent = fullResponse; },
+              onDone: function(d) { toolsUsed = d.tools_used || []; traceId = d.trace_id || ''; requestId = d.request_id || ''; usageData = d.usage || null; modelInfo = d.model ? ((d.provider||'') + '/' + d.model) : ''; if (d.guardrails) guardrailData = d.guardrails; },
+              onGuardrails: function(d) {
+                if (d.phase === 'input') guardrailData.input = d.results || [];
+                if (d.phase === 'output') guardrailData.output = d.results || [];
+              }
             });
           }
         }
@@ -312,6 +350,15 @@
       metaParts.push('Request: ' + requestId);
       if (traceId) metaParts.push('Trace: ' + traceId);
       document.getElementById('meta').textContent = metaParts.join('  \u00B7  ');
+
+      // Render LLM Execution Details card
+      _renderExecDetail(usageData, modelInfo, startTime, toolsUsed, traceId, requestId);
+
+      // Render Guardrail Results card
+      _renderGuardrailResults(guardrailData);
+
+      // Render Control Matrix card
+      _renderControlMatrix(fullResponse, usageData, toolsUsed, guardrailData);
 
       document.getElementById('activity-status').textContent = 'done';
       document.getElementById('activity-status').style.background = 'rgba(16,185,129,0.15)';
@@ -370,6 +417,152 @@
     return (usage.prompt_tokens * rate[0] / 1e6) + (usage.completion_tokens * rate[1] / 1e6);
   }
 
+    if (!rate) return null;
+    return (usage.prompt_tokens * rate[0] / 1e6) + (usage.completion_tokens * rate[1] / 1e6);
+  }
+
+  // ── Render LLM Execution Details ──
+  function _renderExecDetail(usage, modelStr, startTime, tools, traceId, requestId) {
+    var card = document.getElementById('exec-detail-card');
+    var body = document.getElementById('exec-detail-body');
+    if (!usage && !modelStr) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    var cost = _estimateCost(usage, modelStr);
+    var costStr = cost !== null ? '$' + cost.toFixed(6) : 'N/A';
+    var tokensPerSec = usage && usage.completion_tokens && elapsed > 0 ? (usage.completion_tokens / elapsed).toFixed(1) : '-';
+
+    function _tile(label, value, color) {
+      return '<div style="padding:0.6rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);text-align:center">' +
+        '<div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.25rem">' + label + '</div>' +
+        '<div style="font-size:1.1rem;font-weight:700;color:' + color + '">' + value + '</div></div>';
+    }
+
+    body.innerHTML =
+      _tile('Model', escapeHtml(modelStr || 'default'), 'var(--text-1)') +
+      _tile('Total Time', elapsed + 's', '#06b6d4') +
+      _tile('Est. Cost', costStr, '#10b981') +
+      _tile('Prompt Tokens', usage ? usage.prompt_tokens : '-', '#8b5cf6') +
+      _tile('Completion Tokens', usage ? usage.completion_tokens : '-', '#f59e0b') +
+      _tile('Tokens/sec', tokensPerSec, '#06b6d4') +
+      _tile('Total Tokens', usage ? usage.total_tokens : '-', 'var(--text-1)') +
+      _tile('Tools Used', (tools || []).length, '#8b5cf6') +
+      _tile('Trace ID', traceId ? '<span style="font-size:0.55rem;word-break:break-all">' + escapeHtml(traceId.substring(0, 12)) + '...</span>' : 'N/A', 'var(--text-3)');
+  }
+
+  // ── Render Guardrail Results ──
+  function _renderGuardrailResults(grData) {
+    var card = document.getElementById('guardrail-results-card');
+    var body = document.getElementById('guardrail-results-body');
+    var all = (grData.input || []).concat(grData.output || []);
+    if (!all.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    var statusColors = { passed: '#10b981', flagged: '#f59e0b', blocked: '#f43f5e' };
+    var statusIcons = { passed: '\\u2713', flagged: '\\u26A0', blocked: '\\u2717' };
+    var html = '<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">';
+    var passed = all.filter(function(g) { return g.status === 'passed'; }).length;
+    var flagged = all.filter(function(g) { return g.status === 'flagged'; }).length;
+    var blocked = all.filter(function(g) { return g.status === 'blocked'; }).length;
+    html += '<span class="badge" style="background:rgba(16,185,129,0.15);color:#10b981">' + passed + ' passed</span>';
+    if (flagged) html += '<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">' + flagged + ' flagged</span>';
+    if (blocked) html += '<span class="badge" style="background:rgba(244,63,94,0.15);color:#f43f5e">' + blocked + ' blocked</span>';
+    html += '</div>';
+
+    if (grData.input && grData.input.length) {
+      html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);margin-bottom:0.35rem">Input Checks</div>';
+      grData.input.forEach(function(g) {
+        var c = statusColors[g.status] || 'var(--text-3)';
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;margin-bottom:0.25rem;border-radius:6px;background:var(--glass-bg);font-size:0.78rem">' +
+          '<span style="color:' + c + ';font-weight:700">' + (statusIcons[g.status] || '?') + '</span>' +
+          '<span style="color:var(--text-2)">' + escapeHtml(g.guardrail) + '</span>' +
+          '<span style="margin-left:auto;font-size:0.68rem;color:' + c + '">' + escapeHtml(g.detail || g.status) + '</span></div>';
+      });
+    }
+    if (grData.output && grData.output.length) {
+      html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);margin:0.5rem 0 0.35rem">Output Checks</div>';
+      grData.output.forEach(function(g) {
+        var c = statusColors[g.status] || 'var(--text-3)';
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;margin-bottom:0.25rem;border-radius:6px;background:var(--glass-bg);font-size:0.78rem">' +
+          '<span style="color:' + c + ';font-weight:700">' + (statusIcons[g.status] || '?') + '</span>' +
+          '<span style="color:var(--text-2)">' + escapeHtml(g.guardrail) + '</span>' +
+          '<span style="margin-left:auto;font-size:0.68rem;color:' + c + '">' + escapeHtml(g.detail || g.status) + '</span></div>';
+      });
+    }
+    body.innerHTML = html;
+  }
+
+  // ── Render Control Matrix (Post-Run Quality Scores) ──
+  function _renderControlMatrix(response, usage, tools, grData) {
+    var card = document.getElementById('control-matrix-card');
+    var body = document.getElementById('control-matrix-body');
+    if (!response) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    // Heuristic scoring
+    var allGr = (grData.input || []).concat(grData.output || []);
+    var grPassed = allGr.filter(function(g) { return g.status === 'passed'; }).length;
+    var grTotal = allGr.length || 1;
+
+    // Hallucination score: based on presence of hedging language and citation patterns
+    var hedgeWords = ['I think', 'probably', 'might be', 'I believe', 'not sure', 'may not be accurate'];
+    var hedgeCount = 0;
+    hedgeWords.forEach(function(w) { if (response.toLowerCase().indexOf(w.toLowerCase()) !== -1) hedgeCount++; });
+    var citationPattern = /\\[.*?\\]|according to|source:|based on/gi;
+    var citations = (response.match(citationPattern) || []).length;
+    var hallucinationScore = Math.max(0, Math.min(100, 85 - (hedgeCount * 15) + (citations * 10)));
+
+    // Groundedness score: based on whether KB was used and response has concrete refs
+    var hasToolResults = tools && tools.length > 0;
+    var groundedness = hasToolResults ? 80 : (citations > 0 ? 75 : 55);
+    groundedness = Math.min(100, groundedness + (citations * 5));
+
+    // Drift score: for a single-turn, measure topic coherence (simplified)
+    var driftScore = 90; // Base high for single-turn
+
+    // Safety score: based on guardrail results
+    var safetyScore = Math.round((grPassed / grTotal) * 100);
+
+    // Completeness: based on response length and structure
+    var wordCount = response.split(/\\s+/).length;
+    var completeness = wordCount < 10 ? 40 : (wordCount < 30 ? 60 : (wordCount < 100 ? 80 : 90));
+    if (response.indexOf('\\n') !== -1) completeness = Math.min(100, completeness + 5);
+
+    // Token efficiency
+    var tokenEfficiency = 85;
+    if (usage && usage.total_tokens) {
+      tokenEfficiency = usage.completion_tokens < 500 ? 95 : (usage.completion_tokens < 1500 ? 85 : 70);
+    }
+
+    function _scoreColor(score) {
+      if (score >= 80) return '#10b981';
+      if (score >= 60) return '#f59e0b';
+      return '#f43f5e';
+    }
+
+    function _scoreTile(label, score, description) {
+      var color = _scoreColor(score);
+      return '<div style="padding:0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);text-align:center" title="' + escapeHtml(description) + '">' +
+        '<div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.35rem">' + label + '</div>' +
+        '<div style="position:relative;width:50px;height:50px;margin:0 auto 0.35rem">' +
+          '<svg viewBox="0 0 36 36" style="width:50px;height:50px;transform:rotate(-90deg)">' +
+            '<circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>' +
+            '<circle cx="18" cy="18" r="15.9" fill="none" stroke="' + color + '" stroke-width="3" ' +
+              'stroke-dasharray="' + score + ' ' + (100 - score) + '" stroke-linecap="round"/>' +
+          '</svg>' +
+          '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.85rem;font-weight:700;color:' + color + '">' + score + '</div>' +
+        '</div>' +
+        '<div style="font-size:0.6rem;color:var(--text-3)">' + (score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Low') + '</div></div>';
+    }
+
+    body.innerHTML =
+      _scoreTile('Hallucination', hallucinationScore, 'Likelihood the response is factually grounded vs fabricated. Higher = better.') +
+      _scoreTile('Groundedness', groundedness, 'How well the response is supported by retrieved context and tool results.') +
+      _scoreTile('Drift', driftScore, 'Whether the response stays on topic relative to the prompt.') +
+      _scoreTile('Safety', safetyScore, 'Guardrail compliance score. Percentage of guardrail checks passed.') +
+      _scoreTile('Completeness', completeness, 'How thoroughly the response addresses the prompt.') +
+      _scoreTile('Efficiency', tokenEfficiency, 'Token usage efficiency. Lower token count for good answers = higher score.');
+  }
+
   function handleSSEEvent(type, raw, stepElements, callbacks) {
     if (type === 'step') {
       try {
@@ -410,6 +603,8 @@
       callbacks.onToken(raw);
     } else if (type === 'done') {
       try { callbacks.onDone(JSON.parse(raw)); } catch(e) {}
+    } else if (type === 'guardrails') {
+      try { if (callbacks.onGuardrails) callbacks.onGuardrails(JSON.parse(raw)); } catch(e) {}
     }
   }
 

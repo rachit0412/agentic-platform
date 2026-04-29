@@ -284,8 +284,9 @@ function promptNewFolder() {
     return;
   }
   let path = '/' + name.replace(/^\/+/, '').replace(/\/+$/, '') + '/';
+  // Add to dropdown
   const folderSel = document.getElementById('ingest-folder');
-  const exists = Array.from(folderSel.options).some(o => o.value === path);
+  const exists = Array.from(folderSel.options).some(function(o) { return o.value === path; });
   if (!exists) {
     const opt = document.createElement('option');
     opt.value = path;
@@ -293,7 +294,15 @@ function promptNewFolder() {
     folderSel.appendChild(opt);
   }
   folderSel.value = path;
-  showToast('Folder "' + path + '" ready. Upload a document to create it.', 'success');
+  // Add to folder tree visually so user sees immediate feedback
+  var alreadyInTree = allFolders.some(function(f) { return f.path === path; });
+  if (!alreadyInTree) {
+    allFolders.push({ path: path, count: 0 });
+    renderFolderTree();
+    document.getElementById('stat-folders').textContent = allFolders.length;
+  }
+  selectFolder(path);
+  showToast('Folder "' + path + '" created. Upload a document to persist it.', 'success');
 }
 
 // ── Tab Switching ──
@@ -453,17 +462,22 @@ async function ingestDoc() {
 async function loadStats() {
   try {
     const r = await fetch('/api/documents/stats');
+    if (!r.ok) throw new Error('stats failed');
     const d = await r.json();
     document.getElementById('stat-chunks').textContent = d.total_chunks || 0;
     document.getElementById('stat-docs').textContent = d.unique_documents || 0;
-  } catch(e) { document.getElementById('stat-chunks').textContent = 'Err'; }
+  } catch(e) {
+    document.getElementById('stat-chunks').textContent = '0';
+    document.getElementById('stat-docs').textContent = '0';
+  }
   document.getElementById('stat-folders').textContent = allFolders.length || 0;
   try {
     const r = await fetch('/api/documents/registry');
+    if (!r.ok) throw new Error('registry failed');
     const d = await r.json();
-    const tagged = (d.documents || []).filter(doc => doc.agent_tags && doc.agent_tags.length > 0).length;
+    const tagged = (d.documents || []).filter(function(doc) { return doc.agent_tags && doc.agent_tags.length > 0; }).length;
     document.getElementById('stat-tagged').textContent = tagged;
-  } catch(e) { document.getElementById('stat-tagged').textContent = '-'; }
+  } catch(e) { document.getElementById('stat-tagged').textContent = '0'; }
 }
 
 // ── Document List (Registry) ──
@@ -520,7 +534,7 @@ async function loadDocs() {
     html += '</tbody></table>';
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<p style="color:var(--danger)">Failed to load documents</p>';
+    el.innerHTML = '<p style="color:var(--danger)">Failed to load documents. <button class="btn btn-sm" onclick="loadDocs()">Retry</button></p>';
   }
 }
 

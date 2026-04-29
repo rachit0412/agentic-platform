@@ -107,6 +107,9 @@ async def run(body: RunRequest, request: Request):
         _switch(
             provider=body.provider or "ollama",
             model=body.model or "",
+            temperature=body.temperature,
+            top_p=body.top_p,
+            max_completion_tokens=body.max_completion_tokens,
         )
 
     result = await run_agent(
@@ -148,6 +151,7 @@ async def run_stream(body: RunRequest):
             provider=body.provider or "ollama",
             model=body.model or "",
             temperature=body.temperature,
+            top_p=body.top_p,
             max_completion_tokens=body.max_completion_tokens,
         )
 
@@ -162,6 +166,7 @@ async def run_stream(body: RunRequest):
                 provider=agent_config.get("provider", "ollama"),
                 model=agent_config.get("model", "llama3"),
                 temperature=body.temperature if body.temperature is not None else agent_config.get("temperature"),
+                top_p=body.top_p if body.top_p is not None else agent_config.get("top_p"),
                 max_completion_tokens=body.max_completion_tokens,
             )
 
