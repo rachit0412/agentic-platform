@@ -104,6 +104,83 @@
   <div id="ih-agent-table" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
 </div>
 
+<!-- Platform Health Monitoring -->
+<div class="card animate-fade-up delay-300" style="margin-top:1.25rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f43f5e" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:0.95rem">Platform Health Monitoring</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Live resource usage from Prometheus (last 30 min)</p>
+      </div>
+    </div>
+    <button class="btn btn-sm" onclick="phRefresh()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Resource Gauges -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+        <strong style="font-size:0.82rem;color:var(--text-1)">CPU Usage</strong>
+      </div>
+      <div id="ph-cpu-gauges" style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="color:var(--text-3);font-size:0.75rem">Loading...</div>
+      </div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+        <strong style="font-size:0.82rem;color:var(--text-1)">Memory (RSS)</strong>
+      </div>
+      <div id="ph-mem-gauges" style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="color:var(--text-3);font-size:0.75rem">Loading...</div>
+      </div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <strong style="font-size:0.82rem;color:var(--text-1)">Service Uptime</strong>
+      </div>
+      <div id="ph-uptime" style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="color:var(--text-3);font-size:0.75rem">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+        <strong style="font-size:0.82rem;color:var(--text-1)">Memory Usage Over Time</strong>
+        <span style="font-size:0.68rem;color:var(--text-3)">Last 30 min</span>
+      </div>
+      <canvas id="ph-mem-chart" height="180" style="width:100%"></canvas>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+        <strong style="font-size:0.82rem;color:var(--text-1)">CPU Usage Over Time</strong>
+        <span style="font-size:0.68rem;color:var(--text-3)">Last 30 min</span>
+      </div>
+      <canvas id="ph-cpu-chart" height="180" style="width:100%"></canvas>
+    </div>
+  </div>
+
+  <!-- HTTP Requests Chart -->
+  <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:1rem;margin-top:0.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+      <strong style="font-size:0.82rem;color:var(--text-1)">HTTP Request Rate</strong>
+      <span style="font-size:0.68rem;color:var(--text-3)">Last 30 min</span>
+    </div>
+    <canvas id="ph-req-chart" height="140" style="width:100%"></canvas>
+  </div>
+</div>
+
 <script>
 function ihRefresh() { ihLoad(); }
 
@@ -234,5 +311,221 @@ function ihLoad() {
 }
 
 ihLoad();
+
+/* ── Platform Health Monitoring ── */
+var phColors = { 'agent-service': '#06b6d4', 'tools-service': '#8b5cf6', 'otel-collector': '#f59e0b' };
+var phCharts = {};
+
+function phFormatBytes(b) {
+  if (b > 1073741824) return (b / 1073741824).toFixed(1) + ' GB';
+  if (b > 1048576) return (b / 1048576).toFixed(1) + ' MB';
+  if (b > 1024) return (b / 1024).toFixed(1) + ' KB';
+  return b + ' B';
+}
+
+function phPromQuery(query) {
+  return fetch('/api/observability/prometheus/query?query=' + encodeURIComponent(query))
+    .then(function(r) { return r.json(); })
+    .then(function(d) { return (d.status === 'success' && d.data && d.data.result) ? d.data.result : []; })
+    .catch(function() { return []; });
+}
+
+function phPromRange(query, start, end, step) {
+  return fetch('/api/observability/prometheus/query_range?query=' + encodeURIComponent(query) + '&start=' + start + '&end=' + end + '&step=' + step)
+    .then(function(r) { return r.json(); })
+    .then(function(d) { return (d.status === 'success' && d.data && d.data.result) ? d.data.result : []; })
+    .catch(function() { return []; });
+}
+
+function phDrawGauges() {
+  Promise.all([
+    phPromQuery('rate(process_cpu_seconds_total[1m])'),
+    phPromQuery('process_resident_memory_bytes'),
+    phPromQuery('up'),
+    phPromQuery('process_start_time_seconds')
+  ]).then(function(results) {
+    var cpuData = results[0];
+    var memData = results[1];
+    var upData = results[2];
+    var startData = results[3];
+
+    /* CPU gauges */
+    if (cpuData.length > 0) {
+      document.getElementById('ph-cpu-gauges').innerHTML = cpuData.map(function(r) {
+        var job = r.metric.job || '?';
+        var pct = Math.min(100, (parseFloat(r.value[1]) * 100));
+        var color = pct > 75 ? '#f43f5e' : pct > 50 ? '#f59e0b' : '#10b981';
+        return '<div><div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:3px"><span style="color:var(--text-2)">' + job + '</span><span style="color:' + color + ';font-weight:600">' + pct.toFixed(1) + '%</span></div>' +
+          '<div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width 0.5s"></div></div></div>';
+      }).join('');
+    } else {
+      document.getElementById('ph-cpu-gauges').innerHTML = '<div style="color:var(--text-3);font-size:0.75rem">No CPU data</div>';
+    }
+
+    /* Memory gauges */
+    if (memData.length > 0) {
+      document.getElementById('ph-mem-gauges').innerHTML = memData.map(function(r) {
+        var job = r.metric.job || '?';
+        var bytes = parseFloat(r.value[1]);
+        var maxMb = 512;
+        var pct = Math.min(100, bytes / (maxMb * 1048576) * 100);
+        var color = pct > 75 ? '#f43f5e' : pct > 50 ? '#f59e0b' : '#8b5cf6';
+        return '<div><div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:3px"><span style="color:var(--text-2)">' + job + '</span><span style="color:' + color + ';font-weight:600">' + phFormatBytes(bytes) + '</span></div>' +
+          '<div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width 0.5s"></div></div></div>';
+      }).join('');
+    } else {
+      document.getElementById('ph-mem-gauges').innerHTML = '<div style="color:var(--text-3);font-size:0.75rem">No memory data</div>';
+    }
+
+    /* Uptime */
+    if (upData.length > 0) {
+      document.getElementById('ph-uptime').innerHTML = upData.map(function(r) {
+        var job = r.metric.job || '?';
+        var isUp = r.value[1] === '1';
+        var startTs = 0;
+        var startMatch = startData.find(function(s) { return s.metric.job === job; });
+        if (startMatch) startTs = parseFloat(startMatch.value[1]);
+        var uptimeStr = '-';
+        if (startTs > 0) {
+          var secs = Math.floor(Date.now() / 1000 - startTs);
+          if (secs > 86400) uptimeStr = Math.floor(secs / 86400) + 'd ' + Math.floor((secs % 86400) / 3600) + 'h';
+          else if (secs > 3600) uptimeStr = Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+          else uptimeStr = Math.floor(secs / 60) + 'm';
+        }
+        return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem"><span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:' + (isUp ? '#10b981' : '#f43f5e') + '"></span><span style="color:var(--text-2)">' + job + '</span></span><span class="mono" style="color:var(--text-3)">' + uptimeStr + '</span></div>';
+      }).join('');
+    } else {
+      document.getElementById('ph-uptime').innerHTML = '<div style="color:var(--text-3);font-size:0.75rem">No uptime data</div>';
+    }
+  });
+}
+
+function phDrawChart(canvasId, rangeData, unit, formatter) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var w = canvas.parentElement.clientWidth - 32;
+  var h = 180;
+  canvas.width = w * (window.devicePixelRatio || 1);
+  canvas.height = h * (window.devicePixelRatio || 1);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+  if (rangeData.length === 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('No data available', w / 2 - 50, h / 2);
+    return;
+  }
+
+  var padL = 60, padR = 10, padT = 10, padB = 30;
+  var cw = w - padL - padR;
+  var ch = h - padT - padB;
+
+  /* Find global min/max */
+  var allVals = [];
+  rangeData.forEach(function(series) {
+    series.values.forEach(function(v) { allVals.push(parseFloat(v[1])); });
+  });
+  var minV = Math.min.apply(null, allVals);
+  var maxV = Math.max.apply(null, allVals);
+  if (maxV === minV) { maxV = minV + 1; }
+  var range = maxV - minV;
+
+  /* Time range */
+  var allTimes = rangeData[0].values.map(function(v) { return v[0]; });
+  var tMin = allTimes[0], tMax = allTimes[allTimes.length - 1];
+  var tRange = tMax - tMin || 1;
+
+  /* Grid lines */
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (var g = 0; g <= 4; g++) {
+    var gy = padT + ch - (g / 4) * ch;
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL + cw, gy); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    var labelVal = minV + (g / 4) * range;
+    ctx.fillText(formatter ? formatter(labelVal) : labelVal.toFixed(1), padL - 6, gy + 3);
+  }
+
+  /* Time labels */
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  for (var ti = 0; ti <= 4; ti++) {
+    var tx = padL + (ti / 4) * cw;
+    var tVal = new Date((tMin + (ti / 4) * tRange) * 1000);
+    ctx.fillText(tVal.getHours().toString().padStart(2, '0') + ':' + tVal.getMinutes().toString().padStart(2, '0'), tx, h - 5);
+  }
+
+  /* Draw lines */
+  var colorIdx = 0;
+  var colorList = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#f43f5e'];
+  var legendItems = [];
+  rangeData.forEach(function(series) {
+    var color = phColors[series.metric.job] || colorList[colorIdx % colorList.length];
+    colorIdx++;
+    legendItems.push({ name: series.metric.job || '?', color: color });
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    series.values.forEach(function(v, i) {
+      var x = padL + ((v[0] - tMin) / tRange) * cw;
+      var y = padT + ch - ((parseFloat(v[1]) - minV) / range) * ch;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    /* Area fill */
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = color;
+    ctx.lineTo(padL + cw, padT + ch);
+    ctx.lineTo(padL, padT + ch);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  /* Legend */
+  var lx = padL + 5;
+  legendItems.forEach(function(item) {
+    ctx.fillStyle = item.color;
+    ctx.fillRect(lx, padT + 2, 8, 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(item.name, lx + 12, padT + 10);
+    lx += ctx.measureText(item.name).width + 24;
+  });
+}
+
+function phDrawCharts() {
+  var now = Math.floor(Date.now() / 1000);
+  var start = now - 1800;
+  var step = 30;
+
+  Promise.all([
+    phPromRange('process_resident_memory_bytes', start, now, step),
+    phPromRange('rate(process_cpu_seconds_total[1m])', start, now, step),
+    phPromRange('sum(rate(http_requests_total[2m])) by (job)', start, now, step)
+  ]).then(function(results) {
+    phDrawChart('ph-mem-chart', results[0], 'bytes', phFormatBytes);
+    phDrawChart('ph-cpu-chart', results[1], 'percent', function(v) { return (v * 100).toFixed(1) + '%'; });
+    phDrawChart('ph-req-chart', results[2], 'req/s', function(v) { return v.toFixed(2); });
+  });
+}
+
+function phRefresh() {
+  phDrawGauges();
+  phDrawCharts();
+}
+
+phRefresh();
+/* Auto-refresh every 30s */
+setInterval(phRefresh, 30000);
 </script>
 ` }) %>

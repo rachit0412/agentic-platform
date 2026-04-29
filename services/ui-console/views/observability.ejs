@@ -99,26 +99,124 @@
 <!-- Pipeline Diagram -->
 <div class="card animate-fade-up delay-300">
   <h3 style="font-size:0.95rem">Telemetry Pipeline</h3>
-  <div style="margin-top:0.5rem;padding:1rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);font-family:monospace;font-size:0.75rem;line-height:2;color:var(--text-2)">
-    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-      <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service</span>
-      <span style="color:var(--text-3)">&rarr;</span>
-      <span style="background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;color:#06b6d4;font-weight:600">OTel Collector</span>
-      <span style="color:var(--text-3)">&rarr;</span>
-      <span style="display:flex;flex-direction:column;gap:3px">
-        <span style="background:rgba(245,158,11,0.15);padding:3px 8px;border-radius:6px;color:#f59e0b;font-weight:600">Prometheus (metrics)</span>
-        <span style="background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:6px;color:#10b981;font-weight:600">Loki (logs)</span>
-      </span>
-      <span style="color:var(--text-3)">&rarr;</span>
-      <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Grafana</span>
+  <p style="color:var(--text-3);font-size:0.78rem;margin:0.25rem 0 0.75rem">How telemetry flows from services to dashboards — all components are pre-wired via Docker Compose</p>
+
+  <!-- Visual flow diagram -->
+  <div style="margin-top:0.5rem;padding:1.25rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
+
+    <!-- Row 1: OTel path -->
+    <div style="margin-bottom:1rem">
+      <div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem">Path 1 &mdash; OpenTelemetry (auto-instrumented)</div>
+      <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-family:monospace;font-size:0.75rem;line-height:2">
+        <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service</span>
+        <span style="color:var(--text-3)">&rarr;</span>
+        <span style="background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;color:#06b6d4;font-weight:600">OTel Collector</span>
+        <span style="color:var(--text-3)">&rarr;</span>
+        <span style="display:flex;flex-direction:column;gap:3px">
+          <span style="background:rgba(245,158,11,0.15);padding:3px 8px;border-radius:6px;color:#f59e0b;font-weight:600">Prometheus :8889 (metrics)</span>
+          <span style="background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:6px;color:#10b981;font-weight:600">Loki :3100 (logs via OTLP)</span>
+          <span style="background:rgba(255,255,255,0.06);padding:3px 8px;border-radius:6px;color:var(--text-3)">Console (traces — no backend)</span>
+        </span>
+        <span style="color:var(--text-3)">&rarr;</span>
+        <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Grafana</span>
+      </div>
     </div>
-    <div style="margin-top:0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-      <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service</span>
-      <span style="color:var(--text-3)">&rarr;</span>
-      <span style="background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;color:#06b6d4;font-weight:600">Langfuse SDK</span>
-      <span style="color:var(--text-3)">&rarr;</span>
-      <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Langfuse (LLM traces)</span>
+
+    <!-- Row 2: Direct Prometheus scrape -->
+    <div style="margin-bottom:1rem">
+      <div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem">Path 2 &mdash; Prometheus Direct Scrape (/metrics)</div>
+      <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-family:monospace;font-size:0.75rem;line-height:2">
+        <span style="display:flex;flex-direction:column;gap:3px">
+          <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service :8000/metrics</span>
+          <span style="background:rgba(16,185,129,0.15);padding:3px 8px;border-radius:6px;color:#10b981;font-weight:600">tools-service :8001/metrics</span>
+        </span>
+        <span style="color:var(--text-3)">&larr; scrapes &larr;</span>
+        <span style="background:rgba(245,158,11,0.15);padding:3px 8px;border-radius:6px;color:#f59e0b;font-weight:600">Prometheus</span>
+        <span style="color:var(--text-3)">&rarr;</span>
+        <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Grafana</span>
+      </div>
     </div>
+
+    <!-- Row 3: Langfuse path -->
+    <div>
+      <div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem">Path 3 &mdash; Langfuse (LLM-specific tracing)</div>
+      <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-family:monospace;font-size:0.75rem;line-height:2">
+        <span style="background:rgba(139,92,246,0.15);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-weight:600">agent-service</span>
+        <span style="color:var(--text-3)">&rarr;</span>
+        <span style="background:rgba(6,182,212,0.15);padding:3px 8px;border-radius:6px;color:#06b6d4;font-weight:600">Langfuse SDK</span>
+        <span style="color:var(--text-3)">&rarr;</span>
+        <span style="background:rgba(244,63,94,0.15);padding:3px 8px;border-radius:6px;color:#f43f5e;font-weight:600">Langfuse UI (LLM traces)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Component Details -->
+  <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/></svg>
+        </div>
+        <strong style="font-size:0.82rem;color:var(--text-1)">OpenTelemetry Collector</strong>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-3);line-height:1.6">
+        <div>Receives telemetry via <strong style="color:var(--text-2)">OTLP</strong> (gRPC :4317, HTTP :4318)</div>
+        <div>Routes <strong style="color:#f59e0b">metrics</strong> to Prometheus exporter on :8889</div>
+        <div>Routes <strong style="color:#10b981">logs</strong> to Loki via OTLP HTTP</div>
+        <div>Routes <strong style="color:var(--text-2)">traces</strong> to console logging (no Jaeger/Tempo)</div>
+        <div style="margin-top:0.3rem;color:var(--text-3);font-style:italic">Config: services/otel/otel-collector.yaml</div>
+      </div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <strong style="font-size:0.82rem;color:var(--text-1)">Agent Service Instrumentation</strong>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-3);line-height:1.6">
+        <div><strong style="color:var(--text-2)">OTel SDK</strong> &mdash; auto-instruments FastAPI + HTTPX, sends spans to collector</div>
+        <div><strong style="color:var(--text-2)">prometheus-fastapi-instrumentator</strong> &mdash; exposes /metrics (http_requests_total, latency histograms)</div>
+        <div><strong style="color:var(--text-2)">Custom metrics</strong> &mdash; llm_call_duration, tool_calls_total, agent_runs_total</div>
+        <div><strong style="color:var(--text-2)">Langfuse SDK</strong> &mdash; per-request trace/span/generation for LLM calls</div>
+        <div style="margin-top:0.3rem;color:var(--text-3);font-style:italic">Config: services/agent/agent/observability.py</div>
+      </div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <strong style="font-size:0.82rem;color:var(--text-1)">Prometheus</strong>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-3);line-height:1.6">
+        <div>Scrapes 3 targets every <strong style="color:var(--text-2)">15s</strong>:</div>
+        <div>&bull; otel-collector:8889 (OTel-exported metrics)</div>
+        <div>&bull; agent-service:8000/metrics (FastAPI + custom metrics)</div>
+        <div>&bull; tools-service:8001/metrics (FastAPI metrics)</div>
+        <div style="margin-top:0.3rem;color:var(--text-3);font-style:italic">Config: observability/prometheus/prometheus.yml</div>
+      </div>
+    </div>
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <strong style="font-size:0.82rem;color:var(--text-1)">Loki</strong>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-3);line-height:1.6">
+        <div>Receives logs via <strong style="color:var(--text-2)">OTLP HTTP</strong> from OTel Collector</div>
+        <div>TSDB store with filesystem backend, schema v13</div>
+        <div>Supports structured metadata from OTel attributes</div>
+        <div>Queryable from Grafana via LogQL</div>
+        <div style="margin-top:0.3rem;color:var(--text-3);font-style:italic">Config: observability/loki/loki-config.yaml</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key insight callout -->
+  <div style="margin-top:0.75rem;padding:0.75rem 1rem;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);font-size:0.75rem;color:var(--text-2)">
+    <strong style="color:#f59e0b">&#9432; No separate setup required</strong> &mdash; All observability components (OTel Collector, Prometheus, Loki, Grafana) are pre-configured in docker-compose.yml and start automatically with the platform. The agent-service Python SDK (<code>opentelemetry-*</code>, <code>prometheus-client</code>, <code>langfuse</code>) is installed in its Dockerfile.
   </div>
 </div>
 

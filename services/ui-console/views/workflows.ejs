@@ -2,125 +2,313 @@
 
 <h1 class="text-glow-cyan">Workflows</h1>
 
-<!-- When to Use n8n -->
-<div class="card animate-fade-up" style="margin-bottom:1.5rem;border:1px solid rgba(245,158,11,0.2);background:linear-gradient(135deg, rgba(245,158,11,0.04), rgba(6,182,212,0.03))">
-  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
-    <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+<!-- Stats Row -->
+<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     </div>
-    <div>
-      <h3 style="margin:0;font-size:1.05rem">When to Use n8n vs. Running an Agent Directly</h3>
-      <p style="margin:0;color:var(--text-3);font-size:0.78rem">n8n orchestrates the <em>outside world</em> — LangGraph handles the <em>agent brain</em>.</p>
+    <div class="stat-label">Total Workflows</div>
+    <div class="stat-number" id="stat-total">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="stat-label">Active</div>
+    <div class="stat-number" id="stat-active">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="stat-label">Executions (24h)</div>
+    <div class="stat-number" id="stat-executions">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon" style="background:rgba(244,63,94,0.12);color:#f43f5e">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div class="stat-label">Failed</div>
+    <div class="stat-number" id="stat-failed">-</div>
+  </div>
+</div>
+
+<!-- View Toggle -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;gap:0;border:1px solid var(--glass-border);border-radius:10px;overflow:hidden">
+      <button id="btn-editor" onclick="wfSwitchView('editor')" style="padding:0.5rem 1.25rem;font-size:0.82rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:0.4rem;transition:all 0.2s;background:var(--accent);color:#fff">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        n8n Editor
+      </button>
+      <button id="btn-pipelines" onclick="wfSwitchView('pipelines')" style="padding:0.5rem 1.25rem;font-size:0.82rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:0.4rem;transition:all 0.2s;background:var(--glass);color:var(--text-2)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Pipelines
+      </button>
+      <button id="btn-history" onclick="wfSwitchView('history')" style="padding:0.5rem 1.25rem;font-size:0.82rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:0.4rem;transition:all 0.2s;background:var(--glass);color:var(--text-2)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Execution History
+      </button>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <a href="${urls.n8n}" target="_blank" class="btn btn-secondary btn-sm" title="Open n8n in new tab">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Full Screen
+      </a>
+      <button class="btn btn-secondary btn-sm" onclick="wfRefresh()" title="Refresh data">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+</div>
+
+<!-- View: n8n Editor (iframe) -->
+<div id="view-editor" class="animate-fade-up delay-100">
+  <div class="card" style="padding:0;overflow:hidden;border-radius:16px;margin-bottom:1.5rem">
+    <div id="n8n-iframe-wrap" style="position:relative;width:100%;height:70vh;min-height:500px;background:#1a1a2e">
+      <div id="n8n-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;background:#1a1a2e">
+        <div style="text-align:center">
+          <div class="loading-spinner" style="width:40px;height:40px;border:3px solid rgba(6,182,212,0.2);border-top-color:#06b6d4;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem"></div>
+          <p style="color:var(--text-2);font-size:0.88rem">Loading n8n editor...</p>
+          <p style="color:var(--text-3);font-size:0.75rem;margin-top:0.25rem">First load may take a few seconds</p>
+        </div>
+      </div>
+      <iframe id="n8n-iframe" src="${urls.n8nProxy}" style="width:100%;height:100%;border:none;display:block" onload="document.getElementById('n8n-loading').style.display='none'" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- View: Pipelines (Active Workflows) -->
+<div id="view-pipelines" style="display:none" class="animate-fade-up">
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="section-header mb-1">
+      <h3>Active Pipelines</h3>
+      <span style="color:var(--text-3);font-size:0.78rem">Managed via n8n API</span>
+    </div>
+    <div id="pipelines-table" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- Workflow Templates -->
+  <div class="card">
+    <div class="section-header mb-1">
+      <h3>Workflow Templates</h3>
+      <span style="color:var(--text-3);font-size:0.78rem">Pre-built in <code style="font-size:0.72rem">n8n/workflows/</code></span>
+    </div>
+    <table class="mt-1">
+      <tr><th>Name</th><th>Use Case</th><th>Flow</th><th>Type</th></tr>
+      <tr>
+        <td><strong>Agent Run Webhook</strong></td>
+        <td style="color:var(--text-2);font-size:0.82rem">Expose agent as API</td>
+        <td class="mono" style="font-size:0.75rem;color:var(--text-3)">POST /webhook/agent-run → agent-service → response</td>
+        <td><span class="badge badge-success">Webhook</span></td>
+      </tr>
+      <tr>
+        <td><strong>RAG Document Ingest</strong></td>
+        <td style="color:var(--text-2);font-size:0.82rem">Auto-feed docs to knowledge base</td>
+        <td class="mono" style="font-size:0.75rem;color:var(--text-3)">POST /webhook/rag-ingest → chunk + embed → ChromaDB</td>
+        <td><span class="badge" style="background:rgba(139,92,246,0.15);color:#a78bfa">ETL</span></td>
+      </tr>
+      <tr>
+        <td><strong>Scheduled Summary</strong></td>
+        <td style="color:var(--text-2);font-size:0.82rem">Daily automated reports at 9 AM</td>
+        <td class="mono" style="font-size:0.75rem;color:var(--text-3)">Cron 9am → agent prompt → save to data/notes/</td>
+        <td><span class="badge badge-warning">Scheduled</span></td>
+      </tr>
+      <tr>
+        <td><strong>Web Research Pipeline</strong></td>
+        <td style="color:var(--text-2);font-size:0.82rem">Search web + agent analysis</td>
+        <td class="mono" style="font-size:0.75rem;color:var(--text-3)">POST /webhook/web-research → DuckDuckGo → summarize</td>
+        <td><span class="badge badge-success">Webhook</span></td>
+      </tr>
+      <tr>
+        <td><strong>Database → Storage ETL</strong></td>
+        <td style="color:var(--text-2);font-size:0.82rem">Pull data from DB, prep, load to destination</td>
+        <td class="mono" style="font-size:0.75rem;color:var(--text-3)">Postgres/MySQL → Transform → S3/File/API</td>
+        <td><span class="badge" style="background:rgba(139,92,246,0.15);color:#a78bfa">ETL</span></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- View: Execution History -->
+<div id="view-history" style="display:none" class="animate-fade-up">
+  <div class="card">
+    <div class="section-header mb-1">
+      <h3>Recent Executions</h3>
+      <button class="btn btn-secondary btn-sm" onclick="wfLoadExecutions()">Refresh</button>
+    </div>
+    <div id="executions-table" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+</div>
+
+<!-- When to Use Guide (collapsible) -->
+<details class="card animate-fade-up" style="margin-top:1.5rem;border:1px solid rgba(245,158,11,0.2);background:linear-gradient(135deg, rgba(245,158,11,0.04), rgba(6,182,212,0.03))">
+  <summary style="cursor:pointer;display:flex;align-items:center;gap:0.75rem;list-style:none">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <span style="font-size:0.92rem;font-weight:600;color:var(--text-1)">When to Use n8n vs. Running an Agent Directly</span>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-3)" stroke-width="2" style="margin-left:auto"><polyline points="6 9 12 15 18 9"/></svg>
+  </summary>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
     <div style="padding:1rem;border-radius:12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15)">
-      <strong style="font-size:0.88rem;color:#f59e0b;display:block;margin-bottom:0.5rem">Use n8n when you need:</strong>
-      <ul style="color:var(--text-2);font-size:0.82rem;line-height:1.8;margin:0;padding-left:1.25rem">
-        <li><strong>Scheduled runs</strong> — daily summaries, hourly health checks, cron-based reports</li>
-        <li><strong>Webhook triggers</strong> — Slack messages, GitHub events, form submissions trigger an agent</li>
-        <li><strong>Multi-step pipelines</strong> — chain multiple API calls, transform data, then feed to an agent</li>
-        <li><strong>RAG ingest automation</strong> — scrape a URL, extract text, embed into ChromaDB on a schedule</li>
-        <li><strong>External API chains</strong> — connect to CRMs, databases, email, Slack, or any REST API</li>
+      <strong style="font-size:0.85rem;color:#f59e0b;display:block;margin-bottom:0.5rem">Use n8n when you need:</strong>
+      <ul style="color:var(--text-2);font-size:0.8rem;line-height:1.8;margin:0;padding-left:1.25rem">
+        <li><strong>Scheduled runs</strong> — daily summaries, hourly health checks</li>
+        <li><strong>Webhook triggers</strong> — Slack events, GitHub hooks, form submissions</li>
+        <li><strong>Data pipelines</strong> — ETL from databases, APIs, files to any destination</li>
+        <li><strong>RAG automation</strong> — scrape + embed into ChromaDB on schedule</li>
+        <li><strong>External integrations</strong> — CRMs, email, Slack, 1000+ connectors</li>
       </ul>
     </div>
     <div style="padding:1rem;border-radius:12px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.15)">
-      <strong style="font-size:0.88rem;color:#06b6d4;display:block;margin-bottom:0.5rem">Use the Agent directly when you need:</strong>
-      <ul style="color:var(--text-2);font-size:0.82rem;line-height:1.8;margin:0;padding-left:1.25rem">
-        <li><strong>Interactive chat</strong> — real-time Q&A, conversation with streaming responses</li>
-        <li><strong>One-off tasks</strong> — "summarize this document", "review this code"</li>
-        <li><strong>Debugging & testing</strong> — iterate on prompts, check tool calls, tune behavior</li>
-        <li><strong>Real-time RAG</strong> — ask questions against the knowledge base interactively</li>
-        <li><strong>Agent development</strong> — build and test agents before automating with n8n</li>
+      <strong style="font-size:0.85rem;color:#06b6d4;display:block;margin-bottom:0.5rem">Use the Agent directly when you need:</strong>
+      <ul style="color:var(--text-2);font-size:0.8rem;line-height:1.8;margin:0;padding-left:1.25rem">
+        <li><strong>Interactive chat</strong> — real-time Q&amp;A with streaming</li>
+        <li><strong>One-off tasks</strong> — summarize, review, analyze</li>
+        <li><strong>Debugging</strong> — iterate prompts, test tool calls</li>
+        <li><strong>Real-time RAG</strong> — interactive knowledge base queries</li>
+        <li><strong>Agent development</strong> — build before automating with n8n</li>
       </ul>
     </div>
   </div>
-  <p style="color:var(--text-3);font-size:0.78rem;margin:0.75rem 0 0;line-height:1.5"><strong style="color:var(--text-2)">Typical pattern:</strong> Build &amp; test your agent in <a href="/run-agent" style="color:#06b6d4;text-decoration:none">Run Agent</a>, then connect it to n8n workflows for automated, production-scale operation.</p>
-</div>
+</details>
 
-<!-- n8n Editor -->
-<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
-  <div class="section-header mb-1">
-    <h3>n8n Workflow Editor</h3>
-    <a href="${urls.n8n}" target="_blank" class="btn btn-primary btn-sm">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Open n8n
-    </a>
-  </div>
-  <div style="display:flex;align-items:center;justify-content:center;height:200px;background:linear-gradient(135deg,rgba(0,210,255,0.06),rgba(139,92,246,0.06));border-radius:16px;border:1px dashed var(--glass-border)">
-    <div style="text-align:center">
-      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--accent-text)" stroke-width="1.5" style="margin-bottom:1rem;opacity:0.7"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <p style="color:var(--text-2);font-size:0.92rem;margin-bottom:0.75rem">n8n opens in a separate window for security</p>
-      <a href="${urls.n8n}" target="_blank" class="btn btn-primary">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Launch n8n Editor
-      </a>
-      <p class="mono" style="color:var(--text-3);font-size:0.72rem;margin-top:0.5rem">${urls.n8n}</p>
-    </div>
-  </div>
-</div>
-
-<div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
-  <div class="section-header mb-1">
-    <h3>Workflow Templates</h3>
-    <button class="btn btn-secondary btn-sm" onclick="loadWorkflows()">Refresh</button>
-  </div>
-  <p style="color:var(--text-3);font-size:0.78rem;margin-bottom:0.75rem">Pre-built workflows in <code style="font-size:0.75rem">n8n/workflows/</code>. Import them into n8n to get started quickly.</p>
-  <table class="mt-1">
-    <tr><th>Name</th><th>Use Case</th><th>How It Works</th><th>Status</th></tr>
-    <tr>
-      <td><strong>Agent Run Webhook</strong></td>
-      <td style="color:var(--text-2);font-size:0.82rem">Expose your agent as an API for external apps</td>
-      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">POST /webhook/agent-run → agent-service → response + traceId</td>
-      <td><span class="badge badge-success">Active</span></td>
-    </tr>
-    <tr>
-      <td><strong>RAG Document Ingest</strong></td>
-      <td style="color:var(--text-2);font-size:0.82rem">Auto-feed documents into the knowledge base via API</td>
-      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">POST /webhook/rag-ingest → chunk + embed → ChromaDB</td>
-      <td><span class="badge badge-warning">Template</span></td>
-    </tr>
-    <tr>
-      <td><strong>Scheduled Summary</strong></td>
-      <td style="color:var(--text-2);font-size:0.82rem">Daily automated report generation at 9 AM</td>
-      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">Cron 9am → agent prompt → save report to data/notes/</td>
-      <td><span class="badge badge-warning">Template</span></td>
-    </tr>
-    <tr>
-      <td><strong>Web Research Pipeline</strong></td>
-      <td style="color:var(--text-2);font-size:0.82rem">Search the web, then have the agent analyze results</td>
-      <td class="mono" style="font-size:0.78rem;color:var(--text-3)">POST /webhook/web-research → DuckDuckGo → agent summarization</td>
-      <td><span class="badge badge-warning">Template</span></td>
-    </tr>
-  </table>
-</div>
-
-<div class="card animate-fade-up delay-200">
-  <h3>n8n API — Active Workflows</h3>
-  <div id="n8n-workflows" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
-</div>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
 
 <script>
-async function loadWorkflows() {
-  try {
-    const r = await fetch('/api/n8n/workflows');
-    const d = await r.json();
-    const el = document.getElementById('n8n-workflows');
-    if (!d.workflows || d.workflows.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">No active workflows found. Import templates via n8n.</p>';
-      return;
+var wfData = { workflows: [], executions: [] };
+
+function wfSwitchView(view) {
+  ['editor','pipelines','history'].forEach(function(v) {
+    var el = document.getElementById('view-' + v);
+    var btn = document.getElementById('btn-' + v);
+    if (v === view) {
+      el.style.display = '';
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+    } else {
+      el.style.display = 'none';
+      btn.style.background = 'var(--glass)';
+      btn.style.color = 'var(--text-2)';
     }
-    el.innerHTML = '<table><tr><th>ID</th><th>Name</th><th>Active</th><th>Updated</th></tr>' +
-      d.workflows.map(w => \`<tr>
-        <td class="mono">\${escapeHtml(w.id)}</td>
-        <td>\${escapeHtml(w.name || '-')}</td>
-        <td><span class="badge \${w.active ? 'badge-success' : 'badge-warning'}">\${w.active ? 'Active' : 'Inactive'}</span></td>
-        <td class="mono">\${w.updatedAt ? new Date(w.updatedAt).toLocaleDateString() : '-'}</td>
-      </tr>\`).join('') + '</table>';
+  });
+  if (view === 'pipelines') wfLoadPipelines();
+  if (view === 'history') wfLoadExecutions();
+}
+
+function wfRefresh() {
+  wfLoadStats();
+  var ed = document.getElementById('view-editor');
+  if (ed.style.display !== 'none') {
+    document.getElementById('n8n-iframe').src = document.getElementById('n8n-iframe').src;
+  }
+  var pp = document.getElementById('view-pipelines');
+  if (pp.style.display !== 'none') wfLoadPipelines();
+  var hh = document.getElementById('view-history');
+  if (hh.style.display !== 'none') wfLoadExecutions();
+}
+
+async function wfLoadStats() {
+  try {
+    var r = await fetch('/api/n8n/workflows');
+    var d = await r.json();
+    wfData.workflows = d.workflows || [];
+    document.getElementById('stat-total').textContent = wfData.workflows.length;
+    document.getElementById('stat-active').textContent = wfData.workflows.filter(function(w){return w.active}).length;
   } catch(e) {
-    document.getElementById('n8n-workflows').innerHTML = '<p style="color:var(--text-3)">Could not connect to n8n API</p>';
+    document.getElementById('stat-total').textContent = '?';
+    document.getElementById('stat-active').textContent = '?';
+  }
+  try {
+    var r2 = await fetch('/api/n8n/executions?limit=50');
+    var d2 = await r2.json();
+    wfData.executions = d2.executions || [];
+    var now = Date.now();
+    var day = wfData.executions.filter(function(x){ return x.startedAt && (now - new Date(x.startedAt).getTime()) < 86400000; });
+    document.getElementById('stat-executions').textContent = day.length;
+    document.getElementById('stat-failed').textContent = day.filter(function(x){ return x.finished === false || x.status === 'error' || x.status === 'failed'; }).length;
+  } catch(e) {
+    document.getElementById('stat-executions').textContent = '?';
+    document.getElementById('stat-failed').textContent = '?';
   }
 }
-loadWorkflows();
+
+async function wfLoadPipelines() {
+  var el = document.getElementById('pipelines-table');
+  try {
+    var r = await fetch('/api/n8n/workflows');
+    var d = await r.json();
+    var wf = d.workflows || [];
+    if (wf.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3);padding:1rem 0">No workflows found. Create one in the n8n Editor tab or import a template.</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Name</th><th>Status</th><th>Created</th><th>Updated</th><th style="text-align:right">Actions</th></tr>' +
+      wf.map(function(w) {
+        var statusBadge = w.active
+          ? '<span class="badge badge-success">Active</span>'
+          : '<span class="badge badge-warning">Inactive</span>';
+        var actionBtn = w.active
+          ? '<button class="btn btn-sm" style="font-size:0.72rem;padding:0.2rem 0.6rem;background:rgba(244,63,94,0.12);color:#f43f5e;border:1px solid rgba(244,63,94,0.2)" onclick="wfToggle(\\'' + w.id + '\\',false)">Deactivate</button>'
+          : '<button class="btn btn-sm" style="font-size:0.72rem;padding:0.2rem 0.6rem;background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.2)" onclick="wfToggle(\\'' + w.id + '\\',true)">Activate</button>';
+        return '<tr><td><strong>' + escapeHtml(w.name || 'Untitled') + '</strong></td><td>' + statusBadge + '</td><td class="mono" style="font-size:0.75rem">' + (w.createdAt ? new Date(w.createdAt).toLocaleDateString() : '-') + '</td><td class="mono" style="font-size:0.75rem">' + (w.updatedAt ? new Date(w.updatedAt).toLocaleDateString() : '-') + '</td><td style="text-align:right">' + actionBtn + '</td></tr>';
+      }).join('') + '</table>';
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--text-3)">Could not connect to n8n API.</p>';
+  }
+}
+
+async function wfToggle(id, activate) {
+  try {
+    var url = '/api/n8n/workflows/' + id + '/' + (activate ? 'activate' : 'deactivate');
+    await fetch(url, { method: 'POST' });
+    wfLoadPipelines();
+    wfLoadStats();
+  } catch(e) { console.error('Toggle failed', e); }
+}
+
+async function wfLoadExecutions() {
+  var el = document.getElementById('executions-table');
+  try {
+    var r = await fetch('/api/n8n/executions?limit=20');
+    var d = await r.json();
+    var execs = d.executions || [];
+    if (execs.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3);padding:1rem 0">No executions yet. Run a workflow to see history here.</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Workflow</th><th>Started</th><th>Duration</th><th>Status</th></tr>' +
+      execs.map(function(x) {
+        var status = 'unknown';
+        var badgeClass = 'badge-warning';
+        if (x.finished === true || x.status === 'success') { status = 'Success'; badgeClass = 'badge-success'; }
+        else if (x.status === 'error' || x.status === 'failed' || x.finished === false) { status = 'Failed'; badgeClass = ''; }
+        else if (x.status === 'running' || x.status === 'waiting') { status = 'Running'; badgeClass = 'badge-warning'; }
+        else { status = x.status || 'Unknown'; }
+        var badgeStyle = badgeClass === '' ? 'style=\"background:rgba(244,63,94,0.15);color:#f43f5e\"' : '';
+        var dur = '-';
+        if (x.startedAt && x.stoppedAt) {
+          var ms = new Date(x.stoppedAt) - new Date(x.startedAt);
+          dur = ms < 1000 ? ms + 'ms' : (ms/1000).toFixed(1) + 's';
+        }
+        var ago = x.startedAt ? wfTimeAgo(new Date(x.startedAt)) : '-';
+        return '<tr><td><strong>' + escapeHtml(x.workflowData ? x.workflowData.name || 'Untitled' : (x.workflowId || '-')) + '</strong></td><td class="mono" style="font-size:0.75rem">' + ago + '</td><td class="mono" style="font-size:0.75rem">' + dur + '</td><td><span class="badge ' + badgeClass + '" ' + badgeStyle + '>' + status + '</span></td></tr>';
+      }).join('') + '</table>';
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--text-3)">Could not load executions from n8n API.</p>';
+  }
+}
+
+function wfTimeAgo(date) {
+  var s = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+wfLoadStats();
 </script>
 ` }) %>

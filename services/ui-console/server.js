@@ -7,12 +7,14 @@ const PORT = process.env.PORT || 3001;
 // Service URLs (internal Docker network)
 const AGENT_URL = process.env.AGENT_URL || "http://agent-service:8000";
 const N8N_URL = process.env.N8N_URL || "http://n8n:5678";
+const N8N_API_KEY = process.env.N8N_API_KEY || "";
 const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://langfuse:3000";
 const GRAFANA_URL = process.env.GRAFANA_URL || "http://grafana:3000";
 const CHROMA_URL = process.env.CHROMA_URL || "http://chromadb:8000";
 
 // External URLs (browser-accessible)
 const N8N_EXTERNAL = process.env.N8N_EXTERNAL_URL || "http://localhost:5678";
+const N8N_PROXY_EXTERNAL = process.env.N8N_PROXY_EXTERNAL_URL || "http://localhost:5679";
 const LANGFUSE_EXTERNAL = process.env.LANGFUSE_EXTERNAL_URL || "http://localhost:3002";
 const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || "http://localhost:3013";
 const AGENT_EXTERNAL = process.env.AGENT_EXTERNAL_URL || "http://localhost:8010";
@@ -601,13 +603,62 @@ app.post("/api/mcp/servers/:id/invoke", async (req, res) => {
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// ── API: n8n helpers ──────────────────────────────────
+let n8nSessionCookie = "";
+
+function n8nHeaders() {
+  const h = { Accept: "application/json" };
+  if (N8N_API_KEY) h["X-N8N-API-KEY"] = N8N_API_KEY;
+  if (n8nSessionCookie) h["Cookie"] = n8nSessionCookie;
+  return h;
+}
+
+async function n8nLogin() {
+  const email = process.env.N8N_OWNER_EMAIL || "";
+  const password = process.env.N8N_OWNER_PASSWORD || "";
+  if (!email || !password) return;
+  try {
+    const resp = await fetch(`${N8N_URL}/rest/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (resp.ok) {
+      const cookies = resp.headers.getSetCookie();
+      if (cookies && cookies.length) {
+        n8nSessionCookie = cookies.map(function(c) { return c.split(";")[0]; }).join("; ");
+        console.log("[n8n] Session login successful");
+      }
+    }
+  } catch (e) { console.log("[n8n] Session login failed:", e.message); }
+}
+
+// Try to login on startup (non-blocking)
+setTimeout(function() { n8nLogin(); }, 5000);
+
+async function n8nFetchWithAuth(url, options) {
+  options = options || {};
+  options.headers = Object.assign({}, n8nHeaders(), options.headers || {});
+  options.signal = options.signal || AbortSignal.timeout(5000);
+  let resp = await fetch(url, options);
+  // If 401 and we have credentials, try re-login then retry once
+  if (resp.status === 401 && (process.env.N8N_OWNER_EMAIL || N8N_API_KEY)) {
+    await n8nLogin();
+    options.headers = Object.assign({}, n8nHeaders(), options.headers || {});
+    resp = await fetch(url, options);
+  }
+  return resp;
+}
+
 // ── API: n8n Workflows ────────────────────────────────
 app.get("/api/n8n/workflows", async (req, res) => {
   try {
-    const resp = await fetch(`${N8N_URL}/api/v1/workflows`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(5000),
-    });
+    // Try public API first, then internal REST API
+    let resp = await n8nFetchWithAuth(`${N8N_URL}/api/v1/workflows`);
+    if (resp.status === 401) {
+      resp = await n8nFetchWithAuth(`${N8N_URL}/rest/workflows`);
+    }
     if (!resp.ok) {
       return res.json({ workflows: [], error: `n8n returned ${resp.status}` });
     }
@@ -615,6 +666,40 @@ app.get("/api/n8n/workflows", async (req, res) => {
     res.json({ workflows: data.data || [] });
   } catch (e) {
     res.json({ workflows: [], error: e.message });
+  }
+});
+
+// ── API: n8n Workflow activate/deactivate ─────────────
+app.post("/api/n8n/workflows/:id/activate", async (req, res) => {
+  try {
+    const resp = await n8nFetchWithAuth(`${N8N_URL}/api/v1/workflows/${req.params.id}/activate`, {
+      method: "POST",
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/n8n/workflows/:id/deactivate", async (req, res) => {
+  try {
+    const resp = await n8nFetchWithAuth(`${N8N_URL}/api/v1/workflows/${req.params.id}/deactivate`, {
+      method: "POST",
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: n8n Executions ───────────────────────────────
+app.get("/api/n8n/executions", async (req, res) => {
+  try {
+    const limit = req.query.limit || 10;
+    let resp = await n8nFetchWithAuth(`${N8N_URL}/api/v1/executions?limit=${limit}`);
+    if (resp.status === 401) {
+      resp = await n8nFetchWithAuth(`${N8N_URL}/rest/executions?limit=${limit}`);
+    }
+    if (!resp.ok) return res.json({ executions: [], error: `n8n returned ${resp.status}` });
+    const data = await resp.json();
+    res.json({ executions: data.data || [] });
+  } catch (e) {
+    res.json({ executions: [], error: e.message });
   }
 });
 
@@ -653,6 +738,22 @@ app.get("/api/observability/prometheus/query", async (req, res) => {
   }
 });
 
+// ── API: Prometheus range query ───────────────────────
+app.get("/api/observability/prometheus/query_range", async (req, res) => {
+  try {
+    const query = req.query.query || "up";
+    const start = req.query.start || Math.floor(Date.now() / 1000) - 1800;
+    const end = req.query.end || Math.floor(Date.now() / 1000);
+    const step = req.query.step || "30";
+    const url = `http://prometheus:9090/api/v1/query_range?query=${encodeURIComponent(query)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&step=${encodeURIComponent(step)}`;
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const data = await resp.json();
+    res.json(data);
+  } catch (e) {
+    res.json({ status: "error", error: e.message });
+  }
+});
+
 // ── API: Prometheus targets ───────────────────────────
 app.get("/api/observability/prometheus/targets", async (req, res) => {
   try {
@@ -680,6 +781,7 @@ app.get("/api/chromadb/stats", async (req, res) => {
 // ── Pages ──────────────────────────────────────────────
 const externalUrls = {
   n8n: N8N_EXTERNAL,
+  n8nProxy: N8N_PROXY_EXTERNAL,
   langfuse: LANGFUSE_EXTERNAL,
   grafana: GRAFANA_EXTERNAL,
   agent: AGENT_EXTERNAL,

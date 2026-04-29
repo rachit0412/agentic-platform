@@ -7,154 +7,15 @@
   "links": [],
   "panels": [
     {
-      "title": "Agent Request Rate (req/s)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "rate(http_requests_total{job=\"agent-service\"}[1m])",
-          "legendFormat": "{{method}} {{handler}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Agent Latency p50 / p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.50, rate(http_request_duration_highr_seconds_bucket{job=\"agent-service\"}[5m]))",
-          "legendFormat": "p50"
-        },
-        {
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_highr_seconds_bucket{job=\"agent-service\"}[5m]))",
-          "legendFormat": "p95"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Tool Service Request Rate",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "rate(http_requests_total{job=\"tools-service\"}[1m])",
-          "legendFormat": "{{handler}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Tool Latency p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_highr_seconds_bucket{job=\"tools-service\"}[5m]))",
-          "legendFormat": "{{handler}} p95"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "LLM Call Duration (agent custom metric)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "rate(llm_call_duration_seconds_sum{job=\"agent-service\"}[5m]) / rate(llm_call_duration_seconds_count{job=\"agent-service\"}[5m])",
-          "legendFormat": "avg duration"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Agent Tool Calls Total",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "rate(tool_calls_total{job=\"agent-service\"}[5m])",
-          "legendFormat": "{{tool_name}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "ops" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Error Rate",
+      "title": "Service Status",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "sum(rate(http_requests_total{job=\"agent-service\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"agent-service\"}[5m])) * 100",
-          "legendFormat": "Error %"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "thresholds": {
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 5 }
-            ]
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Agent Runs",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 24 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "agent_runs_total{job=\"agent-service\"}",
-          "legendFormat": "{{status}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "short" },
-        "overrides": []
-      }
-    },
-    {
-      "title": "Service Up Status",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 24 },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "expr": "up",
-          "legendFormat": "{{job}}"
+          "legendFormat": "{{job}}",
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -167,9 +28,342 @@
               },
               "type": "value"
             }
-          ]
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
         },
         "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "title": "Memory Usage (RSS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Virtual Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "process_virtual_memory_bytes",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "CPU Usage (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[1m])",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Open File Descriptors",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "process_open_fds",
+          "legendFormat": "{{job}} open"
+        },
+        {
+          "expr": "process_max_fds",
+          "legendFormat": "{{job}} max"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"agent-service\"}[2m])) by (method)",
+          "legendFormat": "agent {{method}}"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"tools-service\"}[2m])) by (method)",
+          "legendFormat": "tools {{method}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "gradientMode": "scheme"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Request Latency p50 / p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"agent-service\"}[5m])) by (le))",
+          "legendFormat": "agent p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"agent-service\"}[5m])) by (le))",
+          "legendFormat": "agent p95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"tools-service\"}[5m])) by (le))",
+          "legendFormat": "tools p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"tools-service\"}[5m])) by (le))",
+          "legendFormat": "tools p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Memory Usage Gauge",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "{{job}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "max": 1073741824,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 268435456 },
+              { "color": "orange", "value": 536870912 },
+              { "color": "red", "value": 805306368 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "title": "CPU Gauge (cores)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(process_cpu_seconds_total[1m])",
+          "legendFormat": "{{job}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "orange", "value": 0.75 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "title": "Scrape Duration",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "scrape_duration_seconds",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "LLM Call Duration",
+      "description": "Average LLM call duration (populated when agent processes requests)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(llm_call_duration_seconds_sum{job=\"agent-service\"}[5m]) / rate(llm_call_duration_seconds_count{job=\"agent-service\"}[5m])",
+          "legendFormat": "avg duration"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No agent activity yet"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Agent Runs",
+      "description": "Cumulative agent runs (populated after first agent request)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "agent_runs_total{job=\"agent-service\"} or vector(0)",
+          "legendFormat": "{{status}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No runs yet",
+          "thresholds": {
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "title": "Tool Calls",
+      "description": "Cumulative tool calls (populated after first agent request)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 34 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "tool_calls_total{job=\"agent-service\"} or vector(0)",
+          "legendFormat": "{{tool_name}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No calls yet",
+          "thresholds": {
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
       }
     }
   ],
