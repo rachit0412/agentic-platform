@@ -25,10 +25,8 @@ services:
       - AGENT_EXTERNAL_URL=http://localhost:${AGENT_PORT:-8010}
       - CHROMA_URL=http://chromadb:8000
       - N8N_API_KEY=${N8N_API_KEY:-}
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
-      - N8N_OWNER_EMAIL=${N8N_OWNER_EMAIL:-}
-      - N8N_OWNER_PASSWORD=${N8N_OWNER_PASSWORD:-}
+      - N8N_OWNER_EMAIL=${N8N_USER:-admin}@local.dev
+      - N8N_OWNER_PASSWORD=${N8N_PASSWORD:-Changeme1!}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-pk-lf-local-dev}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-local-dev}
     depends_on:
@@ -54,16 +52,12 @@ services:
     ports:
       - "${N8N_PORT:-5678}:5678"
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:${N8N_PORT:-5678}/
       - GENERIC_TIMEZONE=UTC
       - NODE_ENV=production
-      - N8N_USER_MANAGEMENT_DISABLED=true
       - N8N_EDITOR_BASE_URL=http://localhost:${N8N_PROXY_PORT:-5679}
       - N8N_SECURE_COOKIE=false
     volumes:

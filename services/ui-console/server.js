@@ -8,6 +8,8 @@ const PORT = process.env.PORT || 3001;
 const AGENT_URL = process.env.AGENT_URL || "http://agent-service:8000";
 const N8N_URL = process.env.N8N_URL || "http://n8n:5678";
 const N8N_API_KEY = process.env.N8N_API_KEY || "";
+const N8N_OWNER_EMAIL = process.env.N8N_OWNER_EMAIL || "";
+const N8N_OWNER_PASSWORD = process.env.N8N_OWNER_PASSWORD || "";
 const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://langfuse:3000";
 const GRAFANA_URL = process.env.GRAFANA_URL || "http://grafana:3000";
 const CHROMA_URL = process.env.CHROMA_URL || "http://chromadb:8000";
@@ -614,14 +616,12 @@ function n8nHeaders() {
 }
 
 async function n8nLogin() {
-  const email = process.env.N8N_OWNER_EMAIL || "";
-  const password = process.env.N8N_OWNER_PASSWORD || "";
-  if (!email || !password) return;
+  if (!N8N_OWNER_EMAIL || !N8N_OWNER_PASSWORD) return false;
   try {
     const resp = await fetch(`${N8N_URL}/rest/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ emailOrLdapLoginId: N8N_OWNER_EMAIL, password: N8N_OWNER_PASSWORD }),
       signal: AbortSignal.timeout(5000),
     });
     if (resp.ok) {
@@ -629,21 +629,57 @@ async function n8nLogin() {
       if (cookies && cookies.length) {
         n8nSessionCookie = cookies.map(function(c) { return c.split(";")[0]; }).join("; ");
         console.log("[n8n] Session login successful");
+        return true;
       }
     }
   } catch (e) { console.log("[n8n] Session login failed:", e.message); }
+  return false;
 }
 
-// Try to login on startup (non-blocking)
-setTimeout(function() { n8nLogin(); }, 5000);
+async function n8nAutoSetup() {
+  if (!N8N_OWNER_EMAIL || !N8N_OWNER_PASSWORD) {
+    console.log("[n8n] No N8N_OWNER_EMAIL/PASSWORD set — API stats will be unavailable until n8n owner is configured");
+    return;
+  }
+  // Check if owner is already set up by trying to login
+  if (await n8nLogin()) return;
+  // Owner not yet created — try auto-provisioning via setup endpoint
+  try {
+    const name = N8N_OWNER_EMAIL.split("@")[0] || "Admin";
+    const resp = await fetch(`${N8N_URL}/rest/owner/setup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: N8N_OWNER_EMAIL,
+        firstName: name.charAt(0).toUpperCase() + name.slice(1),
+        lastName: "User",
+        password: N8N_OWNER_PASSWORD,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (resp.ok) {
+      console.log("[n8n] Owner auto-provisioned:", N8N_OWNER_EMAIL);
+      const cookies = resp.headers.getSetCookie();
+      if (cookies && cookies.length) {
+        n8nSessionCookie = cookies.map(function(c) { return c.split(";")[0]; }).join("; ");
+      }
+    } else {
+      const txt = await resp.text().catch(function() { return ""; });
+      console.log("[n8n] Owner setup returned", resp.status, "— complete setup manually at the n8n UI");
+    }
+  } catch (e) { console.log("[n8n] Auto-setup failed:", e.message, "— complete setup manually at the n8n UI"); }
+}
+
+// Auto-setup on startup (non-blocking, delayed to let n8n fully start)
+setTimeout(function() { n8nAutoSetup(); }, 5000);
 
 async function n8nFetchWithAuth(url, options) {
   options = options || {};
   options.headers = Object.assign({}, n8nHeaders(), options.headers || {});
   options.signal = options.signal || AbortSignal.timeout(5000);
   let resp = await fetch(url, options);
-  // If 401 and we have credentials, try re-login then retry once
-  if (resp.status === 401 && (process.env.N8N_OWNER_EMAIL || N8N_API_KEY)) {
+  // If 401, try re-login then retry once
+  if (resp.status === 401 && (N8N_OWNER_EMAIL || N8N_API_KEY)) {
     await n8nLogin();
     options.headers = Object.assign({}, n8nHeaders(), options.headers || {});
     resp = await fetch(url, options);
