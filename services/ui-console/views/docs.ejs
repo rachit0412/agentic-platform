@@ -1,0 +1,730 @@
+<%- include('layout', {
+  page: 'docs',
+  title: 'Documentation',
+  urls: urls,
+  body: `
+
+<style>
+  .docs-layout { display:grid; grid-template-columns:240px 1fr; gap:0; min-height:calc(100vh - 80px); }
+  .docs-sidebar { background:var(--glass-bg); border-right:1px solid var(--glass-border); padding:1.25rem 0; position:sticky; top:60px; height:calc(100vh - 80px); overflow-y:auto; }
+  .docs-sidebar .ds-group { margin-bottom:0.75rem; }
+  .docs-sidebar .ds-group-title { padding:0.4rem 1.25rem; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); }
+  .docs-sidebar .ds-link { display:block; padding:0.4rem 1.25rem 0.4rem 1.5rem; font-size:0.82rem; color:var(--text-2); text-decoration:none; border-left:2px solid transparent; transition:all 0.15s; cursor:pointer; }
+  .docs-sidebar .ds-link:hover { color:var(--text-1); background:rgba(6,182,212,0.05); }
+  .docs-sidebar .ds-link.active { color:#06b6d4; border-left-color:#06b6d4; background:rgba(6,182,212,0.08); font-weight:600; }
+  .docs-content { padding:2rem 2.5rem; max-width:860px; }
+  .docs-content h1 { font-size:1.8rem; font-weight:700; margin-bottom:0.5rem; }
+  .docs-content h2 { font-size:1.25rem; font-weight:700; margin:2rem 0 0.75rem; padding-bottom:0.5rem; border-bottom:1px solid var(--glass-border); }
+  .docs-content h3 { font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; }
+  .docs-content p { line-height:1.7; color:var(--text-2); margin-bottom:1rem; }
+  .docs-content ul, .docs-content ol { padding-left:1.5rem; margin-bottom:1rem; color:var(--text-2); line-height:1.8; }
+  .docs-content code { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:4px; padding:0.15rem 0.4rem; font-size:0.82rem; font-family:'Fira Code',monospace; }
+  .docs-content pre { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:10px; padding:1rem 1.25rem; overflow-x:auto; margin-bottom:1rem; font-size:0.82rem; line-height:1.6; }
+  .docs-content pre code { background:none; border:none; padding:0; }
+  .docs-callout { border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.25rem; font-size:0.88rem; line-height:1.6; }
+  .docs-callout.info { background:rgba(6,182,212,0.08); border-left:3px solid #06b6d4; }
+  .docs-callout.warn { background:rgba(245,158,11,0.08); border-left:3px solid #f59e0b; }
+  .docs-callout.tip { background:rgba(16,185,129,0.08); border-left:3px solid #10b981; }
+  .docs-section { display:none; }
+  .docs-section.active { display:block; }
+  .docs-breadcrumb { font-size:0.78rem; color:var(--text-3); margin-bottom:1rem; }
+  .docs-breadcrumb a { color:#06b6d4; text-decoration:none; }
+  .docs-table { width:100%; border-collapse:collapse; margin-bottom:1rem; font-size:0.85rem; }
+  .docs-table th { text-align:left; padding:0.6rem 0.75rem; background:var(--glass-bg); border:1px solid var(--glass-border); font-weight:600; color:var(--text-1); }
+  .docs-table td { padding:0.5rem 0.75rem; border:1px solid var(--glass-border); color:var(--text-2); }
+  .docs-diagram { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:1.5rem; margin:1.25rem 0; text-align:center; }
+  .docs-search { width:100%; padding:0.5rem 0.75rem; border:1px solid var(--glass-border); border-radius:8px; background:var(--glass-bg); color:var(--text-1); font-size:0.82rem; margin:0 0 0.75rem; }
+  .docs-search:focus { outline:none; border-color:#06b6d4; }
+  @media (max-width: 768px) {
+    .docs-layout { grid-template-columns:1fr; }
+    .docs-sidebar { position:relative; top:0; height:auto; max-height:50vh; border-right:none; border-bottom:1px solid var(--glass-border); }
+    .docs-content { padding:1.25rem 1rem; }
+  }
+</style>
+
+<div class="docs-layout">
+  <!-- Sidebar Navigation -->
+  <nav class="docs-sidebar">
+    <div style="padding:0 1.25rem;margin-bottom:0.75rem">
+      <input type="text" class="docs-search" placeholder="Search docs..." oninput="filterDocs(this.value)">
+    </div>
+
+    <div class="ds-group">
+      <div class="ds-group-title">Getting Started</div>
+      <a class="ds-link active" data-section="overview" onclick="showDoc('overview')">Platform Overview</a>
+      <a class="ds-link" data-section="quickstart" onclick="showDoc('quickstart')">Quick Start Guide</a>
+      <a class="ds-link" data-section="installation" onclick="showDoc('installation')">Installation</a>
+    </div>
+
+    <div class="ds-group">
+      <div class="ds-group-title">Architecture</div>
+      <a class="ds-link" data-section="architecture" onclick="showDoc('architecture')">System Architecture</a>
+      <a class="ds-link" data-section="services" onclick="showDoc('services')">Service Reference</a>
+      <a class="ds-link" data-section="dataflow" onclick="showDoc('dataflow')">Data Flow</a>
+    </div>
+
+    <div class="ds-group">
+      <div class="ds-group-title">Core Features</div>
+      <a class="ds-link" data-section="agents" onclick="showDoc('agents')">Agent System</a>
+      <a class="ds-link" data-section="llm" onclick="showDoc('llm')">LLM Providers</a>
+      <a class="ds-link" data-section="memory" onclick="showDoc('memory')">Memory &amp; Knowledge</a>
+      <a class="ds-link" data-section="guardrails" onclick="showDoc('guardrails')">Guardrails</a>
+      <a class="ds-link" data-section="tools" onclick="showDoc('tools')">Tools &amp; MCP</a>
+    </div>
+
+    <div class="ds-group">
+      <div class="ds-group-title">Operations</div>
+      <a class="ds-link" data-section="observability" onclick="showDoc('observability')">Observability</a>
+      <a class="ds-link" data-section="workflows" onclick="showDoc('workflows')">Workflows (n8n)</a>
+      <a class="ds-link" data-section="deployment" onclick="showDoc('deployment')">Deployment</a>
+    </div>
+
+    <div class="ds-group">
+      <div class="ds-group-title">Reference</div>
+      <a class="ds-link" data-section="api" onclick="showDoc('api')">API Reference</a>
+      <a class="ds-link" data-section="config" onclick="showDoc('config')">Configuration</a>
+    </div>
+  </nav>
+
+  <!-- Content Area -->
+  <main class="docs-content">
+
+    <!-- ── Overview ── -->
+    <div id="doc-overview" class="docs-section active">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Getting Started</div>
+      <h1>Platform Overview</h1>
+      <p>The Agentic Platform is a production-grade, full-stack framework for building, deploying, and managing AI agents with enterprise-grade observability, guardrails, and multi-provider LLM support.</p>
+
+      <div class="docs-callout info">
+        <strong>What you can do:</strong> Build ReAct agents with tools, connect to 4 LLM providers, manage knowledge bases, enforce safety guardrails, monitor via Prometheus/Grafana/Langfuse, and orchestrate workflows — all from a unified dashboard.
+      </div>
+
+      <h2>Key Capabilities</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.5rem">
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;text-align:center">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem">🤖</div>
+          <strong style="font-size:0.85rem">Agent Builder</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Design & deploy ReAct agents with custom tools and memory</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;text-align:center">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem">🛡️</div>
+          <strong style="font-size:0.85rem">Safety Guardrails</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Input/output safety checks across 5 categories</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;text-align:center">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem">📊</div>
+          <strong style="font-size:0.85rem">Observability</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Prometheus, Grafana, Langfuse, OpenTelemetry</p>
+        </div>
+      </div>
+
+      <h2>Platform Architecture</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+graph TB
+    UI[UI Console :3000] --> Agent[Agent Service :8010]
+    UI --> Tools[Tools Service :8011]
+    Agent --> Ollama[Ollama :11436]
+    Agent --> AzureOAI[Azure OpenAI]
+    Agent --> OpenAI[OpenAI]
+    Agent --> AzureFoundry[Azure AI Foundry]
+    Agent --> ChromaDB[ChromaDB :8200]
+    Agent --> Memory[(SQLite Memory)]
+    UI --> N8N[n8n :5678]
+    Agent --> OTel[OTel Collector :4317]
+    OTel --> Prometheus[Prometheus :9090]
+    OTel --> Loki[Loki :3100]
+    Prometheus --> Grafana[Grafana :3003]
+    Loki --> Grafana
+    Agent --> Langfuse[Langfuse :3014]
+
+    classDef service fill:#0e7490,stroke:#06b6d4,color:#fff
+    classDef storage fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    classDef external fill:#b45309,stroke:#f59e0b,color:#fff
+
+    class UI,Agent,Tools,N8N service
+    class ChromaDB,Memory storage
+    class Ollama,AzureOAI,OpenAI,AzureFoundry,Langfuse external
+        </div>
+      </div>
+
+      <h2>Tech Stack</h2>
+      <table class="docs-table">
+        <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+        <tr><td>Frontend</td><td>Express.js + EJS</td><td>Dashboard UI with SSR</td></tr>
+        <tr><td>Agent Runtime</td><td>Python FastAPI + LangChain</td><td>ReAct agent with tool calling</td></tr>
+        <tr><td>LLM</td><td>Ollama, OpenAI, Azure OpenAI, Azure AI Foundry</td><td>Multi-provider inference</td></tr>
+        <tr><td>Memory</td><td>SQLite (STM + LTM)</td><td>Conversation persistence</td></tr>
+        <tr><td>Knowledge</td><td>ChromaDB</td><td>Vector store for RAG</td></tr>
+        <tr><td>Observability</td><td>Prometheus, Grafana, Loki, OTel, Langfuse</td><td>Metrics, logs, traces</td></tr>
+        <tr><td>Workflows</td><td>n8n</td><td>Visual workflow automation</td></tr>
+        <tr><td>Orchestration</td><td>Docker Compose</td><td>13-service deployment</td></tr>
+      </table>
+    </div>
+
+    <!-- ── Quick Start ── -->
+    <div id="doc-quickstart" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Getting Started</div>
+      <h1>Quick Start Guide</h1>
+      <p>Get the platform running in under 5 minutes.</p>
+
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>Docker Desktop (v24+) with Docker Compose v2</li>
+        <li>8GB+ RAM available for Docker</li>
+        <li>Git</li>
+      </ul>
+
+      <h2>Steps</h2>
+      <h3>1. Clone the repository</h3>
+      <pre><code>git clone https://github.com/rachit0412/agentic-platform.git
+cd agentic-platform</code></pre>
+
+      <h3>2. Configure environment</h3>
+      <pre><code>cp .env.example .env
+# Edit .env with your API keys (optional for local Ollama)</code></pre>
+
+      <h3>3. Start all services</h3>
+      <pre><code>docker-compose up -d</code></pre>
+
+      <h3>4. Pull Ollama models</h3>
+      <pre><code>docker exec ollama ollama pull llama3
+docker exec ollama ollama pull nomic-embed-text</code></pre>
+
+      <h3>5. Open the dashboard</h3>
+      <p>Navigate to <code>http://localhost:3000</code> in your browser.</p>
+
+      <div class="docs-callout tip">
+        <strong>Tip:</strong> Use the "Run Agent" page to test your first agent interaction. The default agent works with Ollama out of the box — no API keys needed.
+      </div>
+    </div>
+
+    <!-- ── Installation ── -->
+    <div id="doc-installation" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Getting Started</div>
+      <h1>Installation</h1>
+      <p>Detailed installation and configuration instructions for all environments.</p>
+
+      <h2>Docker Compose (Recommended)</h2>
+      <p>The platform ships as 13 Docker services orchestrated via <code>docker-compose.yml</code>:</p>
+      <pre><code>docker-compose up -d          # Start all services
+docker-compose ps              # Check status
+docker-compose logs -f agent   # View agent logs
+docker-compose down            # Stop all</code></pre>
+
+      <h2>Service Ports</h2>
+      <table class="docs-table">
+        <tr><th>Service</th><th>External Port</th><th>Internal Port</th></tr>
+        <tr><td>UI Console</td><td>3000</td><td>3001</td></tr>
+        <tr><td>Agent Service</td><td>8010</td><td>8000</td></tr>
+        <tr><td>Tools Service</td><td>8011</td><td>8001</td></tr>
+        <tr><td>Ollama</td><td>11436</td><td>11434</td></tr>
+        <tr><td>ChromaDB</td><td>8200</td><td>8000</td></tr>
+        <tr><td>n8n</td><td>5678</td><td>5678</td></tr>
+        <tr><td>Langfuse</td><td>3014</td><td>3000</td></tr>
+        <tr><td>Grafana</td><td>3003</td><td>3000</td></tr>
+        <tr><td>Prometheus</td><td>9090</td><td>9090</td></tr>
+        <tr><td>Loki</td><td>3100</td><td>3100</td></tr>
+        <tr><td>OTel Collector</td><td>4317/4318</td><td>4317/4318</td></tr>
+      </table>
+
+      <h2>Development Setup</h2>
+      <pre><code># Agent service (Python)
+cd services/agent
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# UI Console (Node.js)
+cd services/ui-console
+npm install
+node server.js</code></pre>
+    </div>
+
+    <!-- ── Architecture ── -->
+    <div id="doc-architecture" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>System Architecture</h1>
+      <p>The platform follows a microservices architecture with clear separation of concerns.</p>
+
+      <h2>Service Interaction</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant UI as UI Console
+    participant A as Agent Service
+    participant LLM as LLM Provider
+    participant T as Tools Service
+    participant KB as ChromaDB
+    participant M as SQLite
+
+    U->>UI: Submit prompt
+    UI->>A: POST /agent/run (SSE)
+    A->>M: Load conversation history
+    A->>KB: RAG retrieval (if relevant)
+    A->>LLM: Generate response
+    LLM-->>A: Stream tokens
+    A->>T: Execute tool calls
+    T-->>A: Tool results
+    A->>LLM: Continue with tool results
+    LLM-->>A: Final response
+    A->>M: Save to memory
+    A-->>UI: SSE stream
+    UI-->>U: Rendered response
+        </div>
+      </div>
+
+      <h2>Directory Structure</h2>
+      <pre><code>agentic-platform/
+├── services/
+│   ├── agent/          # Python FastAPI agent service
+│   │   ├── agent/      # Core agent modules
+│   │   │   ├── graph.py        # LangGraph ReAct agent
+│   │   │   ├── llm.py          # Multi-provider LLM factory
+│   │   │   ├── memory.py       # SQLite STM + LTM
+│   │   │   ├── tools.py        # Tool definitions
+│   │   │   ├── vectorstore.py  # ChromaDB integration
+│   │   │   └── observability.py # OTel + Langfuse
+│   │   └── main.py     # FastAPI app & routes
+│   ├── tools/           # External tools microservice
+│   ├── ui-console/      # Express.js dashboard
+│   └── otel/            # OpenTelemetry collector config
+├── n8n/workflows/       # n8n workflow definitions
+├── observability/       # Grafana, Prometheus, Loki configs
+├── tests/               # Unit, integration, e2e, load tests
+├── docs/                # Generated documentation
+└── docker-compose.yml   # 13-service orchestration</code></pre>
+    </div>
+
+    <!-- ── Services ── -->
+    <div id="doc-services" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>Service Reference</h1>
+      <p>Detailed reference for each microservice in the platform.</p>
+
+      <h2>Agent Service</h2>
+      <p>The core AI agent runtime built with Python FastAPI and LangChain/LangGraph.</p>
+      <table class="docs-table">
+        <tr><th>Aspect</th><th>Detail</th></tr>
+        <tr><td>Runtime</td><td>Python 3.11 + FastAPI</td></tr>
+        <tr><td>Framework</td><td>LangChain + LangGraph (ReAct pattern)</td></tr>
+        <tr><td>Port</td><td>8000 (internal) → 8010 (external)</td></tr>
+        <tr><td>Endpoints</td><td>/agent/run, /health, /sessions, /memory, /guardrails, /models</td></tr>
+      </table>
+
+      <h2>UI Console</h2>
+      <p>Full-featured dashboard with 19 pages built on Express.js + EJS.</p>
+      <table class="docs-table">
+        <tr><th>Aspect</th><th>Detail</th></tr>
+        <tr><td>Runtime</td><td>Node.js v20 + Express.js</td></tr>
+        <tr><td>Templating</td><td>EJS with glass-morphism CSS design system</td></tr>
+        <tr><td>Port</td><td>3001 (internal) → 3000 (external)</td></tr>
+        <tr><td>Features</td><td>Dark/light theme, real-time SSE streaming, responsive layout</td></tr>
+      </table>
+
+      <h2>Tools Service</h2>
+      <p>Standalone microservice for external tool execution.</p>
+
+      <h2>Observability Stack</h2>
+      <ul>
+        <li><strong>Prometheus</strong> (:9090) — Metrics scraping &amp; alerting</li>
+        <li><strong>Grafana</strong> (:3003) — Dashboards &amp; visualization</li>
+        <li><strong>Loki</strong> (:3100) — Log aggregation</li>
+        <li><strong>OTel Collector</strong> (:4317) — Distributed tracing</li>
+        <li><strong>Langfuse</strong> (:3014) — LLM-specific tracing &amp; evaluation</li>
+      </ul>
+    </div>
+
+    <!-- ── Data Flow ── -->
+    <div id="doc-dataflow" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>Data Flow</h1>
+      <p>How data moves through the platform during an agent interaction.</p>
+
+      <h2>Request Lifecycle</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+flowchart LR
+    A[User Prompt] --> B{Input Guardrails}
+    B -->|Pass| C[Load Memory]
+    B -->|Block| X[Return Error]
+    C --> D[RAG Retrieval]
+    D --> E[LLM Inference]
+    E --> F{Tool Call?}
+    F -->|Yes| G[Execute Tool]
+    G --> E
+    F -->|No| H{Output Guardrails}
+    H -->|Pass| I[Stream Response]
+    H -->|Flag| I
+    I --> J[Save to Memory]
+    J --> K[Emit Telemetry]
+        </div>
+      </div>
+
+      <h2>Memory Architecture</h2>
+      <p>The platform uses a dual-layer memory system:</p>
+      <ul>
+        <li><strong>Short-Term Memory (STM):</strong> Last 100 messages per session, stored in the <code>conversations</code> table</li>
+        <li><strong>Long-Term Memory (LTM):</strong> Rolling 2KB summaries per session in <code>session_summaries</code> table</li>
+      </ul>
+
+      <div class="docs-callout info">
+        Memory is SQLite-based and lives on a Docker volume. No vector/semantic memory for conversations — that's reserved for the Knowledge Base (ChromaDB).
+      </div>
+    </div>
+
+    <!-- ── Agent System ── -->
+    <div id="doc-agents" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
+      <h1>Agent System</h1>
+      <p>The agent system uses the ReAct (Reasoning + Acting) pattern via LangGraph.</p>
+
+      <h2>Agent Lifecycle</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+stateDiagram-v2
+    [*] --> Receive: User prompt
+    Receive --> InputGuardrails: Check safety
+    InputGuardrails --> LoadContext: Pass
+    InputGuardrails --> Blocked: Block
+    LoadContext --> Reason: Memory + RAG
+    Reason --> Act: Tool needed
+    Act --> Observe: Tool result
+    Observe --> Reason: Continue
+    Reason --> OutputGuardrails: Final answer
+    OutputGuardrails --> Respond: Pass/Flag
+    Respond --> SaveMemory
+    SaveMemory --> [*]
+        </div>
+      </div>
+
+      <h2>Creating Agents</h2>
+      <p>Use the <strong>Agent Builder</strong> page to create custom agents with:</p>
+      <ul>
+        <li>Custom system prompts</li>
+        <li>Tool selection (from registered tools)</li>
+        <li>LLM provider and model configuration</li>
+        <li>Memory settings</li>
+        <li>Guardrail profiles</li>
+      </ul>
+
+      <h2>Agent-to-Agent (A2A)</h2>
+      <p>Agents can delegate tasks to other agents using the A2A protocol. Configure delegation rules on the A2A page.</p>
+    </div>
+
+    <!-- ── LLM Providers ── -->
+    <div id="doc-llm" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
+      <h1>LLM Providers</h1>
+      <p>The platform supports 4 LLM providers with automatic fallback.</p>
+
+      <table class="docs-table">
+        <tr><th>Provider</th><th>Models</th><th>Config</th></tr>
+        <tr><td>Ollama (Local)</td><td>llama3, mistral, phi3</td><td><code>OLLAMA_HOST</code></td></tr>
+        <tr><td>Azure OpenAI</td><td>GPT-4o, GPT-4, GPT-3.5</td><td><code>AZURE_OPENAI_API_KEY</code>, <code>AZURE_OPENAI_ENDPOINT</code></td></tr>
+        <tr><td>OpenAI</td><td>GPT-4o, GPT-4, GPT-3.5</td><td><code>OPENAI_API_KEY</code></td></tr>
+        <tr><td>Azure AI Foundry</td><td>Custom deployments</td><td><code>AZURE_AI_FOUNDRY_ENDPOINT</code>, <code>AZURE_AI_FOUNDRY_KEY</code></td></tr>
+      </table>
+
+      <div class="docs-callout tip">
+        <strong>Tip:</strong> Ollama works out of the box with no API keys. For cloud providers, set the appropriate environment variables in your <code>.env</code> file.
+      </div>
+
+      <h2>Provider Selection</h2>
+      <p>When running an agent, you can select the provider/model from the dropdown. The platform will attempt to use the selected provider and fall back to others if unavailable.</p>
+    </div>
+
+    <!-- ── Memory & Knowledge ── -->
+    <div id="doc-memory" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
+      <h1>Memory &amp; Knowledge Base</h1>
+
+      <h2>Conversation Memory</h2>
+      <p>SQLite-based dual-layer system:</p>
+      <table class="docs-table">
+        <tr><th>Layer</th><th>Table</th><th>Capacity</th><th>Purpose</th></tr>
+        <tr><td>Short-Term (STM)</td><td><code>conversations</code></td><td>100 messages/session</td><td>Recent conversation context</td></tr>
+        <tr><td>Long-Term (LTM)</td><td><code>session_summaries</code></td><td>2KB rolling/session</td><td>Compressed session summaries</td></tr>
+      </table>
+
+      <h2>Knowledge Base (RAG)</h2>
+      <p>ChromaDB-powered vector store for document retrieval:</p>
+      <ul>
+        <li><strong>Chunking:</strong> RecursiveCharacterTextSplitter (chunk_size=1000, overlap=200)</li>
+        <li><strong>Embeddings:</strong> nomic-embed-text via Ollama</li>
+        <li><strong>Search:</strong> Cosine similarity with HNSW index</li>
+        <li><strong>Ingestion:</strong> Upload via Documents page or n8n RAG workflow</li>
+      </ul>
+    </div>
+
+    <!-- ── Guardrails ── -->
+    <div id="doc-guardrails" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
+      <h1>Guardrails</h1>
+      <p>The guardrail system enforces safety and quality controls on both inputs and outputs.</p>
+
+      <h2>Categories</h2>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;margin-bottom:1rem">
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>🛡️ Content Safety</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Toxicity, hate speech, violence detection</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>✨ Quality</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Hallucination, relevance, coherence checks</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>⚖️ Fairness</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Bias detection, stereotyping prevention</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>📋 Compliance</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">PII detection, regulatory adherence</p>
+        </div>
+      </div>
+
+      <h2>Severity Levels</h2>
+      <ul>
+        <li><strong>Block:</strong> Immediately reject the request/response</li>
+        <li><strong>Warn:</strong> Flag for review but allow through</li>
+        <li><strong>Log:</strong> Record for audit without interrupting</li>
+      </ul>
+
+      <h2>Configuration</h2>
+      <p>Configure guardrails via the <a href="/guardrails" style="color:#06b6d4">Guardrails</a> page. Each guardrail can be individually enabled/disabled and its severity level adjusted.</p>
+    </div>
+
+    <!-- ── Tools & MCP ── -->
+    <div id="doc-tools" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
+      <h1>Tools &amp; MCP</h1>
+      <p>Agents can use tools to interact with external systems. The platform supports the Model Context Protocol (MCP).</p>
+
+      <h2>Built-in Tools</h2>
+      <ul>
+        <li><strong>Web Search:</strong> Search the internet for current information</li>
+        <li><strong>Calculator:</strong> Mathematical computations</li>
+        <li><strong>Document Lookup:</strong> Query the knowledge base</li>
+        <li><strong>Note Taking:</strong> Save and retrieve notes</li>
+      </ul>
+
+      <h2>MCP Integration</h2>
+      <p>Connect external MCP-compatible tools via the <a href="/mcp" style="color:#06b6d4">MCP</a> page. The platform acts as an MCP client, allowing agents to discover and use tools from MCP servers.</p>
+    </div>
+
+    <!-- ── Observability ── -->
+    <div id="doc-observability" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Operations</div>
+      <h1>Observability</h1>
+      <p>Full-stack observability with metrics, logs, traces, and LLM-specific monitoring.</p>
+
+      <h2>Stack Overview</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+flowchart TB
+    Agent[Agent Service] -->|metrics| OTel[OTel Collector]
+    Agent -->|traces| Langfuse
+    Agent -->|logs| Loki
+    OTel --> Prometheus
+    Prometheus --> Grafana
+    Loki --> Grafana
+    Langfuse -->|eval| IH[Intelligence Hub]
+
+    classDef tool fill:#0e7490,stroke:#06b6d4,color:#fff
+    class Prometheus,Grafana,Loki,OTel,Langfuse tool
+        </div>
+      </div>
+
+      <h2>Access Points</h2>
+      <table class="docs-table">
+        <tr><th>Tool</th><th>URL</th><th>Purpose</th></tr>
+        <tr><td>Grafana</td><td><code>localhost:3003</code></td><td>Dashboards, alerts</td></tr>
+        <tr><td>Prometheus</td><td><code>localhost:9090</code></td><td>Raw metrics, PromQL</td></tr>
+        <tr><td>Langfuse</td><td><code>localhost:3014</code></td><td>LLM traces, evaluation</td></tr>
+        <tr><td>Intelligence Hub</td><td><code>localhost:3000/intelligence-hub</code></td><td>Unified view</td></tr>
+      </table>
+    </div>
+
+    <!-- ── Workflows ── -->
+    <div id="doc-workflows" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Operations</div>
+      <h1>Workflows (n8n)</h1>
+      <p>Visual workflow automation via n8n. Pre-built workflows included:</p>
+
+      <table class="docs-table">
+        <tr><th>Workflow</th><th>Trigger</th><th>Description</th></tr>
+        <tr><td>Agent Workflow</td><td>Webhook</td><td>Run agent with custom parameters</td></tr>
+        <tr><td>RAG Ingest</td><td>Manual/Webhook</td><td>Ingest documents into ChromaDB</td></tr>
+        <tr><td>Scheduled Summary</td><td>Cron</td><td>Generate daily usage summaries</td></tr>
+        <tr><td>Web Research</td><td>Webhook</td><td>Multi-step web research agent</td></tr>
+      </table>
+
+      <p>Access n8n at <code>localhost:5678</code> to create and manage workflows.</p>
+    </div>
+
+    <!-- ── Deployment ── -->
+    <div id="doc-deployment" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Operations</div>
+      <h1>Deployment</h1>
+
+      <h2>Docker Compose (Default)</h2>
+      <pre><code>docker-compose up -d</code></pre>
+      <p>This starts all 13 services. Data persists via Docker volumes.</p>
+
+      <h2>Environment Variables</h2>
+      <table class="docs-table">
+        <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>LLM_PROVIDER</code></td><td>ollama</td><td>Default LLM provider</td></tr>
+        <tr><td><code>OLLAMA_HOST</code></td><td>http://ollama:11434</td><td>Ollama server URL</td></tr>
+        <tr><td><code>OPENAI_API_KEY</code></td><td>-</td><td>OpenAI API key</td></tr>
+        <tr><td><code>AZURE_OPENAI_API_KEY</code></td><td>-</td><td>Azure OpenAI key</td></tr>
+        <tr><td><code>AZURE_OPENAI_ENDPOINT</code></td><td>-</td><td>Azure OpenAI endpoint</td></tr>
+        <tr><td><code>CHROMADB_HOST</code></td><td>chromadb</td><td>ChromaDB host</td></tr>
+        <tr><td><code>LANGFUSE_HOST</code></td><td>http://langfuse:3000</td><td>Langfuse URL</td></tr>
+      </table>
+
+      <h2>Health Checks</h2>
+      <pre><code>curl http://localhost:8010/health   # Agent service
+curl http://localhost:3000          # UI Console
+curl http://localhost:9090/-/healthy # Prometheus</code></pre>
+    </div>
+
+    <!-- ── API Reference ── -->
+    <div id="doc-api" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Reference</div>
+      <h1>API Reference</h1>
+      <p>REST API endpoints exposed by the Agent Service.</p>
+
+      <h2>Agent Endpoints</h2>
+      <table class="docs-table">
+        <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+        <tr><td><code>POST</code></td><td>/agent/run</td><td>Run agent (SSE stream)</td></tr>
+        <tr><td><code>GET</code></td><td>/health</td><td>Health check</td></tr>
+        <tr><td><code>GET</code></td><td>/sessions</td><td>List sessions</td></tr>
+        <tr><td><code>GET</code></td><td>/sessions/:id</td><td>Get session details</td></tr>
+        <tr><td><code>GET</code></td><td>/memory/stats</td><td>Memory statistics</td></tr>
+        <tr><td><code>GET</code></td><td>/models</td><td>List available models</td></tr>
+        <tr><td><code>GET</code></td><td>/agents</td><td>List agents</td></tr>
+        <tr><td><code>GET</code></td><td>/tools</td><td>List tools</td></tr>
+        <tr><td><code>GET</code></td><td>/guardrails</td><td>List guardrails</td></tr>
+        <tr><td><code>PUT</code></td><td>/guardrails/:id</td><td>Update guardrail config</td></tr>
+      </table>
+
+      <h2>Request: Run Agent</h2>
+      <pre><code>POST /agent/run
+Content-Type: application/json
+
+{
+  "message": "What is the capital of France?",
+  "session_id": "optional-session-id",
+  "model": "llama3",
+  "provider": "ollama",
+  "tools": ["web_search", "calculator"]
+}</code></pre>
+
+      <h2>Response: SSE Stream</h2>
+      <pre><code>event: token
+data: {"token": "The"}
+
+event: token
+data: {"token": " capital"}
+
+event: tool_call
+data: {"tool": "web_search", "input": "capital of France"}
+
+event: done
+data: {"tools_used": ["web_search"], "guardrails": {...}, "usage": {...}}</code></pre>
+    </div>
+
+    <!-- ── Configuration ── -->
+    <div id="doc-config" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Reference</div>
+      <h1>Configuration</h1>
+      <p>All configurable aspects of the platform.</p>
+
+      <h2>Docker Compose Services</h2>
+      <p>The <code>docker-compose.yml</code> defines 13 services. Key overrides:</p>
+      <pre><code># Scale a specific service
+docker-compose up -d --scale agent=3
+
+# Override environment
+LLM_PROVIDER=openai docker-compose up -d
+
+# Use specific profile
+docker-compose --profile gpu up -d</code></pre>
+
+      <h2>Grafana Dashboards</h2>
+      <p>Custom dashboards are stored in <code>observability/grafana/dashboards/</code> and auto-provisioned on startup.</p>
+
+      <h2>Prometheus Targets</h2>
+      <p>Scrape targets are defined in <code>observability/prometheus/prometheus.yml</code>.</p>
+
+      <h2>n8n Workflows</h2>
+      <p>Pre-built workflows in <code>n8n/workflows/</code> are imported on first boot. Custom workflows persist in the n8n database.</p>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
+<script>
+  // Initialize Mermaid
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+    themeVariables: {
+      primaryColor: '#0e7490',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#06b6d4',
+      lineColor: '#64748b',
+      sectionBkgColor: 'transparent'
+    }
+  });
+
+  function showDoc(id) {
+    document.querySelectorAll('.docs-section').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.ds-link').forEach(function(l) { l.classList.remove('active'); });
+    var section = document.getElementById('doc-' + id);
+    if (section) {
+      section.classList.add('active');
+      // Re-render mermaid diagrams in the newly visible section
+      section.querySelectorAll('.mermaid').forEach(function(el) {
+        if (!el.getAttribute('data-processed')) {
+          mermaid.run({ nodes: [el] });
+        }
+      });
+    }
+    var link = document.querySelector('[data-section="' + id + '"]');
+    if (link) link.classList.add('active');
+    // Update URL without reload
+    history.replaceState(null, '', '/docs#' + id);
+    // Scroll content to top
+    document.querySelector('.docs-content').scrollTop = 0;
+  }
+
+  function filterDocs(query) {
+    var q = query.toLowerCase();
+    document.querySelectorAll('.ds-link').forEach(function(link) {
+      var text = link.textContent.toLowerCase();
+      var section = document.getElementById('doc-' + link.dataset.section);
+      var sectionText = section ? section.textContent.toLowerCase() : '';
+      link.style.display = (!q || text.includes(q) || sectionText.includes(q)) ? '' : 'none';
+    });
+  }
+
+  // Handle hash navigation
+  var hash = window.location.hash.replace('#', '');
+  if (hash) showDoc(hash);
+
+  // Render mermaid in initial visible section
+  document.addEventListener('DOMContentLoaded', function() {
+    var active = document.querySelector('.docs-section.active');
+    if (active) {
+      active.querySelectorAll('.mermaid').forEach(function(el) {
+        mermaid.run({ nodes: [el] });
+      });
+    }
+  });
+<\/script>
+
+` }) %>

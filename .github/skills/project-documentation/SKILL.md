@@ -155,3 +155,20 @@ Output:
 | docs/architecture.md | EXISTS/MISSING   | date         | Details       |
 | CHANGELOG.md         | EXISTS/MISSING   | date         | Details       |
 | API Documentation    | COMPLETE/PARTIAL | date         | Details       |
+
+### 8. In-App Documentation Portal
+
+The platform includes a built-in documentation portal at `/docs` (see `services/ui-console/views/docs.ejs`).
+
+When updating documentation:
+- Update both `docs/ARCHITECTURE.md` (auto-generated) AND the in-app docs portal
+- The docs portal has 15 sections: Overview, Quick Start, Installation, Architecture, Services, Data Flow, Agents, LLM Providers, Memory, Guardrails, Tools/MCP, Observability, Workflows, Deployment, API Reference, Configuration
+- Mermaid.js diagrams are rendered client-side via CDN
+- The portal is searchable with instant filter
+
+### 9. Auto-Documentation Workflow
+
+The GitHub Actions workflow (`.github/workflows/update-docs.yml`) automatically:
+- Triggers on push to main or PRs that modify services/docker-compose
+- Runs `scripts/generate-docs.sh` to regenerate `docs/ARCHITECTURE.md`
+- Auto-commits if docs changed (push events only)

@@ -104,6 +104,28 @@
   <div id="ih-agent-table" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
 </div>
 
+<!-- Guardrail Activity -->
+<div class="card animate-fade-up delay-300" style="margin-top:1.25rem">
+  <div class="section-header mb-1" style="cursor:pointer" onclick="toggleGrActivity()">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:0.95rem">Guardrail Activity</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Real-time safety control checks from agent runs</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <span id="gr-activity-badges" style="display:flex;gap:0.35rem"></span>
+      <svg id="gr-activity-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+  <div id="gr-activity-body" style="display:none;margin-top:0.75rem">
+    <div id="gr-activity-content" style="font-size:0.82rem;color:var(--text-3)">Click to load guardrail activity...</div>
+  </div>
+</div>
+
 <!-- Platform Health Monitoring -->
 <div class="card animate-fade-up delay-300" style="margin-top:1.25rem">
   <div class="section-header mb-1">
@@ -182,6 +204,59 @@
 </div>
 
 <script>
+var _grActivityLoaded = false;
+function toggleGrActivity() {
+  var body = document.getElementById('gr-activity-body');
+  var chevron = document.getElementById('gr-activity-chevron');
+  var isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  if (!isOpen && !_grActivityLoaded) { loadGrActivity(); _grActivityLoaded = true; }
+}
+function loadGrActivity() {
+  fetch('/api/guardrails', { signal: AbortSignal.timeout(5000) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var guardrails = d.guardrails || [];
+      var el = document.getElementById('gr-activity-content');
+      var badges = document.getElementById('gr-activity-badges');
+      if (!guardrails.length) { el.innerHTML = '<p>No guardrails configured. <a href="/guardrails">Set up guardrails</a></p>'; return; }
+      var active = guardrails.filter(function(g) { return g.enabled; }).length;
+      var disabled = guardrails.length - active;
+      badges.innerHTML = '<span class="badge" style="background:rgba(16,185,129,0.15);color:#10b981;font-size:0.62rem">' + active + ' active</span>' +
+        (disabled ? '<span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444;font-size:0.62rem">' + disabled + ' off</span>' : '');
+      var cats = {};
+      guardrails.forEach(function(g) { if (!cats[g.category]) cats[g.category] = []; cats[g.category].push(g); });
+      var catIcons = { content_safety:'🛡️', quality:'✨', fairness:'⚖️', compliance:'📋', operational:'⚙️' };
+      var catLabels = { content_safety:'Content Safety', quality:'Quality', fairness:'Fairness', compliance:'Compliance', operational:'Operational' };
+      var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+      Object.keys(cats).forEach(function(cat) {
+        var items = cats[cat];
+        var catActive = items.filter(function(g) { return g.enabled; }).length;
+        html += '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.75rem">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem">' +
+          '<span>' + (catIcons[cat] || '⚙️') + '</span>' +
+          '<strong style="font-size:0.82rem;color:var(--text-1)">' + (catLabels[cat] || cat) + '</strong>' +
+          '<span class="badge" style="margin-left:auto;font-size:0.6rem;background:' + (catActive === items.length ? 'rgba(16,185,129,0.15);color:#10b981' : 'rgba(245,158,11,0.15);color:#f59e0b') + '">' + catActive + '/' + items.length + '</span>' +
+          '</div>';
+        items.forEach(function(g) {
+          var color = g.enabled ? '#10b981' : '#64748b';
+          html += '<div style="display:flex;align-items:center;gap:0.4rem;padding:0.25rem 0;font-size:0.78rem">' +
+            '<span style="width:6px;height:6px;border-radius:50%;background:' + color + ';flex-shrink:0"></span>' +
+            '<span style="color:var(--text-2)">' + escapeHtml(g.name) + '</span>' +
+            '<span style="margin-left:auto;font-size:0.65rem;color:var(--text-3)">' + g.severity + '</span></div>';
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<a href="/guardrails" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#f59e0b;margin-top:0.5rem">Manage guardrails →</a>';
+      el.innerHTML = html;
+    })
+    .catch(function() {
+      document.getElementById('gr-activity-content').innerHTML = '<p style="color:var(--text-3)">Guardrail data unavailable</p>';
+    });
+}
+
 function ihRefresh() { ihLoad(); }
 
 function ihLoad() {

@@ -843,6 +843,7 @@ app.get("/evaluation", (req, res) => res.render("evaluation", { urls: externalUr
 app.get("/observability", (req, res) => res.render("observability", { urls: externalUrls }));
 app.get("/marketplace", (req, res) => res.render("marketplace", { urls: externalUrls }));
 app.get("/admin", (req, res) => res.render("admin", { urls: externalUrls }));
+app.get("/docs", (req, res) => res.render("docs", { urls: externalUrls }));
 
 app.listen(PORT, () => {
   console.log(`UI Console listening on :${PORT}`);

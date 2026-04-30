@@ -43,10 +43,10 @@
       <div class="flex" style="gap:0.5rem;flex-wrap:wrap;align-items:center">
         <input id="session" placeholder="Session ID (auto)" style="max-width:200px" />
         <select id="agent-select" style="max-width:200px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
-          <option value="">Loading agents...</option>
+          <option value="">Default Agent</option>
         </select>
         <select id="model-select" style="max-width:220px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
-          <option value="">Loading models...</option>
+          <option value="">Default Model</option>
         </select>
         <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;color:var(--text-2);cursor:pointer;user-select:none;padding:0.35rem 0.6rem;background:var(--glass-bg);border:1px solid var(--divider);border-radius:8px" title="Toggle Knowledge Base retrieval. Disable for faster responses when KB context is not needed.">
           <input type="checkbox" id="use-kb-toggle" checked style="accent-color:#06b6d4;width:15px;height:15px;cursor:pointer" />
@@ -158,7 +158,7 @@
 
     <div class="card animate-fade-up delay-200">
       <h3>Available Tools</h3>
-      <div id="tools-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+      <div id="tools-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Discovering tools...</div>
     </div>
   </div>
 
@@ -169,7 +169,7 @@
         <button class="btn btn-secondary btn-sm" onclick="loadSessions()">Refresh</button>
       </div>
       <div id="sessions-list" style="max-height:400px;overflow-y:auto">
-        <span style="color:var(--text-3);font-size:0.82rem">Loading...</span>
+        <span style="color:var(--text-3);font-size:0.82rem">Fetching sessions...</span>
       </div>
     </div>
 
@@ -207,14 +207,17 @@
 
   async function loadMemoryStats() {
     try {
-      const r = await fetch('/api/memory/stats');
+      const r = await fetch('/api/memory/stats', { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
       document.getElementById('stat-sessions').textContent = d.memory?.total_sessions || 0;
       document.getElementById('stat-messages').textContent = d.memory?.total_messages || 0;
       document.getElementById('stat-kb-docs').textContent = d.knowledge_base?.unique_documents || 0;
       document.getElementById('stat-kb-chunks').textContent = d.knowledge_base?.total_chunks || 0;
     } catch(e) {
-      document.getElementById('stat-sessions').textContent = '-';
+      document.getElementById('stat-sessions').textContent = '0';
+      document.getElementById('stat-messages').textContent = '0';
+      document.getElementById('stat-kb-docs').textContent = '0';
+      document.getElementById('stat-kb-chunks').textContent = '0';
     }
   }
 
@@ -469,23 +472,29 @@
     html += '</div>';
 
     if (grData.input && grData.input.length) {
-      html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);margin-bottom:0.35rem">Input Checks</div>';
+      html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);margin-bottom:0.35rem">🛡️ Input Checks</div>';
       grData.input.forEach(function(g) {
         var c = statusColors[g.status] || 'var(--text-3)';
-        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;margin-bottom:0.25rem;border-radius:6px;background:var(--glass-bg);font-size:0.78rem">' +
-          '<span style="color:' + c + ';font-weight:700">' + (statusIcons[g.status] || '?') + '</span>' +
-          '<span style="color:var(--text-2)">' + escapeHtml(g.guardrail) + '</span>' +
-          '<span style="margin-left:auto;font-size:0.68rem;color:' + c + '">' + escapeHtml(g.detail || g.status) + '</span></div>';
+        var latency = g.latency_ms ? '<span class="mono" style="font-size:0.65rem;color:var(--text-3);margin-left:0.25rem">' + g.latency_ms + 'ms</span>' : '';
+        var bgColor = g.status === 'blocked' ? 'rgba(244,63,94,0.08)' : g.status === 'flagged' ? 'rgba(245,158,11,0.06)' : 'var(--glass-bg)';
+        var border = g.status === 'blocked' ? 'border:1px solid rgba(244,63,94,0.2);' : g.status === 'flagged' ? 'border:1px solid rgba(245,158,11,0.15);' : '';
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;margin-bottom:0.25rem;border-radius:8px;background:' + bgColor + ';' + border + 'font-size:0.78rem">' +
+          '<span style="color:' + c + ';font-weight:700;font-size:0.88rem">' + (statusIcons[g.status] || '?') + '</span>' +
+          '<span style="color:var(--text-2);font-weight:500">' + escapeHtml(g.guardrail) + '</span>' + latency +
+          '<span style="margin-left:auto;font-size:0.68rem;color:' + c + ';font-weight:500">' + escapeHtml(g.detail || g.status) + '</span></div>';
       });
     }
     if (grData.output && grData.output.length) {
-      html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);margin:0.5rem 0 0.35rem">Output Checks</div>';
+      html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);margin:0.5rem 0 0.35rem">🛡️ Output Checks</div>';
       grData.output.forEach(function(g) {
         var c = statusColors[g.status] || 'var(--text-3)';
-        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;margin-bottom:0.25rem;border-radius:6px;background:var(--glass-bg);font-size:0.78rem">' +
-          '<span style="color:' + c + ';font-weight:700">' + (statusIcons[g.status] || '?') + '</span>' +
-          '<span style="color:var(--text-2)">' + escapeHtml(g.guardrail) + '</span>' +
-          '<span style="margin-left:auto;font-size:0.68rem;color:' + c + '">' + escapeHtml(g.detail || g.status) + '</span></div>';
+        var latency = g.latency_ms ? '<span class="mono" style="font-size:0.65rem;color:var(--text-3);margin-left:0.25rem">' + g.latency_ms + 'ms</span>' : '';
+        var bgColor = g.status === 'blocked' ? 'rgba(244,63,94,0.08)' : g.status === 'flagged' ? 'rgba(245,158,11,0.06)' : 'var(--glass-bg)';
+        var border = g.status === 'blocked' ? 'border:1px solid rgba(244,63,94,0.2);' : g.status === 'flagged' ? 'border:1px solid rgba(245,158,11,0.15);' : '';
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;margin-bottom:0.25rem;border-radius:8px;background:' + bgColor + ';' + border + 'font-size:0.78rem">' +
+          '<span style="color:' + c + ';font-weight:700;font-size:0.88rem">' + (statusIcons[g.status] || '?') + '</span>' +
+          '<span style="color:var(--text-2);font-weight:500">' + escapeHtml(g.guardrail) + '</span>' + latency +
+          '<span style="margin-left:auto;font-size:0.68rem;color:' + c + ';font-weight:500">' + escapeHtml(g.detail || g.status) + '</span></div>';
       });
     }
     body.innerHTML = html;
@@ -622,7 +631,7 @@
 
   async function loadSessions() {
     try {
-      const r = await fetch('/api/sessions');
+      const r = await fetch('/api/sessions', { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
       const el = document.getElementById('sessions-list');
       if (!d.sessions || d.sessions.length === 0) {
@@ -636,7 +645,7 @@
         </div>
       \`).join('');
     } catch(e) {
-      document.getElementById('sessions-list').innerHTML = '<p style="color:var(--danger);font-size:0.82rem">Failed to load</p>';
+      document.getElementById('sessions-list').innerHTML = '<p style="color:var(--text-3);font-size:0.82rem">No sessions yet</p>';
     }
   }
 
@@ -647,7 +656,7 @@
 
   async function loadTools() {
     try {
-      const r = await fetch('/api/tools');
+      const r = await fetch('/api/tools', { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
       const el = document.getElementById('tools-list');
       if (!d.tools || d.tools.length === 0) {
@@ -661,7 +670,7 @@
         </div>
       \`).join('');
     } catch(e) {
-      document.getElementById('tools-list').innerHTML = '<p style="color:var(--text-3)">Could not load tools</p>';
+      document.getElementById('tools-list').innerHTML = '<p style="color:var(--text-3);font-size:0.82rem">No tools registered</p>';
     }
   }
 
@@ -671,12 +680,12 @@
 
   async function loadModels() {
     try {
-      const r = await fetch('/api/models');
+      const r = await fetch('/api/models', { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
       const sel = document.getElementById('model-select');
       sel.innerHTML = '';
       if (!d.models || d.models.length === 0) {
-        sel.innerHTML = '<option value="">No models available</option>';
+        sel.innerHTML = '<option value="">Default Model</option>';
         return;
       }
       d.models.forEach(m => {
@@ -688,19 +697,19 @@
         sel.appendChild(opt);
       });
     } catch(e) {
-      document.getElementById('model-select').innerHTML = '<option value="">Failed to load</option>';
+      document.getElementById('model-select').innerHTML = '<option value="">Default Model</option>';
     }
   }
 
   async function loadAgentsDropdown() {
     try {
-      const r = await fetch('/api/agents');
+      const r = await fetch('/api/agents', { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
       const sel = document.getElementById('agent-select');
       sel.innerHTML = '';
       const agents = d.agents || [];
       if (agents.length === 0) {
-        sel.innerHTML = '<option value="">No agents</option>';
+        sel.innerHTML = '<option value="">Default Agent</option>';
         return;
       }
       agents.forEach(a => {
@@ -711,7 +720,7 @@
         sel.appendChild(opt);
       });
     } catch(e) {
-      document.getElementById('agent-select').innerHTML = '<option value="">Failed to load</option>';
+      document.getElementById('agent-select').innerHTML = '<option value="">Default Agent</option>';
     }
   }
 

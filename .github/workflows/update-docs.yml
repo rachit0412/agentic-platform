@@ -8,6 +8,14 @@ on:
       - 'docker-compose.yml'
       - 'observability/**'
       - 'tests/**'
+      - 'n8n/**'
+      - 'scripts/**'
+
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/**'
+      - 'docker-compose.yml'
 
   workflow_dispatch:
 
@@ -24,6 +32,7 @@ jobs:
         run: bash scripts/generate-docs.sh
 
       - name: Commit if changed
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
