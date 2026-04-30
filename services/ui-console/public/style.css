@@ -584,17 +584,27 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   white-space: nowrap;
 }
 .arch-pill-active {
-  color: #10b981;
-  background: rgba(16,185,129,0.10);
-  border: 1px solid rgba(16,185,129,0.25);
+  color: #047857;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.30);
 }
 .arch-pill-warn {
-  color: #f59e0b;
-  background: rgba(245,158,11,0.08);
-  border: 1px dashed rgba(245,158,11,0.35);
+  color: #b45309;
+  background: rgba(245,158,11,0.06);
+  border: 1px dashed rgba(245,158,11,0.40);
 }
-.dark .arch-pill-active { box-shadow: 0 0 6px rgba(16,185,129,0.06); }
-.dark .arch-pill-warn { box-shadow: 0 0 6px rgba(245,158,11,0.06); }
+.dark .arch-pill-active {
+  color: #34d399;
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.30);
+  box-shadow: 0 0 6px rgba(16,185,129,0.06);
+}
+.dark .arch-pill-warn {
+  color: #fbbf24;
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.35);
+  box-shadow: 0 0 6px rgba(245,158,11,0.06);
+}
 
 /* ─── Buttons ─── */
 .btn {

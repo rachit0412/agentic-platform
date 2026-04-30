@@ -40,7 +40,7 @@ cd agentic-platform
 # 2. (Optional) Copy and customise environment
 cp .env.example .env
 
-# 3. Start all 12 services
+# 3. Start all 13 services
 docker compose up -d --build
 
 # 4. Pull a model (first time only — ~4 GB)
