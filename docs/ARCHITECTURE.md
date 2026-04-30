@@ -8,7 +8,7 @@ The Agentic Platform is a containerised agent factory built with:
 - **Frontend**: Express.js + EJS (ui-console)
 - **Agent Runtime**: FastAPI + LangGraph (agent-service)
 - **Tool Runtime**: FastAPI (tools-service)
-- **LLM Providers**: Ollama (local) + Azure OpenAI + OpenAI + Azure AI Foundry
+- **LLM Providers**: Ollama (local) + Azure OpenAI (cloud)
 - **Knowledge Base**: ChromaDB (vector store, RAG)
 - **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers)
 - **Workflows**: n8n (automation, webhooks)
