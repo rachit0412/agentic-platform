@@ -164,27 +164,27 @@ curl -X POST http://localhost:8010/run \
 
 ### Dashboard Pages (19)
 
-| Page               | What you do there                                     |
-| ------------------ | ----------------------------------------------------- |
-| Overview           | Platform stats, architecture, quick-start guide       |
-| Run Agent          | Execute agents, stream responses, browse sessions     |
-| Agent Builder      | Visual agent composition with drag-and-drop           |
-| Agent Factory      | Agent factory overview dashboard                      |
-| Agents             | Create and manage agent definitions                   |
-| Skills             | Build reusable skill packages                         |
-| Prompts            | Prompt template library                               |
-| Tools              | Manage agent tools and capabilities                   |
-| Knowledge          | Knowledge base — upload, search, manage RAG docs      |
-| Workflows          | n8n workflow monitoring                               |
-| A2A Protocol       | Register peer agents for inter-agent delegation       |
-| MCP Protocol       | Connect external tool servers                         |
-| Intelligence Hub   | Operational intelligence overview                     |
-| Traceability       | Langfuse trace timeline and deep-dive                 |
-| Evaluation         | Agent quality scoring and model comparison            |
-| Observability      | Stack health — Prometheus, Grafana, Loki status       |
-| Guardrails         | Runtime safety controls and policy enforcement        |
-| Marketplace        | Browse and install templates                          |
-| Model Hub          | Model management and system config                    |
+| Page             | What you do there                                 |
+| ---------------- | ------------------------------------------------- |
+| Overview         | Platform stats, architecture, quick-start guide   |
+| Run Agent        | Execute agents, stream responses, browse sessions |
+| Agent Builder    | Visual agent composition with drag-and-drop       |
+| Agent Factory    | Agent factory overview dashboard                  |
+| Agents           | Create and manage agent definitions               |
+| Skills           | Build reusable skill packages                     |
+| Prompts          | Prompt template library                           |
+| Tools            | Manage agent tools and capabilities               |
+| Knowledge        | Knowledge base — upload, search, manage RAG docs  |
+| Workflows        | n8n workflow monitoring                           |
+| A2A Protocol     | Register peer agents for inter-agent delegation   |
+| MCP Protocol     | Connect external tool servers                     |
+| Intelligence Hub | Operational intelligence overview                 |
+| Traceability     | Langfuse trace timeline and deep-dive             |
+| Evaluation       | Agent quality scoring and model comparison        |
+| Observability    | Stack health — Prometheus, Grafana, Loki status   |
+| Guardrails       | Runtime safety controls and policy enforcement    |
+| Marketplace      | Browse and install templates                      |
+| Model Hub        | Model management and system config                |
 
 ---
 
