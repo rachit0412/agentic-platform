@@ -427,10 +427,145 @@ async function loadPlatformStats() {
 loadPlatformStats();
 </script>
 
-<!-- Architecture Diagram -->
+<!-- Enterprise Architecture — Layered View (Build / Scale / Govern / Optimize) -->
 <div class="card animate-fade-up delay-300" style="margin-top:1.5rem">
   <h3 style="margin-bottom:0.5rem">Platform Architecture</h3>
-  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">One runtime, <strong style="color:#8b5cf6">unlimited agents</strong>. Each agent = <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic + Context</strong> in a <strong style="color:#06b6d4">ReAct loop</strong>. <strong style="color:#10b981">4 LLM providers</strong> (Ollama, Azure OpenAI, OpenAI, Azure AI Foundry). Embeddings stored in <strong style="color:#10b981">ChromaDB</strong> for RAG retrieval.</p>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">Enterprise-grade agentic platform — four layers from <strong style="color:#8b5cf6">Build</strong> to <strong style="color:#06b6d4">Scale</strong> to <strong style="color:#10b981">Govern</strong> to <strong style="color:#f59e0b">Optimize</strong>. Each layer maps directly to platform capabilities.</p>
+
+  <div style="overflow-x:auto">
+
+    <!-- ════════════ BUILD LAYER ════════════ -->
+    <div style="border:2px solid rgba(139,92,246,0.35);border-radius:16px;padding:1.25rem;margin-bottom:1rem;background:linear-gradient(135deg, rgba(139,92,246,0.04), rgba(139,92,246,0.01))">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:#8b5cf6;letter-spacing:0.5px">Build</div>
+        <span style="font-size:0.72rem;color:var(--text-3)">Agent Factory & Model Hub & Tools, Data, and Other Agents</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <!-- Left: Agent Factory & Model Hub -->
+        <div>
+          <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin-bottom:0.5rem;letter-spacing:0.3px">Model Hub</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="arch-pill arch-pill-active">Ollama (Local)</span>
+            <span class="arch-pill arch-pill-active">Azure OpenAI</span>
+            <span class="arch-pill arch-pill-active">OpenAI</span>
+            <span class="arch-pill arch-pill-active">Azure AI Foundry</span>
+          </div>
+          <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Agent Factory</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="arch-pill arch-pill-active">Agent Builder</span>
+            <span class="arch-pill arch-pill-active">Skills Designer</span>
+            <span class="arch-pill arch-pill-active">Prompt Library</span>
+            <span class="arch-pill arch-pill-active">Agent Hub</span>
+          </div>
+          <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Frameworks</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="arch-pill arch-pill-active">LangChain</span>
+            <span class="arch-pill arch-pill-active">LangGraph (ReAct)</span>
+            <span class="arch-pill arch-pill-active">Langfuse Tracing</span>
+          </div>
+        </div>
+        <!-- Right: Tools, Data & Connectivity -->
+        <div>
+          <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin-bottom:0.5rem;letter-spacing:0.3px">Tools, Data & Connectivity</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="arch-pill arch-pill-active">A2A Protocol</span>
+            <span class="arch-pill arch-pill-active">MCP Servers</span>
+            <span class="arch-pill arch-pill-active">RAG Pipeline</span>
+            <span class="arch-pill arch-pill-active">Web Search</span>
+            <span class="arch-pill arch-pill-active">Code Execution</span>
+            <span class="arch-pill arch-pill-active">APIs & Connectors</span>
+            <span class="arch-pill arch-pill-active">Marketplace</span>
+          </div>
+          <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Knowledge & Grounding</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="arch-pill arch-pill-active">ChromaDB (vectors)</span>
+            <span class="arch-pill arch-pill-active">Unstructured Docs</span>
+            <span class="arch-pill arch-pill-warn">Structured Data</span>
+            <span class="arch-pill arch-pill-warn">Grounding / Citations</span>
+          </div>
+          <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Workflow Orchestration</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="arch-pill arch-pill-active">n8n Automation</span>
+            <span class="arch-pill arch-pill-active">Scheduled Runs</span>
+            <span class="arch-pill arch-pill-active">Webhook Triggers</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ SCALE LAYER ════════════ -->
+    <div style="border:2px solid rgba(6,182,212,0.35);border-radius:16px;padding:1.25rem;margin-bottom:1rem;background:linear-gradient(135deg, rgba(6,182,212,0.04), rgba(6,182,212,0.01))">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:#06b6d4;letter-spacing:0.5px">Scale</div>
+        <span style="font-size:0.72rem;color:var(--text-3)">Agent Runtime, Sessions, Sandbox & Memory</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+        <span class="arch-pill arch-pill-active">Agent Runtime (FastAPI)</span>
+        <span class="arch-pill arch-pill-active">Agent Sessions</span>
+        <span class="arch-pill arch-pill-active">Short-Term Memory</span>
+        <span class="arch-pill arch-pill-active">Long-Term Summaries</span>
+        <span class="arch-pill arch-pill-active">Agent Registry (SQLite)</span>
+        <span class="arch-pill arch-pill-active">SSE Streaming</span>
+        <span class="arch-pill arch-pill-warn">Agent Sandbox</span>
+        <span class="arch-pill arch-pill-warn">Semantic Memory Bank</span>
+        <span class="arch-pill arch-pill-warn">Multi-Tenant</span>
+      </div>
+    </div>
+
+    <!-- ════════════ GOVERN LAYER ════════════ -->
+    <div style="border:2px solid rgba(16,185,129,0.35);border-radius:16px;padding:1.25rem;margin-bottom:1rem;background:linear-gradient(135deg, rgba(16,185,129,0.04), rgba(16,185,129,0.01))">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:#10b981;letter-spacing:0.5px">Govern</div>
+        <span style="font-size:0.72rem;color:var(--text-3)">Guardrails, Security, Policy & Compliance</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+        <span class="arch-pill arch-pill-active">10 Guardrails (runtime)</span>
+        <span class="arch-pill arch-pill-active">PII Detection</span>
+        <span class="arch-pill arch-pill-active">Prompt Injection Guard</span>
+        <span class="arch-pill arch-pill-active">Toxicity Filter</span>
+        <span class="arch-pill arch-pill-active">Output Length Control</span>
+        <span class="arch-pill arch-pill-active">Topic Restriction</span>
+        <span class="arch-pill arch-pill-active">Data Leak Prevention</span>
+        <span class="arch-pill arch-pill-warn">Agent Identity (RBAC)</span>
+        <span class="arch-pill arch-pill-warn">Agent Gateway</span>
+        <span class="arch-pill arch-pill-warn">Anomaly Detection</span>
+        <span class="arch-pill arch-pill-warn">Compliance Audit</span>
+      </div>
+    </div>
+
+    <!-- ════════════ OPTIMIZE LAYER ════════════ -->
+    <div style="border:2px solid rgba(245,158,11,0.35);border-radius:16px;padding:1.25rem;background:linear-gradient(135deg, rgba(245,158,11,0.04), rgba(245,158,11,0.01))">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <div style="font-size:1.1rem;font-weight:700;color:#f59e0b;letter-spacing:0.5px">Optimize</div>
+        <span style="font-size:0.72rem;color:var(--text-3)">Evaluation, Observability, Simulation & Continuous Improvement</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+        <span class="arch-pill arch-pill-active">Agent Evaluation</span>
+        <span class="arch-pill arch-pill-active">Observability (Grafana)</span>
+        <span class="arch-pill arch-pill-active">Prometheus Metrics</span>
+        <span class="arch-pill arch-pill-active">LLM Tracing (Langfuse)</span>
+        <span class="arch-pill arch-pill-active">OpenTelemetry</span>
+        <span class="arch-pill arch-pill-active">Traceability Dashboard</span>
+        <span class="arch-pill arch-pill-active">Intelligence Hub</span>
+        <span class="arch-pill arch-pill-active">Control Matrix</span>
+        <span class="arch-pill arch-pill-warn">Agent Simulation</span>
+        <span class="arch-pill arch-pill-warn">A/B Testing</span>
+        <span class="arch-pill arch-pill-warn">Auto-Optimizer</span>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:1.5rem;margin-top:1rem;padding:0.75rem 1rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border);font-size:0.75rem;color:var(--text-3)">
+      <div style="display:flex;align-items:center;gap:0.35rem"><span class="arch-pill arch-pill-active" style="font-size:0.65rem;padding:2px 6px">Active</span> Built & operational</div>
+      <div style="display:flex;align-items:center;gap:0.35rem"><span class="arch-pill arch-pill-warn" style="font-size:0.65rem;padding:2px 6px">Planned</span> Identified gap — roadmap</div>
+    </div>
+  </div>
+</div>
+
+<!-- Services Topology -->
+<div class="card animate-fade-up delay-300" style="margin-top:1.5rem">
+  <h3 style="margin-bottom:0.5rem">Services Topology</h3>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">13 containerized services — how data flows from user prompt to agent response.</p>
 
   <div style="overflow-x:auto">
     <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:960px;margin:0 auto;display:block;font-family:var(--sans)">
@@ -451,30 +586,28 @@ loadPlatformStats();
       <rect x="140" y="200" width="100" height="80" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5"/>
       <text x="190" y="232" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="600">UI Console</text>
       <text x="190" y="248" text-anchor="middle" fill="var(--text-3)" font-size="8">Express + EJS</text>
-      <text x="190" y="260" text-anchor="middle" fill="var(--text-3)" font-size="8">:3001</text>
+      <text x="190" y="260" text-anchor="middle" fill="var(--text-3)" font-size="8">:3000</text>
 
       <!-- User → UI -->
       <line x1="110" y1="240" x2="138" y2="240" stroke="var(--text-3)" stroke-width="1.2" marker-end="url(#ah)"/>
 
-      <!-- ====== AGENT RUNTIME (center, large) ====== -->
+      <!-- ====== AGENT RUNTIME ====== -->
       <rect x="270" y="20" width="420" height="480" rx="20" fill="rgba(139,92,246,0.03)" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="6 3"/>
       <text x="480" y="48" text-anchor="middle" fill="#8b5cf6" font-size="12" font-weight="700">AGENT REGISTRY &amp; RUNTIME</text>
-      <text x="480" y="63" text-anchor="middle" fill="var(--text-3)" font-size="9">FastAPI :8010 — Each agent = LLM + Tools + Memory + Control Logic + Context in a loop</text>
+      <text x="480" y="63" text-anchor="middle" fill="var(--text-3)" font-size="9">FastAPI :8010 — Each agent = LLM + Tools + Memory + Control Logic + Context</text>
 
       <!-- UI → Agent Runtime -->
       <line x1="240" y1="240" x2="268" y2="240" stroke="#06b6d4" stroke-width="1.2" marker-end="url(#ah-cyan)"/>
       <text x="254" y="233" text-anchor="middle" fill="#06b6d4" font-size="7">SSE</text>
 
-      <!-- ── Agent A ── -->
+      <!-- Agent A -->
       <rect x="295" y="80" width="180" height="110" rx="14" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#glow)"/>
       <text x="385" y="100" text-anchor="middle" fill="#8b5cf6" font-size="10" font-weight="700">Agent: Research Analyst</text>
       <text x="385" y="114" text-anchor="middle" fill="var(--text-3)" font-size="8">model: llama3 (ollama) | temp: 0.3</text>
-      <!-- Skills inside agent A -->
       <rect x="305" y="122" width="75" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
       <text x="342" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Deep Research</text>
       <rect x="388" y="122" width="75" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
       <text x="425" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Summarization</text>
-      <!-- Tools inside agent A -->
       <rect x="305" y="150" width="55" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
       <text x="332" y="162" text-anchor="middle" fill="#06b6d4" font-size="7">web_search</text>
       <rect x="365" y="150" width="45" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
@@ -482,7 +615,7 @@ loadPlatformStats();
       <rect x="415" y="150" width="50" height="18" rx="4" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.6"/>
       <text x="440" y="162" text-anchor="middle" fill="#10b981" font-size="7">KB: docs</text>
 
-      <!-- ── Agent B ── -->
+      <!-- Agent B -->
       <rect x="495" y="80" width="180" height="110" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5" filter="url(#glow)"/>
       <text x="585" y="100" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">Agent: Code Assistant</text>
       <text x="585" y="114" text-anchor="middle" fill="var(--text-3)" font-size="8">model: gpt-4.1-mini (foundry) | temp: 0.1</text>
@@ -490,8 +623,6 @@ loadPlatformStats();
       <text x="537" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Code Review</text>
       <rect x="578" y="122" width="55" height="22" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
       <text x="605" y="137" text-anchor="middle" fill="#f59e0b" font-size="7.5">Bug Fix</text>
-      <rect x="640" y="122" width="25" height="22" rx="5" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-width="0.5"/>
-      <text x="652" y="137" text-anchor="middle" fill="var(--text-3)" font-size="7.5">...</text>
       <rect x="505" y="150" width="62" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
       <text x="536" y="162" text-anchor="middle" fill="#06b6d4" font-size="7">code_exec</text>
       <rect x="572" y="150" width="45" height="18" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
@@ -499,102 +630,100 @@ loadPlatformStats();
       <rect x="622" y="150" width="48" height="18" rx="4" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.6"/>
       <text x="646" y="162" text-anchor="middle" fill="#10b981" font-size="7">KB: code</text>
 
-      <!-- ── More agents indicator ── -->
+      <!-- More agents -->
       <rect x="295" y="200" width="380" height="28" rx="8" fill="rgba(139,92,246,0.04)" stroke="var(--glass-border)" stroke-width="1" stroke-dasharray="4 3"/>
-      <text x="485" y="219" text-anchor="middle" fill="var(--text-3)" font-size="9" font-style="italic">+ Support Bot, Content Writer, API Orchestrator ... (create as many agents as you need)</text>
+      <text x="485" y="219" text-anchor="middle" fill="var(--text-3)" font-size="9" font-style="italic">+ Support Bot, Content Writer, API Orchestrator ... unlimited agents</text>
 
-      <!-- ====== LANGGRAPH ReAct Loop ====== -->
+      <!-- LangGraph ReAct Loop -->
       <rect x="310" y="240" width="360" height="120" rx="14" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1.5"/>
       <text x="490" y="260" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700">LangGraph — ReAct Reasoning Loop</text>
-      <text x="490" y="274" text-anchor="middle" fill="var(--text-3)" font-size="8">Every agent runs through this same execution engine</text>
-
-      <!-- ReAct nodes -->
-      <rect x="325" y="284" width="90" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="370" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">1. Retrieve KB</text>
-
-      <rect x="425" y="284" width="80" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="465" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">2. Reason</text>
-
-      <rect x="515" y="284" width="80" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="555" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">3. Act (tools)</text>
-
-      <rect x="605" y="284" width="55" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="632" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8.5">4. Reply</text>
-
-      <!-- Loop arrow -->
-      <path d="M595 312 Q610 340 465 340 Q330 340 330 304" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2" fill="none"/>
+      <text x="490" y="274" text-anchor="middle" fill="var(--text-3)" font-size="8">Guardrails ▸ Retrieve KB ▸ Reason ▸ Act ▸ Check ▸ Reply</text>
+      <rect x="325" y="284" width="65" height="28" rx="7" fill="rgba(16,185,129,0.12)" stroke="#10b981" stroke-width="1"/>
+      <text x="357" y="303" text-anchor="middle" fill="#10b981" font-size="8">Guardrails</text>
+      <rect x="398" y="284" width="72" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="434" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8">Retrieve KB</text>
+      <rect x="478" y="284" width="60" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="508" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8">Reason</text>
+      <rect x="546" y="284" width="65" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="578" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8">Act (tools)</text>
+      <rect x="619" y="284" width="42" height="28" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="640" y="303" text-anchor="middle" fill="var(--text-2)" font-size="8">Reply</text>
+      <path d="M611 312 Q630 340 480 340 Q340 340 340 304" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2" fill="none"/>
       <text x="490" y="350" text-anchor="middle" fill="#06b6d4" font-size="7.5" font-style="italic">iterate until done</text>
 
-      <!-- ====== DATA LAYER ====== -->
-      <rect x="295" y="375" width="120" height="50" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
-      <text x="355" y="393" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">ChromaDB</text>
-      <text x="355" y="406" text-anchor="middle" fill="var(--text-3)" font-size="7">Vector Store :8200</text>
-      <text x="355" y="417" text-anchor="middle" fill="#10b981" font-size="6.5">embed → store → retrieve</text>
+      <!-- Memory Layer — two sub-boxes for STM & LTM -->
+      <rect x="295" y="370" width="190" height="120" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="390" y="386" text-anchor="middle" fill="#8b5cf6" font-size="9" font-weight="700">MEMORY LAYER</text>
+      <!-- STM box -->
+      <rect x="305" y="394" width="170" height="40" rx="8" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="390" y="410" text-anchor="middle" fill="#06b6d4" font-size="8" font-weight="600">Short-Term Memory</text>
+      <text x="390" y="422" text-anchor="middle" fill="var(--text-3)" font-size="7">SQLite conversations table — last 100 msgs/session</text>
+      <!-- LTM box -->
+      <rect x="305" y="440" width="170" height="40" rx="8" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1"/>
+      <text x="390" y="456" text-anchor="middle" fill="#8b5cf6" font-size="8" font-weight="600">Long-Term Memory</text>
+      <text x="390" y="468" text-anchor="middle" fill="var(--text-3)" font-size="7">SQLite session_summaries — rolling 2 KB/session</text>
 
-      <rect x="430" y="375" width="120" height="50" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
-      <text x="490" y="396" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">SQLite</text>
-      <text x="490" y="410" text-anchor="middle" fill="var(--text-3)" font-size="8">Memory + Config</text>
+      <!-- Data Layer -->
+      <rect x="295" y="435" width="90" height="55" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="340" y="455" text-anchor="middle" fill="#10b981" font-size="9" font-weight="600">ChromaDB</text>
+      <text x="340" y="468" text-anchor="middle" fill="var(--text-3)" font-size="7">Vectors :8200</text>
+      <text x="340" y="480" text-anchor="middle" fill="#10b981" font-size="6.5">RAG retrieval</text>
 
-      <rect x="565" y="375" width="110" height="50" rx="10" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1"/>
-      <text x="620" y="393" text-anchor="middle" fill="#8b5cf6" font-size="9" font-weight="600">LLM Providers (4)</text>
-      <text x="620" y="406" text-anchor="middle" fill="var(--text-3)" font-size="7">Ollama | Azure OAI</text>
-      <text x="620" y="417" text-anchor="middle" fill="var(--text-3)" font-size="7">OpenAI | Foundry</text>
+      <rect x="395" y="435" width="90" height="55" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
+      <text x="440" y="455" text-anchor="middle" fill="#10b981" font-size="9" font-weight="600">SQLite</text>
+      <text x="440" y="468" text-anchor="middle" fill="var(--text-3)" font-size="7">Config + Memory</text>
 
-      <!-- ====== OBSERVABILITY (bottom) ====== -->
-      <rect x="295" y="440" width="120" height="46" rx="10" fill="rgba(244,63,94,0.08)" stroke="#f43f5e" stroke-width="1"/>
-      <text x="355" y="460" text-anchor="middle" fill="#f43f5e" font-size="10" font-weight="600">Langfuse</text>
-      <text x="355" y="474" text-anchor="middle" fill="var(--text-3)" font-size="8">LLM Tracing :3012</text>
+      <!-- LLM Providers -->
+      <rect x="500" y="370" width="180" height="55" rx="10" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1"/>
+      <text x="590" y="386" text-anchor="middle" fill="#8b5cf6" font-size="9" font-weight="700">MODEL HUB (4 Providers)</text>
+      <text x="590" y="401" text-anchor="middle" fill="var(--text-3)" font-size="7.5">Ollama (local) | Azure OpenAI</text>
+      <text x="590" y="413" text-anchor="middle" fill="var(--text-3)" font-size="7.5">OpenAI | Azure AI Foundry</text>
 
-      <rect x="430" y="440" width="120" height="46" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
-      <text x="490" y="460" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">Grafana</text>
-      <text x="490" y="474" text-anchor="middle" fill="var(--text-3)" font-size="8">Monitoring :3013</text>
+      <!-- Observability group -->
+      <rect x="500" y="432" width="180" height="60" rx="12" fill="rgba(244,63,94,0.04)" stroke="#f43f5e" stroke-width="1.5"/>
+      <text x="590" y="446" text-anchor="middle" fill="#f43f5e" font-size="8" font-weight="700">OBSERVABILITY STACK</text>
+      <rect x="508" y="454" width="52" height="32" rx="6" fill="rgba(244,63,94,0.10)" stroke="#f43f5e" stroke-width="0.8"/>
+      <text x="534" y="467" text-anchor="middle" fill="#f43f5e" font-size="7" font-weight="600">Langfuse</text>
+      <text x="534" y="478" text-anchor="middle" fill="var(--text-3)" font-size="5.5">LLM Traces</text>
+      <rect x="564" y="454" width="52" height="32" rx="6" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.8"/>
+      <text x="590" y="467" text-anchor="middle" fill="#10b981" font-size="7" font-weight="600">Grafana</text>
+      <text x="590" y="478" text-anchor="middle" fill="var(--text-3)" font-size="5.5">Dashboards</text>
+      <rect x="620" y="454" width="55" height="32" rx="6" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.8"/>
+      <text x="647" y="467" text-anchor="middle" fill="#10b981" font-size="7" font-weight="600">Prometheus</text>
+      <text x="647" y="478" text-anchor="middle" fill="var(--text-3)" font-size="5.5">Metrics</text>
 
-      <rect x="565" y="440" width="110" height="46" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1"/>
-      <text x="620" y="460" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">Prometheus</text>
-      <text x="620" y="474" text-anchor="middle" fill="var(--text-3)" font-size="8">Metrics</text>
+      <!-- n8n -->
+      <rect x="730" y="80" width="200" height="200" rx="18" fill="rgba(245,158,11,0.05)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="830" y="108" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700">n8n Workflows</text>
+      <text x="830" y="124" text-anchor="middle" fill="var(--text-3)" font-size="9">Automation :5678</text>
+      <rect x="748" y="140" width="164" height="24" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="157" text-anchor="middle" fill="var(--text-2)" font-size="8.5">Scheduled Agent Runs</text>
+      <rect x="748" y="170" width="164" height="24" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="187" text-anchor="middle" fill="var(--text-2)" font-size="8.5">Webhook Triggers</text>
+      <rect x="748" y="200" width="164" height="24" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="217" text-anchor="middle" fill="var(--text-2)" font-size="8.5">Multi-Step Pipelines</text>
+      <rect x="748" y="230" width="164" height="24" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="830" y="247" text-anchor="middle" fill="var(--text-2)" font-size="8.5">RAG Ingest Workflows</text>
 
-      <!-- ====== n8n (EXTERNAL, right side) ====== -->
-      <rect x="730" y="80" width="200" height="240" rx="18" fill="rgba(245,158,11,0.05)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3"/>
-      <text x="830" y="108" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700">n8n — External</text>
-      <text x="830" y="124" text-anchor="middle" fill="var(--text-3)" font-size="9">Workflow Automation :5678</text>
+      <!-- Tools Service -->
+      <rect x="730" y="310" width="200" height="50" rx="10" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="830" y="331" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="600">Tools Service :8011</text>
+      <text x="830" y="345" text-anchor="middle" fill="var(--text-3)" font-size="8">web_search, code_exec, http_fetch</text>
 
-      <rect x="748" y="140" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="159" text-anchor="middle" fill="var(--text-2)" font-size="9">Scheduled Agent Runs</text>
-      <rect x="748" y="174" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="193" text-anchor="middle" fill="var(--text-2)" font-size="9">Webhook → Agent Trigger</text>
-      <rect x="748" y="208" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="227" text-anchor="middle" fill="var(--text-2)" font-size="9">Multi-Step Pipelines</text>
-      <rect x="748" y="242" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="261" text-anchor="middle" fill="var(--text-2)" font-size="9">RAG Ingest Workflows</text>
-      <rect x="748" y="276" width="164" height="28" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="295" text-anchor="middle" fill="var(--text-2)" font-size="9">External API Chains</text>
+      <!-- OTel -->
+      <rect x="730" y="380" width="200" height="40" rx="10" fill="rgba(16,185,129,0.06)" stroke="#10b981" stroke-width="1"/>
+      <text x="830" y="405" text-anchor="middle" fill="#10b981" font-size="9" font-weight="600">OpenTelemetry Collector :4317</text>
 
-      <!-- Tools Service (external, below n8n) -->
-      <rect x="730" y="345" width="200" height="50" rx="10" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="830" y="366" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="600">Tools Service</text>
-      <text x="830" y="380" text-anchor="middle" fill="var(--text-3)" font-size="8">web_search, code_exec, http_fetch :8001</text>
-
-      <!-- ====== ARROWS ====== -->
-      <!-- UI → n8n -->
+      <!-- Arrows -->
       <path d="M240 220 Q260 100 728 120" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#ah-amber)"/>
       <text x="450" y="90" fill="#f59e0b" font-size="7">iframe / API</text>
+      <line x1="730" y1="230" x2="692" y2="260" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#ah-amber)"/>
+      <line x1="690" y1="300" x2="728" y2="325" stroke="#06b6d4" stroke-width="1" marker-end="url(#ah-cyan)"/>
 
-      <!-- n8n → Agent Runtime -->
-      <line x1="730" y1="260" x2="692" y2="260" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#ah-amber)"/>
-      <text x="711" y="253" text-anchor="middle" fill="#f59e0b" font-size="7">calls</text>
-
-      <!-- Agent Runtime → Tools Service -->
-      <line x1="690" y1="300" x2="728" y2="340" stroke="#06b6d4" stroke-width="1" marker-end="url(#ah-cyan)"/>
-
-      <!-- ====== LEGEND ====== -->
-      <rect x="730" y="415" width="200" height="75" rx="10" fill="var(--glass-bg)" stroke="var(--glass-border)" stroke-width="1"/>
-      <text x="830" y="432" text-anchor="middle" fill="var(--text-2)" font-size="9" font-weight="600">Legend</text>
-      <rect x="742" y="440" width="10" height="10" rx="2" fill="rgba(139,92,246,0.3)" stroke="#8b5cf6"/>
-      <text x="758" y="449" fill="var(--text-2)" font-size="8">Agent = LLM + Tools + Memory + Logic + Context</text>
-      <rect x="742" y="455" width="10" height="10" rx="2" fill="rgba(245,158,11,0.3)" stroke="#f59e0b"/>
-      <text x="758" y="464" fill="var(--text-2)" font-size="8">Skill = behavior profile (prompt + tools)</text>
-      <rect x="742" y="470" width="10" height="10" rx="2" fill="rgba(6,182,212,0.3)" stroke="#06b6d4"/>
-      <text x="758" y="479" fill="var(--text-2)" font-size="8">LangGraph = agent reasoning engine</text>
+      <!-- Legend -->
+      <rect x="730" y="440" width="200" height="50" rx="10" fill="var(--glass-bg)" stroke="var(--glass-border)" stroke-width="1"/>
+      <text x="830" y="458" text-anchor="middle" fill="var(--text-2)" font-size="9" font-weight="600">13 Services — Docker Compose</text>
+      <text x="830" y="474" text-anchor="middle" fill="var(--text-3)" font-size="7.5">Agent = LLM + Tools + Memory + Logic + Context</text>
     </svg>
   </div>
 </div>

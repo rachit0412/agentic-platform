@@ -90,11 +90,12 @@ async function loadModels() {
       el.innerHTML = '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker exec ollama ollama pull llama3</code></p>';
       return;
     }
-    el.innerHTML = '<table><tr><th>Model</th><th>Size</th><th>Digest</th></tr>' +
+    var activeModel = d.active ? d.active.model : '';
+    el.innerHTML = '<table><tr><th>Model</th><th>Provider</th><th>Size</th></tr>' +
       d.models.map(m => \`<tr>
-        <td>\${escapeHtml(m.name)} \${m.name === d.current_model ? '<span class="badge badge-success">active</span>' : ''}</td>
-        <td class="mono">\${(m.size / 1e9).toFixed(1)} GB</td>
-        <td class="mono" style="font-size:0.72rem">\${escapeHtml(m.digest)}</td>
+        <td>\${escapeHtml(m.full_name || m.model)} \${m.active ? '<span class="badge badge-success">active</span>' : ''}</td>
+        <td class="mono" style="font-size:0.78rem">\${escapeHtml(m.provider || '')}</td>
+        <td class="mono">\${m.size ? (m.size / 1e9).toFixed(1) + ' GB' : '—'}</td>
       </tr>\`).join('') + '</table>';
   } catch(e) {
     document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';

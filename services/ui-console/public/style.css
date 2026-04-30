@@ -574,6 +574,28 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
 .dark .badge-error, .dark .badge.unhealthy { box-shadow: 0 0 10px rgba(244,63,94,0.08); }
 .dark .badge-warning, .dark .badge.pending { box-shadow: 0 0 10px rgba(245,158,11,0.06); }
 
+/* ─── Architecture Pills ─── */
+.arch-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.arch-pill-active {
+  color: #10b981;
+  background: rgba(16,185,129,0.10);
+  border: 1px solid rgba(16,185,129,0.25);
+}
+.arch-pill-warn {
+  color: #f59e0b;
+  background: rgba(245,158,11,0.08);
+  border: 1px dashed rgba(245,158,11,0.35);
+}
+.dark .arch-pill-active { box-shadow: 0 0 6px rgba(16,185,129,0.06); }
+.dark .arch-pill-warn { box-shadow: 0 0 6px rgba(245,158,11,0.06); }
+
 /* ─── Buttons ─── */
 .btn {
   display: inline-flex;
