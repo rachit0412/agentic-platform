@@ -199,14 +199,24 @@ def _make_custom_tool(ct: dict):
 # ── Legacy compatibility ────────────────────────────────────────────────────
 # These keep the old graph.py imports working during migration.
 
-TOOL_CATALOGUE: list[dict] = [
-    {"name": t.name, "description": t.description, "endpoint": "", "method": "POST", "parameters": {}}
-    for t in get_all_tools()
-]
+def _get_tool_catalogue() -> list[dict]:
+    """Build a fresh tool catalogue including custom tools."""
+    return [
+        {"name": t.name, "description": t.description, "endpoint": "", "method": "POST", "parameters": {}}
+        for t in get_all_tools()
+    ]
+
+# Lazy property: rebuilt on access so custom tools are always included.
+TOOL_CATALOGUE: list[dict] = []
+
+def _refresh_catalogue():
+    global TOOL_CATALOGUE
+    TOOL_CATALOGUE[:] = _get_tool_catalogue()
 
 
 def catalogue_as_text() -> str:
     """Render tool list as plain text for system prompts."""
+    _refresh_catalogue()
     lines = []
     for t in get_all_tools():
         lines.append(f"- {t.name}: {t.description}")

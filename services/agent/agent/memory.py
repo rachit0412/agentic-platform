@@ -91,7 +91,7 @@ def init_db():
     try:
         conn.execute("ALTER TABLE agents ADD COLUMN top_p REAL DEFAULT 1.0")
         conn.commit()
-    except Exception:
+    except sqlite3.OperationalError:
         pass  # column already exists
     # ── A2A Peers table ──
     conn.execute(

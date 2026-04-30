@@ -93,15 +93,16 @@ async def health():
 async def run(body: RunRequest, request: Request):
     request_id = request.headers.get("x-request-id", str(uuid.uuid4())[:8])
     logger.info(
-        "req=%s session=%s prompt=%s provider=%s model=%s",
+        "req=%s session=%s prompt=%s provider=%s model=%s agent=%s",
         request_id,
         body.sessionId,
         body.prompt[:80],
         body.provider or "default",
         body.model or "default",
+        body.agent_id or "default",
     )
 
-    # Switch model if requested
+    # Switch model if requested explicitly
     if body.provider or body.model:
         from agent.llm import set_active_model as _switch
         _switch(
@@ -111,6 +112,19 @@ async def run(body: RunRequest, request: Request):
             top_p=body.top_p,
             max_completion_tokens=body.max_completion_tokens,
         )
+
+    # Load agent config if specified
+    if body.agent_id:
+        agent_config = get_agent(body.agent_id)
+        if agent_config and not (body.provider or body.model):
+            from agent.llm import set_active_model as _switch
+            _switch(
+                provider=agent_config.get("provider", "ollama"),
+                model=agent_config.get("model", "llama3"),
+                temperature=body.temperature if body.temperature is not None else agent_config.get("temperature"),
+                top_p=body.top_p if body.top_p is not None else agent_config.get("top_p"),
+                max_completion_tokens=body.max_completion_tokens,
+            )
 
     result = await run_agent(
         prompt=body.prompt,

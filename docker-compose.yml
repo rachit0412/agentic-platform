@@ -336,7 +336,7 @@ services:
     networks:
       - platform-net
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8000' || exit 1"]
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/v2/heartbeat\")'"]
       interval: 15s
       timeout: 5s
       retries: 3
