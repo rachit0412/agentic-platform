@@ -259,7 +259,7 @@ function renderFolderTree() {
     const depth = (f.path.match(/\\//g) || []).length - 1;
     const indent = Math.max(0, depth - 1) * 12;
     const folderName = f.path === '/' ? '/ (root)' : f.path.replace(/^\\//,'').replace(/\\/$/, '').split('/').pop();
-    html += '<div onclick="selectFolder(\\\'' + escapeHtml(f.path) + '\\\')" style="cursor:pointer;padding:0.3rem 0.5rem;padding-left:' + (8 + indent) + 'px;border-radius:6px;display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;' + (isActive ? 'background:rgba(6,182,212,0.12);color:#06b6d4;font-weight:600' : 'color:var(--text-2)') + ';margin-bottom:0.15rem">';
+    html += '<div onclick="selectFolder(\\'' + escapeHtml(f.path) + '\\')" style="cursor:pointer;padding:0.3rem 0.5rem;padding-left:' + (8 + indent) + 'px;border-radius:6px;display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;' + (isActive ? 'background:rgba(6,182,212,0.12);color:#06b6d4;font-weight:600' : 'color:var(--text-2)') + ';margin-bottom:0.15rem">';
     html += '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     html += escapeHtml(folderName) + ' <span style="font-size:0.65rem;opacity:0.6;margin-left:auto">' + f.count + '</span></div>';
   });

@@ -203,11 +203,15 @@ async function toggleGuardrail(id, enabled) {
     const idx = allGuardrails.findIndex(g => g.id === id);
     if (idx >= 0) allGuardrails[idx] = updated;
 
-    // Update card styling
+    // Update card styling and checkbox
     const card = document.getElementById('gr-card-' + id);
     if (card) {
       if (enabled) card.classList.remove('disabled');
       else card.classList.add('disabled');
+      var cb = card.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = enabled;
+      var lbl = card.querySelector('.gr-toggle');
+      if (lbl) lbl.title = (enabled ? 'Disable' : 'Enable') + ' ' + (updated.name || id);
     }
     updateStats();
     showToast((enabled ? 'Enabled' : 'Disabled') + ': ' + (updated.name || id), enabled ? 'success' : 'warning');
