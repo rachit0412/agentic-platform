@@ -65,6 +65,9 @@
 
 <!-- View: n8n Editor (iframe) -->
 <div id="view-editor" class="animate-fade-up delay-100">
+  <div id="n8n-auth-banner" style="display:none;margin-bottom:0.75rem;padding:0.65rem 1rem;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);font-size:0.82rem;color:var(--text-2)">
+    <strong style="color:#f59e0b">n8n requires sign-in.</strong> Log in below with <span class="mono" style="font-size:0.78rem">admin@local.dev</span> / <span class="mono" style="font-size:0.78rem">Changeme1!</span> (or your custom credentials) to access the workflow editor.
+  </div>
   <div class="card" style="padding:0;overflow:hidden;border-radius:16px;margin-bottom:1.5rem">
     <div id="n8n-iframe-wrap" style="position:relative;width:100%;height:70vh;min-height:500px;background:#1a1a2e">
       <div id="n8n-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;background:#1a1a2e">
@@ -211,28 +214,36 @@ function wfRefresh() {
 }
 
 async function wfLoadStats() {
+  var authFailed = false;
   try {
     var r = await fetch('/api/n8n/workflows');
     var d = await r.json();
     wfData.workflows = d.workflows || [];
+    if (d.error) authFailed = true;
     document.getElementById('stat-total').textContent = wfData.workflows.length;
     document.getElementById('stat-active').textContent = wfData.workflows.filter(function(w){return w.active}).length;
   } catch(e) {
+    authFailed = true;
     document.getElementById('stat-total').textContent = '?';
     document.getElementById('stat-active').textContent = '?';
   }
   try {
     var r2 = await fetch('/api/n8n/executions?limit=50');
     var d2 = await r2.json();
-    wfData.executions = d2.executions || [];
+    var exArr = d2.executions;
+    if (exArr && exArr.results) exArr = exArr.results;
+    wfData.executions = exArr || [];
     var now = Date.now();
     var day = wfData.executions.filter(function(x){ return x.startedAt && (now - new Date(x.startedAt).getTime()) < 86400000; });
     document.getElementById('stat-executions').textContent = day.length;
     document.getElementById('stat-failed').textContent = day.filter(function(x){ return x.finished === false || x.status === 'error' || x.status === 'failed'; }).length;
   } catch(e) {
+    authFailed = true;
     document.getElementById('stat-executions').textContent = '?';
     document.getElementById('stat-failed').textContent = '?';
   }
+  var banner = document.getElementById('n8n-auth-banner');
+  if (banner) banner.style.display = authFailed ? 'block' : 'none';
 }
 
 async function wfLoadPipelines() {
@@ -310,5 +321,5 @@ function wfTimeAgo(date) {
 }
 
 wfLoadStats();
-</script>
+<\/script>
 ` }) %>

@@ -283,7 +283,12 @@ function fetchAllData() {
     renderEvaluation();
     renderRAI();
     renderComparison();
-  }).catch(function(e) { console.error('fetchAllData failed:', e); });
+  }).catch(function(e) {
+    console.error('fetchAllData failed:', e);
+    var errMsg = '<p style="color:var(--text-3)">Unable to load data. <button class="btn btn-sm" onclick="fetchAllData()">Retry</button></p>';
+    var ct = document.getElementById('agent-comparison-table');
+    if (ct && ct.textContent.trim() === 'Loading...') ct.innerHTML = errMsg;
+  });
 }
 
 /* ── RENDER EVALUATION ── */
@@ -436,5 +441,5 @@ function renderComparison() {
 }
 
 fetchAllData();
-</script>
+<\/script>
 ` }) %>

@@ -382,6 +382,11 @@ function ihLoad() {
     }
   }).catch(function(e) {
     console.error('Intelligence Hub load failed:', e);
+    var errMsg = '<p style="color:var(--text-3)">Unable to load data. <button class="btn btn-sm" onclick="ihLoad()">Retry</button></p>';
+    ['ih-traces-list','ih-eval-summary','ih-obs-summary','ih-agent-table'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.textContent.trim() === 'Loading...') el.innerHTML = errMsg;
+    });
   });
 }
 
@@ -602,5 +607,5 @@ function phRefresh() {
 phRefresh();
 /* Auto-refresh every 30s */
 setInterval(phRefresh, 30000);
-</script>
+<\/script>
 ` }) %>

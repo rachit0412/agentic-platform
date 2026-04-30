@@ -32,9 +32,55 @@
   .docs-table { width:100%; border-collapse:collapse; margin-bottom:1rem; font-size:0.85rem; }
   .docs-table th { text-align:left; padding:0.6rem 0.75rem; background:var(--glass-bg); border:1px solid var(--glass-border); font-weight:600; color:var(--text-1); }
   .docs-table td { padding:0.5rem 0.75rem; border:1px solid var(--glass-border); color:var(--text-2); }
-  .docs-diagram { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:1.5rem; margin:1.25rem 0; text-align:center; }
   .docs-search { width:100%; padding:0.5rem 0.75rem; border:1px solid var(--glass-border); border-radius:8px; background:var(--glass-bg); color:var(--text-1); font-size:0.82rem; margin:0 0 0.75rem; }
   .docs-search:focus { outline:none; border-color:#06b6d4; }
+
+  /* Capability cards */
+  .docs-cap-card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:10px; padding:1rem; text-align:center; cursor:pointer; transition:all 0.2s ease; position:relative; }
+  .docs-cap-card:hover { border-color:#06b6d4; transform:translateY(-2px); box-shadow:0 4px 16px rgba(6,182,212,0.15); }
+  .docs-cap-card::after { content:'Click for details ↗'; position:absolute; bottom:0.35rem; left:50%; transform:translateX(-50%); font-size:0.58rem; color:var(--text-3); opacity:0; transition:opacity 0.15s; }
+  .docs-cap-card:hover::after { opacity:1; }
+
+  /* Capability pop-out modal */
+  .cap-modal-backdrop { position:fixed; inset:0; z-index:99998; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; }
+  .cap-modal-backdrop.active { opacity:1; }
+  .cap-modal { position:relative; background:var(--bg); border:1px solid var(--glass-border); border-radius:16px; width:560px; max-width:92vw; max-height:85vh; overflow-y:auto; padding:2rem 2.25rem 1.75rem; box-shadow:0 25px 60px rgba(0,0,0,0.4); transform:scale(0.92) translateY(12px); transition:transform 0.25s ease; }
+  .cap-modal-backdrop.active .cap-modal { transform:scale(1) translateY(0); }
+  .cap-modal-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.25rem; }
+  .cap-modal-emoji { font-size:2.2rem; }
+  .cap-modal-titles { display:flex; flex-direction:column; }
+  .cap-modal-title { font-size:1.2rem; font-weight:700; color:var(--text-1); }
+  .cap-modal-subtitle { font-size:0.8rem; color:var(--text-3); margin-top:0.1rem; }
+  .cap-modal-close { position:absolute; top:1rem; right:1.25rem; background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-2); width:32px; height:32px; border-radius:50%; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .cap-modal-close:hover { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3); color:#ef4444; }
+  .cap-modal-section { margin-bottom:1rem; }
+  .cap-modal-section-title { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#06b6d4; margin-bottom:0.3rem; }
+  .cap-modal-section p { font-size:0.85rem; line-height:1.7; color:var(--text-2); margin:0; }
+  .cap-modal-link { display:inline-block; margin-top:1rem; padding:0.5rem 1.25rem; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3); border-radius:8px; color:#06b6d4; font-size:0.82rem; font-weight:600; text-decoration:none; cursor:pointer; transition:all 0.15s; }
+  .cap-modal-link:hover { background:rgba(6,182,212,0.2); transform:translateY(-1px); }
+
+  /* Diagram node info popup */
+  .node-info-popup { position:fixed; z-index:99997; background:var(--bg); border:1px solid var(--glass-border); border-radius:12px; padding:1rem 1.25rem; width:340px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,0.3); opacity:0; transform:translateY(6px); transition:all 0.2s ease; pointer-events:none; }
+  .node-info-popup.active { opacity:1; transform:translateY(0); pointer-events:auto; }
+  .node-info-popup-title { font-size:0.9rem; font-weight:700; color:var(--text-1); margin-bottom:0.3rem; }
+  .node-info-popup-desc { font-size:0.8rem; line-height:1.6; color:var(--text-2); margin-bottom:0.5rem; }
+  .node-info-popup-meta { font-size:0.7rem; color:var(--text-3); margin-bottom:0.4rem; }
+  .node-info-popup-link { font-size:0.78rem; color:#06b6d4; cursor:pointer; text-decoration:none; display:inline-block; }
+  .node-info-popup-link:hover { text-decoration:underline; }
+
+  /* Diagram zoom lightbox — HD */
+  .docs-diagram { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:1.5rem; margin:1.25rem 0; text-align:center; position:relative; cursor:zoom-in; }
+  .docs-diagram::after { content:'🔍 Click to zoom'; position:absolute; top:0.5rem; right:0.75rem; font-size:0.65rem; color:var(--text-3); background:var(--glass-bg); padding:0.15rem 0.5rem; border-radius:6px; border:1px solid var(--glass-border); opacity:0; transition:opacity 0.15s; pointer-events:none; }
+  .docs-diagram:hover::after { opacity:1; }
+  .diagram-lightbox { position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.88); backdrop-filter:blur(12px); display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; }
+  .diagram-lightbox.active { opacity:1; }
+  .diagram-lightbox-inner { background:var(--bg); border:1px solid var(--glass-border); border-radius:16px; padding:2.5rem; width:92vw; height:85vh; display:flex; align-items:center; justify-content:center; overflow:auto; transform:scale(0.92); transition:transform 0.25s ease; box-shadow:0 25px 60px rgba(0,0,0,0.5); cursor:default; }
+  .diagram-lightbox.active .diagram-lightbox-inner { transform:scale(1); }
+  .diagram-lightbox-inner svg { width:100% !important; height:auto !important; max-height:78vh; }
+  .diagram-lightbox-close { position:absolute; top:1.25rem; right:1.75rem; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#fff; width:40px; height:40px; border-radius:50%; font-size:1.3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:1; transition:all 0.15s; }
+  .diagram-lightbox-close:hover { background:rgba(255,255,255,0.25); transform:scale(1.1); }
+  .diagram-lightbox-hint { color:rgba(255,255,255,0.45); font-size:0.72rem; margin-top:0.75rem; pointer-events:none; }
+
   @media (max-width: 768px) {
     .docs-layout { grid-template-columns:1fr; }
     .docs-sidebar { position:relative; top:0; height:auto; max-height:50vh; border-right:none; border-bottom:1px solid var(--glass-border); }
@@ -100,21 +146,38 @@
       </div>
 
       <h2>Key Capabilities</h2>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.5rem">
-        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;text-align:center">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.75rem">
+        <div class="docs-cap-card" onclick="showCapModal('agent-builder')">
           <div style="font-size:1.5rem;margin-bottom:0.5rem">🤖</div>
           <strong style="font-size:0.85rem">Agent Builder</strong>
           <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Design & deploy ReAct agents with custom tools and memory</p>
         </div>
-        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;text-align:center">
+        <div class="docs-cap-card" onclick="showCapModal('guardrails')">
           <div style="font-size:1.5rem;margin-bottom:0.5rem">🛡️</div>
           <strong style="font-size:0.85rem">Safety Guardrails</strong>
           <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Input/output safety checks across 5 categories</p>
         </div>
-        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;text-align:center">
+        <div class="docs-cap-card" onclick="showCapModal('observability')">
           <div style="font-size:1.5rem;margin-bottom:0.5rem">📊</div>
           <strong style="font-size:0.85rem">Observability</strong>
           <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Prometheus, Grafana, Langfuse, OpenTelemetry</p>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.5rem">
+        <div class="docs-cap-card" onclick="showCapModal('memory-rag')">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem">🧠</div>
+          <strong style="font-size:0.85rem">Memory & RAG</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">SQLite dual-layer memory + ChromaDB knowledge base</p>
+        </div>
+        <div class="docs-cap-card" onclick="showCapModal('tools-mcp')">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem">🔧</div>
+          <strong style="font-size:0.85rem">Tools & MCP</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">Built-in tools + Model Context Protocol integration</p>
+        </div>
+        <div class="docs-cap-card" onclick="showCapModal('workflows')">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem">⚡</div>
+          <strong style="font-size:0.85rem">Workflows</strong>
+          <p style="font-size:0.78rem;margin:0.25rem 0 0;color:var(--text-3)">n8n visual workflow automation with agent triggers</p>
         </div>
       </div>
 
@@ -668,38 +731,363 @@ docker-compose --profile gpu up -d</code></pre>
 
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
 <script>
-  // Initialize Mermaid
+  // Theme-aware Mermaid init
+  var isDark = document.documentElement.classList.contains('dark');
   mermaid.initialize({
     startOnLoad: false,
-    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-    themeVariables: {
+    theme: isDark ? 'dark' : 'default',
+    themeVariables: isDark ? {
       primaryColor: '#0e7490',
       primaryTextColor: '#e2e8f0',
       primaryBorderColor: '#06b6d4',
       lineColor: '#64748b',
-      sectionBkgColor: 'transparent'
+      sectionBkgColor: 'transparent',
+      noteBkgColor: '#1e293b',
+      noteTextColor: '#e2e8f0'
+    } : {
+      primaryColor: '#0e7490',
+      primaryTextColor: '#1e293b',
+      primaryBorderColor: '#0e7490',
+      lineColor: '#475569',
+      secondaryColor: '#f0f9ff',
+      tertiaryColor: '#ecfeff',
+      sectionBkgColor: 'transparent',
+      noteBkgColor: '#f0f9ff',
+      noteTextColor: '#1e293b',
+      actorTextColor: '#1e293b',
+      actorBorder: '#0e7490',
+      signalColor: '#334155',
+      signalTextColor: '#1e293b',
+      labelTextColor: '#1e293b'
     }
   });
 
+  /* ── Capability Pop-out Modal ── */
+  var CAP_DATA = {
+    'agent-builder': {
+      emoji: '🤖', title: 'Agent Builder',
+      subtitle: 'Design & deploy ReAct agents with custom tools and memory',
+      what: 'Visual agent designer that lets you create LangGraph ReAct agents with custom system prompts, tool selection, memory configuration, and guardrail profiles — all without writing code.',
+      why: 'Eliminates boilerplate: instead of wiring up LangChain chains manually, you configure agents via the UI and they are instantly deployable with full observability baked in.',
+      how: 'Creates agent configs stored in SQLite → Agent Service loads them at runtime → each run gets memory (STM/LTM), tools, guardrails, and telemetry automatically.',
+      docSection: 'agents'
+    },
+    'guardrails': {
+      emoji: '🛡️', title: 'Safety Guardrails',
+      subtitle: 'Input/output safety checks across 5 categories',
+      what: 'Enforces safety controls on every agent interaction — checking both user inputs and LLM outputs for toxicity, bias, PII, hallucination, and compliance violations in real-time.',
+      why: 'Enterprise AI requires governance. Guardrails prevent harmful content, detect sensitive data leaks, and provide audit trails for regulatory compliance (SOC2, GDPR, etc.).',
+      how: 'Runs as middleware in the Agent Service pipeline: Input → Input Guardrails → LLM → Output Guardrails → Response. Results appear in run-agent cards and Intelligence Hub.',
+      docSection: 'guardrails'
+    },
+    'observability': {
+      emoji: '📊', title: 'Observability',
+      subtitle: 'Prometheus, Grafana, Langfuse, OpenTelemetry',
+      what: 'Full-stack monitoring: metrics (Prometheus), logs (Loki), distributed traces (OTel), and LLM-specific traces with evaluation scoring (Langfuse) — all visualized in Grafana and the Intelligence Hub.',
+      why: 'AI agents are non-deterministic. You need visibility into latency, token usage, tool call success rates, error patterns, and response quality to operate them reliably in production.',
+      how: 'Agent Service → OTel Collector → Prometheus + Loki → Grafana dashboards. Agent Service → Langfuse SDK → Langfuse UI. Intelligence Hub aggregates all signals into a single view.',
+      docSection: 'observability'
+    },
+    'memory-rag': {
+      emoji: '🧠', title: 'Memory & RAG',
+      subtitle: 'SQLite dual-layer memory + ChromaDB knowledge base',
+      what: 'Dual-layer conversation memory (STM: last 100 messages, LTM: rolling summaries) plus a ChromaDB vector store for RAG — agents remember context and can search your documents.',
+      why: 'Without memory, every agent interaction is stateless. STM gives short-term context, LTM prevents context window overflow, and RAG grounds responses in your actual data.',
+      how: 'Agent loads STM + LTM from SQLite at each turn → queries ChromaDB for relevant docs → injects context into the LLM prompt → saves new messages back to SQLite after responding.',
+      docSection: 'memory'
+    },
+    'tools-mcp': {
+      emoji: '🔧', title: 'Tools & MCP',
+      subtitle: 'Built-in tools + Model Context Protocol integration',
+      what: 'Agents can call tools (web search, calculator, document lookup, notes) and connect to external MCP servers for dynamic tool discovery — extending agent capabilities without code changes.',
+      why: 'LLMs can reason but cannot act. Tools bridge the gap: agents use them to fetch live data, perform calculations, query databases, and interact with external APIs.',
+      how: 'LLM decides to call a tool → Agent Service routes to Tools Service or MCP server → result returned to LLM for next reasoning step. Tool calls are traced in Langfuse.',
+      docSection: 'tools'
+    },
+    'workflows': {
+      emoji: '⚡', title: 'Workflows',
+      subtitle: 'n8n visual workflow automation with agent triggers',
+      what: 'Visual workflow builder (n8n) with pre-built templates: agent execution via webhooks, scheduled summaries, RAG document ingestion, and multi-step web research — all drag-and-drop.',
+      why: 'Agents alone handle single interactions. Workflows orchestrate complex multi-step processes: ingest documents on a schedule, chain agent calls, trigger actions based on events.',
+      how: 'n8n calls Agent Service via HTTP webhooks → receives results → chains to next steps (email, Slack, database writes). Accessible at port 5678.',
+      docSection: 'workflows'
+    }
+  };
+
+  function showCapModal(id) {
+    var d = CAP_DATA[id];
+    if (!d) return;
+    var existing = document.querySelector('.cap-modal-backdrop');
+    if (existing) existing.remove();
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'cap-modal-backdrop';
+    backdrop.innerHTML = '<div class="cap-modal">' +
+      '<button class="cap-modal-close" title="Close">&times;<\/button>' +
+      '<div class="cap-modal-header">' +
+        '<div class="cap-modal-emoji">' + d.emoji + '<\/div>' +
+        '<div class="cap-modal-titles">' +
+          '<div class="cap-modal-title">' + d.title + '<\/div>' +
+          '<div class="cap-modal-subtitle">' + d.subtitle + '<\/div>' +
+        '<\/div>' +
+      '<\/div>' +
+      '<div class="cap-modal-section"><div class="cap-modal-section-title">What it does<\/div><p>' + d.what + '<\/p><\/div>' +
+      '<div class="cap-modal-section"><div class="cap-modal-section-title">Why it&#39;s needed<\/div><p>' + d.why + '<\/p><\/div>' +
+      '<div class="cap-modal-section"><div class="cap-modal-section-title">How it interacts<\/div><p>' + d.how + '<\/p><\/div>' +
+      '<a class="cap-modal-link" onclick="closeCapModal();showDoc(\\'' + d.docSection + '\\');">Read full ' + d.title + ' docs →<\/a>' +
+    '<\/div>';
+
+    document.body.appendChild(backdrop);
+    requestAnimationFrame(function() { backdrop.classList.add('active'); });
+
+    function closeCapModal() {
+      backdrop.classList.remove('active');
+      setTimeout(function() { backdrop.remove(); }, 200);
+    }
+    window.closeCapModal = closeCapModal;
+    backdrop.querySelector('.cap-modal-close').addEventListener('click', closeCapModal);
+    backdrop.addEventListener('click', function(e) { if (e.target === backdrop) closeCapModal(); });
+    document.addEventListener('keydown', function handler(e) {
+      if (e.key === 'Escape') { closeCapModal(); document.removeEventListener('keydown', handler); }
+    });
+  }
+
+  /* ── Clickable Diagram Nodes ── */
+  var NODE_INFO = {
+    'UI Console :3000': { title: 'UI Console', desc: 'Express.js + EJS dashboard with 20 pages. Provides the user-facing interface for agent interaction, configuration, monitoring, and documentation.', meta: 'Port 3000 → 3001 internal', section: 'services' },
+    'Agent Service :8010': { title: 'Agent Service', desc: 'Python FastAPI core runtime. Hosts the LangGraph ReAct agent with tool calling, memory management, guardrails, and observability.', meta: 'Port 8010 → 8000 internal', section: 'services' },
+    'Tools Service :8011': { title: 'Tools Service', desc: 'Standalone Python microservice for external tool execution. Isolates tool calls from the agent runtime for security and scalability.', meta: 'Port 8011 → 8001 internal', section: 'tools' },
+    'Ollama :11436': { title: 'Ollama (Local LLM)', desc: 'Local LLM inference server. Runs open-source models (llama3, mistral, phi3) with no API keys required.', meta: 'Port 11436 → 11434 internal', section: 'llm' },
+    'Azure OpenAI': { title: 'Azure OpenAI', desc: 'Enterprise cloud LLM provider. Supports GPT-4o, GPT-4, GPT-3.5 with Azure AD auth and data residency.', meta: 'AZURE_OPENAI_API_KEY + ENDPOINT', section: 'llm' },
+    'OpenAI': { title: 'OpenAI', desc: 'Direct OpenAI API integration. Access GPT-4o, GPT-4, GPT-3.5-turbo models.', meta: 'OPENAI_API_KEY', section: 'llm' },
+    'Azure AI Foundry': { title: 'Azure AI Foundry', desc: 'Azure AI Foundry model deployments. Connect custom fine-tuned or marketplace models.', meta: 'AZURE_AI_FOUNDRY_ENDPOINT + KEY', section: 'llm' },
+    'ChromaDB :8200': { title: 'ChromaDB (Vector Store)', desc: 'Vector database for RAG. Stores document embeddings using nomic-embed-text, supports cosine similarity search with HNSW index.', meta: 'Port 8200 → 8000 internal', section: 'memory' },
+    'SQLite Memory': { title: 'SQLite Memory', desc: 'Dual-layer conversation persistence. STM stores last 100 messages per session. LTM stores rolling 2KB summaries.', meta: 'Docker volume', section: 'memory' },
+    'n8n :5678': { title: 'n8n Workflow Engine', desc: 'Visual workflow automation. Ships with pre-built workflows for agent execution, RAG ingestion, and web research.', meta: 'Port 5678', section: 'workflows' },
+    'OTel Collector :4317': { title: 'OpenTelemetry Collector', desc: 'Receives traces, metrics, and logs from Agent Service via OTLP. Routes to Prometheus and Loki.', meta: 'Ports 4317/4318', section: 'observability' },
+    'Prometheus :9090': { title: 'Prometheus', desc: 'Metrics collection and alerting. Scrapes agent service metrics and stores time-series data for Grafana.', meta: 'Port 9090', section: 'observability' },
+    'Loki :3100': { title: 'Loki', desc: 'Log aggregation system. Collects structured logs from all services. Queryable via Grafana with LogQL.', meta: 'Port 3100', section: 'observability' },
+    'Grafana :3003': { title: 'Grafana', desc: 'Visualization and dashboarding. Pre-provisioned Platform Health dashboard with request rates, latencies, error rates.', meta: 'Port 3003', section: 'observability' },
+    'Langfuse :3014': { title: 'Langfuse', desc: 'LLM-specific observability. Captures detailed traces of every LLM call including prompts, completions, token counts, and cost.', meta: 'Port 3014', section: 'observability' },
+    'Agent Service': { title: 'Agent Service', desc: 'Python FastAPI core runtime with LangGraph ReAct agent, tool calling, memory, guardrails, and observability.', meta: 'Port 8010 → 8000', section: 'services' },
+    'OTel Collector': { title: 'OTel Collector', desc: 'Receives and routes traces, metrics, and logs from Agent Service to Prometheus and Loki.', meta: 'Ports 4317/4318', section: 'observability' },
+    'Intelligence Hub': { title: 'Intelligence Hub', desc: 'Unified observability dashboard aggregating metrics, logs, and LLM traces into a single view.', meta: 'localhost:3000/intelligence-hub', section: 'observability' },
+    'User Prompt': { title: 'User Prompt', desc: 'Starting point of every agent interaction. User submits a natural language prompt via UI or API.', meta: 'POST /agent/run', section: 'dataflow' },
+    'Input Guardrails': { title: 'Input Guardrails', desc: 'First safety gate. Checks user input for toxicity, PII, bias, and compliance violations.', meta: 'Can Block or Pass', section: 'guardrails' },
+    'Load Memory': { title: 'Load Memory', desc: 'Retrieves conversation context from SQLite — STM and LTM to maintain continuity.', meta: 'conversations + session_summaries', section: 'memory' },
+    'RAG Retrieval': { title: 'RAG Retrieval', desc: 'Queries ChromaDB for documents relevant to the prompt. Results injected into LLM context.', meta: 'Cosine similarity search', section: 'memory' },
+    'LLM Inference': { title: 'LLM Inference', desc: 'Core reasoning step. Selected LLM generates a response using prompt, memory, and RAG context.', meta: 'Supports 4 providers', section: 'llm' },
+    'Execute Tool': { title: 'Execute Tool', desc: 'Agent Service routes tool calls to Tools Service or MCP server and returns results.', meta: 'Via Tools Service or MCP', section: 'tools' },
+    'Output Guardrails': { title: 'Output Guardrails', desc: 'Second safety gate. Checks LLM output for hallucination, toxicity, PII, and quality.', meta: 'Can Pass or Flag', section: 'guardrails' },
+    'Stream Response': { title: 'Stream Response', desc: 'Final response streamed to UI via Server-Sent Events for real-time chat experience.', meta: 'SSE via /agent/run', section: 'api' },
+    'Save to Memory': { title: 'Save to Memory', desc: 'Conversation turn saved to STM. LTM summaries updated if session exceeds limits.', meta: 'SQLite write', section: 'memory' },
+    'Emit Telemetry': { title: 'Emit Telemetry', desc: 'Telemetry data sent to OTel Collector and Langfuse for monitoring and debugging.', meta: 'OTLP + Langfuse SDK', section: 'observability' },
+    'Receive': { title: 'Receive Prompt', desc: 'Agent receives user prompt and begins the ReAct reasoning cycle.', meta: 'Entry point', section: 'agents' },
+    'InputGuardrails': { title: 'Input Guardrails', desc: 'Safety check on user input before processing. Can block harmful prompts.', meta: 'Configurable severity', section: 'guardrails' },
+    'LoadContext': { title: 'Load Context', desc: 'Loads conversation memory and performs RAG retrieval to build full context for the LLM.', meta: 'Memory + ChromaDB', section: 'memory' },
+    'Reason': { title: 'Reason (LLM)', desc: 'LLM reasoning step in the ReAct loop. Decides whether to call a tool or produce a final answer.', meta: 'ReAct via LangGraph', section: 'agents' },
+    'Act': { title: 'Act (Tool Call)', desc: 'Executes the tool selected by the LLM during Reason. Results returned for next cycle.', meta: 'Tool execution', section: 'tools' },
+    'Observe': { title: 'Observe', desc: 'Agent observes tool result and feeds it back into the Reason step for continued analysis.', meta: 'ReAct loop', section: 'agents' },
+    'OutputGuardrails': { title: 'Output Guardrails', desc: 'Final safety check on LLM response before delivery.', meta: 'Configurable severity', section: 'guardrails' },
+    'Respond': { title: 'Respond', desc: 'Formats and delivers the final response to the user via SSE streaming.', meta: 'SSE stream', section: 'api' },
+    'SaveMemory': { title: 'Save Memory', desc: 'Persists conversation turn to SQLite STM and updates LTM summaries.', meta: 'SQLite write', section: 'memory' },
+    'Blocked': { title: 'Blocked', desc: 'Input blocked by guardrails due to safety violations. Error returned to user.', meta: 'Block-level guardrail', section: 'guardrails' }
+  };
+
+  var _activeNodePopup = null;
+  function dismissNodePopup() {
+    if (_activeNodePopup) {
+      _activeNodePopup.classList.remove('active');
+      var ref = _activeNodePopup;
+      setTimeout(function() { if (ref && ref.parentNode) ref.remove(); }, 200);
+      _activeNodePopup = null;
+    }
+  }
+
+  function showNodeInfo(label, evt) {
+    dismissNodePopup();
+    var info = NODE_INFO[label];
+    if (!info) return;
+
+    var popup = document.createElement('div');
+    popup.className = 'node-info-popup';
+    popup.innerHTML = '<div class="node-info-popup-title">' + info.title + '<\/div>' +
+      '<div class="node-info-popup-desc">' + info.desc + '<\/div>' +
+      '<div class="node-info-popup-meta">' + info.meta + '<\/div>' +
+      (info.section ? '<a class="node-info-popup-link" onclick="dismissNodePopup();showDoc(\\'' + info.section + '\\');">Learn more →<\/a>' : '');
+
+    document.body.appendChild(popup);
+    var x = Math.min(evt.clientX + 12, window.innerWidth - 360);
+    var y = Math.min(evt.clientY - 10, window.innerHeight - 200);
+    if (x < 10) x = 10;
+    if (y < 10) y = 10;
+    popup.style.left = x + 'px';
+    popup.style.top = y + 'px';
+    _activeNodePopup = popup;
+    requestAnimationFrame(function() { popup.classList.add('active'); });
+
+    setTimeout(function() {
+      document.addEventListener('click', function handler(e) {
+        if (!popup.contains(e.target)) {
+          dismissNodePopup();
+          document.removeEventListener('click', handler);
+        }
+      });
+    }, 50);
+  }
+
+  function attachNodeClickHandlers() {
+    document.querySelectorAll('.docs-diagram svg .node').forEach(function(node) {
+      if (node.hasAttribute('data-node-click')) return;
+      node.setAttribute('data-node-click', 'true');
+      node.style.cursor = 'pointer';
+      var textEl = node.querySelector('.nodeLabel') || node.querySelector('text') || node.querySelector('foreignObject span');
+      var label = textEl ? textEl.textContent.trim() : '';
+      if (!label) return;
+      node.addEventListener('click', function(e) { e.stopPropagation(); showNodeInfo(label, e); });
+    });
+    document.querySelectorAll('.docs-diagram svg .statediagram-state').forEach(function(node) {
+      if (node.hasAttribute('data-node-click')) return;
+      node.setAttribute('data-node-click', 'true');
+      node.style.cursor = 'pointer';
+      var textEl = node.querySelector('.state-title-text') || node.querySelector('text');
+      var label = textEl ? textEl.textContent.trim() : '';
+      if (!label) return;
+      node.addEventListener('click', function(e) { e.stopPropagation(); showNodeInfo(label, e); });
+    });
+    document.querySelectorAll('.docs-diagram svg text.actor').forEach(function(textNode) {
+      if (textNode.hasAttribute('data-node-click')) return;
+      textNode.setAttribute('data-node-click', 'true');
+      textNode.style.cursor = 'pointer';
+      var label = textNode.textContent.trim();
+      if (!label) return;
+      textNode.addEventListener('click', function(e) { e.stopPropagation(); showNodeInfo(label, e); });
+    });
+  }
+
+  /* ── HD Diagram Zoom Lightbox ── */
+  function openDiagramLightbox(diagramEl) {
+    var existing = document.querySelector('.diagram-lightbox');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'diagram-lightbox';
+    overlay.innerHTML = '<button class="diagram-lightbox-close" title="Close">&times;<\/button>' +
+      '<div class="diagram-lightbox-inner"><\/div>' +
+      '<div class="diagram-lightbox-hint">Press Esc or click outside to close<\/div>';
+
+    var inner = overlay.querySelector('.diagram-lightbox-inner');
+
+    // Try to re-render mermaid source at full size for HD quality
+    var mermaidEl = diagramEl.querySelector('.mermaid');
+    var source = mermaidEl ? mermaidEl.getAttribute('data-original-source') : null;
+
+    if (source && source.trim()) {
+      var renderDiv = document.createElement('div');
+      renderDiv.style.width = '100%';
+      inner.appendChild(renderDiv);
+      var renderId = 'lightbox-' + Date.now();
+      mermaid.render(renderId, source.trim()).then(function(result) {
+        renderDiv.innerHTML = result.svg;
+        var svg = renderDiv.querySelector('svg');
+        if (svg) {
+          svg.style.width = '100%';
+          svg.style.height = 'auto';
+          svg.style.maxHeight = '78vh';
+        }
+      }).catch(function() {
+        cloneSvgIntoLightbox(diagramEl, inner);
+      });
+    } else {
+      cloneSvgIntoLightbox(diagramEl, inner);
+    }
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('active'); });
+
+    function closeBox() {
+      overlay.classList.remove('active');
+      setTimeout(function() { overlay.remove(); }, 200);
+    }
+    overlay.querySelector('.diagram-lightbox-close').addEventListener('click', function(e) { e.stopPropagation(); closeBox(); });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeBox(); });
+    document.addEventListener('keydown', function handler(e) {
+      if (e.key === 'Escape') { closeBox(); document.removeEventListener('keydown', handler); }
+    });
+  }
+
+  function cloneSvgIntoLightbox(diagramEl, container) {
+    var svg = diagramEl.querySelector('svg');
+    if (svg) {
+      var clone = svg.cloneNode(true);
+      var vb = svg.getAttribute('viewBox');
+      if (!vb) {
+        var bbox = svg.getBBox ? svg.getBBox() : null;
+        if (bbox) clone.setAttribute('viewBox', '0 0 ' + (bbox.width + bbox.x * 2) + ' ' + (bbox.height + bbox.y * 2));
+      }
+      clone.removeAttribute('width');
+      clone.removeAttribute('height');
+      clone.removeAttribute('style');
+      clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      clone.style.width = '100%';
+      clone.style.height = 'auto';
+      clone.style.maxHeight = '78vh';
+      container.appendChild(clone);
+    } else {
+      container.innerHTML = '<p style="color:var(--text-3)">Unable to load diagram<\/p>';
+    }
+  }
+
+  // Save mermaid source before rendering (for HD re-render in lightbox)
+  function saveMermaidSources() {
+    document.querySelectorAll('.mermaid').forEach(function(el) {
+      if (!el.getAttribute('data-original-source') && !el.querySelector('svg')) {
+        el.setAttribute('data-original-source', el.textContent);
+      }
+    });
+  }
+  saveMermaidSources();
+
+  // Attach zoom to all diagrams
+  function attachDiagramZoom() {
+    document.querySelectorAll('.docs-diagram').forEach(function(el) {
+      if (!el.hasAttribute('data-zoom')) {
+        el.setAttribute('data-zoom', 'true');
+        el.addEventListener('click', function(e) {
+          if (e.target.closest('.node') || e.target.closest('.statediagram-state') || e.target.closest('.actor')) return;
+          openDiagramLightbox(el);
+        });
+      }
+    });
+  }
+
   function showDoc(id) {
+    dismissNodePopup();
     document.querySelectorAll('.docs-section').forEach(function(s) { s.classList.remove('active'); });
     document.querySelectorAll('.ds-link').forEach(function(l) { l.classList.remove('active'); });
     var section = document.getElementById('doc-' + id);
     if (section) {
       section.classList.add('active');
-      // Re-render mermaid diagrams in the newly visible section
+      section.querySelectorAll('.mermaid').forEach(function(el) {
+        if (!el.getAttribute('data-original-source') && !el.querySelector('svg')) {
+          el.setAttribute('data-original-source', el.textContent);
+        }
+      });
       section.querySelectorAll('.mermaid').forEach(function(el) {
         if (!el.getAttribute('data-processed')) {
-          mermaid.run({ nodes: [el] });
+          mermaid.run({ nodes: [el] }).then(function() {
+            attachDiagramZoom();
+            attachNodeClickHandlers();
+          });
         }
       });
     }
     var link = document.querySelector('[data-section="' + id + '"]');
     if (link) link.classList.add('active');
-    // Update URL without reload
     history.replaceState(null, '', '/docs#' + id);
-    // Scroll content to top
     document.querySelector('.docs-content').scrollTop = 0;
+    attachDiagramZoom();
+    attachNodeClickHandlers();
   }
 
   function filterDocs(query) {
@@ -716,14 +1104,25 @@ docker-compose --profile gpu up -d</code></pre>
   var hash = window.location.hash.replace('#', '');
   if (hash) showDoc(hash);
 
-  // Render mermaid in initial visible section
+  // Render mermaid in initial visible section + attach interactions
   document.addEventListener('DOMContentLoaded', function() {
+    saveMermaidSources();
     var active = document.querySelector('.docs-section.active');
     if (active) {
       active.querySelectorAll('.mermaid').forEach(function(el) {
-        mermaid.run({ nodes: [el] });
+        if (!el.getAttribute('data-original-source') && !el.querySelector('svg')) {
+          el.setAttribute('data-original-source', el.textContent);
+        }
+      });
+      active.querySelectorAll('.mermaid').forEach(function(el) {
+        mermaid.run({ nodes: [el] }).then(function() {
+          attachDiagramZoom();
+          attachNodeClickHandlers();
+        });
       });
     }
+    attachDiagramZoom();
+    attachNodeClickHandlers();
   });
 <\/script>
 

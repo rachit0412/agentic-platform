@@ -118,7 +118,13 @@ async function loadServers() {
     renderServers();
     updateStats();
     updateServerSelect();
-  } catch(e) { console.error('Failed to load servers', e); }
+  } catch(e) {
+    console.error('Failed to load servers', e);
+    servers = [];
+    renderServers();
+    updateStats();
+    updateServerSelect();
+  }
 }
 
 function updateStats() {
@@ -307,6 +313,6 @@ async function invokeTool() {
 }
 
 init();
-</script>
+<\/script>
 
 ` }) %>

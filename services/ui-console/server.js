@@ -733,7 +733,9 @@ app.get("/api/n8n/executions", async (req, res) => {
     }
     if (!resp.ok) return res.json({ executions: [], error: `n8n returned ${resp.status}` });
     const data = await resp.json();
-    res.json({ executions: data.data || [] });
+    const raw = data.data || [];
+    const executions = Array.isArray(raw) ? raw : (raw.results || []);
+    res.json({ executions });
   } catch (e) {
     res.json({ executions: [], error: e.message });
   }

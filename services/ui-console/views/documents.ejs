@@ -256,10 +256,10 @@ function renderFolderTree() {
   const sorted = [...allFolders].sort((a, b) => a.path.localeCompare(b.path));
   sorted.forEach(f => {
     const isActive = currentFolder === f.path;
-    const depth = (f.path.match(/\//g) || []).length - 1;
+    const depth = (f.path.match(/\\//g) || []).length - 1;
     const indent = Math.max(0, depth - 1) * 12;
-    const folderName = f.path === '/' ? '/ (root)' : f.path.replace(/^\//, '').replace(/\/$/, '').split('/').pop();
-    html += '<div onclick="selectFolder(\'' + escapeHtml(f.path) + '\')" style="cursor:pointer;padding:0.3rem 0.5rem;padding-left:' + (8 + indent) + 'px;border-radius:6px;display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;' + (isActive ? 'background:rgba(6,182,212,0.12);color:#06b6d4;font-weight:600' : 'color:var(--text-2)') + ';margin-bottom:0.15rem">';
+    const folderName = f.path === '/' ? '/ (root)' : f.path.replace(/^\\//,'').replace(/\\/$/, '').split('/').pop();
+    html += '<div onclick="selectFolder(\\\'' + escapeHtml(f.path) + '\\\')" style="cursor:pointer;padding:0.3rem 0.5rem;padding-left:' + (8 + indent) + 'px;border-radius:6px;display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;' + (isActive ? 'background:rgba(6,182,212,0.12);color:#06b6d4;font-weight:600' : 'color:var(--text-2)') + ';margin-bottom:0.15rem">';
     html += '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     html += escapeHtml(folderName) + ' <span style="font-size:0.65rem;opacity:0.6;margin-left:auto">' + f.count + '</span></div>';
   });
@@ -279,11 +279,11 @@ function selectFolder(path) {
 function promptNewFolder() {
   const name = prompt('Enter folder path (e.g. hr-policies or projects/2024):');
   if (!name) return;
-  if (!/^[a-zA-Z0-9_\-\/]+$/.test(name)) {
+  if (!/^[a-zA-Z0-9_\\-\\/]+$/.test(name)) {
     alert('Folder names can only contain letters, numbers, hyphens, underscores, and slashes');
     return;
   }
-  let path = '/' + name.replace(/^\/+/, '').replace(/\/+$/, '') + '/';
+  let path = '/' + name.replace(/^\\/+/, '').replace(/\\/+$/, '') + '/';
   // Add to dropdown
   const folderSel = document.getElementById('ingest-folder');
   const exists = Array.from(folderSel.options).some(function(o) { return o.value === path; });
@@ -510,8 +510,8 @@ async function loadDocs() {
         return '<span style="display:inline-block;padding:0.1rem 0.45rem;border-radius:4px;font-size:0.68rem;font-weight:600;background:rgba(139,92,246,0.15);color:#a78bfa;margin-right:0.25rem;white-space:nowrap" title="Agent: ' + escapeHtml(name) + '">' + escapeHtml(name) + '</span>';
       }).join('');
       const ext = doc.file_type ? '<span style="display:inline-block;padding:0.05rem 0.35rem;border-radius:3px;font-size:0.65rem;background:rgba(6,182,212,0.1);color:#06b6d4;margin-left:0.35rem">' + escapeHtml(doc.file_type) + '</span>' : '';
-      const folderDisplay = doc.folder === '/' ? '/' : doc.folder.replace(/^\//, '').replace(/\/$/, '');
-      const tagsJson = JSON.stringify(doc.agent_tags || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const folderDisplay = doc.folder === '/' ? '/' : doc.folder.replace(/^\\//,'').replace(/\\/$/, '');
+      const tagsJson = JSON.stringify(doc.agent_tags || []).replace(/'/g, "\\\\'").replace(/"/g, '&quot;');
       html += '<tr>' +
         '<td class="mono" style="font-size:0.8rem">' + escapeHtml(doc.name) + ext + '</td>' +
         '<td style="font-size:0.75rem;color:var(--text-3)">' +
@@ -520,13 +520,13 @@ async function loadDocs() {
         '<td>' + (agentBadges || '<span style="font-size:0.72rem;color:var(--text-3)">—</span>') + '</td>' +
         '<td style="text-align:center;font-size:0.78rem;color:var(--text-2)">' + (doc.chunk_count || 0) + '</td>' +
         '<td style="text-align:right;white-space:nowrap">' +
-          '<button class="btn btn-sm" onclick="openMoveModal(\'' + escapeHtml(doc.id) + '\')" title="Move to folder" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
+          '<button class="btn btn-sm" onclick="openMoveModal(\\'' + escapeHtml(doc.id) + '\\')" title="Move to folder" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
           '</button>' +
-          '<button class="btn btn-sm" onclick="openTagModal(\'' + escapeHtml(doc.id) + '\', JSON.parse(this.dataset.tags))" data-tags="' + tagsJson + '" title="Manage agent tags" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
+          '<button class="btn btn-sm" onclick="openTagModal(\\'' + escapeHtml(doc.id) + '\\', JSON.parse(this.dataset.tags))" data-tags="' + tagsJson + '" title="Manage agent tags" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>' +
           '</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="deleteRegistryDoc(\'' + escapeHtml(doc.id) + '\', \'' + escapeHtml(doc.name) + '\')" title="Delete" style="padding:0.2rem 0.4rem;font-size:0.7rem">' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteRegistryDoc(\\'' + escapeHtml(doc.id) + '\\', \\'' + escapeHtml(doc.name) + '\\')" title="Delete" style="padding:0.2rem 0.4rem;font-size:0.7rem">' +
             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
           '</button>' +
         '</td></tr>';
@@ -657,6 +657,12 @@ async function refreshAll() {
   loadDocs();
 }
 
-init();
-</script>
+init().catch(function(e) {
+  console.error('Documents init failed:', e);
+  var el = document.getElementById('doc-list');
+  if (el && el.textContent.trim() === 'Loading...') {
+    el.innerHTML = '<p style="color:var(--danger)">Failed to load documents. <button class="btn btn-sm" onclick="init()">Retry</button></p>';
+  }
+});
+<\/script>
 ` }) %>

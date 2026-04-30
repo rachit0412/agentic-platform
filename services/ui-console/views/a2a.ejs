@@ -121,7 +121,13 @@ async function loadPeers() {
     renderPeers();
     updateStats();
     updatePeerSelect();
-  } catch(e) { console.error('Failed to load peers', e); }
+  } catch(e) {
+    console.error('Failed to load peers', e);
+    peers = [];
+    renderPeers();
+    updateStats();
+    updatePeerSelect();
+  }
 }
 
 function updateStats() {
@@ -285,6 +291,6 @@ async function sendTask() {
 }
 
 init();
-</script>
+<\/script>
 
 ` }) %>

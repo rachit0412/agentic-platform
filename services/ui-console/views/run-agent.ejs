@@ -420,10 +420,6 @@
     return (usage.prompt_tokens * rate[0] / 1e6) + (usage.completion_tokens * rate[1] / 1e6);
   }
 
-    if (!rate) return null;
-    return (usage.prompt_tokens * rate[0] / 1e6) + (usage.completion_tokens * rate[1] / 1e6);
-  }
-
   // ── Render LLM Execution Details ──
   function _renderExecDetail(usage, modelStr, startTime, tools, traceId, requestId) {
     var card = document.getElementById('exec-detail-card');
@@ -729,5 +725,5 @@
   loadMemoryStats();
   loadModels();
   loadAgentsDropdown();
-</script>
+<\/script>
 ` }) %>
