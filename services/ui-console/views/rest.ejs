@@ -1,15 +1,20 @@
 <%- include('layout', { title: 'REST Console', page: 'rest', body: `
 
 <style>
-.rest-layout { display:flex; gap:1.25rem; height:calc(100vh - 140px); }
+/* ── Layout ───────────────────────────────── */
+.rest-layout { display:flex; gap:1.25rem; height:calc(100vh - 220px); }
 .rest-sidebar { width:220px; flex-shrink:0; overflow-y:auto; }
 .rest-main { flex:1; overflow-y:auto; min-width:0; }
+
+/* ── Domain sidebar ──────────────────────── */
 .domain-item { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0.75rem; border-radius:8px; cursor:pointer; font-size:0.82rem; color:var(--text-2); transition:all 0.15s; margin-bottom:2px; }
 .domain-item:hover { background:var(--glass-bg); color:var(--text-1); }
 .domain-item.active { background:var(--accent-bg); color:var(--accent-text); font-weight:600; }
 .domain-count { font-size:0.7rem; background:var(--glass-bg); padding:1px 6px; border-radius:10px; color:var(--text-3); }
 .domain-item.active .domain-count { background:rgba(6,182,212,0.2); color:var(--accent-text); }
-.ep-card { border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:0.75rem; background:var(--glass-bg); transition:border-color 0.15s; }
+
+/* ── Endpoint cards ──────────────────────── */
+.ep-card { border:1px solid var(--glass-border); border-radius:10px; padding:1rem; margin-bottom:0.75rem; background:var(--glass-bg); transition:border-color 0.15s; }
 .ep-card:hover { border-color:var(--glass-hover-border); }
 .ep-header { display:flex; align-items:center; gap:0.75rem; cursor:pointer; }
 .ep-method { font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:5px; font-family:var(--mono); letter-spacing:0.5px; min-width:52px; text-align:center; }
@@ -20,97 +25,145 @@
 .ep-path { font-family:var(--mono); font-size:0.82rem; color:var(--text-1); font-weight:500; }
 .ep-path .param { color:#8b5cf6; }
 .ep-desc { font-size:0.78rem; color:var(--text-3); margin-left:auto; }
-.ep-try { display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); }
+.ep-try { display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--glass-border); }
 .ep-try.open { display:block; }
 .ep-try-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-.ep-response { margin-top:0.75rem; border-radius:8px; background:var(--surface-2); max-height:300px; overflow-y:auto; font-family:var(--mono); font-size:0.78rem; color:var(--text-2); }
+.ep-response { margin-top:0.75rem; border-radius:8px; background:var(--input-bg); max-height:300px; overflow-y:auto; font-family:var(--mono); font-size:0.78rem; color:var(--text-2); }
 .ep-response pre { margin:0; padding:1rem; white-space:pre-wrap; word-break:break-all; }
 .ep-status { display:inline-block; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:4px; font-family:var(--mono); }
 .ep-status.s2xx { background:rgba(16,185,129,0.15); color:#10b981; }
 .ep-status.s4xx { background:rgba(245,158,11,0.15); color:#f59e0b; }
 .ep-status.s5xx { background:rgba(239,68,68,0.15); color:#ef4444; }
 .ep-timing { font-size:0.72rem; color:var(--text-3); margin-left:0.5rem; }
-.base-url-bar { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0.75rem; background:var(--glass-bg); border:1px solid var(--border); border-radius:8px; margin-bottom:1rem; font-family:var(--mono); font-size:0.8rem; color:var(--text-2); }
+
+/* ── Base URL bar ────────────────────────── */
+.base-url-bar { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0.75rem; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:8px; margin-bottom:1rem; font-family:var(--mono); font-size:0.8rem; color:var(--text-2); }
 .base-url-bar code { color:var(--accent-text); font-weight:600; }
-.base-url-bar .toggle-svc { font-size:0.72rem; padding:3px 8px; border-radius:5px; cursor:pointer; border:1px solid var(--border); background:var(--glass-bg); color:var(--text-2); transition:all 0.15s; }
+.base-url-bar .toggle-svc { font-size:0.72rem; padding:3px 8px; border-radius:5px; cursor:pointer; border:1px solid var(--glass-border); background:var(--glass-bg); color:var(--text-2); transition:all 0.15s; }
 .base-url-bar .toggle-svc.active { background:var(--accent-bg); color:var(--accent-text); border-color:var(--accent-text); }
 .quick-links { display:flex; gap:0.5rem; margin-left:auto; }
-.quick-links a { font-size:0.72rem; padding:3px 10px; border-radius:5px; background:var(--glass-bg); border:1px solid var(--border); color:var(--text-2); text-decoration:none; transition:all 0.15s; }
+.quick-links a { font-size:0.72rem; padding:3px 10px; border-radius:5px; background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-2); text-decoration:none; transition:all 0.15s; }
 .quick-links a:hover { background:var(--accent-bg); color:var(--accent-text); }
-/* Stat tiles */
-.rest-stat { text-align:center; padding:1rem; cursor:pointer; transition:all 0.2s; position:relative; }
-.rest-stat:hover { border-color:var(--accent-text); transform:translateY(-1px); }
-.rest-stat .stat-val { font-size:1.75rem; font-weight:700; }
-.rest-stat .stat-label { font-size:0.75rem; color:var(--text-3); }
-.rest-stat .stat-hint { font-size:0.62rem; color:var(--text-3); opacity:0; transition:opacity 0.15s; margin-top:2px; }
-.rest-stat:hover .stat-hint { opacity:1; }
-/* Method breakdown mini-bars */
-.method-bars { display:flex; gap:6px; justify-content:center; margin-top:6px; }
-.method-bars .mb { font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:3px; font-family:var(--mono); }
-/* Health dots */
-.health-row { display:flex; align-items:center; gap:6px; justify-content:center; margin-top:4px; }
-.health-dot { width:8px; height:8px; border-radius:50%; }
-.health-dot.online { background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5); }
-.health-dot.offline { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.5); }
-.health-dot.pending { background:#f59e0b; animation:pulse 1s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-/* Endpoint Index Modal */
-.ep-index-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; backdrop-filter:blur(4px); }
+
+/* ── Endpoint Index Modal ────────────────── */
+.ep-index-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; backdrop-filter:blur(6px); }
 .ep-index-overlay.open { display:flex; align-items:center; justify-content:center; }
-.ep-index-modal { background:var(--bg-1); border:1px solid var(--border); border-radius:12px; width:720px; max-width:90vw; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
-.ep-index-header { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid var(--border); }
+.ep-index-modal { background:var(--bg); border:1px solid var(--glass-border); border-radius:12px; width:720px; max-width:90vw; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+.ep-index-header { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid var(--glass-border); }
 .ep-index-header h3 { margin:0; font-size:1rem; color:var(--text-1); }
-.ep-index-search { margin:0; padding:0.5rem 1.25rem; border-bottom:1px solid var(--border); }
-.ep-index-search input { width:100%; background:var(--glass-bg); border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.6rem; font-size:0.8rem; color:var(--text-1); outline:none; }
-.ep-index-search input:focus { border-color:var(--accent-text); }
+.ep-index-search { margin:0; padding:0.5rem 1.25rem; border-bottom:1px solid var(--glass-border); }
+.ep-index-search input { width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; padding:0.4rem 0.6rem; font-size:0.8rem; color:var(--text-1); outline:none; }
+.ep-index-search input:focus { border-color:var(--accent-text); background:var(--glass-hover-bg); }
 .ep-index-body { overflow-y:auto; padding:0.5rem 0; flex:1; }
 .ep-index-item { display:flex; align-items:center; gap:0.6rem; padding:0.35rem 1.25rem; cursor:pointer; font-size:0.8rem; transition:background 0.1s; }
-.ep-index-item:hover { background:var(--glass-bg); }
+.ep-index-item:hover { background:var(--glass-hover-bg); }
 .ep-index-item .eii-domain { font-size:0.65rem; color:var(--text-3); margin-left:auto; min-width:80px; text-align:right; }
 .ep-index-close { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:1.2rem; padding:4px 8px; border-radius:4px; }
-.ep-index-close:hover { background:var(--glass-bg); color:var(--text-1); }
-/* Swagger link in domain header */
-.domain-swagger { font-size:0.68rem; color:var(--text-3); text-decoration:none; margin-left:0.5rem; padding:1px 6px; border-radius:4px; border:1px solid var(--border); transition:all 0.15s; }
+.ep-index-close:hover { background:var(--glass-hover-bg); color:var(--text-1); }
+
+/* ── Method Breakdown Modal ──────────────── */
+.method-breakdown-bar { display:flex; align-items:flex-end; gap:0.75rem; height:140px; padding:0.5rem 0; }
+.mb-col { display:flex; flex-direction:column; align-items:center; gap:0.35rem; flex:1; }
+.mb-bar { width:100%; border-radius:6px 6px 0 0; min-height:4px; transition:height 0.4s ease; }
+.mb-bar.get { background:linear-gradient(to top,rgba(16,185,129,0.6),#10b981); }
+.mb-bar.post { background:linear-gradient(to top,rgba(59,130,246,0.6),#3b82f6); }
+.mb-bar.put { background:linear-gradient(to top,rgba(245,158,11,0.6),#f59e0b); }
+.mb-bar.delete { background:linear-gradient(to top,rgba(239,68,68,0.6),#ef4444); }
+.mb-label { font-size:0.72rem; font-weight:700; font-family:var(--mono); }
+.mb-count { font-size:0.9rem; font-weight:700; color:var(--text-1); }
+.mb-domain-list { margin-top:0.75rem; max-height:180px; overflow-y:auto; }
+.mb-domain-row { display:flex; align-items:center; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--glass-border); font-size:0.78rem; }
+.mb-domain-row:last-child { border-bottom:none; }
+.mb-domain-name { color:var(--text-2); }
+.mb-domain-counts { display:flex; gap:0.5rem; }
+.mb-dc { font-size:0.68rem; font-weight:600; font-family:var(--mono); padding:1px 6px; border-radius:4px; }
+
+/* ── Swagger link in domain header ───────── */
+.domain-swagger { font-size:0.68rem; color:var(--text-3); text-decoration:none; margin-left:0.5rem; padding:1px 6px; border-radius:4px; border:1px solid var(--glass-border); transition:all 0.15s; }
 .domain-swagger:hover { color:var(--accent-text); border-color:var(--accent-text); }
+
+/* ── Health inline chip ──────────────────── */
+.svc-health-chip { display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; padding:3px 10px; border-radius:20px; background:var(--glass-bg); border:1px solid var(--glass-border); font-weight:600; transition:all 0.2s; }
+.svc-health-chip .h-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.svc-health-chip .h-dot.online { background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5); }
+.svc-health-chip .h-dot.offline { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.5); }
+.svc-health-chip .h-dot.pending { background:#f59e0b; animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── Method filter pills ─────────────────── */
+.method-pill { display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:5px; font-family:var(--mono); cursor:pointer; border:1px solid transparent; transition:all 0.15s; opacity:0.7; }
+.method-pill:hover, .method-pill.active { opacity:1; transform:scale(1.05); }
+.method-pill.get { background:rgba(16,185,129,0.12); color:#10b981; }
+.method-pill.post { background:rgba(59,130,246,0.12); color:#3b82f6; }
+.method-pill.put { background:rgba(245,158,11,0.12); color:#f59e0b; }
+.method-pill.delete { background:rgba(239,68,68,0.12); color:#ef4444; }
+.method-pill.active { border-color:currentColor; opacity:1; }
 </style>
 
-<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.25rem">
-  <h1 class="text-glow-cyan" style="margin:0">REST Console</h1>
-  <span style="font-size:0.65rem;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:700;letter-spacing:0.5px">DEV</span>
+<!-- ── Page Header ────────────────────────────── -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem">
+  <div>
+    <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.25rem">
+      <h1 style="margin:0;font-size:1.5rem;color:var(--text-1);font-weight:700">REST Console</h1>
+      <span style="font-size:0.6rem;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:700;letter-spacing:0.5px">DEV</span>
+    </div>
+    <p style="color:var(--text-3);font-size:0.78rem;margin:0;line-height:1.4">Browse, test, and integrate with every API endpoint across all services.</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <div class="svc-health-chip" title="Agent Service" style="cursor:pointer" onclick="checkHealth()">
+      <span class="h-dot pending" id="hd-agent"></span>
+      <span id="hl-agent" style="color:var(--text-2)">Agent</span>
+    </div>
+    <div class="svc-health-chip" title="Tools Service" style="cursor:pointer" onclick="checkHealth()">
+      <span class="h-dot pending" id="hd-tools"></span>
+      <span id="hl-tools" style="color:var(--text-2)">Tools</span>
+    </div>
+  </div>
 </div>
-<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.25rem;line-height:1.5">Browse, test, and integrate with every API endpoint. Click tiles below for details.</p>
 
-<!-- Stats Row -->
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem">
-  <div class="card rest-stat" onclick="openEndpointIndex()">
-    <div class="stat-val" style="color:var(--cyan)" id="stat-total">69</div>
+<!-- ── Stats Row ──────────────────────────────── -->
+<div class="grid-4 mb-2" style="margin-bottom:1rem">
+  <div class="stat-card animate-fade-up" style="cursor:pointer" onclick="openEndpointIndex()" title="Browse all endpoints">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    </div>
     <div class="stat-label">Total Endpoints</div>
-    <div class="stat-hint">Click to browse all</div>
+    <div class="stat-number" id="stat-total">-</div>
   </div>
-  <div class="card rest-stat" onclick="openEndpointIndex()">
-    <div class="stat-val" style="color:#8b5cf6" id="stat-methods">—</div>
+  <div class="stat-card animate-fade-up delay-100" style="cursor:pointer" onclick="document.getElementById('rest-sidebar').scrollIntoView({behavior:'smooth',block:'start'})" title="View API domains">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </div>
+    <div class="stat-label">API Domains</div>
+    <div class="stat-number" id="stat-domains">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200" style="cursor:pointer" onclick="openMethodBreakdown()" title="View method breakdown">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </div>
     <div class="stat-label">Methods</div>
-    <div class="method-bars" id="method-bars"></div>
-    <div class="stat-hint">Click to filter</div>
+    <div class="stat-number" id="stat-methods">-</div>
   </div>
-  <div class="card rest-stat" onclick="refreshHealth()">
-    <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:4px">
-      <div style="text-align:center">
-        <div class="health-row"><span class="health-dot pending" id="hd-agent"></span><span style="font-size:0.78rem;font-weight:600;color:var(--text-2)" id="hl-agent">...</span></div>
-        <div style="font-size:0.62rem;color:var(--text-3)">Agent :8010</div>
-      </div>
-      <div style="width:1px;height:24px;background:var(--border)"></div>
-      <div style="text-align:center">
-        <div class="health-row"><span class="health-dot pending" id="hd-tools"></span><span style="font-size:0.78rem;font-weight:600;color:var(--text-2)" id="hl-tools">...</span></div>
-        <div style="font-size:0.62rem;color:var(--text-3)">Tools :8011</div>
-      </div>
+  <div class="stat-card animate-fade-up delay-300" style="cursor:pointer" onclick="checkHealth()" title="Check service health">
+    <div class="stat-icon" id="health-icon-wrap" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));color:#f59e0b">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     </div>
     <div class="stat-label">Service Health</div>
-    <div class="stat-hint">Click to refresh</div>
+    <div class="stat-number" id="stat-health" style="font-size:0.9rem">Checking...</div>
   </div>
 </div>
 
-<!-- Base URL Bar -->
+<!-- ── Method Filter Pills ───────────────────── -->
+<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
+  <span style="font-size:0.72rem;color:var(--text-3);font-weight:600;margin-right:0.25rem">FILTER:</span>
+  <span class="method-pill get active" onclick="toggleMethodFilter(this, 'GET')">GET <span id="mc-get">-</span></span>
+  <span class="method-pill post active" onclick="toggleMethodFilter(this, 'POST')">POST <span id="mc-post">-</span></span>
+  <span class="method-pill put active" onclick="toggleMethodFilter(this, 'PUT')">PUT <span id="mc-put">-</span></span>
+  <span class="method-pill delete active" onclick="toggleMethodFilter(this, 'DELETE')">DELETE <span id="mc-delete">-</span></span>
+  <span style="margin-left:auto;font-size:0.72rem;color:var(--text-3)" id="filter-count"></span>
+</div>
+
+<!-- ── Base URL Bar ──────────────────────────── -->
 <div class="base-url-bar">
   <span>Base URL:</span>
   <code id="rest-base-url">/api</code>
@@ -124,7 +177,7 @@
   </div>
 </div>
 
-<!-- Endpoint Index Modal -->
+<!-- ── Endpoint Index Modal ──────────────────── -->
 <div class="ep-index-overlay" id="ep-index-overlay" onclick="if(event.target===this)closeEndpointIndex()">
   <div class="ep-index-modal">
     <div class="ep-index-header">
@@ -136,7 +189,18 @@
   </div>
 </div>
 
-<!-- Main Layout -->
+<!-- ── Method Breakdown Modal ────────────────── -->
+<div class="ep-index-overlay" id="method-overlay" onclick="if(event.target===this)closeMethodBreakdown()">
+  <div class="ep-index-modal" style="width:520px">
+    <div class="ep-index-header">
+      <h3>Method Breakdown</h3>
+      <button class="ep-index-close" onclick="closeMethodBreakdown()">&times;</button>
+    </div>
+    <div style="padding:1.25rem" id="method-breakdown-body"></div>
+  </div>
+</div>
+
+<!-- ── Main Layout ───────────────────────────── -->
 <div class="rest-layout">
   <div class="rest-sidebar" id="rest-sidebar"></div>
   <div class="rest-main" id="rest-main"></div>
@@ -145,6 +209,13 @@
 <script>
 var currentSvc = 'agent';
 var currentDomain = 'execution';
+var activeMethodFilters = { GET:true, POST:true, PUT:true, DELETE:true };
+
+// Local escapeHtml (available before layout script loads)
+function _esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 function getAgentDocsUrl() {
   var u = window.location.origin.replace(':3000', ':8010');
@@ -249,7 +320,7 @@ var API_CATALOG = {
       { method: 'DELETE', path: '/a2a/peers/:id', desc: 'Unregister peer agent' },
       { method: 'POST', path: '/a2a/peers/:id/ping', desc: 'Check peer health & fetch agent card' },
       { method: 'POST', path: '/a2a/send', desc: 'Send task to a peer agent', body: '{"peer_id":"peer-1","message":"Research AI trends"}' },
-      { method: 'GET', path: '/a2a/card', desc: 'Get this agent\\\'s discovery card' }
+      { method: 'GET', path: '/a2a/card', desc: 'Get this agent\\\\\\\'s discovery card' }
     ]
   },
   mcp: {
@@ -299,7 +370,7 @@ function setSvc(svc) {
   document.getElementById('rest-base-url').textContent = svc === 'agent' ? '/api' : '/api/tools-svc';
 }
 
-// ── Compute method stats ──────────────────────────────
+// ── Compute stats ──────────────────────────────
 function computeStats() {
   var counts = { GET:0, POST:0, PUT:0, DELETE:0 };
   var total = 0;
@@ -310,18 +381,38 @@ function computeStats() {
     for (var j = 0; j < eps.length; j++) counts[eps[j].method]++;
   }
   document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-domains').textContent = keys.length;
   document.getElementById('stat-methods').textContent = Object.values(counts).filter(function(v){return v>0}).length + ' types';
-  var bars = document.getElementById('method-bars');
-  var colors = { GET:'rgba(16,185,129,0.15);color:#10b981', POST:'rgba(59,130,246,0.15);color:#3b82f6', PUT:'rgba(245,158,11,0.15);color:#f59e0b', DELETE:'rgba(239,68,68,0.15);color:#ef4444' };
-  var bhtml = '';
-  var mkeys = Object.keys(counts);
-  for (var m = 0; m < mkeys.length; m++) {
-    if (counts[mkeys[m]] > 0) bhtml += '<span class="mb" style="background:' + colors[mkeys[m]] + '">' + mkeys[m] + ' ' + counts[mkeys[m]] + '</span>';
-  }
-  bars.innerHTML = bhtml;
+  document.getElementById('mc-get').textContent = counts.GET;
+  document.getElementById('mc-post').textContent = counts.POST;
+  document.getElementById('mc-put').textContent = counts.PUT;
+  document.getElementById('mc-delete').textContent = counts.DELETE;
+  updateFilterCount();
 }
 
-// ── Endpoint Index Modal ──────────────────────────────
+// ── Method filter toggle ──────────────────────
+function toggleMethodFilter(el, method) {
+  activeMethodFilters[method] = !activeMethodFilters[method];
+  el.classList.toggle('active');
+  renderEndpoints();
+  updateFilterCount();
+}
+
+function updateFilterCount() {
+  var total = 0; var shown = 0;
+  var keys = Object.keys(API_CATALOG);
+  for (var i = 0; i < keys.length; i++) {
+    var eps = API_CATALOG[keys[i]].endpoints;
+    for (var j = 0; j < eps.length; j++) {
+      total++;
+      if (activeMethodFilters[eps[j].method]) shown++;
+    }
+  }
+  var el = document.getElementById('filter-count');
+  if (el) el.textContent = shown === total ? total + ' endpoints' : shown + ' of ' + total + ' shown';
+}
+
+// ── Endpoint Index Modal ──────────────────────
 function getAllEndpoints() {
   var all = [];
   var keys = Object.keys(API_CATALOG);
@@ -357,7 +448,7 @@ function renderEndpointIndex(filter) {
     html += '<div class="ep-index-item" onclick="jumpToEndpoint(\\'' + ep.domain + '\\', \\'' + ep.path + '\\')">';
     html += '<span class="ep-method ' + m + '">' + ep.method + '</span>';
     html += '<span class="ep-path">' + highlightPath(ep.path) + '</span>';
-    html += '<span class="eii-domain">' + escapeHtml(ep.domainLabel) + '</span>';
+    html += '<span class="eii-domain">' + _esc(ep.domainLabel) + '</span>';
     html += '</div>';
     shown++;
   }
@@ -368,7 +459,6 @@ function renderEndpointIndex(filter) {
 function jumpToEndpoint(domain, path) {
   closeEndpointIndex();
   selectDomain(domain);
-  // Scroll to the endpoint card after a tick
   setTimeout(function() {
     var eps = API_CATALOG[domain].endpoints;
     for (var i = 0; i < eps.length; i++) {
@@ -381,6 +471,7 @@ function jumpToEndpoint(domain, path) {
   }, 100);
 }
 
+// ── Sidebar ───────────────────────────────────
 function renderSidebar() {
   var sb = document.getElementById('rest-sidebar');
   var html = '';
@@ -391,7 +482,7 @@ function renderSidebar() {
     var cnt = d.endpoints.length;
     var cls = k === currentDomain ? ' active' : '';
     html += '<div class="domain-item' + cls + '" onclick="selectDomain(\\'' + k + '\\')">';
-    html += '<span>' + escapeHtml(d.label) + '</span>';
+    html += '<span>' + _esc(d.label) + '</span>';
     html += '<span class="domain-count">' + cnt + '</span>';
     html += '</div>';
   }
@@ -410,28 +501,30 @@ function highlightPath(path) {
   });
 }
 
+// ── Endpoint rendering ───────────────────────
 function renderEndpoints() {
   var main = document.getElementById('rest-main');
   var d = API_CATALOG[currentDomain];
   if (!d) { main.innerHTML = ''; return; }
   var swaggerUrl = getSwaggerUrl() + '#/' + encodeURIComponent(d.label);
   var html = '<div style="display:flex;align-items:center;margin-bottom:1rem">';
-  html += '<h2 style="font-size:1.1rem;margin:0;color:var(--text-1)">' + escapeHtml(d.label) + ' <span style="font-size:0.78rem;color:var(--text-3);font-weight:400">(' + d.endpoints.length + ' endpoints)</span></h2>';
-  html += '<a class="domain-swagger" href="' + swaggerUrl + '" target="_blank">Swagger &#x2197;</a>';
+  html += '<h2 style="font-size:1.1rem;margin:0;color:var(--text-1)">' + _esc(d.label) + ' <span style="font-size:0.78rem;color:var(--text-3);font-weight:400">(' + d.endpoints.length + ' endpoints)</span></h2>';
+  html += '<a class="domain-swagger" href="' + swaggerUrl + '" target="_blank" rel="noopener">Swagger &#x2197;</a>';
   html += '</div>';
+  var visibleCount = 0;
   for (var i = 0; i < d.endpoints.length; i++) {
     var ep = d.endpoints[i];
+    if (!activeMethodFilters[ep.method]) continue;
+    visibleCount++;
     var m = ep.method.toLowerCase();
     var epId = currentDomain + '-' + i;
     html += '<div class="ep-card" id="card-' + epId + '">';
     html += '<div class="ep-header" onclick="toggleTry(\\'' + epId + '\\')">';
     html += '<span class="ep-method ' + m + '">' + ep.method + '</span>';
     html += '<span class="ep-path">' + highlightPath(ep.path) + '</span>';
-    html += '<span class="ep-desc">' + escapeHtml(ep.desc) + '</span>';
+    html += '<span class="ep-desc">' + _esc(ep.desc) + '</span>';
     html += '</div>';
-    // Try-it section
     html += '<div class="ep-try" id="try-' + epId + '">';
-    // Param inputs
     var params = ep.path.match(/:[a-z_]+/g) || [];
     if (params.length > 0 || ep.body) {
       html += '<div class="ep-try-grid">';
@@ -451,7 +544,7 @@ function renderEndpoints() {
       html += '<div>';
       if (ep.body) {
         html += '<label class="field-label">Request Body (JSON)</label>';
-        html += '<textarea class="input" id="body-' + epId + '" rows="6" style="font-family:var(--mono);font-size:0.78rem;resize:vertical">' + escapeHtml(ep.body) + '</textarea>';
+        html += '<textarea class="input" id="body-' + epId + '" rows="6" style="font-family:var(--mono);font-size:0.78rem;resize:vertical">' + _esc(ep.body) + '</textarea>';
       }
       html += '</div>';
       html += '</div>';
@@ -464,8 +557,11 @@ function renderEndpoints() {
     html += '<span id="status-' + epId + '"></span>';
     html += '</div>';
     html += '<div class="ep-response" id="resp-' + epId + '" style="display:none"><pre></pre></div>';
-    html += '</div>'; // ep-try
-    html += '</div>'; // ep-card
+    html += '</div>';
+    html += '</div>';
+  }
+  if (visibleCount === 0) {
+    html += '<div style="padding:2rem;text-align:center;color:var(--text-3);font-size:0.85rem">No endpoints match current method filters</div>';
   }
   main.innerHTML = html;
 }
@@ -476,7 +572,6 @@ function toggleTry(epId) {
 }
 
 async function sendRequest(epId, method, pathTemplate) {
-  // Build path with param substitution
   var path = pathTemplate;
   var params = pathTemplate.match(/:[a-z_]+/g) || [];
   for (var i = 0; i < params.length; i++) {
@@ -533,42 +628,136 @@ async function sendRequest(epId, method, pathTemplate) {
   }
 }
 
+// ── Health check ──────────────────────────────
 async function checkHealth() {
   var dotAgent = document.getElementById('hd-agent');
   var lblAgent = document.getElementById('hl-agent');
   var dotTools = document.getElementById('hd-tools');
   var lblTools = document.getElementById('hl-tools');
-  dotAgent.className = 'health-dot pending';
-  dotTools.className = 'health-dot pending';
-  lblAgent.textContent = '...';
-  lblTools.textContent = '...';
+  var statHealth = document.getElementById('stat-health');
+  var iconWrap = document.getElementById('health-icon-wrap');
+
+  dotAgent.className = 'h-dot pending';
+  dotTools.className = 'h-dot pending';
+  lblAgent.textContent = 'Agent';
+  lblTools.textContent = 'Tools';
+  lblAgent.style.color = 'var(--text-2)';
+  lblTools.style.color = 'var(--text-2)';
+  statHealth.textContent = 'Checking...';
+  statHealth.style.color = '#f59e0b';
+  iconWrap.style.background = 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08))';
+  iconWrap.style.color = '#f59e0b';
+
   try {
-    var r = await fetch('/api/health', { signal: AbortSignal.timeout(3000) });
-    dotAgent.className = 'health-dot ' + (r.ok ? 'online' : 'offline');
-    lblAgent.textContent = r.ok ? 'Online' : 'Error';
-    lblAgent.style.color = r.ok ? '#10b981' : '#ef4444';
+    var r = await fetch('/api/health-check', { signal: AbortSignal.timeout(5000) });
+    var data = await r.json();
+    var agentSvc = data.services.find(function(s){ return s.name === 'agent-service'; });
+    var toolsSvc = data.services.find(function(s){ return s.name === 'tools-service'; });
+
+    var agentOk = agentSvc && agentSvc.status === 'healthy';
+    var toolsOk = toolsSvc && toolsSvc.status === 'healthy';
+
+    dotAgent.className = 'h-dot ' + (agentOk ? 'online' : 'offline');
+    lblAgent.style.color = agentOk ? '#10b981' : '#ef4444';
+
+    dotTools.className = 'h-dot ' + (toolsOk ? 'online' : 'offline');
+    lblTools.style.color = toolsOk ? '#10b981' : '#ef4444';
+
+    var allOk = agentOk && toolsOk;
+    var noneOk = !agentOk && !toolsOk;
+    if (allOk) {
+      statHealth.textContent = 'All Healthy';
+      statHealth.style.color = '#10b981';
+      iconWrap.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08))';
+      iconWrap.style.color = '#10b981';
+    } else if (noneOk) {
+      statHealth.textContent = 'Services Down';
+      statHealth.style.color = '#ef4444';
+      iconWrap.style.background = 'linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.08))';
+      iconWrap.style.color = '#ef4444';
+    } else {
+      statHealth.textContent = 'Degraded';
+      statHealth.style.color = '#f59e0b';
+    }
   } catch(e) {
-    dotAgent.className = 'health-dot offline';
-    lblAgent.textContent = 'Offline';
+    dotAgent.className = 'h-dot offline';
+    dotTools.className = 'h-dot offline';
     lblAgent.style.color = '#ef4444';
-  }
-  try {
-    var r2 = await fetch('/api/tools-health', { signal: AbortSignal.timeout(3000) });
-    dotTools.className = 'health-dot ' + (r2.ok ? 'online' : 'offline');
-    lblTools.textContent = r2.ok ? 'Online' : 'Error';
-    lblTools.style.color = r2.ok ? '#10b981' : '#ef4444';
-  } catch(e) {
-    dotTools.className = 'health-dot offline';
-    lblTools.textContent = 'Offline';
     lblTools.style.color = '#ef4444';
+    statHealth.textContent = 'Unreachable';
+    statHealth.style.color = '#ef4444';
+    iconWrap.style.background = 'linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.08))';
+    iconWrap.style.color = '#ef4444';
   }
 }
 var refreshHealth = checkHealth;
 
-computeStats();
-renderSidebar();
-renderEndpoints();
-checkHealth();
+// ── Method Breakdown Modal ─────────────────────
+function openMethodBreakdown() {
+  var counts = { GET:0, POST:0, PUT:0, DELETE:0 };
+  var total = 0;
+  var domainData = [];
+  var keys = Object.keys(API_CATALOG);
+  for (var i = 0; i < keys.length; i++) {
+    var d = API_CATALOG[keys[i]];
+    var dc = { label: d.label, GET:0, POST:0, PUT:0, DELETE:0 };
+    for (var j = 0; j < d.endpoints.length; j++) {
+      var m = d.endpoints[j].method;
+      counts[m]++; dc[m]++; total++;
+    }
+    domainData.push(dc);
+  }
+  var maxCount = Math.max(counts.GET, counts.POST, counts.PUT, counts.DELETE, 1);
+  var methods = [
+    { key:'GET', color:'get', label:'GET' },
+    { key:'POST', color:'post', label:'POST' },
+    { key:'PUT', color:'put', label:'PUT' },
+    { key:'DELETE', color:'delete', label:'DELETE' }
+  ];
+  var html = '<div class="method-breakdown-bar">';
+  for (var m = 0; m < methods.length; m++) {
+    var mi = methods[m];
+    var pct = Math.max(8, (counts[mi.key] / maxCount) * 100);
+    html += '<div class="mb-col">';
+    html += '<div class="mb-count">' + counts[mi.key] + '</div>';
+    html += '<div class="mb-bar ' + mi.color + '" style="height:' + pct + '%"></div>';
+    html += '<div class="mb-label" style="color:' + getMethodColor(mi.key) + '">' + mi.label + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '<div style="text-align:center;font-size:0.78rem;color:var(--text-3);margin:0.5rem 0 0.75rem">' + total + ' total endpoints</div>';
+  html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.35rem">By Domain</div>';
+  html += '<div class="mb-domain-list">';
+  for (var d = 0; d < domainData.length; d++) {
+    var dd = domainData[d];
+    html += '<div class="mb-domain-row">';
+    html += '<span class="mb-domain-name">' + _esc(dd.label) + '</span>';
+    html += '<span class="mb-domain-counts">';
+    if (dd.GET) html += '<span class="mb-dc" style="background:rgba(16,185,129,0.12);color:#10b981">' + dd.GET + ' GET</span>';
+    if (dd.POST) html += '<span class="mb-dc" style="background:rgba(59,130,246,0.12);color:#3b82f6">' + dd.POST + ' POST</span>';
+    if (dd.PUT) html += '<span class="mb-dc" style="background:rgba(245,158,11,0.12);color:#f59e0b">' + dd.PUT + ' PUT</span>';
+    if (dd.DELETE) html += '<span class="mb-dc" style="background:rgba(239,68,68,0.12);color:#ef4444">' + dd.DELETE + ' DEL</span>';
+    html += '</span></div>';
+  }
+  html += '</div>';
+  document.getElementById('method-breakdown-body').innerHTML = html;
+  document.getElementById('method-overlay').classList.add('open');
+}
+function closeMethodBreakdown() { document.getElementById('method-overlay').classList.remove('open'); }
+function getMethodColor(m) {
+  if (m === 'GET') return '#10b981';
+  if (m === 'POST') return '#3b82f6';
+  if (m === 'PUT') return '#f59e0b';
+  return '#ef4444';
+}
+
+// ── Init (deferred so layout scripts load first) ──
+setTimeout(function() {
+  computeStats();
+  renderSidebar();
+  renderEndpoints();
+  checkHealth();
+}, 0);
 <\/script>
 
 ` }) %>
