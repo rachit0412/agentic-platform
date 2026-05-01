@@ -695,6 +695,19 @@ select {
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+  cursor: pointer;
+}
+select option {
+  background: var(--bg-2, #1e293b);
+  color: var(--text-1, #e2e8f0);
+  padding: 0.5rem 0.75rem;
+}
+select option:checked {
+  background: var(--accent-bg, rgba(6,182,212,0.15));
+  color: var(--accent-text, #06b6d4);
+}
+select option:hover {
+  background: var(--glass-hover-bg, rgba(255,255,255,0.065));
 }
 
 /* ─── Tables ─── */
