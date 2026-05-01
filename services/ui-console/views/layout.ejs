@@ -102,6 +102,12 @@
           <span class="rail-tooltip">Agent Builder</span>
         </a>
       </li>
+      <li>
+        <a href="/ai-studio" class="rail-item <%= page === 'ai-studio' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="12" y1="14" x2="17" y2="14"/></svg>
+          <span class="rail-tooltip">AI Studio <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:4px;font-weight:600">DEV</span></span>
+        </a>
+      </li>
       <!-- ── Agent Configuration ── -->
       <li class="rail-group">
         <a href="/agent-hub" class="rail-item <%= ['agent-hub','agents','skills','prompts','tools'].includes(page) ? 'active' : '' %>">
@@ -150,13 +156,13 @@
       <li>
         <a href="/a2a" class="rail-item <%= page === 'a2a' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          <span class="rail-tooltip">A2A Protocol</span>
+          <span class="rail-tooltip">A2A Protocol <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:4px;font-weight:600">BETA</span></span>
         </a>
       </li>
       <li>
         <a href="/mcp" class="rail-item <%= page === 'mcp' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6"/><circle cx="12" cy="12" r="4"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6m8 0h6"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>
-          <span class="rail-tooltip">MCP Protocol</span>
+          <span class="rail-tooltip">MCP Protocol <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:4px;font-weight:600">BETA</span></span>
         </a>
       </li>
       <!-- ── Monitoring ── -->
@@ -202,7 +208,7 @@
       <li>
         <a href="/admin" class="rail-item <%= page === 'admin' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span class="rail-tooltip">Model Hub</span>
+          <span class="rail-tooltip">Admin Plane <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:4px;font-weight:600">BETA</span></span>
         </a>
       </li>
     </ul>
@@ -382,6 +388,12 @@
         <button class="tc-icon-btn" onclick="toggleTCConfig()" id="tc-config-toggle" title="Settings">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
+        <button class="tc-icon-btn" onclick="exportTestChat()" title="Export conversation">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="tc-icon-btn" onclick="toggleTCFullscreen()" id="tc-fullscreen-btn" title="Fullscreen">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <button class="tc-icon-btn" onclick="clearTestChat()" title="New conversation">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         </button>
@@ -463,6 +475,8 @@
         </div>
         <div id="tc-activity-model" class="tc-activity-model" style="display:none"></div>
         <div id="tc-flowchart" class="tc-flowchart"></div>
+        <div id="tc-guardrail-bar" style="display:none;margin-top:0.5rem;padding:0.35rem 0.5rem;border-radius:6px;font-size:0.62rem;border:1px solid var(--divider)"></div>
+        <div id="tc-trace-info" style="display:none;margin-top:0.35rem;padding:0.3rem 0.5rem;border-radius:6px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.12);font-size:0.6rem;color:var(--text-3);font-family:JetBrains Mono,monospace;word-break:break-all"></div>
         <div id="tc-activity-summary" class="tc-activity-summary" style="display:none"></div>
       </div>
       <!-- Right: Chat Messages -->
@@ -475,6 +489,9 @@
         <textarea id="tc-prompt" rows="2" placeholder="Type a message..." class="tc-input-textarea"></textarea>
         <div class="tc-input-hint">Enter to send &middot; Shift+Enter for new line</div>
       </div>
+      <button id="tc-regen" class="tc-send-btn" onclick="regenerateTC()" style="display:none;background:rgba(139,92,246,0.15);color:#8b5cf6;width:32px;height:32px" title="Regenerate last response">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
       <button id="tc-send" class="tc-send-btn" onclick="sendTestChat()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
@@ -806,6 +823,9 @@
     .tc-send-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
     @media (max-width:640px) { .tc-panel { width:100%; } .tc-activity-rail { width:130px; } }
+    .tc-panel.tc-fullscreen { width:100% !important; }
+    .tc-panel.tc-fullscreen .tc-activity-rail { width:220px; }
+    .tc-panel.tc-fullscreen .tc-messages .tc-msg { max-width:70%; }
   </style>
 
   <script>
@@ -821,6 +841,11 @@
     var tcElapsedTimer = null;
     var tcActiveModel = '';
     var _tcAbortController = null;
+    var tcLastPrompt = '';
+    var tcGuardrailData = { input: [], output: [] };
+    var tcTraceId = '';
+    var tcRequestId = '';
+    var tcIsFullscreen = false;
 
     function stopTestChat() {
       if (_tcAbortController) {
@@ -906,7 +931,11 @@
         if (isStreaming) {
           html += '<div class="tc-typing"><div class="tc-typing-dot"></div><div class="tc-typing-dot"></div><div class="tc-typing-dot"></div></div>';
         } else {
-          html += '<div class="tc-msg tc-msg-' + (isUser ? 'user' : 'assistant') + '">' + escapeHtml(m.content || '...') + '</div>';
+          html += '<div class="tc-msg tc-msg-' + (isUser ? 'user' : 'assistant') + '" style="position:relative">' + escapeHtml(m.content || '...');
+          if (!isUser && m.content) {
+            html += '<button onclick="copyTCMessage(' + i + ')" title="Copy" style="position:absolute;top:4px;right:4px;background:none;border:none;color:var(--text-3);cursor:pointer;padding:3px;border-radius:4px;opacity:0.5;transition:opacity 0.15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.5"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+          }
+          html += '</div>';
         }
         if (m.time) {
           html += '<span class="tc-msg-meta' + (isUser ? ' tc-msg-meta-user' : '') + '">' + escapeHtml(m.time) + '</span>';
@@ -915,6 +944,9 @@
       });
       el.innerHTML = html;
       el.scrollTop = el.scrollHeight;
+      /* Show/hide regenerate button */
+      var regenBtn = document.getElementById('tc-regen');
+      if (regenBtn) regenBtn.style.display = tcLastPrompt && tcMessages.length > 0 ? '' : 'none';
     }
 
     function renderFlowchart() {
@@ -1039,6 +1071,7 @@
       if (!prompt) return;
 
       if (!tcSessionId) tcSessionId = 'tc-' + Math.random().toString(36).slice(2, 8);
+      tcLastPrompt = prompt;
 
       var now = new Date();
       var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
@@ -1082,8 +1115,13 @@
 
       /* Reset flowchart + start timer */
       tcFlowSteps = [];
+      tcGuardrailData = { input: [], output: [] };
+      tcTraceId = '';
+      tcRequestId = '';
       document.getElementById('tc-activity-rail').style.display = 'block';
       document.getElementById('tc-activity-summary').style.display = 'none';
+      document.getElementById('tc-guardrail-bar').style.display = 'none';
+      document.getElementById('tc-trace-info').style.display = 'none';
 
       /* Show model in activity rail */
       var modelInfoEl = document.getElementById('tc-activity-model');
@@ -1178,11 +1216,24 @@
                 fullResponse += raw;
                 tcMessages[assistantIdx].content = fullResponse;
                 renderTCMessages();
+              } else if (eventType === 'guardrails') {
+                try {
+                  var grEvt = JSON.parse(raw);
+                  if (grEvt.phase === 'input') tcGuardrailData.input = grEvt.results || [];
+                  if (grEvt.phase === 'output') tcGuardrailData.output = grEvt.results || [];
+                  renderTCGuardrails();
+                } catch(e) {}
               } else if (eventType === 'done') {
                 try {
                   var doneData = JSON.parse(raw);
                   tcUsageData = doneData.usage || null;
                   tcDoneModelInfo = doneData.model ? ((doneData.provider || '') + '/' + doneData.model) : '';
+                  tcTraceId = doneData.trace_id || '';
+                  tcRequestId = doneData.request_id || '';
+                  if (doneData.guardrails) {
+                    tcGuardrailData = doneData.guardrails;
+                    renderTCGuardrails();
+                  }
                 } catch(e) {}
               }
             }
@@ -1204,6 +1255,7 @@
         var doneTime = new Date();
         tcMessages[assistantIdx].time = doneTime.getHours().toString().padStart(2,'0') + ':' + doneTime.getMinutes().toString().padStart(2,'0');
         showActivitySummary(totalMs, tcUsageData, tcDoneModelInfo);
+        renderTCTraceInfo();
         sendBtn.disabled = false;
         renderTCMessages();
         saveTCState();
@@ -1216,6 +1268,7 @@
           sessionId: tcSessionId,
           messages: tcMessages,
           isOpen: tcIsOpen,
+          lastPrompt: tcLastPrompt,
           agentId: document.getElementById('tc-agent') ? document.getElementById('tc-agent').value : '',
           modelVal: document.getElementById('tc-model') ? document.getElementById('tc-model').value : '',
           maxTokens: document.getElementById('tc-max-tokens') ? document.getElementById('tc-max-tokens').value : '2048',
@@ -1234,6 +1287,7 @@
         tcSessionId = s.sessionId || '';
         tcMessages = s.messages || [];
         tcIsOpen = s.isOpen || false;
+        tcLastPrompt = s.lastPrompt || '';
         renderTCMessages();
         if (s.maxTokens) document.getElementById('tc-max-tokens').value = s.maxTokens;
         if (s.temperature) { document.getElementById('tc-temp').value = s.temperature; document.getElementById('tc-temp-val').textContent = s.temperature; }
@@ -1255,6 +1309,94 @@
     document.getElementById('tc-prompt').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendTestChat(); }
     });
+
+    /* ── New Enhancement Functions ── */
+
+    function copyTCMessage(idx) {
+      var msg = tcMessages[idx];
+      if (!msg || !msg.content) return;
+      navigator.clipboard.writeText(msg.content).then(function() {
+        showToast('Copied to clipboard', 'success');
+      }).catch(function() { showToast('Failed to copy', 'error'); });
+    }
+
+    function regenerateTC() {
+      if (!tcLastPrompt) { showToast('No previous prompt', 'warning'); return; }
+      /* Remove the last assistant response */
+      if (tcMessages.length > 0 && tcMessages[tcMessages.length - 1].role === 'assistant') {
+        tcMessages.pop();
+      }
+      /* Remove the last user message too (sendTestChat will re-add it) */
+      if (tcMessages.length > 0 && tcMessages[tcMessages.length - 1].role === 'user') {
+        tcMessages.pop();
+      }
+      document.getElementById('tc-prompt').value = tcLastPrompt;
+      sendTestChat();
+    }
+
+    function exportTestChat() {
+      if (tcMessages.length === 0) { showToast('No conversation to export', 'warning'); return; }
+      var lines = '# Test Agent Conversation Export\n\n';
+      lines += '**Session:** ' + (tcSessionId || 'unknown') + '\n';
+      lines += '**Date:** ' + new Date().toISOString() + '\n';
+      lines += '**Model:** ' + (tcActiveModel || 'default') + '\n\n---\n\n';
+      tcMessages.forEach(function(m) {
+        lines += '### ' + (m.role === 'user' ? 'You' : 'Agent') + ' (' + (m.time || '') + ')\n\n';
+        lines += m.content + '\n\n';
+      });
+      var blob = new Blob([lines], { type: 'text/markdown' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'conversation-' + (tcSessionId || 'export') + '.md';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('Conversation exported', 'success');
+    }
+
+    function toggleTCFullscreen() {
+      var panel = document.getElementById('test-chat-panel');
+      tcIsFullscreen = !tcIsFullscreen;
+      panel.classList.toggle('tc-fullscreen', tcIsFullscreen);
+      var btn = document.getElementById('tc-fullscreen-btn');
+      if (tcIsFullscreen) {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+        btn.title = 'Exit fullscreen';
+      } else {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+        btn.title = 'Fullscreen';
+      }
+    }
+
+    function renderTCGuardrails() {
+      var bar = document.getElementById('tc-guardrail-bar');
+      var all = (tcGuardrailData.input || []).concat(tcGuardrailData.output || []);
+      if (all.length === 0) { bar.style.display = 'none'; return; }
+      var passed = all.filter(function(g) { return g.status === 'passed'; }).length;
+      var flagged = all.filter(function(g) { return g.status === 'flagged'; }).length;
+      var blocked = all.filter(function(g) { return g.status === 'blocked'; }).length;
+      var bgColor = blocked > 0 ? 'rgba(244,63,94,0.08)' : flagged > 0 ? 'rgba(245,158,11,0.06)' : 'rgba(16,185,129,0.06)';
+      var borderColor = blocked > 0 ? 'rgba(244,63,94,0.2)' : flagged > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)';
+      var html = '<div style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap">';
+      html += '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+      html += '<span style="color:#10b981;font-weight:600">' + passed + '</span>';
+      if (flagged) html += '<span style="color:#f59e0b;font-weight:600">' + flagged + ' warn</span>';
+      if (blocked) html += '<span style="color:#f43f5e;font-weight:600">' + blocked + ' blocked</span>';
+      html += '</div>';
+      bar.innerHTML = html;
+      bar.style.display = 'block';
+      bar.style.background = bgColor;
+      bar.style.borderColor = borderColor;
+    }
+
+    function renderTCTraceInfo() {
+      var el = document.getElementById('tc-trace-info');
+      if (!tcTraceId && !tcRequestId) { el.style.display = 'none'; return; }
+      var html = '';
+      if (tcRequestId) html += 'req: ' + escapeHtml(tcRequestId.substring(0, 16));
+      if (tcTraceId) html += (html ? '<br>' : '') + 'trace: ' + escapeHtml(tcTraceId.substring(0, 16));
+      el.innerHTML = html;
+      el.style.display = 'block';
+    }
 
     restoreTCState();
 

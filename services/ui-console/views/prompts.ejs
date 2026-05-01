@@ -187,7 +187,7 @@
       document.getElementById('prompt-tags').value = (p.tags || []).join(', ');
       document.getElementById('prompt-form').style.display = 'block';
       document.getElementById('prompt-name').focus();
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Error loading prompt: ' + e.message, 'error'); }
   }
 
   async function savePrompt() {
@@ -201,22 +201,33 @@
     };
     if (!payload.name) { alert('Name is required'); return; }
     if (!payload.content) { alert('Prompt content is required'); return; }
+    const btn = event ? event.target : document.querySelector('.btn-primary');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
     try {
       const url = id ? '/api/prompts/' + id : '/api/prompts';
       const method = id ? 'PUT' : 'POST';
-      await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (!res.ok) {
+        const err = await res.text();
+        showToast('Save failed: ' + (err || res.statusText), 'error');
+        return;
+      }
+      showToast(id ? 'Prompt updated' : 'Prompt created', 'success');
       clearDraft();
       hideForm();
       loadPrompts();
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    finally { if (btn) { btn.disabled = false; btn.textContent = 'Save'; } }
   }
 
   async function deletePrompt(id) {
     if (!confirm('Delete this prompt?')) return;
     try {
-      await fetch('/api/prompts/' + id, { method: 'DELETE' });
+      const res = await fetch('/api/prompts/' + id, { method: 'DELETE' });
+      if (!res.ok) { showToast('Delete failed: ' + res.statusText, 'error'); return; }
+      showToast('Prompt deleted', 'success');
       loadPrompts();
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
   }
 
   async function copyPrompt(id) {
@@ -228,7 +239,7 @@
       const orig = btn.textContent;
       btn.textContent = 'Copied!';
       setTimeout(() => btn.textContent = orig, 1500);
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Copy failed: ' + e.message, 'error'); }
   }
 
   loadPrompts();

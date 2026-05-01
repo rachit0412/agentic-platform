@@ -157,8 +157,9 @@ body {
   color: var(--text-1);
   background: var(--bg);
   background-image: linear-gradient(145deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
+  overflow: hidden;
   transition: background 0.3s ease;
 }
 
@@ -445,12 +446,14 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
   margin-left: 60px;
 }
 
 .main-content {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   background-image: radial-gradient(circle, var(--dot-grid-color) 0.8px, transparent 0.8px);
   background-size: 28px 28px;

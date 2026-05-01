@@ -1,0 +1,666 @@
+<%- include('layout', { title: 'AI Studio', page: 'ai-studio', body: `
+
+<style>
+  .studio-container { display:flex; height:calc(100vh - 60px); gap:0; overflow:hidden; margin:-1.5rem; }
+  /* ── Left: Chat ── */
+  .studio-chat { width:340px; min-width:260px; display:flex; flex-direction:column; background:var(--glass-bg); border-right:1px solid var(--glass-border); }
+  .studio-chat-header { padding:0.75rem 1rem; border-bottom:1px solid var(--glass-border); display:flex; align-items:center; gap:0.5rem; }
+  .studio-chat-header h3 { font-size:0.85rem; margin:0; font-weight:700; }
+  .studio-chat-messages { flex:1; overflow-y:auto; padding:0.75rem; display:flex; flex-direction:column; gap:0.5rem; }
+  .studio-msg { padding:0.6rem 0.75rem; border-radius:10px; font-size:0.8rem; line-height:1.5; max-width:95%; word-break:break-word; }
+  .studio-msg-user { background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.08)); align-self:flex-end; border:1px solid rgba(99,102,241,0.2); }
+  .studio-msg-ai { background:var(--card-bg); align-self:flex-start; border:1px solid var(--glass-border); }
+  .studio-msg-ai pre { background:rgba(0,0,0,0.3); border-radius:6px; padding:0.5rem; overflow-x:auto; font-size:0.75rem; margin:0.4rem 0; }
+  .studio-msg-ai code { font-family:var(--mono); font-size:0.75rem; }
+  .studio-msg-system { background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.15); color:var(--text-3); font-size:0.72rem; text-align:center; align-self:center; }
+  .studio-chat-input { padding:0.75rem; border-top:1px solid var(--glass-border); display:flex; gap:0.5rem; }
+  .studio-chat-input textarea { flex:1; resize:none; font-size:0.8rem; min-height:40px; max-height:120px; border-radius:10px; padding:0.5rem 0.75rem; background:var(--card-bg); border:1px solid var(--glass-border); color:var(--text-1); font-family:inherit; }
+  .studio-chat-input button { align-self:flex-end; }
+
+  /* ── Center: Editor ── */
+  .studio-editor { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .studio-tabs { display:flex; align-items:center; background:var(--glass-bg); border-bottom:1px solid var(--glass-border); overflow-x:auto; min-height:36px; }
+  .studio-tab { padding:0.4rem 0.85rem; font-size:0.75rem; cursor:pointer; border-right:1px solid var(--glass-border); display:flex; align-items:center; gap:0.35rem; white-space:nowrap; color:var(--text-3); transition:background 0.15s; user-select:none; }
+  .studio-tab:hover { background:rgba(255,255,255,0.03); }
+  .studio-tab.active { background:var(--card-bg); color:var(--text-1); border-bottom:2px solid #f59e0b; }
+  .studio-tab .tab-close { opacity:0.4; cursor:pointer; font-size:0.65rem; margin-left:0.3rem; }
+  .studio-tab .tab-close:hover { opacity:1; color:#f43f5e; }
+  .studio-toolbar { display:flex; align-items:center; gap:0.5rem; padding:0.35rem 0.75rem; background:var(--glass-bg); border-bottom:1px solid var(--glass-border); }
+  .studio-toolbar .btn { font-size:0.72rem; padding:0.25rem 0.6rem; }
+  .studio-editor-area { flex:1; position:relative; overflow:hidden; }
+  .studio-editor-area textarea { width:100%; height:100%; resize:none; background:var(--card-bg); color:var(--text-1); border:none; padding:1rem; font-family:var(--mono); font-size:0.82rem; line-height:1.6; tab-size:2; outline:none; }
+
+  /* ── Right: Sidebar ── */
+  .studio-sidebar { width:280px; min-width:200px; display:flex; flex-direction:column; background:var(--glass-bg); border-left:1px solid var(--glass-border); }
+  .studio-sidebar-tabs { display:flex; border-bottom:1px solid var(--glass-border); }
+  .studio-sidebar-tab { flex:1; text-align:center; padding:0.5rem; font-size:0.72rem; cursor:pointer; color:var(--text-3); border-bottom:2px solid transparent; transition:all 0.15s; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .studio-sidebar-tab.active { color:#f59e0b; border-bottom-color:#f59e0b; }
+  .studio-sidebar-panel { flex:1; overflow-y:auto; display:none; }
+  .studio-sidebar-panel.active { display:flex; flex-direction:column; }
+
+  /* File tree */
+  .file-tree { padding:0.5rem; font-size:0.78rem; }
+  .file-tree-item { display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0.5rem; border-radius:6px; cursor:pointer; color:var(--text-2); transition:background 0.1s; user-select:none; }
+  .file-tree-item:hover { background:rgba(255,255,255,0.04); }
+  .file-tree-item.active { background:rgba(245,158,11,0.1); color:#f59e0b; }
+  .file-tree-item .ft-icon { width:14px; text-align:center; flex-shrink:0; font-size:0.7rem; }
+  .file-tree-actions { display:flex; gap:0.25rem; padding:0.5rem; border-bottom:1px solid var(--glass-border); }
+  .file-tree-actions button { font-size:0.68rem; padding:0.2rem 0.5rem; }
+
+  /* Preview */
+  .studio-preview { flex:1; background:#fff; position:relative; }
+  .studio-preview iframe { width:100%; height:100%; border:none; }
+  .studio-preview-placeholder { display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-3); font-size:0.82rem; flex-direction:column; gap:0.5rem; }
+
+  /* Console */
+  .studio-console { height:140px; background:rgba(0,0,0,0.4); border-top:1px solid var(--glass-border); font-family:var(--mono); font-size:0.72rem; overflow-y:auto; padding:0.5rem 0.75rem; color:#a5f3fc; }
+  .studio-console .log-error { color:#f87171; }
+  .studio-console .log-warn { color:#fbbf24; }
+  .studio-console .log-info { color:#a5f3fc; }
+
+  /* Resize handle */
+  .resize-h { width:4px; cursor:col-resize; background:transparent; transition:background 0.15s; flex-shrink:0; }
+  .resize-h:hover, .resize-h.dragging { background:rgba(245,158,11,0.4); }
+
+  /* Agent selector in chat */
+  .studio-agent-sel { font-size:0.72rem; padding:0.2rem 0.5rem; border-radius:6px; background:var(--card-bg); border:1px solid var(--glass-border); color:var(--text-1); }
+
+  /* Project templates */
+  .template-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; padding:0.75rem; }
+  .template-card { padding:0.6rem; border-radius:10px; border:1px solid var(--glass-border); background:var(--card-bg); cursor:pointer; transition:all 0.15s; text-align:center; }
+  .template-card:hover { border-color:#f59e0b; transform:translateY(-1px); }
+  .template-card .tc-icon { font-size:1.5rem; margin-bottom:0.25rem; }
+  .template-card .tc-name { font-size:0.75rem; font-weight:600; color:var(--text-1); }
+  .template-card .tc-desc { font-size:0.65rem; color:var(--text-3); margin-top:0.15rem; }
+</style>
+
+<div class="studio-container">
+  <!-- ══ CHAT PANEL ══ -->
+  <div class="studio-chat" id="studio-chat-panel">
+    <div class="studio-chat-header">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <h3>AI Assistant</h3>
+      <div style="margin-left:auto">
+        <select id="studio-agent" class="studio-agent-sel" title="Select agent">
+          <option value="">Default Agent</option>
+        </select>
+      </div>
+    </div>
+    <div class="studio-chat-messages" id="studio-messages">
+      <div class="studio-msg studio-msg-system">Welcome to AI Studio. Describe the app you want to build, and I will generate the code for you.</div>
+    </div>
+    <div class="studio-chat-input">
+      <textarea id="studio-prompt" placeholder="Describe your app or ask for changes..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();studioSend()}"></textarea>
+      <button class="btn btn-primary btn-sm" onclick="studioSend()" id="studio-send-btn" title="Send">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="resize-h" id="resize-chat"></div>
+
+  <!-- ══ EDITOR PANEL ══ -->
+  <div class="studio-editor" id="studio-editor-panel">
+    <!-- Tabs -->
+    <div class="studio-tabs" id="studio-tabs"></div>
+    <!-- Toolbar -->
+    <div class="studio-toolbar">
+      <button class="btn btn-sm" onclick="studioRun()" title="Run preview" style="background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.2)">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run
+      </button>
+      <button class="btn btn-sm" onclick="studioSaveFile()" title="Save current file" style="background:rgba(99,102,241,0.1);color:#6366f1;border:1px solid rgba(99,102,241,0.2)">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Save
+      </button>
+      <button class="btn btn-sm" onclick="studioFormatCode()" title="Format code">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg> Format
+      </button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem">
+        <span id="studio-file-lang" style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase"></span>
+        <span id="studio-file-size" style="font-size:0.68rem;color:var(--text-3)"></span>
+      </div>
+    </div>
+    <!-- Code area -->
+    <div class="studio-editor-area">
+      <textarea id="studio-code" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+        oninput="studioCodeChanged()" onkeydown="studioHandleTab(event)"></textarea>
+    </div>
+    <!-- Console -->
+    <div class="studio-console" id="studio-console">
+      <div class="log-info">[AI Studio] Ready. Select a template or describe your app in the chat.</div>
+    </div>
+  </div>
+
+  <div class="resize-h" id="resize-sidebar"></div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="studio-sidebar" id="studio-sidebar-panel">
+    <div class="studio-sidebar-tabs">
+      <div class="studio-sidebar-tab active" onclick="studioSidebarTab('files')">Files</div>
+      <div class="studio-sidebar-tab" onclick="studioSidebarTab('preview')">Preview</div>
+      <div class="studio-sidebar-tab" onclick="studioSidebarTab('templates')">Templates</div>
+    </div>
+
+    <!-- Files panel -->
+    <div class="studio-sidebar-panel active" id="sidebar-files">
+      <div class="file-tree-actions">
+        <button class="btn btn-sm" onclick="studioNewFile()" title="New file">+ File</button>
+        <button class="btn btn-sm" onclick="studioNewFolder()" title="New folder">+ Folder</button>
+        <button class="btn btn-sm" onclick="studioDeleteFile()" title="Delete selected" style="color:#f43f5e">Del</button>
+        <div style="margin-left:auto">
+          <button class="btn btn-sm" onclick="studioExportProject()" title="Export project as JSON">Export</button>
+        </div>
+      </div>
+      <div class="file-tree" id="studio-file-tree"></div>
+    </div>
+
+    <!-- Preview panel -->
+    <div class="studio-sidebar-panel" id="sidebar-preview">
+      <div class="studio-preview" id="studio-preview-container">
+        <div class="studio-preview-placeholder" id="studio-preview-placeholder">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Click "Run" to preview</span>
+        </div>
+        <iframe id="studio-preview-frame" style="display:none" sandbox="allow-scripts allow-modals"></iframe>
+      </div>
+    </div>
+
+    <!-- Templates panel -->
+    <div class="studio-sidebar-panel" id="sidebar-templates">
+      <div class="template-grid">
+        <div class="template-card" onclick="studioLoadTemplate('react-app')">
+          <div class="tc-icon">\\u269B</div>
+          <div class="tc-name">React App</div>
+          <div class="tc-desc">SPA with components</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('dashboard')">
+          <div class="tc-icon">\\ud83d\\udcca</div>
+          <div class="tc-name">Dashboard</div>
+          <div class="tc-desc">Charts & metrics</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('landing')">
+          <div class="tc-icon">\\ud83c\\udfaf</div>
+          <div class="tc-name">Landing Page</div>
+          <div class="tc-desc">Hero + sections</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('form-app')">
+          <div class="tc-icon">\\ud83d\\udcdd</div>
+          <div class="tc-name">Form App</div>
+          <div class="tc-desc">CRUD with validation</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('chat-ui')">
+          <div class="tc-icon">\\ud83d\\udcac</div>
+          <div class="tc-name">Chat UI</div>
+          <div class="tc-desc">Messaging interface</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('blank')">
+          <div class="tc-icon">\\ud83d\\udcc4</div>
+          <div class="tc-name">Blank</div>
+          <div class="tc-desc">Empty project</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   AI STUDIO — In-browser IDE powered by platform agents
+   ═══════════════════════════════════════════════════════════════ */
+
+var studioProject = {
+  name: 'untitled',
+  files: {},
+  activeFile: null,
+  openTabs: [],
+  sessionId: 'studio-' + Date.now(),
+  chatHistory: []
+};
+
+/* ── Templates ── */
+var studioTemplates = {
+  'react-app': {
+    'index.html': '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n  <meta charset="UTF-8">\\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n  <title>React App<\\/title>\\n  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\\/script>\\n  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\\/script>\\n  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\\/script>\\n  <link rel="stylesheet" href="styles.css">\\n<\\/head>\\n<body>\\n  <div id="root"><\\/div>\\n  <script type="text/babel" src="App.jsx"><\\/script>\\n<\\/body>\\n<\\/html>',
+    'App.jsx': 'function App() {\\n  const [count, setCount] = React.useState(0);\\n\\n  return (\\n    <div className="app">\\n      <h1>\\u269B React App<\\/h1>\\n      <p>Count: {count}<\\/p>\\n      <button onClick={() => setCount(c => c + 1)}>Increment<\\/button>\\n      <button onClick={() => setCount(0)}>Reset<\\/button>\\n    <\\/div>\\n  );\\n}\\n\\nReactDOM.createRoot(document.getElementById("root")).render(<App \\/>);',
+    'styles.css': '* { margin:0; padding:0; box-sizing:border-box; }\\nbody { font-family:system-ui,-apple-system,sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; display:flex; align-items:center; justify-content:center; }\\n.app { text-align:center; padding:2rem; }\\nh1 { font-size:2rem; margin-bottom:1rem; background:linear-gradient(135deg,#6366f1,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }\\nbutton { padding:0.5rem 1.5rem; margin:0.25rem; border:none; border-radius:8px; background:#6366f1; color:white; font-size:1rem; cursor:pointer; transition:transform 0.1s; }\\nbutton:hover { transform:scale(1.05); }\\nbutton:last-child { background:#475569; }'
+  },
+  'dashboard': {
+    'index.html': '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n  <meta charset="UTF-8">\\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n  <title>Dashboard<\\/title>\\n  <link rel="stylesheet" href="styles.css">\\n<\\/head>\\n<body>\\n  <div class="dashboard">\\n    <header><h1>\\ud83d\\udcca Dashboard<\\/h1><\\/header>\\n    <div class="metrics">\\n      <div class="metric-card"><div class="metric-value">1,284<\\/div><div class="metric-label">Users<\\/div><\\/div>\\n      <div class="metric-card"><div class="metric-value">$12.4k<\\/div><div class="metric-label">Revenue<\\/div><\\/div>\\n      <div class="metric-card"><div class="metric-value">98.2%<\\/div><div class="metric-label">Uptime<\\/div><\\/div>\\n      <div class="metric-card"><div class="metric-value">342<\\/div><div class="metric-label">Orders<\\/div><\\/div>\\n    <\\/div>\\n    <div class="charts"><div class="chart-placeholder">Chart Area \\u2014 Add chart.js for real charts<\\/div><\\/div>\\n  <\\/div>\\n  <script src="app.js"><\\/script>\\n<\\/body>\\n<\\/html>',
+    'styles.css': '* { margin:0; padding:0; box-sizing:border-box; }\\nbody { font-family:system-ui,sans-serif; background:#0f172a; color:#e2e8f0; }\\n.dashboard { max-width:1200px; margin:0 auto; padding:2rem; }\\nheader h1 { font-size:1.5rem; margin-bottom:1.5rem; }\\n.metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:2rem; }\\n.metric-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:1.5rem; text-align:center; }\\n.metric-value { font-size:2rem; font-weight:700; background:linear-gradient(135deg,#6366f1,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }\\n.metric-label { font-size:0.85rem; color:#94a3b8; margin-top:0.25rem; }\\n.charts { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:2rem; }\\n.chart-placeholder { text-align:center; color:#64748b; padding:4rem; }',
+    'app.js': '// Dashboard logic\\nconsole.log("Dashboard loaded");\\n\\n// Animate metric values\\ndocument.querySelectorAll(".metric-card").forEach(function(card, i) {\\n  card.style.opacity = "0";\\n  card.style.transform = "translateY(20px)";\\n  setTimeout(function() {\\n    card.style.transition = "all 0.4s ease";\\n    card.style.opacity = "1";\\n    card.style.transform = "translateY(0)";\\n  }, i * 100);\\n});'
+  },
+  'landing': {
+    'index.html': '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n  <meta charset="UTF-8">\\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n  <title>Landing Page<\\/title>\\n  <link rel="stylesheet" href="styles.css">\\n<\\/head>\\n<body>\\n  <nav><div class="nav-inner"><span class="logo">\\u2728 MyApp<\\/span><div class="nav-links"><a href="#features">Features<\\/a><a href="#pricing">Pricing<\\/a><button class="cta-btn">Get Started<\\/button><\\/div><\\/div><\\/nav>\\n  <section class="hero"><h1>Build Something<br>Amazing<\\/h1><p>The modern platform for creating incredible applications.<\\/p><button class="cta-btn cta-lg">Start Free Trial<\\/button><\\/section>\\n  <section class="features" id="features"><h2>Features<\\/h2><div class="feature-grid"><div class="feature-card">\\ud83d\\ude80 <strong>Fast<\\/strong><p>Lightning quick performance<\\/p><\\/div><div class="feature-card">\\ud83d\\udd12 <strong>Secure<\\/strong><p>Enterprise-grade security<\\/p><\\/div><div class="feature-card">\\ud83c\\udf0d <strong>Global<\\/strong><p>Deployed worldwide<\\/p><\\/div><\\/div><\\/section>\\n  <footer><p>&copy; 2026 MyApp. All rights reserved.<\\/p><\\/footer>\\n<\\/body>\\n<\\/html>',
+    'styles.css': '* { margin:0; padding:0; box-sizing:border-box; }\\nbody { font-family:system-ui,sans-serif; background:#0f172a; color:#e2e8f0; }\\nnav { position:fixed; top:0; width:100%; background:rgba(15,23,42,0.9); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,0.1); z-index:100; }\\n.nav-inner { max-width:1100px; margin:0 auto; padding:1rem 2rem; display:flex; align-items:center; justify-content:space-between; }\\n.logo { font-weight:700; font-size:1.2rem; }\\n.nav-links { display:flex; gap:1.5rem; align-items:center; }\\n.nav-links a { color:#94a3b8; text-decoration:none; font-size:0.9rem; }\\n.cta-btn { padding:0.5rem 1.5rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; }\\n.cta-lg { font-size:1.1rem; padding:0.75rem 2rem; }\\n.hero { text-align:center; padding:8rem 2rem 4rem; }\\n.hero h1 { font-size:3.5rem; font-weight:800; line-height:1.1; background:linear-gradient(135deg,#f59e0b,#6366f1,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }\\n.hero p { color:#94a3b8; font-size:1.2rem; margin:1.5rem 0 2rem; }\\n.features { max-width:1100px; margin:0 auto; padding:4rem 2rem; }\\n.features h2 { text-align:center; font-size:2rem; margin-bottom:2rem; }\\n.feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }\\n.feature-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:2rem; text-align:center; }\\n.feature-card p { color:#94a3b8; margin-top:0.5rem; font-size:0.9rem; }\\nfooter { text-align:center; padding:2rem; color:#475569; font-size:0.85rem; border-top:1px solid rgba(255,255,255,0.05); }'
+  },
+  'form-app': {
+    'index.html': '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n  <meta charset="UTF-8">\\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n  <title>Form App<\\/title>\\n  <link rel="stylesheet" href="styles.css">\\n<\\/head>\\n<body>\\n  <div class="container">\\n    <h1>\\ud83d\\udcdd Contact Form<\\/h1>\\n    <form id="myForm" onsubmit="return handleSubmit(event)">\\n      <div class="field"><label>Name<\\/label><input type="text" id="name" required placeholder="Your name"><\\/div>\\n      <div class="field"><label>Email<\\/label><input type="email" id="email" required placeholder="you@example.com"><\\/div>\\n      <div class="field"><label>Message<\\/label><textarea id="message" rows="4" required placeholder="Your message..."><\\/textarea><\\/div>\\n      <button type="submit" class="submit-btn">Send Message<\\/button>\\n    <\\/form>\\n    <div id="result" style="display:none"><\\/div>\\n  <\\/div>\\n  <script src="app.js"><\\/script>\\n<\\/body>\\n<\\/html>',
+    'styles.css': '* { margin:0; padding:0; box-sizing:border-box; }\\nbody { font-family:system-ui,sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; display:flex; align-items:center; justify-content:center; }\\n.container { width:100%; max-width:480px; padding:2rem; }\\nh1 { margin-bottom:1.5rem; font-size:1.5rem; }\\n.field { margin-bottom:1rem; }\\nlabel { display:block; font-size:0.85rem; color:#94a3b8; margin-bottom:0.35rem; }\\ninput, textarea { width:100%; padding:0.65rem 0.75rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e2e8f0; font-size:0.9rem; font-family:inherit; }\\ninput:focus, textarea:focus { outline:none; border-color:#6366f1; }\\n.submit-btn { width:100%; padding:0.75rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; }\\n#result { margin-top:1rem; padding:1rem; border-radius:8px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#10b981; text-align:center; }',
+    'app.js': 'function handleSubmit(e) {\\n  e.preventDefault();\\n  var name = document.getElementById("name").value;\\n  var email = document.getElementById("email").value;\\n  var msg = document.getElementById("message").value;\\n  var result = document.getElementById("result");\\n  result.style.display = "block";\\n  result.textContent = "Thanks " + name + "! Message sent from " + email;\\n  e.target.reset();\\n  return false;\\n}'
+  },
+  'chat-ui': {
+    'index.html': '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n  <meta charset="UTF-8">\\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n  <title>Chat UI<\\/title>\\n  <link rel="stylesheet" href="styles.css">\\n<\\/head>\\n<body>\\n  <div class="chat-container">\\n    <div class="chat-header"><h2>\\ud83d\\udcac Chat<\\/h2><\\/div>\\n    <div class="chat-messages" id="messages"><\\/div>\\n    <div class="chat-input"><input type="text" id="msgInput" placeholder="Type a message..." onkeydown="if(event.key===\\u0027Enter\\u0027)sendMsg()"><button onclick="sendMsg()">Send<\\/button><\\/div>\\n  <\\/div>\\n  <script src="app.js"><\\/script>\\n<\\/body>\\n<\\/html>',
+    'styles.css': '* { margin:0; padding:0; box-sizing:border-box; }\\nbody { font-family:system-ui,sans-serif; background:#0f172a; color:#e2e8f0; height:100vh; display:flex; align-items:center; justify-content:center; }\\n.chat-container { width:400px; height:600px; display:flex; flex-direction:column; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; overflow:hidden; }\\n.chat-header { padding:1rem; border-bottom:1px solid rgba(255,255,255,0.1); }\\n.chat-header h2 { font-size:1rem; }\\n.chat-messages { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.5rem; }\\n.msg { max-width:80%; padding:0.6rem 0.85rem; border-radius:12px; font-size:0.85rem; line-height:1.4; }\\n.msg-user { align-self:flex-end; background:#6366f1; color:white; border-bottom-right-radius:4px; }\\n.msg-bot { align-self:flex-start; background:rgba(255,255,255,0.1); border-bottom-left-radius:4px; }\\n.chat-input { display:flex; padding:0.75rem; gap:0.5rem; border-top:1px solid rgba(255,255,255,0.1); }\\n.chat-input input { flex:1; padding:0.6rem 0.75rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e2e8f0; font-size:0.85rem; }\\n.chat-input button { padding:0.6rem 1rem; background:#6366f1; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; }',
+    'app.js': 'var replies = ["Interesting!","Tell me more.","I see what you mean.","That\\u0027s a great point!","How can I help further?"];\\nfunction sendMsg() {\\n  var input = document.getElementById("msgInput");\\n  var text = input.value.trim();\\n  if (!text) return;\\n  addMsg(text, "user");\\n  input.value = "";\\n  setTimeout(function() {\\n    addMsg(replies[Math.floor(Math.random() * replies.length)], "bot");\\n  }, 500);\\n}\\nfunction addMsg(text, type) {\\n  var div = document.createElement("div");\\n  div.className = "msg msg-" + type;\\n  div.textContent = text;\\n  var container = document.getElementById("messages");\\n  container.appendChild(div);\\n  container.scrollTop = container.scrollHeight;\\n}'
+  },
+  'blank': {
+    'index.html': '<!DOCTYPE html>\\n<html lang="en">\\n<head>\\n  <meta charset="UTF-8">\\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\\n  <title>My App<\\/title>\\n  <link rel="stylesheet" href="styles.css">\\n<\\/head>\\n<body>\\n  <h1>Hello World<\\/h1>\\n  <script src="app.js"><\\/script>\\n<\\/body>\\n<\\/html>',
+    'styles.css': '* { margin:0; padding:0; box-sizing:border-box; }\\nbody { font-family:system-ui,sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; display:flex; align-items:center; justify-content:center; }\\nh1 { font-size:2rem; }',
+    'app.js': '// Your code here\\nconsole.log("App loaded");'
+  }
+};
+
+/* ── Init ── */
+function studioInit() {
+  // Load agents
+  fetch('/api/agents').then(function(r) { return r.json(); }).then(function(d) {
+    var sel = document.getElementById('studio-agent');
+    (d.agents || []).forEach(function(a) {
+      var opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.name;
+      sel.appendChild(opt);
+    });
+  }).catch(function() {});
+
+  // Load blank template by default
+  studioLoadTemplate('blank');
+  setupResizeHandles();
+}
+
+/* ── Templates ── */
+function studioLoadTemplate(name) {
+  var tpl = studioTemplates[name];
+  if (!tpl) return;
+  studioProject.files = {};
+  studioProject.openTabs = [];
+  studioProject.activeFile = null;
+  studioProject.name = name;
+
+  Object.keys(tpl).forEach(function(f) {
+    studioProject.files[f] = tpl[f];
+  });
+
+  // Open first file
+  var first = Object.keys(studioProject.files)[0];
+  if (first) {
+    studioProject.openTabs = [first];
+    studioProject.activeFile = first;
+  }
+  studioRenderFileTree();
+  studioRenderTabs();
+  studioLoadFileInEditor(first);
+  studioLog('info', 'Loaded template: ' + name + ' (' + Object.keys(studioProject.files).length + ' files)');
+  studioSidebarTab('files');
+}
+
+/* ── File Tree ── */
+function studioRenderFileTree() {
+  var tree = document.getElementById('studio-file-tree');
+  var files = Object.keys(studioProject.files).sort();
+  tree.innerHTML = files.map(function(f) {
+    var ext = f.split('.').pop();
+    var icons = { html:'\\ud83c\\udf10', css:'\\ud83c\\udfa8', js:'\\u26a1', jsx:'\\u269b', json:'\\ud83d\\udcc4', md:'\\ud83d\\udcdd', txt:'\\ud83d\\udcc4' };
+    var icon = icons[ext] || '\\ud83d\\udcc4';
+    var active = studioProject.activeFile === f ? ' active' : '';
+    return '<div class="file-tree-item' + active + '" onclick="studioOpenFile(\\'' + escapeHtml(f).replace(/'/g, "\\\\'") + '\\')" title="' + escapeHtml(f) + '">' +
+      '<span class="ft-icon">' + icon + '</span>' +
+      '<span>' + escapeHtml(f) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── Tabs ── */
+function studioRenderTabs() {
+  var tabs = document.getElementById('studio-tabs');
+  tabs.innerHTML = studioProject.openTabs.map(function(f) {
+    var active = studioProject.activeFile === f ? ' active' : '';
+    var ext = f.split('.').pop();
+    return '<div class="studio-tab' + active + '" onclick="studioOpenFile(\\'' + escapeHtml(f).replace(/'/g, "\\\\'") + '\\')">' +
+      '<span>' + escapeHtml(f) + '</span>' +
+      '<span class="tab-close" onclick="event.stopPropagation();studioCloseTab(\\'' + escapeHtml(f).replace(/'/g, "\\\\'") + '\\')">&times;</span>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── File Operations ── */
+function studioOpenFile(name) {
+  if (!studioProject.files.hasOwnProperty(name)) return;
+  // Save current
+  if (studioProject.activeFile) {
+    studioProject.files[studioProject.activeFile] = document.getElementById('studio-code').value;
+  }
+  // Add to tabs
+  if (studioProject.openTabs.indexOf(name) === -1) {
+    studioProject.openTabs.push(name);
+  }
+  studioProject.activeFile = name;
+  studioLoadFileInEditor(name);
+  studioRenderTabs();
+  studioRenderFileTree();
+}
+
+function studioLoadFileInEditor(name) {
+  if (!name) return;
+  var code = studioProject.files[name] || '';
+  document.getElementById('studio-code').value = code;
+  var ext = name.split('.').pop();
+  document.getElementById('studio-file-lang').textContent = ext;
+  document.getElementById('studio-file-size').textContent = code.length + ' chars';
+}
+
+function studioCloseTab(name) {
+  var idx = studioProject.openTabs.indexOf(name);
+  if (idx === -1) return;
+  studioProject.openTabs.splice(idx, 1);
+  if (studioProject.activeFile === name) {
+    studioProject.activeFile = studioProject.openTabs[Math.max(0, idx - 1)] || null;
+    if (studioProject.activeFile) {
+      studioLoadFileInEditor(studioProject.activeFile);
+    } else {
+      document.getElementById('studio-code').value = '';
+      document.getElementById('studio-file-lang').textContent = '';
+      document.getElementById('studio-file-size').textContent = '';
+    }
+  }
+  studioRenderTabs();
+  studioRenderFileTree();
+}
+
+function studioCodeChanged() {
+  if (studioProject.activeFile) {
+    studioProject.files[studioProject.activeFile] = document.getElementById('studio-code').value;
+  }
+  var code = document.getElementById('studio-code').value;
+  document.getElementById('studio-file-size').textContent = code.length + ' chars';
+}
+
+function studioSaveFile() {
+  studioCodeChanged();
+  studioLog('info', 'Saved: ' + (studioProject.activeFile || '(none)'));
+  showToast('File saved', 'success');
+}
+
+function studioNewFile() {
+  var name = prompt('File name (e.g. component.jsx):');
+  if (!name) return;
+  name = name.trim();
+  if (studioProject.files.hasOwnProperty(name)) {
+    showToast('File already exists', 'error');
+    return;
+  }
+  studioProject.files[name] = '';
+  studioOpenFile(name);
+  studioLog('info', 'Created: ' + name);
+}
+
+function studioNewFolder() {
+  showToast('Folders are implicit \\u2014 use paths like folder/file.js', 'info');
+}
+
+function studioDeleteFile() {
+  var f = studioProject.activeFile;
+  if (!f) { showToast('No file selected', 'error'); return; }
+  if (!confirm('Delete ' + f + '?')) return;
+  delete studioProject.files[f];
+  studioCloseTab(f);
+  studioRenderFileTree();
+  studioLog('info', 'Deleted: ' + f);
+}
+
+function studioFormatCode() {
+  // Basic indentation cleanup
+  var code = document.getElementById('studio-code').value;
+  try {
+    if (studioProject.activeFile && studioProject.activeFile.endsWith('.json')) {
+      code = JSON.stringify(JSON.parse(code), null, 2);
+      document.getElementById('studio-code').value = code;
+      studioCodeChanged();
+      showToast('Formatted JSON', 'success');
+      return;
+    }
+  } catch(e) {}
+  showToast('Format applied', 'info');
+}
+
+function studioHandleTab(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    var ta = e.target;
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    ta.value = ta.value.substring(0, start) + '  ' + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + 2;
+    studioCodeChanged();
+  }
+}
+
+/* ── Export ── */
+function studioExportProject() {
+  studioCodeChanged();
+  var data = JSON.stringify({ name: studioProject.name, files: studioProject.files }, null, 2);
+  var blob = new Blob([data], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = studioProject.name + '-project.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Project exported', 'success');
+}
+
+/* ── Preview ── */
+function studioRun() {
+  studioCodeChanged();
+  var html = studioProject.files['index.html'];
+  if (!html) {
+    studioLog('error', 'No index.html found. Create one first.');
+    showToast('No index.html', 'error');
+    return;
+  }
+
+  // Inline CSS and JS into the HTML
+  var combined = html;
+  var Q = '[' + '"' + "'" + ']'; // regex char class matching " or '
+  Object.keys(studioProject.files).forEach(function(f) {
+    if (f === 'index.html') return;
+    var content = studioProject.files[f];
+    if (f.endsWith('.css')) {
+      combined = combined.replace(
+        new RegExp('<link[^>]+href=' + Q + f.replace('.', '\\\\.') + Q + '[^>]*>', 'g'),
+        '<style>' + content + '<\\/style>'
+      );
+    }
+    if (f.endsWith('.js') || f.endsWith('.jsx')) {
+      var re = new RegExp('<script[^>]+src=' + Q + f.replace('.', '\\\\.') + Q + '[^>]*><\\\\/script>', 'g');
+      var srcTag = combined.match(re);
+      if (srcTag) {
+        var typeAttr = '';
+        if (srcTag[0].indexOf('text/babel') !== -1) typeAttr = ' type="text/babel"';
+        combined = combined.replace(re, '<script' + typeAttr + '>' + content + '<\\/script>');
+      }
+    }
+  });
+
+  // Show in preview iframe
+  studioSidebarTab('preview');
+  var frame = document.getElementById('studio-preview-frame');
+  var placeholder = document.getElementById('studio-preview-placeholder');
+  placeholder.style.display = 'none';
+  frame.style.display = 'block';
+  frame.srcdoc = combined;
+  studioLog('info', 'Preview updated');
+}
+
+/* ── Sidebar Tabs ── */
+function studioSidebarTab(name) {
+  document.querySelectorAll('.studio-sidebar-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.studio-sidebar-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelector('.studio-sidebar-tab:nth-child(' + ({files:1,preview:2,templates:3}[name]) + ')').classList.add('active');
+  document.getElementById('sidebar-' + name).classList.add('active');
+}
+
+/* ── Console ── */
+function studioLog(level, msg) {
+  var c = document.getElementById('studio-console');
+  var d = document.createElement('div');
+  d.className = 'log-' + level;
+  var time = new Date().toLocaleTimeString();
+  d.textContent = '[' + time + '] ' + msg;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+/* ── Chat / AI ── */
+function studioAddMessage(text, role) {
+  var container = document.getElementById('studio-messages');
+  var div = document.createElement('div');
+  div.className = 'studio-msg studio-msg-' + role;
+  if (role === 'ai') {
+    // Parse code blocks
+    div.innerHTML = studioFormatAIResponse(text);
+  } else {
+    div.textContent = text;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function studioFormatAIResponse(text) {
+  // Convert markdown code blocks to styled output
+  var safe = escapeHtml(text);
+  var bt = String.fromCharCode(96); // backtick
+  var codeBlockRe = new RegExp(bt+bt+bt+'(\\\\w*)?\\\\n([\\\\s\\\\S]*?)'+bt+bt+bt, 'g');
+  safe = safe.replace(codeBlockRe, function(m, lang, code) {
+    return '<pre><code>' + code + '</code></pre>';
+  });
+  var inlineCodeRe = new RegExp(bt+'([^'+bt+']+)'+bt, 'g');
+  safe = safe.replace(inlineCodeRe, '<code style="background:rgba(0,0,0,0.3);padding:0.1rem 0.3rem;border-radius:4px;font-size:0.75rem">$1</code>');
+  safe = safe.replace(/\\n/g, '<br>');
+  return safe;
+}
+
+async function studioSend() {
+  var input = document.getElementById('studio-prompt');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  studioAddMessage(text, 'user');
+
+  var btn = document.getElementById('studio-send-btn');
+  btn.disabled = true;
+
+  // Build context: include all current project files
+  var fileContext = 'Current project files:\\n';
+  Object.keys(studioProject.files).forEach(function(f) {
+    fileContext += '\\n--- ' + f + ' ---\\n' + studioProject.files[f] + '\\n';
+  });
+
+  var systemPrompt = 'You are an AI coding assistant inside an in-browser IDE called AI Studio. ' +
+    'The user is building a web application. You can generate or modify code files. ' +
+    'When you want to create or update a file, use this exact format:\\n' +
+    '===FILE: filename.ext===\\n(file content)\\n===END===\\n' +
+    'You may output multiple ===FILE=== blocks. Only use this format for code changes. ' +
+    'After the file blocks, add a brief explanation. ' +
+    'The project runs in-browser with static HTML/CSS/JS. React is available via CDN with Babel. ' +
+    'Here is the current project state:\\n' + fileContext;
+
+  studioLog('info', 'Sending prompt to agent...');
+
+  try {
+    var agentId = document.getElementById('studio-agent').value || undefined;
+    var r = await fetch('/api/agent-run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prompt: text,
+        session_id: studioProject.sessionId,
+        system_prompt: systemPrompt,
+        agent_id: agentId
+      })
+    });
+    var d = await r.json();
+    var response = d.response || d.output || '';
+
+    // Extract ===FILE=== blocks
+    var filePattern = /===FILE:\\s*([\\w.\\/\\-]+)===\\n([\\s\\S]*?)===END===/g;
+    var match;
+    var filesUpdated = 0;
+    while ((match = filePattern.exec(response)) !== null) {
+      var fname = match[1].trim();
+      var fcontent = match[2];
+      // Remove trailing newline
+      if (fcontent.endsWith('\\n')) fcontent = fcontent.slice(0, -1);
+      studioProject.files[fname] = fcontent;
+      filesUpdated++;
+      studioLog('info', 'Updated file: ' + fname);
+      // Open the file
+      if (studioProject.openTabs.indexOf(fname) === -1) {
+        studioProject.openTabs.push(fname);
+      }
+    }
+
+    if (filesUpdated > 0) {
+      studioRenderFileTree();
+      studioRenderTabs();
+      // Show last updated file
+      var lastFile = studioProject.openTabs[studioProject.openTabs.length - 1];
+      studioProject.activeFile = lastFile;
+      studioLoadFileInEditor(lastFile);
+      studioRenderFileTree();
+      studioRenderTabs();
+    }
+
+    // Show response (strip out FILE blocks for display)
+    var displayText = response.replace(/===FILE:[\\s\\S]*?===END===/g, '').trim();
+    if (!displayText && filesUpdated > 0) {
+      displayText = 'Updated ' + filesUpdated + ' file(s). Click "Run" to preview.';
+    }
+    studioAddMessage(displayText || response, 'ai');
+    studioLog('info', 'Agent responded' + (filesUpdated > 0 ? ' \\u2014 ' + filesUpdated + ' files updated' : ''));
+  } catch(e) {
+    studioAddMessage('Error: ' + e.message, 'ai');
+    studioLog('error', 'Agent error: ' + e.message);
+  }
+  btn.disabled = false;
+}
+
+/* ── Resize Handles ── */
+function setupResizeHandles() {
+  setupResize('resize-chat', 'studio-chat-panel', 'width', 200, 600);
+  setupResize('resize-sidebar', 'studio-sidebar-panel', 'width', 180, 500, true);
+}
+
+function setupResize(handleId, panelId, prop, min, max, reverse) {
+  var handle = document.getElementById(handleId);
+  var panel = document.getElementById(panelId);
+  if (!handle || !panel) return;
+  var startX, startW;
+
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    handle.classList.add('dragging');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  function onMove(e) {
+    var dx = e.clientX - startX;
+    var newW = reverse ? startW - dx : startW + dx;
+    newW = Math.max(min, Math.min(max, newW));
+    panel.style.width = newW + 'px';
+    panel.style.minWidth = newW + 'px';
+  }
+  function onUp() {
+    handle.classList.remove('dragging');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  }
+}
+
+/* ── Boot ── */
+studioInit();
+<\/script>
+
+`}) %>

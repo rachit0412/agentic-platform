@@ -244,18 +244,26 @@ async function saveServer() {
   try {
     const url = id ? '/api/mcp/servers/' + id : '/api/mcp/servers';
     const method = id ? 'PUT' : 'POST';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.text();
+      showToast('Save failed: ' + (err || res.statusText), 'error');
+      return;
+    }
+    showToast(id ? 'Server updated' : 'Server added', 'success');
     hideServerForm();
     await loadServers();
-  } catch(e) { alert('Failed to save: ' + e.message); }
+  } catch(e) { showToast('Failed to save: ' + e.message, 'error'); }
 }
 
 async function deleteServer(id) {
   if (!confirm('Delete this MCP server?')) return;
   try {
-    await fetch('/api/mcp/servers/' + id, { method: 'DELETE' });
+    const res = await fetch('/api/mcp/servers/' + id, { method: 'DELETE' });
+    if (!res.ok) { showToast('Delete failed: ' + res.statusText, 'error'); return; }
+    showToast('Server deleted', 'success');
     await loadServers();
-  } catch(e) { alert('Failed to delete: ' + e.message); }
+  } catch(e) { showToast('Failed to delete: ' + e.message, 'error'); }
 }
 
 async function discoverTools(id) {
@@ -263,11 +271,12 @@ async function discoverTools(id) {
     const resp = await fetch('/api/mcp/servers/' + id + '/discover', { method: 'POST' });
     const data = await resp.json();
     await loadServers();
-    const msg = data.status === 'connected'
-      ? 'Discovered ' + (data.tools?.length || 0) + ' tools'
-      : 'Discovery failed: ' + (data.error || data.status);
-    alert(msg);
-  } catch(e) { alert('Discovery failed: ' + e.message); }
+    if (data.status === 'connected') {
+      showToast('Discovered ' + (data.tools?.length || 0) + ' tools', 'success');
+    } else {
+      showToast('Discovery failed: ' + (data.error || data.status), 'error');
+    }
+  } catch(e) { showToast('Discovery failed: ' + e.message, 'error'); }
 }
 
 async function toggleServer(id, enabled) {
@@ -278,7 +287,7 @@ async function toggleServer(id, enabled) {
       body: JSON.stringify({ enabled }),
     });
     await loadServers();
-  } catch(e) { alert('Failed: ' + e.message); }
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
 }
 
 async function invokeTool() {

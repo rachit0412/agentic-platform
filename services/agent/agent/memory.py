@@ -5,6 +5,7 @@ Also stores skills and agent configurations.
 """
 import os
 import json
+import logging
 import sqlite3
 import threading
 import uuid
@@ -16,13 +17,38 @@ DB_PATH = os.path.join(MEMORY_DIR, "memory.db")
 _local = threading.local()
 
 
+logger = logging.getLogger(__name__)
+
+
 def _get_conn() -> sqlite3.Connection:
-    """One connection per thread (SQLite is not thread-safe by default)."""
-    if not hasattr(_local, "conn"):
+    """One connection per thread, with automatic recovery from corrupted connections."""
+    if not hasattr(_local, "conn") or _local.conn is None:
         os.makedirs(MEMORY_DIR, exist_ok=True)
         _local.conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         _local.conn.row_factory = sqlite3.Row
+    else:
+        # Validate cached connection is still usable
+        try:
+            _local.conn.execute("SELECT 1")
+        except sqlite3.DatabaseError:
+            logger.warning("Stale/corrupted SQLite connection detected, reconnecting")
+            try:
+                _local.conn.close()
+            except Exception:
+                pass
+            _local.conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            _local.conn.row_factory = sqlite3.Row
     return _local.conn
+
+
+def _reset_conn():
+    """Close and discard the cached connection so next call creates a fresh one."""
+    if hasattr(_local, "conn") and _local.conn is not None:
+        try:
+            _local.conn.close()
+        except Exception:
+            pass
+        _local.conn = None
 
 
 def init_db():
@@ -269,6 +295,75 @@ def get_memory_stats() -> dict:
     }
 
 
+def get_db_stats() -> dict:
+    """Return database path and record counts for all tables."""
+    conn = _get_conn()
+    tables = ["agents", "skills", "prompts", "conversations", "documents",
+              "mcp_servers", "a2a_peers", "guardrails", "custom_tools", "session_summaries",
+              "version_history", "audit_log"]
+    counts = {}
+    for table in tables:
+        try:
+            row = conn.execute(f"SELECT COUNT(*) as c FROM {table}").fetchone()
+            counts[table] = row["c"]
+        except Exception:
+            counts[table] = 0
+    db_size = 0
+    try:
+        db_size = os.path.getsize(DB_PATH)
+    except Exception:
+        pass
+    return {
+        "db_path": DB_PATH,
+        "db_size_bytes": db_size,
+        **counts,
+    }
+
+
+def export_all_data() -> dict:
+    """Export all data from all tables as a JSON-serializable dict."""
+    conn = _get_conn()
+    tables = ["agents", "skills", "prompts", "guardrails", "custom_tools",
+              "mcp_servers", "a2a_peers", "documents", "conversations", "session_summaries",
+              "version_history", "audit_log"]
+    result = {}
+    for table in tables:
+        try:
+            rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+            result[table] = [dict(r) for r in rows]
+        except Exception:
+            result[table] = []
+    return result
+
+
+def import_all_data(data: dict, merge: bool = True) -> dict:
+    """Import data into all tables. If merge=True, skip existing records; if False, replace all."""
+    conn = _get_conn()
+    stats = {}
+    for table, rows in data.items():
+        if not rows:
+            stats[table] = {"imported": 0, "skipped": 0}
+            continue
+        if not merge:
+            conn.execute(f"DELETE FROM {table}")
+        imported = 0
+        skipped = 0
+        for row in rows:
+            cols = ", ".join(row.keys())
+            placeholders = ", ".join(["?"] * len(row))
+            try:
+                conn.execute(
+                    f"INSERT OR IGNORE INTO {table} ({cols}) VALUES ({placeholders})",
+                    list(row.values()),
+                )
+                imported += 1
+            except Exception:
+                skipped += 1
+        stats[table] = {"imported": imported, "skipped": skipped}
+    conn.commit()
+    return stats
+
+
 def get_relevant_context(query: str, k: int = 3) -> list[dict]:
     """
     Retrieve relevant context from ChromaDB vector store.
@@ -319,6 +414,7 @@ def create_skill(name: str, description: str = "", system_prompt: str = "",
         (skill_id, name, description, system_prompt, json.dumps(tool_ids or []), json.dumps(constraints or []), now, now),
     )
     conn.commit()
+    log_audit("create", "skill", skill_id, name)
     return get_skill(skill_id)
 
 
@@ -327,6 +423,8 @@ def update_skill(skill_id: str, **kwargs) -> dict | None:
     existing = get_skill(skill_id)
     if not existing:
         return None
+    save_version("skill", skill_id, existing)
+    log_audit("update", "skill", skill_id, existing.get("name", ""), {"fields": list(kwargs.keys())})
     fields = []
     values = []
     for key in ("name", "description", "system_prompt"):
@@ -348,8 +446,11 @@ def update_skill(skill_id: str, **kwargs) -> dict | None:
 
 def delete_skill(skill_id: str) -> bool:
     conn = _get_conn()
+    existing = get_skill(skill_id)
     cursor = conn.execute("DELETE FROM skills WHERE id = ?", (skill_id,))
     conn.commit()
+    if cursor.rowcount > 0 and existing:
+        log_audit("delete", "skill", skill_id, existing.get("name", ""))
     return cursor.rowcount > 0
 
 
@@ -403,6 +504,7 @@ def create_agent(name: str, description: str = "", provider: str = "ollama",
          max_iterations, int(memory_enabled), 0, now, now),
     )
     conn.commit()
+    log_audit("create", "agent", agent_id, name)
     return get_agent(agent_id)
 
 
@@ -411,6 +513,9 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
     existing = get_agent(agent_id)
     if not existing:
         return None
+    # Save version before update
+    save_version("agent", agent_id, existing)
+    log_audit("update", "agent", agent_id, existing.get("name", ""), {"fields": list(kwargs.keys())})
     fields = []
     values = []
     for key in ("name", "description", "provider", "model", "system_prompt", "kb_collection"):
@@ -448,8 +553,11 @@ def delete_agent(agent_id: str) -> bool:
     row = conn.execute("SELECT is_default FROM agents WHERE id = ?", (agent_id,)).fetchone()
     if row and row["is_default"]:
         return False
+    existing = get_agent(agent_id)
     cursor = conn.execute("DELETE FROM agents WHERE id = ?", (agent_id,))
     conn.commit()
+    if cursor.rowcount > 0 and existing:
+        log_audit("delete", "agent", agent_id, existing.get("name", ""))
     return cursor.rowcount > 0
 
 
@@ -645,6 +753,7 @@ def create_prompt(name: str, content: str, category: str = "general",
         (prompt_id, name, category, content, description, json.dumps(tags or []), now, now),
     )
     conn.commit()
+    log_audit("create", "prompt", prompt_id, name)
     return get_prompt(prompt_id)
 
 
@@ -653,6 +762,8 @@ def update_prompt(prompt_id: str, **kwargs) -> dict | None:
     existing = get_prompt(prompt_id)
     if not existing:
         return None
+    save_version("prompt", prompt_id, existing)
+    log_audit("update", "prompt", prompt_id, existing.get("name", ""), {"fields": list(kwargs.keys())})
     fields = []
     values = []
     for key in ("name", "category", "content", "description"):
@@ -674,8 +785,11 @@ def update_prompt(prompt_id: str, **kwargs) -> dict | None:
 
 def delete_prompt(prompt_id: str) -> bool:
     conn = _get_conn()
+    existing = get_prompt(prompt_id)
     cursor = conn.execute("DELETE FROM prompts WHERE id = ?", (prompt_id,))
     conn.commit()
+    if cursor.rowcount > 0 and existing:
+        log_audit("delete", "prompt", prompt_id, existing.get("name", ""))
     return cursor.rowcount > 0
 
 
@@ -1086,3 +1200,134 @@ def delete_documents_by_collection(collection: str) -> int:
     cursor = conn.execute("DELETE FROM documents WHERE collection = ?", (collection,))
     conn.commit()
     return cursor.rowcount
+
+
+# ── Version History ────────────────────────────────────────────────────────
+
+def _init_version_history_table():
+    conn = _get_conn()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS version_history (
+            id          TEXT PRIMARY KEY,
+            entity_type TEXT NOT NULL,
+            entity_id   TEXT NOT NULL,
+            version     INTEGER NOT NULL,
+            snapshot    TEXT NOT NULL,
+            changed_by  TEXT DEFAULT 'system',
+            created_at  TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_vh_entity ON version_history(entity_type, entity_id)")
+    conn.commit()
+
+
+def save_version(entity_type: str, entity_id: str, snapshot: dict, changed_by: str = "system"):
+    """Save a versioned snapshot of an entity before it is modified."""
+    _init_version_history_table()
+    conn = _get_conn()
+    # Determine next version number
+    row = conn.execute(
+        "SELECT COALESCE(MAX(version), 0) as max_v FROM version_history WHERE entity_type = ? AND entity_id = ?",
+        (entity_type, entity_id),
+    ).fetchone()
+    next_version = row["max_v"] + 1
+    vid = str(uuid.uuid4())[:12]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO version_history (id, entity_type, entity_id, version, snapshot, changed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (vid, entity_type, entity_id, next_version, json.dumps(snapshot), changed_by, now),
+    )
+    conn.commit()
+    return {"id": vid, "version": next_version}
+
+
+def list_versions(entity_type: str, entity_id: str) -> list[dict]:
+    """List all versions for an entity, newest first."""
+    _init_version_history_table()
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT * FROM version_history WHERE entity_type = ? AND entity_id = ? ORDER BY version DESC",
+        (entity_type, entity_id),
+    ).fetchall()
+    return [
+        {"id": r["id"], "entity_type": r["entity_type"], "entity_id": r["entity_id"],
+         "version": r["version"], "snapshot": json.loads(r["snapshot"]),
+         "changed_by": r["changed_by"], "created_at": r["created_at"]}
+        for r in rows
+    ]
+
+
+def get_version(version_id: str) -> dict | None:
+    """Get a specific version snapshot."""
+    _init_version_history_table()
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM version_history WHERE id = ?", (version_id,)).fetchone()
+    if not row:
+        return None
+    return {"id": row["id"], "entity_type": row["entity_type"], "entity_id": row["entity_id"],
+            "version": row["version"], "snapshot": json.loads(row["snapshot"]),
+            "changed_by": row["changed_by"], "created_at": row["created_at"]}
+
+
+# ── Audit Log ──────────────────────────────────────────────────────────────
+
+def _init_audit_log_table():
+    conn = _get_conn()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id          TEXT PRIMARY KEY,
+            action      TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id   TEXT DEFAULT '',
+            entity_name TEXT DEFAULT '',
+            details     TEXT DEFAULT '{}',
+            performed_by TEXT DEFAULT 'system',
+            created_at  TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(created_at)")
+    conn.commit()
+
+
+def log_audit(action: str, entity_type: str, entity_id: str = "",
+              entity_name: str = "", details: dict | None = None,
+              performed_by: str = "system"):
+    """Record an audit log entry."""
+    _init_audit_log_table()
+    conn = _get_conn()
+    aid = str(uuid.uuid4())[:12]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO audit_log (id, action, entity_type, entity_id, entity_name, details, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (aid, action, entity_type, entity_id, entity_name, json.dumps(details or {}), performed_by, now),
+    )
+    conn.commit()
+
+
+def list_audit_log(limit: int = 100, entity_type: str | None = None,
+                   action: str | None = None) -> list[dict]:
+    """Return recent audit log entries with optional filters."""
+    _init_audit_log_table()
+    conn = _get_conn()
+    query = "SELECT * FROM audit_log WHERE 1=1"
+    params: list = []
+    if entity_type:
+        query += " AND entity_type = ?"
+        params.append(entity_type)
+    if action:
+        query += " AND action = ?"
+        params.append(action)
+    query += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    rows = conn.execute(query, params).fetchall()
+    return [
+        {"id": r["id"], "action": r["action"], "entity_type": r["entity_type"],
+         "entity_id": r["entity_id"], "entity_name": r["entity_name"],
+         "details": json.loads(r["details"]), "performed_by": r["performed_by"],
+         "created_at": r["created_at"]}
+        for r in rows
+    ]

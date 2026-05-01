@@ -110,7 +110,23 @@
     </div>
 
     <div class="card animate-fade-up delay-100" id="result-card" style="display:none">
-      <h3>Response</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h3>Response</h3>
+        <div style="display:flex;gap:0.35rem">
+          <button class="btn btn-secondary btn-sm" onclick="copyResponse()" title="Copy response" style="font-size:0.72rem;padding:0.3rem 0.5rem">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="regenerateResponse()" title="Regenerate response" style="font-size:0.72rem;padding:0.3rem 0.5rem">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Retry
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportResponse()" title="Export" style="font-size:0.72rem;padding:0.3rem 0.5rem">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
       <div id="response" style="white-space:pre-wrap;line-height:1.7;margin-top:0.75rem;color:var(--text-1)"></div>
       <div id="meta" class="mono mt-1" style="font-size:0.72rem"></div>
     </div>
@@ -718,6 +734,51 @@
     } catch(e) {
       document.getElementById('agent-select').innerHTML = '<option value="">Default Agent</option>';
     }
+  }
+
+  // ── Copy / Regenerate / Export ──
+  var _lastPrompt = '';
+
+  var _origRunAgent = runAgent;
+  runAgent = function() {
+    _lastPrompt = document.getElementById('prompt').value.trim();
+    return _origRunAgent();
+  };
+
+  function copyResponse() {
+    var text = document.getElementById('response').textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('Response copied to clipboard', 'success');
+    }).catch(function() {
+      showToast('Failed to copy', 'error');
+    });
+  }
+
+  function regenerateResponse() {
+    if (!_lastPrompt) { showToast('No previous prompt to retry', 'warning'); return; }
+    document.getElementById('prompt').value = _lastPrompt;
+    runAgent();
+  }
+
+  function exportResponse() {
+    var text = document.getElementById('response').textContent;
+    var meta = document.getElementById('meta').textContent;
+    if (!text) { showToast('No response to export', 'warning'); return; }
+    var session = document.getElementById('session').value || 'unknown';
+    var content = '# Agent Response Export\\n\\n';
+    content += '**Session:** ' + session + '\\n';
+    content += '**Date:** ' + new Date().toISOString() + '\\n';
+    content += '**Prompt:** ' + _lastPrompt + '\\n\\n';
+    content += '## Response\\n\\n' + text + '\\n\\n';
+    content += '## Metadata\\n\\n' + meta + '\\n';
+    var blob = new Blob([content], { type: 'text/markdown' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'agent-response-' + session + '.md';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Response exported', 'success');
   }
 
   loadSessions();

@@ -45,11 +45,15 @@ _INJECTION_PATTERNS = [
     "ignore previous", "ignore all previous", "disregard above",
     "disregard all", "new instructions", "override system",
     "forget everything", "you are now", "act as if",
+    "ignore the above", "bypass", "jailbreak",
+    "do not follow", "do anything now", "pretend you",
+    "system prompt", "reveal your instructions",
 ]
 
 
-def _check_guardrails_input(text: str) -> list[dict]:
-    """Run enabled input guardrails. Returns list of {guardrail, status, detail}."""
+def _check_guardrails_input(text: str, agent_config: dict | None = None) -> list[dict]:
+    """Run enabled input guardrails. Returns list of {guardrail, status, detail}.
+    If agent_config has a 'guardrails' key, only run those guardrail IDs."""
     results = []
     try:
         from agent.memory import list_guardrails
@@ -57,16 +61,28 @@ def _check_guardrails_input(text: str) -> list[dict]:
     except Exception:
         return results
 
+    # Per-agent guardrail filtering
+    allowed_ids = None
+    if agent_config and agent_config.get("guardrail_ids"):
+        allowed_ids = set(agent_config["guardrail_ids"])
+
     for gr in guardrails:
         if not gr.get("enabled"):
             continue
         gid = gr["id"]
         name = gr["name"]
+        # Per-agent filter: skip guardrails not in allowed list
+        if allowed_ids is not None and gid not in allowed_ids:
+            continue
 
         if gid == "gr-prompt-injection":
             lower = text.lower()
-            for pat in _INJECTION_PATTERNS:
-                if pat in lower:
+            cfg = gr.get("config", {})
+            patterns = cfg.get("patterns", _INJECTION_PATTERNS)
+            if not patterns:
+                patterns = _INJECTION_PATTERNS
+            for pat in patterns:
+                if pat.lower() in lower:
                     results.append({"guardrail": name, "id": gid, "status": "blocked",
                                     "detail": f"Prompt injection pattern detected: '{pat}'"})
                     break
@@ -99,7 +115,7 @@ def _check_guardrails_input(text: str) -> list[dict]:
     return results
 
 
-def _check_guardrails_output(text: str) -> list[dict]:
+def _check_guardrails_output(text: str, agent_config: dict | None = None) -> list[dict]:
     """Run enabled output guardrails. Returns list of {guardrail, status, detail}."""
     results = []
     try:
@@ -108,11 +124,17 @@ def _check_guardrails_output(text: str) -> list[dict]:
     except Exception:
         return results
 
+    allowed_ids = None
+    if agent_config and agent_config.get("guardrail_ids"):
+        allowed_ids = set(agent_config["guardrail_ids"])
+
     for gr in guardrails:
         if not gr.get("enabled"):
             continue
         gid = gr["id"]
         name = gr["name"]
+        if allowed_ids is not None and gid not in allowed_ids:
+            continue
 
         if gid == "gr-pii":
             found = []
@@ -557,7 +579,14 @@ async def run_agent_stream(
     import time as _time
 
     lf_trace = LangfuseTrace("agent-run-stream", session_id, request_id, prompt)
-    history = get_history(session_id, limit=5)
+
+    # Configurable memory window from agent config
+    memory_window = 5
+    max_iterations = MAX_ITERATIONS
+    if agent_config:
+        memory_window = agent_config.get("memory_window", 5) or 5
+        max_iterations = agent_config.get("max_iterations", MAX_ITERATIONS) or MAX_ITERATIONS
+    history = get_history(session_id, limit=memory_window)
 
     # Build merged system prompt from agent config + skills
     extra_system_parts = []
@@ -578,7 +607,7 @@ async def run_agent_stream(
     # ── Step 0: Input guardrails ────────────────────────────────────────
     yield {"event": "step", "data": {"step": "guardrails_input", "status": "started", "label": "Running input guardrails"}}
     t0 = _time.time()
-    input_gr_results = _check_guardrails_input(prompt)
+    input_gr_results = _check_guardrails_input(prompt, agent_config=agent_config)
     blocked = [g for g in input_gr_results if g["status"] == "blocked"]
     yield {"event": "guardrails", "data": {"phase": "input", "results": input_gr_results}}
     yield {"event": "step", "data": {"step": "guardrails_input", "status": "done",
@@ -744,7 +773,7 @@ async def run_agent_stream(
     # ── Output guardrails ───────────────────────────────────────────────
     yield {"event": "step", "data": {"step": "guardrails_output", "status": "started", "label": "Running output guardrails"}}
     t0 = _time.time()
-    output_gr_results = _check_guardrails_output(full_response)
+    output_gr_results = _check_guardrails_output(full_response, agent_config=agent_config)
     yield {"event": "guardrails", "data": {"phase": "output", "results": output_gr_results}}
     yield {"event": "step", "data": {"step": "guardrails_output", "status": "done",
            "duration_ms": int((_time.time()-t0)*1000),

@@ -46,7 +46,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **MCP Protocol**      | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime             |
 | **Full Traceability** | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                               |
 | **Responsible AI**    | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                |
-| **15-page Dashboard** | Not a CLI-only project. A real UI for building, running, and monitoring agents                                            |
+| **22-page Dashboard** | Not a CLI-only project. A real UI for building, running, and monitoring agents                                            |
 | **One-command setup** | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                       |
 
 <details>
@@ -74,7 +74,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  🖥️  UI Console (Express.js + EJS)                :3000        │
-│  19 pages — build, run, evaluate, trace agents from the browser│
+│  22 pages — build, run, evaluate, trace agents from the browser│
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
 │  ReAct agent loop, skill/agent registry, auto-RAG, memory      │
@@ -107,7 +107,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 | **Tracing**       | Langfuse                        | See every LLM call: prompt, response, cost, latency. Non-negotiable for production        |
 | **Observability** | Prometheus + Grafana + Loki     | Industry-standard monitoring. Not a toy dashboard — real SRE tooling                      |
 | **Workflows**     | n8n                             | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks                |
-| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 19 pages for full platform control                  |
+| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 22 pages for full platform control                  |
 
 ---
 
@@ -149,7 +149,7 @@ curl -X POST http://localhost:8010/run \
 
 | Service            | Port    | Purpose                                                                  |
 | ------------------ | ------- | ------------------------------------------------------------------------ |
-| **ui-console**     | `3000`  | Platform dashboard — 19 pages for building, running, monitoring agents   |
+| **ui-console**     | `3000`  | Platform dashboard — 22 pages for building, running, monitoring agents   |
 | **agent-service**  | `8010`  | FastAPI + LangGraph — the brain: ReAct agent, registry, auto-RAG, memory |
 | **tools-service**  | `8011`  | Math, HTTP, file I/O, datetime, web search, code exec, vector ops        |
 | **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more           |
@@ -162,29 +162,32 @@ curl -X POST http://localhost:8010/run \
 | **otel-collector** | `4317`  | OpenTelemetry pipeline — traces, metrics, logs routing                   |
 | **langfuse-db**    | —       | PostgreSQL backend for Langfuse (internal)                               |
 
-### Dashboard Pages (19)
+### Dashboard Pages (22)
 
-| Page             | What you do there                                 |
-| ---------------- | ------------------------------------------------- |
-| Overview         | Platform stats, architecture, quick-start guide   |
-| Run Agent        | Execute agents, stream responses, browse sessions |
-| Agent Builder    | Visual agent composition with drag-and-drop       |
-| Agent Factory    | Agent factory overview dashboard                  |
-| Agents           | Create and manage agent definitions               |
-| Skills           | Build reusable skill packages                     |
-| Prompts          | Prompt template library                           |
-| Tools            | Manage agent tools and capabilities               |
-| Knowledge        | Knowledge base — upload, search, manage RAG docs  |
-| Workflows        | n8n workflow monitoring                           |
-| A2A Protocol     | Register peer agents for inter-agent delegation   |
-| MCP Protocol     | Connect external tool servers                     |
-| Intelligence Hub | Operational intelligence overview                 |
-| Traceability     | Langfuse trace timeline and deep-dive             |
-| Evaluation       | Agent quality scoring and model comparison        |
-| Observability    | Stack health — Prometheus, Grafana, Loki status   |
-| Guardrails       | Runtime safety controls and policy enforcement    |
-| Marketplace      | Browse and install templates                      |
-| Model Hub        | Model management and system config                |
+| Page             | What you do there                                      |
+| ---------------- | ------------------------------------------------------ |
+| Overview         | Platform stats, architecture, quick-start guide        |
+| Run Agent        | Execute agents, stream responses, browse sessions      |
+| Agent Builder    | Visual agent composition with templates and live test  |
+| AI Studio        | IDE-style code editor with chat, preview, and projects |
+| Agent Hub        | Agent factory overview dashboard                       |
+| Agents           | Create and manage agent definitions                    |
+| Skills           | Build reusable skill packages                          |
+| Prompts          | Prompt template library                                |
+| Tools            | Manage agent tools and capabilities                    |
+| Knowledge Base   | Upload, search, manage RAG docs                        |
+| Workflows        | n8n workflow monitoring                                |
+| A2A Protocol     | Register peer agents for inter-agent delegation        |
+| MCP Protocol     | Connect external tool servers                          |
+| Intelligence Hub | Operational intelligence overview                      |
+| Traceability     | Langfuse trace timeline and deep-dive                  |
+| Evaluation       | Agent quality scoring and model comparison             |
+| Observability    | Stack health — Prometheus, Grafana, Loki status        |
+| Guardrails       | Runtime safety controls and policy enforcement         |
+| Marketplace      | Browse and install templates                           |
+| Admin            | System admin — DB stats, export/import, diagnostics    |
+| Documentation    | Auto-generated API & architecture docs                 |
+| Test Agent       | Floating chat panel — available on every page          |
 
 ---
 
@@ -263,9 +266,9 @@ agentic-platform/
 ├── CONTRIBUTING.md              # Contribution guidelines
 ├── docs/ARCHITECTURE.md         # Deep-dive architecture & protocols
 ├── services/
-│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (47 API routes)
+│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (50+ API routes)
 │   ├── tools/                   # 🔧 FastAPI tool endpoints (9 tools)
-│   ├── ui-console/              # 🖥️  Express.js dashboard (19 pages)
+│   ├── ui-console/              # 🖥️  Express.js dashboard (22 pages)
 │   └── otel/                    # 📡 OpenTelemetry collector config
 ├── n8n/workflows/               # ⚡ Pre-built n8n workflow templates
 ├── observability/               # 📊 Grafana dashboards, Prometheus, Loki config

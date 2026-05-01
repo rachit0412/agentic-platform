@@ -135,12 +135,20 @@
     <label class="field-label">System Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">Defines agent behavior, persona, and constraints</span></label>
     <textarea id="ab-prompt" class="input" rows="6" placeholder="You are a helpful assistant that...&#10;&#10;Rules:&#10;1. Always cite sources&#10;2. Be concise&#10;3. Ask clarifying questions when needed" style="resize:vertical;font-family:var(--mono);font-size:0.82rem"></textarea>
     <div style="display:flex;justify-content:space-between;margin-top:0.25rem">
-      <span style="font-size:0.68rem;color:var(--text-3)" id="ab-prompt-chars">0 chars</span>
-      <div style="display:flex;gap:0.5rem">
+      <span style="font-size:0.68rem;color:var(--text-3)" id="ab-prompt-chars">0 chars &middot; ~0 tokens</span>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="abInsertTemplate('research')" style="font-size:0.7rem">Research</button>
         <button class="btn btn-sm" onclick="abInsertTemplate('coding')" style="font-size:0.7rem">Coding</button>
         <button class="btn btn-sm" onclick="abInsertTemplate('analysis')" style="font-size:0.7rem">Analysis</button>
         <button class="btn btn-sm" onclick="abInsertTemplate('writing')" style="font-size:0.7rem">Writing</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('customer_support')" style="font-size:0.7rem">Support</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('data_extraction')" style="font-size:0.7rem">Extraction</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('qa')" style="font-size:0.7rem">QA</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('devops')" style="font-size:0.7rem">DevOps</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('legal')" style="font-size:0.7rem">Legal</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('financial')" style="font-size:0.7rem">Finance</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('creative')" style="font-size:0.7rem">Creative</button>
+        <button class="btn btn-sm" onclick="abInsertTemplate('translator')" style="font-size:0.7rem">Translator</button>
       </div>
     </div>
   </div>
@@ -177,6 +185,28 @@
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     <span style="font-size:0.78rem;color:var(--text-3)">Skills are optional. Each skill injects its system prompt and tool bindings into the agent's reasoning loop. <a href="/skills" style="color:#f59e0b">Manage skills library</a></span>
   </div>
+
+  <!-- Inline skill creation -->
+  <details style="margin-top:0.75rem">
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:#f59e0b;user-select:none">+ Create New Skill Inline</summary>
+    <div style="margin-top:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem">
+        <div>
+          <label class="field-label">Skill Name</label>
+          <input type="text" id="ab-new-skill-name" class="input" placeholder="e.g. SQL Expert">
+        </div>
+        <div>
+          <label class="field-label">Description</label>
+          <input type="text" id="ab-new-skill-desc" class="input" placeholder="What this skill does">
+        </div>
+      </div>
+      <div>
+        <label class="field-label">System Prompt</label>
+        <textarea id="ab-new-skill-prompt" class="input" rows="3" placeholder="Skill-specific instructions..." style="resize:vertical;font-size:0.82rem"></textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="abCreateSkillInline()" style="margin-top:0.5rem">Create & Attach Skill</button>
+    </div>
+  </details>
 </div>
 
 <!-- ── Panel 3: Knowledge Base ── -->
@@ -367,6 +397,24 @@
           <label class="field-label">Top P <span class="mono" style="color:var(--text-3);font-size:0.72rem" id="ab-topp-val">1.0</span></label>
           <input type="range" id="ab-top-p" min="0" max="1" step="0.05" value="1" oninput="document.getElementById('ab-topp-val').textContent=this.value" style="width:100%">
         </div>
+        <div>
+          <label class="field-label">Max Tokens</label>
+          <input type="number" id="ab-max-tokens" class="input" min="0" max="128000" value="4096" step="256">
+          <span style="font-size:0.68rem;color:var(--text-3)">Max output tokens (0 = model default)</span>
+        </div>
+        <div>
+          <label class="field-label">Timeout (seconds)</label>
+          <input type="number" id="ab-timeout" class="input" min="5" max="600" value="120">
+          <span style="font-size:0.68rem;color:var(--text-3)">Request timeout in seconds</span>
+        </div>
+        <div>
+          <label class="field-label">Response Format</label>
+          <select id="ab-response-format" class="input">
+            <option value="text">Text (default)</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -387,10 +435,18 @@
           </select>
         </div>
         <div>
-          <label class="field-label">Guardrails</label>
-          <div id="ab-guardrails-list" style="display:flex;flex-direction:column;gap:0.35rem;max-height:160px;overflow-y:auto">
+          <label class="field-label" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Guardrails</span>
+            <a href="/guardrails" style="font-size:0.68rem;color:#06b6d4;font-weight:400;text-decoration:none">Manage &rarr;</a>
+          </label>
+          <div id="ab-guardrails-list" style="display:flex;flex-direction:column;gap:0.5rem;max-height:220px;overflow-y:auto;padding:0.25rem 0">
             <p style="color:var(--text-3);font-size:0.78rem">Loading guardrails...</p>
           </div>
+        </div>
+        <div>
+          <label class="field-label">Memory Window</label>
+          <input type="number" id="ab-memory-window" class="input" min="1" max="50" value="5">
+          <span style="font-size:0.68rem;color:var(--text-3)">Number of past messages included as context</span>
         </div>
       </div>
     </div>
@@ -432,6 +488,20 @@
   </div>
 
   <div id="ab-deploy-result" style="margin-top:1rem"></div>
+
+  <!-- Quick Test -->
+  <div style="margin-top:1.25rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px">
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <strong style="font-size:0.88rem">Quick Test</strong>
+      <span style="font-size:0.72rem;color:var(--text-3)">Test your agent configuration before deploying</span>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
+      <input type="text" id="ab-test-input" class="input" placeholder="Type a test message..." style="flex:1;font-size:0.82rem" onkeydown="if(event.key==='Enter')abQuickTest()">
+      <button class="btn btn-primary btn-sm" onclick="abQuickTest()" id="ab-test-btn">Test</button>
+    </div>
+    <div id="ab-test-result" style="display:none;background:rgba(0,0,0,0.3);border-radius:8px;padding:0.75rem;font-size:0.82rem;color:var(--text-2);max-height:200px;overflow-y:auto;white-space:pre-wrap;font-family:var(--mono)"></div>
+  </div>
 </div>
 
 
@@ -620,13 +690,16 @@ function abSavePromptToLib() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ name: pName, content: content, category: 'custom', description: 'Created from Agent Builder' })
-  }).then(function(r){return r.json()}).then(function(d) {
-    if (d.id || d.prompt) {
+  }).then(function(r){
+    if (!r.ok) { showToast('Save failed: ' + r.statusText, 'error'); return Promise.reject(new Error('HTTP ' + r.status)); }
+    return r.json();
+  }).then(function(d) {
+    if (d && (d.id || d.prompt)) {
       abData.prompts.push(d.prompt || d);
       abRenderPromptLibrary();
-      alert('Saved to prompt library!');
+      showToast('Saved to prompt library!', 'success');
     }
-  }).catch(function(e){ alert('Error: ' + e.message); });
+  }).catch(function(e){ showToast('Error: ' + e.message, 'error'); });
 }
 
 function abInsertTemplate(type) {
@@ -634,7 +707,15 @@ function abInsertTemplate(type) {
     research: 'You are a senior research analyst. Your goal is to provide thorough, well-sourced answers.\\n\\nRules:\\n1. Always search for recent information before answering\\n2. Cite your sources\\n3. Distinguish between facts and opinions\\n4. If unsure, say so explicitly',
     coding: 'You are an expert software engineer. Help users write clean, secure, and efficient code.\\n\\nRules:\\n1. Follow best practices and design patterns\\n2. Include error handling\\n3. Add brief inline comments for complex logic\\n4. Consider security implications (OWASP Top 10)',
     analysis: 'You are a data analyst. Analyze information systematically and provide actionable insights.\\n\\nRules:\\n1. Structure your analysis with clear sections\\n2. Use quantitative reasoning when possible\\n3. Highlight key findings and recommendations\\n4. Note any limitations or assumptions',
-    writing: 'You are a professional writer. Help users create clear, engaging, and well-structured content.\\n\\nRules:\\n1. Match the tone to the audience\\n2. Use active voice and concise language\\n3. Structure content with headers and bullet points\\n4. Proofread for grammar and clarity'
+    writing: 'You are a professional writer. Help users create clear, engaging, and well-structured content.\\n\\nRules:\\n1. Match the tone to the audience\\n2. Use active voice and concise language\\n3. Structure content with headers and bullet points\\n4. Proofread for grammar and clarity',
+    customer_support: 'You are a customer support specialist. Handle user inquiries with empathy and efficiency.\\n\\nRules:\\n1. Acknowledge the user\\'s concern before responding\\n2. Provide step-by-step solutions\\n3. Escalate when you cannot resolve an issue\\n4. Follow up to ensure satisfaction\\n5. Never share internal policies or credentials',
+    data_extraction: 'You are a data extraction specialist. Extract structured information from unstructured text.\\n\\nRules:\\n1. Return data in JSON format when possible\\n2. Identify entities: names, dates, amounts, locations\\n3. Flag uncertain extractions with confidence scores\\n4. Handle missing data gracefully with null values',
+    qa: 'You are a QA engineer. Help test software and identify potential issues.\\n\\nRules:\\n1. Think about edge cases and boundary conditions\\n2. Write clear test case descriptions\\n3. Categorize issues by severity (critical, major, minor)\\n4. Suggest both manual and automated testing approaches\\n5. Consider performance, security, and accessibility',
+    devops: 'You are a DevOps engineer. Help with infrastructure, CI/CD, and deployment tasks.\\n\\nRules:\\n1. Prefer Infrastructure as Code (Terraform, ARM, Bicep)\\n2. Follow the principle of least privilege\\n3. Include rollback strategies\\n4. Monitor and alert on key metrics\\n5. Document all configuration changes',
+    legal: 'You are a legal document analyst. Help review and summarize legal documents.\\n\\nRules:\\n1. Identify key clauses, obligations, and risks\\n2. Highlight unusual or non-standard terms\\n3. Summarize in plain language\\n4. Always note that this is not legal advice\\n5. Flag items requiring human attorney review',
+    financial: 'You are a financial analyst. Help analyze financial data and provide insights.\\n\\nRules:\\n1. Use standard financial metrics (ROI, NPV, IRR)\\n2. Present numbers with appropriate precision\\n3. Compare against industry benchmarks\\n4. Clearly state assumptions\\n5. Include risk factors and sensitivity analysis',
+    creative: 'You are a creative writing assistant. Help generate imaginative and original content.\\n\\nRules:\\n1. Be creative but stay on-topic\\n2. Vary sentence structure and vocabulary\\n3. Create vivid imagery and compelling narratives\\n4. Respect content guidelines\\n5. Offer multiple creative directions when asked',
+    translator: 'You are a professional translator. Translate text accurately between languages.\\n\\nRules:\\n1. Preserve the original meaning and tone\\n2. Adapt idioms and cultural references appropriately\\n3. Maintain formatting and structure\\n4. Note when direct translation is ambiguous\\n5. Default to formal register unless instructed otherwise'
   };
   document.getElementById('ab-prompt').value = templates[type] || '';
   abUpdatePromptChars();
@@ -643,7 +724,8 @@ function abInsertTemplate(type) {
 
 function abUpdatePromptChars() {
   var len = (document.getElementById('ab-prompt').value || '').length;
-  document.getElementById('ab-prompt-chars').textContent = len + ' chars';
+  var tokens = Math.ceil(len / 4);
+  document.getElementById('ab-prompt-chars').textContent = len + ' chars \\u00b7 ~' + tokens + ' tokens';
 }
 document.getElementById('ab-prompt').addEventListener('input', abUpdatePromptChars);
 
@@ -864,10 +946,22 @@ function abRenderGuardrails() {
   el.innerHTML = abData.guardrails.map(function(g) {
     var checked = g.enabled ? ' checked' : '';
     var sevColor = g.severity === 'high' ? '#f43f5e' : g.severity === 'medium' ? '#f59e0b' : '#10b981';
-    return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0">' +
-      '<input type="checkbox" data-gid="' + g.id + '"' + checked + ' style="accent-color:#10b981">' +
-      '<span style="font-size:0.78rem;color:var(--text-1);flex:1">' + escapeHtml(g.name) + '</span>' +
-      '<span class="badge" style="font-size:0.6rem;color:' + sevColor + '">' + (g.severity||'medium') + '</span>' +
+    var sevBg = g.severity === 'high' ? 'rgba(244,63,94,0.08)' : g.severity === 'medium' ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.08)';
+    var typeIcon = g.type === 'input' ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="' + sevColor + '" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+      : g.type === 'output' ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="' + sevColor + '" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="' + sevColor + '" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+    return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.65rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;transition:all 0.2s">' +
+      '<input type="checkbox" data-gid="' + g.id + '"' + checked + ' style="accent-color:' + sevColor + ';width:16px;height:16px;flex-shrink:0">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:center;gap:0.35rem">' +
+          '<span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">' + escapeHtml(g.name) + '</span>' +
+        '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-3);margin-top:0.1rem">' + escapeHtml(g.description || g.type || 'Safety control') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;flex-shrink:0">' +
+        '<span style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.15rem 0.4rem;border-radius:6px;font-size:0.62rem;font-weight:600;background:' + sevBg + ';color:' + sevColor + ';text-transform:uppercase">' + typeIcon + ' ' + (g.severity||'medium') + '</span>' +
+        '<span style="font-size:0.6rem;color:var(--text-3)">' + (g.type||'input/output') + '</span>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -908,6 +1002,9 @@ function abLoadExisting() {
   document.getElementById('ab-topp-val').textContent = agent.top_p != null ? agent.top_p : 1;
   document.getElementById('ab-max-iter').value = agent.max_iterations || 5;
   document.getElementById('ab-memory').value = agent.memory_enabled ? '1' : '0';
+  document.getElementById('ab-max-tokens').value = agent.max_tokens || 4096;
+  document.getElementById('ab-timeout').value = agent.timeout || 120;
+  document.getElementById('ab-response-format').value = agent.response_format || 'text';
 
   // KB collection
   if (agent.kb_collection) {
@@ -951,8 +1048,14 @@ function abReset() {
   document.getElementById('ab-topp-val').textContent = '1';
   document.getElementById('ab-max-iter').value = 5;
   document.getElementById('ab-memory').value = '1';
+  document.getElementById('ab-max-tokens').value = 4096;
+  document.getElementById('ab-timeout').value = 120;
+  document.getElementById('ab-response-format').value = 'text';
   document.getElementById('ab-kb-collection').value = 'agentic_docs';
   document.getElementById('ab-deploy-result').innerHTML = '';
+  document.getElementById('ab-test-input').value = '';
+  document.getElementById('ab-test-result').style.display = 'none';
+  document.getElementById('ab-test-result').textContent = '';
   abRenderSkills();
   abRenderTools();
   abLoadKBDocs();
@@ -979,7 +1082,23 @@ function abBuildReview() {
   var cfg = abGetConfig();
   var summary = document.getElementById('ab-review-summary');
 
-  summary.innerHTML = [
+  // Validation checks
+  var warnings = [];
+  if (!cfg.name || cfg.name === 'Untitled Agent') warnings.push('Agent name not set');
+  if (!cfg.system_prompt) warnings.push('No system prompt defined');
+  if (cfg.system_prompt && cfg.system_prompt.length < 20) warnings.push('System prompt is very short');
+  if (cfg.temperature > 1.5) warnings.push('Very high temperature may produce incoherent output');
+  if (cfg.max_iterations > 10) warnings.push('High iteration count may increase latency and cost');
+
+  var validationHtml = '';
+  if (warnings.length > 0) {
+    validationHtml = '<div style="grid-column:1/-1;padding:0.6rem 0.75rem;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:10px;margin-bottom:0.25rem">' +
+      '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.35rem"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong style="font-size:0.78rem;color:#f59e0b">Validation Warnings</strong></div>' +
+      warnings.map(function(w) { return '<div style="font-size:0.75rem;color:var(--text-3);padding-left:1.1rem">\\u2022 ' + w + '</div>'; }).join('') +
+    '</div>';
+  }
+
+  var summaryCards = [
     { label: 'Agent', value: cfg.name || '(unnamed)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>' },
     { label: 'Model', value: cfg.provider + '/' + cfg.model, color: '#f43f5e', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>' },
     { label: 'Prompt', value: cfg.system_prompt ? cfg.system_prompt.length + ' chars' : 'None', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
@@ -992,6 +1111,8 @@ function abBuildReview() {
       '<div><div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + item.label + '</div><div style="font-size:0.88rem;font-weight:600;color:var(--text-1)">' + escapeHtml(item.value) + '</div></div>' +
     '</div>';
   }).join('');
+
+  summary.innerHTML = validationHtml + summaryCards;
 
   document.getElementById('ab-review-json').textContent = JSON.stringify(cfg, null, 2);
 }
@@ -1007,6 +1128,9 @@ function abGetConfig() {
     model: document.getElementById('ab-model').value,
     temperature: parseFloat(document.getElementById('ab-temperature').value) || 0.7,
     top_p: parseFloat(document.getElementById('ab-top-p').value) || 1,
+    max_tokens: parseInt(document.getElementById('ab-max-tokens').value) || 4096,
+    timeout: parseInt(document.getElementById('ab-timeout').value) || 120,
+    response_format: document.getElementById('ab-response-format').value || 'text',
     skill_ids: abData.selectedSkills.slice(),
     tool_ids: abData.selectedTools.slice(),
     kb_collection: newCol || document.getElementById('ab-kb-collection').value || 'agentic_docs',
@@ -1017,7 +1141,69 @@ function abGetConfig() {
 
 function abCopyConfig() {
   var text = document.getElementById('ab-review-json').textContent;
-  navigator.clipboard.writeText(text).then(function() { alert('Copied!'); });
+  navigator.clipboard.writeText(text).then(function() { showToast('Copied!', 'success'); });
+}
+
+/* ═══ INLINE SKILL CREATION ═══ */
+async function abCreateSkillInline() {
+  var name = (document.getElementById('ab-new-skill-name').value || '').trim();
+  var desc = (document.getElementById('ab-new-skill-desc').value || '').trim();
+  var prompt = (document.getElementById('ab-new-skill-prompt').value || '').trim();
+  if (!name) { showToast('Skill name is required', 'error'); return; }
+  if (!prompt) { showToast('Skill system prompt is required', 'error'); return; }
+  try {
+    var r = await fetch('/api/skills', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name: name, description: desc, system_prompt: prompt })
+    });
+    if (!r.ok) { showToast('Failed to create skill: ' + r.statusText, 'error'); return; }
+    var d = await r.json();
+    var skill = d.skill || d;
+    abData.skills.push(skill);
+    abData.selectedSkills.push(skill.id);
+    abRenderSkills();
+    abUpdateStatuses();
+    document.getElementById('ab-new-skill-name').value = '';
+    document.getElementById('ab-new-skill-desc').value = '';
+    document.getElementById('ab-new-skill-prompt').value = '';
+    showToast('Skill "' + name + '" created and attached!', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+/* ═══ QUICK TEST ═══ */
+async function abQuickTest() {
+  var input = document.getElementById('ab-test-input').value.trim();
+  if (!input) { showToast('Type a test message first', 'error'); return; }
+  var btn = document.getElementById('ab-test-btn');
+  var result = document.getElementById('ab-test-result');
+  btn.disabled = true;
+  btn.textContent = 'Testing...';
+  result.style.display = 'block';
+  result.textContent = 'Sending to agent...';
+
+  var cfg = abGetConfig();
+  try {
+    var r = await fetch('/api/agent-run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prompt: input,
+        session_id: 'ab-test-' + Date.now(),
+        provider: cfg.provider,
+        model: cfg.model,
+        system_prompt: cfg.system_prompt,
+        temperature: cfg.temperature,
+        agent_id: abEditingId || undefined
+      })
+    });
+    var d = await r.json();
+    result.textContent = d.response || d.output || JSON.stringify(d, null, 2);
+  } catch(e) {
+    result.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Test';
 }
 
 /* ═══ DEPLOY ═══ */

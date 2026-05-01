@@ -418,7 +418,7 @@
       loadAgentKBDocs(a.kb_collection);
       document.getElementById('agent-form').style.display = 'block';
       document.getElementById('agent-name').focus();
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Error loading agent: ' + e.message, 'error'); }
   }
 
   function getAgentCollectionName() {
@@ -453,6 +453,11 @@
       const url = id ? '/api/agents/' + id : '/api/agents';
       const method = id ? 'PUT' : 'POST';
       const resp = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (!resp.ok) {
+        const err = await resp.text();
+        showToast('Save failed: ' + (err || resp.statusText), 'error');
+        return;
+      }
       const result = await resp.json();
       // For new agents, update kb_collection with actual agent ID
       if (!id && result.id && !kbVal) {
@@ -463,19 +468,21 @@
           body: JSON.stringify({ ...payload, kb_collection: newKb })
         });
       }
+      showToast(id ? 'Agent updated' : 'Agent created', 'success');
       clearAgentDraft();
       hideAgentForm();
       loadAgents();
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
   }
 
   async function deleteAgent(id) {
     if (!confirm('Delete this agent? Its isolated KB documents will be removed. Any shared/global documents will keep their content but lose the agent tag.')) return;
     try {
-      await fetch('/api/agents/' + id, { method: 'DELETE' });
+      const res = await fetch('/api/agents/' + id, { method: 'DELETE' });
+      if (!res.ok) { showToast('Delete failed: ' + res.statusText, 'error'); return; }
       showToast('Agent deleted. KB removed, global doc tags cleared.', 'success');
       loadAgents();
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
   }
 
   // ── KB Tab / Reuse helpers ──

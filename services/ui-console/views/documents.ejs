@@ -446,6 +446,12 @@ async function ingestDoc() {
         chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
       })
     });
+    if (!r.ok) {
+      const err = await r.text();
+      document.getElementById('ingest-result').textContent = 'Error: ' + (err || r.statusText);
+      document.getElementById('ingest-result').style.color = 'var(--danger)';
+      return;
+    }
     const d = await r.json();
     document.getElementById('ingest-result').style.color = 'var(--success)';
     document.getElementById('ingest-result').textContent = 'Ingested: ' + (d.chunks || 0) + ' chunks from ' + (d.source || source);
@@ -582,10 +588,11 @@ async function searchDocs() {
 async function deleteRegistryDoc(docId, name) {
   if (!confirm('Delete "' + name + '" and all its chunks?')) return;
   try {
-    await fetch('/api/documents/registry/' + docId, { method: 'DELETE' });
+    const res = await fetch('/api/documents/registry/' + docId, { method: 'DELETE' });
+    if (!res.ok) { showToast('Delete failed: ' + res.statusText, 'error'); return; }
     showToast('Document deleted', 'success');
     refreshAll();
-  } catch(e) { alert('Delete failed: ' + e.message); }
+  } catch(e) { showToast('Delete failed: ' + e.message, 'error'); }
 }
 
 // ── Move to Folder Modal ──
@@ -605,15 +612,16 @@ async function confirmMoveFolder() {
   const docId = document.getElementById('move-doc-id').value;
   const folder = document.getElementById('move-folder-select').value;
   try {
-    await fetch('/api/documents/registry/' + docId + '/folder', {
+    const res = await fetch('/api/documents/registry/' + docId + '/folder', {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ folder })
     });
+    if (!res.ok) { showToast('Move failed: ' + res.statusText, 'error'); return; }
     showToast('Document moved', 'success');
     closeMoveModal();
     refreshAll();
-  } catch(e) { alert('Move failed: ' + e.message); }
+  } catch(e) { showToast('Move failed: ' + e.message, 'error'); }
 }
 
 // ── Tag Agent Modal ──
@@ -638,15 +646,16 @@ async function confirmTagAgent() {
   const docId = document.getElementById('tag-doc-id').value;
   const tags = Array.from(document.querySelectorAll('.tag-agent-cb:checked')).map(cb => cb.value);
   try {
-    await fetch('/api/documents/registry/' + docId + '/tags', {
+    const res = await fetch('/api/documents/registry/' + docId + '/tags', {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ agent_tags: tags })
     });
+    if (!res.ok) { showToast('Tag update failed: ' + res.statusText, 'error'); return; }
     showToast('Agent tags updated', 'success');
     closeTagModal();
     refreshAll();
-  } catch(e) { alert('Tag update failed: ' + e.message); }
+  } catch(e) { showToast('Tag update failed: ' + e.message, 'error'); }
 }
 
 // ── Refresh ──

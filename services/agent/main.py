@@ -16,7 +16,8 @@ from pydantic import BaseModel, Field
 from agent.graph import run_agent, run_agent_stream
 from agent.memory import (
     init_db, get_history, list_sessions, delete_session,
-    get_session_summary, get_memory_stats,
+    get_session_summary, get_memory_stats, get_db_stats,
+    export_all_data, import_all_data,
     list_skills, get_skill, create_skill, update_skill, delete_skill,
     list_agents, get_agent, create_agent, update_agent, delete_agent,
     list_a2a_peers, get_a2a_peer, create_a2a_peer, update_a2a_peer, delete_a2a_peer,
@@ -28,6 +29,8 @@ from agent.memory import (
     update_document_registry, delete_document_registry, delete_document_registry_by_source,
     list_folders, tag_document_to_agent, untag_document_from_agent,
     untag_all_for_agent, delete_documents_by_collection,
+    list_versions, get_version, save_version,
+    list_audit_log, log_audit,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
@@ -43,7 +46,11 @@ logger = logging.getLogger("agent-service")
 async def lifespan(app: FastAPI):
     """Initialise resources on startup."""
     init_db()
-    logger.info("Memory DB initialised")
+    stats = get_db_stats()
+    logger.info("Memory DB initialised at %s", stats.get("db_path", "unknown"))
+    logger.info("DB stats: %s agents, %s skills, %s prompts, %s conversations, %s documents",
+                stats.get("agents", 0), stats.get("skills", 0), stats.get("prompts", 0),
+                stats.get("conversations", 0), stats.get("documents", 0))
     yield
 
 
@@ -73,6 +80,7 @@ class RunRequest(BaseModel):
     system_prompt: str | None = Field(default=None, max_length=8192)
     max_completion_tokens: int | None = Field(default=None, ge=1, le=32768, description="Max tokens in response")
     use_kb: bool = Field(default=True, description="Whether to search the Knowledge Base for context")
+    memory_window: int | None = Field(default=None, ge=1, le=50, description="Number of past messages to include")
 
 
 class RunResponse(BaseModel):
@@ -87,6 +95,26 @@ class RunResponse(BaseModel):
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "agent-service"}
+
+
+@app.get("/db-stats")
+async def db_stats_endpoint():
+    return get_db_stats()
+
+
+@app.get("/export")
+async def export_endpoint():
+    data = export_all_data()
+    return {"export": data, "stats": get_db_stats()}
+
+
+@app.post("/import")
+async def import_endpoint(request: Request):
+    body = await request.json()
+    data = body.get("export", body)
+    merge = body.get("merge", True)
+    stats = import_all_data(data, merge=merge)
+    return {"status": "ok", "import_stats": stats}
 
 
 @app.post("/run", response_model=RunResponse)
@@ -194,6 +222,8 @@ async def run_stream(body: RunRequest):
         agent_config["top_p"] = body.top_p
     if body.system_prompt:
         agent_config["system_prompt"] = body.system_prompt
+    if body.memory_window is not None:
+        agent_config["memory_window"] = body.memory_window
 
     async def event_generator():
         async for event in run_agent_stream(
@@ -1071,3 +1101,65 @@ async def api_update_guardrail(guardrail_id: str, request: Request):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=404, content={"error": "Guardrail not found"})
     return g
+
+
+# ── Version History endpoints ──────────────────────────────────────────────
+
+@app.get("/versions/{entity_type}/{entity_id}")
+async def versions_list(entity_type: str, entity_id: str):
+    """List all versions for an entity (agent, skill, prompt)."""
+    if entity_type not in ("agent", "skill", "prompt"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=400, content={"error": "entity_type must be agent, skill, or prompt"})
+    versions = list_versions(entity_type, entity_id)
+    return {"versions": versions, "count": len(versions)}
+
+
+@app.get("/versions/detail/{version_id}")
+async def versions_detail(version_id: str):
+    """Get a specific version snapshot."""
+    v = get_version(version_id)
+    if not v:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Version not found"})
+    return v
+
+
+@app.post("/versions/{entity_type}/{entity_id}/rollback/{version_id}")
+async def versions_rollback(entity_type: str, entity_id: str, version_id: str):
+    """Rollback an entity to a previous version."""
+    if entity_type not in ("agent", "skill", "prompt"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=400, content={"error": "entity_type must be agent, skill, or prompt"})
+    v = get_version(version_id)
+    if not v or v["entity_type"] != entity_type or v["entity_id"] != entity_id:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "Version not found or does not match entity"})
+    snapshot = v["snapshot"]
+    # Apply rollback based on entity type
+    if entity_type == "agent":
+        result = update_agent(entity_id, **{k: v for k, v in snapshot.items()
+                              if k not in ("id", "created_at", "updated_at", "is_default")})
+    elif entity_type == "skill":
+        result = update_skill(entity_id, **{k: v for k, v in snapshot.items()
+                              if k not in ("id", "created_at", "updated_at")})
+    elif entity_type == "prompt":
+        result = update_prompt(entity_id, **{k: v for k, v in snapshot.items()
+                               if k not in ("id", "created_at", "updated_at")})
+    else:
+        result = None
+    if not result:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={"error": "Rollback failed"})
+    log_audit("rollback", entity_type, entity_id, snapshot.get("name", ""), {"to_version": v["version"]})
+    return {"status": "rolled_back", "version": v["version"], "entity": result}
+
+
+# ── Audit Log endpoints ───────────────────────────────────────────────────
+
+@app.get("/audit-log")
+async def audit_log_endpoint(limit: int = 100, entity_type: str | None = None,
+                              action: str | None = None):
+    """List recent audit log entries."""
+    entries = list_audit_log(limit=min(limit, 500), entity_type=entity_type, action=action)
+    return {"entries": entries, "count": len(entries)}

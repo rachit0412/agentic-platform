@@ -54,6 +54,20 @@ app.get("/api/health-check", async (req, res) => {
   res.json({ services: results });
 });
 
+// ── API: DB Stats, Export, Import ──────────────────────
+app.get("/api/db-stats", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/db-stats`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/export", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/export`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/import", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/import`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: Skills CRUD proxy ─────────────────────────────
 app.get("/api/skills", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/skills`); res.json(await r.json()); }
@@ -379,6 +393,40 @@ app.put("/api/guardrails/:id", async (req, res) => {
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
+
+// ── API: Version History (proxy to agent) ─────────────
+app.get("/api/versions/:entityType/:entityId", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/versions/${req.params.entityType}/${req.params.entityId}`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/versions/detail/:versionId", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/versions/detail/${req.params.versionId}`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/versions/:entityType/:entityId/rollback/:versionId", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/versions/${req.params.entityType}/${req.params.entityId}/rollback/${req.params.versionId}`, { method: "POST" });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Audit Log (proxy to agent) ───────────────────
+app.get("/api/audit-log", async (req, res) => {
+  try {
+    const params = new URLSearchParams();
+    if (req.query.limit) params.set("limit", req.query.limit);
+    if (req.query.entity_type) params.set("entity_type", req.query.entity_type);
+    if (req.query.action) params.set("action", req.query.action);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const resp = await fetch(`${AGENT_URL}/audit-log${qs}`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 app.get("/api/documents", async (req, res) => {
   try {
     const qs = req.query.collection ? `?collection=${encodeURIComponent(req.query.collection)}` : '';
@@ -828,6 +876,7 @@ const externalUrls = {
 app.get("/", (req, res) => res.render("overview", { urls: externalUrls }));
 app.get("/run-agent", (req, res) => res.render("run-agent", { urls: externalUrls }));
 app.get("/agent-builder", (req, res) => res.render("agent-builder", { urls: externalUrls }));
+app.get("/ai-studio", (req, res) => res.render("ai-studio", { urls: externalUrls }));
 app.get("/documents", (req, res) => res.render("documents", { urls: externalUrls }));
 app.get("/workflows", (req, res) => res.render("workflows", { urls: externalUrls }));
 app.get("/skills", (req, res) => res.render("skills", { urls: externalUrls }));
