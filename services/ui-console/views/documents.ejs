@@ -4,28 +4,28 @@
 
 <!-- Stats Row -->
 <div class="grid-4 mb-2" style="margin-bottom:1.5rem">
-  <div class="stat-card animate-fade-up">
+  <div class="stat-card animate-fade-up" style="cursor:pointer" onclick="document.getElementById('search-query').focus();document.getElementById('search-query').scrollIntoView({behavior:'smooth',block:'center'})" title="Search documents">
     <div class="stat-icon stat-icon-cyan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     </div>
     <div class="stat-label">Total Chunks</div>
     <div class="stat-number" id="stat-chunks">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-100">
+  <div class="stat-card animate-fade-up delay-100" style="cursor:pointer" onclick="document.getElementById('doc-list').scrollIntoView({behavior:'smooth',block:'start'})" title="View document list">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
     <div class="stat-label">Documents</div>
     <div class="stat-number" id="stat-docs">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-200">
+  <div class="stat-card animate-fade-up delay-200" style="cursor:pointer" onclick="document.getElementById('folder-tree').scrollIntoView({behavior:'smooth',block:'start'})" title="Browse folders">
     <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
     </div>
     <div class="stat-label">Folders</div>
     <div class="stat-number" id="stat-folders">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-300">
+  <div class="stat-card animate-fade-up delay-300" style="cursor:pointer" onclick="document.getElementById('doc-list').scrollIntoView({behavior:'smooth',block:'start'})" title="View tagged documents">
     <div class="stat-icon" style="background:rgba(244,63,94,0.12);color:#f43f5e">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
     </div>

@@ -6,19 +6,19 @@
 
 <!-- Stats Row -->
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('peers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View all peers">
     <div style="font-size:1.75rem;font-weight:700;color:var(--cyan)" id="stat-total">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Registered Peers</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('peers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View online peers">
     <div style="font-size:1.75rem;font-weight:700;color:#10b981" id="stat-online">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Online</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('peers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View offline peers">
     <div style="font-size:1.75rem;font-weight:700;color:#f59e0b" id="stat-offline">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Offline / Unknown</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('peers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View capabilities">
     <div style="font-size:1.75rem;font-weight:700;color:#8b5cf6" id="stat-capabilities">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Total Capabilities</div>
   </div>

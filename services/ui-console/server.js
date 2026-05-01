@@ -613,6 +613,15 @@ app.get("/api/a2a/card", async (req, res) => {
   } catch (e) { res.json({ error: e.message }); }
 });
 
+// ── API: Tools Service Health ─────────────────────────
+app.get("/api/tools-health", async (req, res) => {
+  try {
+    const resp = await fetch("http://tools-service:8001/health", { signal: AbortSignal.timeout(3000) });
+    const data = await resp.json();
+    res.json(data);
+  } catch(e) { res.status(503).json({ status: "offline" }); }
+});
+
 // ── API: MCP Registry ─────────────────────────────────
 // MCP servers CRUD
 app.get("/api/mcp/servers", async (req, res) => {
@@ -886,6 +895,7 @@ app.get("/tools", (req, res) => res.render("tools", { urls: externalUrls }));
 app.get("/guardrails", (req, res) => res.render("guardrails", { urls: externalUrls }));
 app.get("/a2a", (req, res) => res.render("a2a", { urls: externalUrls }));
 app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));
+app.get("/rest", (req, res) => res.render("rest", { urls: externalUrls }));
 app.get("/intelligence-hub", (req, res) => res.render("intelligence-hub", { urls: externalUrls }));
 app.get("/agent-hub", (req, res) => res.render("agent-hub", { urls: externalUrls }));
 app.get("/llm-activity", (req, res) => res.redirect("/intelligence-hub"));

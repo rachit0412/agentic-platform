@@ -4,28 +4,28 @@
 
 <!-- Stats Row -->
 <div class="grid-4 mb-2" style="margin-bottom:1.5rem">
-  <div class="stat-card animate-fade-up">
+  <div class="stat-card animate-fade-up" style="cursor:pointer" onclick="wfSwitchView('pipelines')" title="View all workflows">
     <div class="stat-icon stat-icon-cyan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     </div>
     <div class="stat-label">Total Workflows</div>
     <div class="stat-number" id="stat-total">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-100">
+  <div class="stat-card animate-fade-up delay-100" style="cursor:pointer" onclick="wfSwitchView('pipelines')" title="View active workflows">
     <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
     </div>
     <div class="stat-label">Active</div>
     <div class="stat-number" id="stat-active">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-200">
+  <div class="stat-card animate-fade-up delay-200" style="cursor:pointer" onclick="wfSwitchView('history')" title="View execution history">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </div>
     <div class="stat-label">Executions (24h)</div>
     <div class="stat-number" id="stat-executions">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-300">
+  <div class="stat-card animate-fade-up delay-300" style="cursor:pointer" onclick="wfSwitchView('history')" title="View failed executions">
     <div class="stat-icon" style="background:rgba(244,63,94,0.12);color:#f43f5e">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
     </div>

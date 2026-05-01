@@ -233,13 +233,13 @@ Closes #123
 agentic-platform/
 ├── services/
 │   ├── agent/               # FastAPI + LangGraph agent (port 8010)
-│   │   ├── main.py          # 50+ REST endpoints
+│   │   ├── main.py          # 69 REST endpoints
 │   │   └── agent/           # graph, llm, memory, tools, vectorstore, observability
 │   ├── tools/               # FastAPI tool endpoints (port 8011)
 │   │   └── main.py          # math, fetch, file-read/write, search, code-execute
 │   ├── ui-console/          # Express.js + EJS dashboard (port 3000)
 │   │   ├── server.js        # Routes + API proxy
-│   │   ├── views/           # 22 EJS page templates
+│   │   ├── views/           # 22 EJS page templates (includes REST Console)
 │   │   └── public/          # Static assets
 │   ├── ui/                  # Legacy static UI
 │   └── otel/                # OpenTelemetry Collector config

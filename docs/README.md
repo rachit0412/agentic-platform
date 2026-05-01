@@ -9,6 +9,10 @@
 | [Installation Guide](../INSTALL.md) | Prerequisites, per-platform setup, GPU configuration |
 | [Contributing](../CONTRIBUTING.md)  | Code style, PR process, commit conventions           |
 
+## Interactive API Console
+
+The platform includes a built-in **REST Console** at **http://localhost:3000/rest** for interactively testing all 69 agent-service and 10 tools-service endpoints. Navigate to **Protocols → REST Console** in the dashboard.
+
 ## API Reference
 
 Interactive API docs are available at **http://localhost:8010/docs** (agent-service) and **http://localhost:8011/docs** (tools-service) when the platform is running.
@@ -17,10 +21,10 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 
 #### Agent Execution
 
-| Method | Endpoint      | Description                  |
-| ------ | ------------- | ---------------------------- |
-| POST   | `/run`        | Run agent (blocking)         |
-| POST   | `/run/stream` | Run agent with SSE streaming |
+| Method | Endpoint            | Description                  |
+| ------ | ------------------- | ---------------------------- |
+| POST   | `/agent-run`        | Run agent (blocking)         |
+| POST   | `/agent-run/stream` | Run agent with SSE streaming |
 
 #### Agent CRUD
 
@@ -52,6 +56,17 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 | PUT    | `/prompts/{id}` | Update prompt    |
 | DELETE | `/prompts/{id}` | Delete prompt    |
 
+#### Tools
+
+| Method | Endpoint             | Description            |
+| ------ | -------------------- | ---------------------- |
+| GET    | `/tools`             | List built-in + custom |
+| GET    | `/custom-tools`      | List custom tools only |
+| POST   | `/custom-tools`      | Create custom tool     |
+| GET    | `/custom-tools/{id}` | Get custom tool        |
+| PUT    | `/custom-tools/{id}` | Update custom tool     |
+| DELETE | `/custom-tools/{id}` | Delete custom tool     |
+
 #### A2A Protocol
 
 | Method | Endpoint               | Description                     |
@@ -65,7 +80,7 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 | POST   | `/a2a/send`            | Send task to peer agent         |
 | GET    | `/a2a/card`            | Get this agent's discovery card |
 
-#### MCP Protocol
+#### MCP Registry
 
 | Method | Endpoint                     | Description                |
 | ------ | ---------------------------- | -------------------------- |
@@ -89,14 +104,29 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 
 #### Documents / RAG
 
-| Method | Endpoint               | Description                    |
-| ------ | ---------------------- | ------------------------------ |
-| GET    | `/documents`           | List all documents             |
-| GET    | `/documents/stats`     | Get vector store stats         |
-| POST   | `/documents/ingest`    | Ingest text into vector store  |
-| POST   | `/documents/search`    | Search documents by similarity |
-| POST   | `/documents/fetch-url` | Fetch & extract text from URL  |
-| DELETE | `/documents/{source}`  | Delete document by source      |
+| Method | Endpoint                          | Description                    |
+| ------ | --------------------------------- | ------------------------------ |
+| GET    | `/documents`                      | List documents by collection   |
+| GET    | `/documents/stats`                | Get vector store stats         |
+| GET    | `/documents/collections`          | List ChromaDB collections      |
+| POST   | `/documents/ingest`               | Ingest text into vector store  |
+| POST   | `/documents/search`               | Search documents by similarity |
+| POST   | `/documents/fetch-url`            | Fetch & extract text from URL  |
+| DELETE | `/documents/{source}`             | Delete document by source      |
+| POST   | `/documents/copy`                 | Copy docs between collections  |
+| GET    | `/documents/registry`             | List docs with filters         |
+| GET    | `/documents/folders`              | List folder paths with counts  |
+| PUT    | `/documents/registry/{id}/tags`   | Set agent tags for document    |
+| PUT    | `/documents/registry/{id}/folder` | Move document to folder        |
+| DELETE | `/documents/registry/{id}`        | Delete from registry           |
+
+#### Guardrails
+
+| Method | Endpoint           | Description               |
+| ------ | ------------------ | ------------------------- |
+| GET    | `/guardrails`      | List all guardrails       |
+| GET    | `/guardrails/{id}` | Get guardrail config      |
+| PUT    | `/guardrails/{id}` | Update guardrail settings |
 
 #### Models
 
@@ -105,12 +135,23 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 | GET    | `/models`        | List available models + active model |
 | POST   | `/models/switch` | Switch active LLM provider/model     |
 
-#### Utilities
+#### System
 
-| Method | Endpoint  | Description          |
-| ------ | --------- | -------------------- |
-| GET    | `/health` | Health check         |
-| GET    | `/tools`  | List available tools |
+| Method | Endpoint    | Description              |
+| ------ | ----------- | ------------------------ |
+| GET    | `/health`   | Health check             |
+| GET    | `/db-stats` | Database record counts   |
+| GET    | `/export`   | Export all data as JSON  |
+| POST   | `/import`   | Import/merge data backup |
+
+#### Versions & Audit
+
+| Method | Endpoint                                                    | Description            |
+| ------ | ----------------------------------------------------------- | ---------------------- |
+| GET    | `/versions/{entity_type}/{entity_id}`                       | List version history   |
+| GET    | `/versions/detail/{version_id}`                             | Get version snapshot   |
+| POST   | `/versions/{entity_type}/{entity_id}/rollback/{version_id}` | Rollback to version    |
+| GET    | `/audit-log`                                                | List audit log entries |
 
 ### Tools Service — `http://localhost:8011`
 
@@ -132,6 +173,7 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 | Service        | URL                        | Credentials                |
 | -------------- | -------------------------- | -------------------------- |
 | UI Console     | http://localhost:3000      | —                          |
+| REST Console   | http://localhost:3000/rest | —                          |
 | Agent API Docs | http://localhost:8010/docs | —                          |
 | Tools API Docs | http://localhost:8011/docs | —                          |
 | n8n            | http://localhost:5678      | admin / changeme           |

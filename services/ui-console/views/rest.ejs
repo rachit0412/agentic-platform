@@ -1,0 +1,574 @@
+<%- include('layout', { title: 'REST Console', page: 'rest', body: `
+
+<style>
+.rest-layout { display:flex; gap:1.25rem; height:calc(100vh - 140px); }
+.rest-sidebar { width:220px; flex-shrink:0; overflow-y:auto; }
+.rest-main { flex:1; overflow-y:auto; min-width:0; }
+.domain-item { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0.75rem; border-radius:8px; cursor:pointer; font-size:0.82rem; color:var(--text-2); transition:all 0.15s; margin-bottom:2px; }
+.domain-item:hover { background:var(--glass-bg); color:var(--text-1); }
+.domain-item.active { background:var(--accent-bg); color:var(--accent-text); font-weight:600; }
+.domain-count { font-size:0.7rem; background:var(--glass-bg); padding:1px 6px; border-radius:10px; color:var(--text-3); }
+.domain-item.active .domain-count { background:rgba(6,182,212,0.2); color:var(--accent-text); }
+.ep-card { border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:0.75rem; background:var(--glass-bg); transition:border-color 0.15s; }
+.ep-card:hover { border-color:var(--glass-hover-border); }
+.ep-header { display:flex; align-items:center; gap:0.75rem; cursor:pointer; }
+.ep-method { font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:5px; font-family:var(--mono); letter-spacing:0.5px; min-width:52px; text-align:center; }
+.ep-method.get { background:rgba(16,185,129,0.15); color:#10b981; }
+.ep-method.post { background:rgba(59,130,246,0.15); color:#3b82f6; }
+.ep-method.put { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.ep-method.delete { background:rgba(239,68,68,0.15); color:#ef4444; }
+.ep-path { font-family:var(--mono); font-size:0.82rem; color:var(--text-1); font-weight:500; }
+.ep-path .param { color:#8b5cf6; }
+.ep-desc { font-size:0.78rem; color:var(--text-3); margin-left:auto; }
+.ep-try { display:none; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); }
+.ep-try.open { display:block; }
+.ep-try-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.ep-response { margin-top:0.75rem; border-radius:8px; background:var(--surface-2); max-height:300px; overflow-y:auto; font-family:var(--mono); font-size:0.78rem; color:var(--text-2); }
+.ep-response pre { margin:0; padding:1rem; white-space:pre-wrap; word-break:break-all; }
+.ep-status { display:inline-block; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:4px; font-family:var(--mono); }
+.ep-status.s2xx { background:rgba(16,185,129,0.15); color:#10b981; }
+.ep-status.s4xx { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.ep-status.s5xx { background:rgba(239,68,68,0.15); color:#ef4444; }
+.ep-timing { font-size:0.72rem; color:var(--text-3); margin-left:0.5rem; }
+.base-url-bar { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0.75rem; background:var(--glass-bg); border:1px solid var(--border); border-radius:8px; margin-bottom:1rem; font-family:var(--mono); font-size:0.8rem; color:var(--text-2); }
+.base-url-bar code { color:var(--accent-text); font-weight:600; }
+.base-url-bar .toggle-svc { font-size:0.72rem; padding:3px 8px; border-radius:5px; cursor:pointer; border:1px solid var(--border); background:var(--glass-bg); color:var(--text-2); transition:all 0.15s; }
+.base-url-bar .toggle-svc.active { background:var(--accent-bg); color:var(--accent-text); border-color:var(--accent-text); }
+.quick-links { display:flex; gap:0.5rem; margin-left:auto; }
+.quick-links a { font-size:0.72rem; padding:3px 10px; border-radius:5px; background:var(--glass-bg); border:1px solid var(--border); color:var(--text-2); text-decoration:none; transition:all 0.15s; }
+.quick-links a:hover { background:var(--accent-bg); color:var(--accent-text); }
+/* Stat tiles */
+.rest-stat { text-align:center; padding:1rem; cursor:pointer; transition:all 0.2s; position:relative; }
+.rest-stat:hover { border-color:var(--accent-text); transform:translateY(-1px); }
+.rest-stat .stat-val { font-size:1.75rem; font-weight:700; }
+.rest-stat .stat-label { font-size:0.75rem; color:var(--text-3); }
+.rest-stat .stat-hint { font-size:0.62rem; color:var(--text-3); opacity:0; transition:opacity 0.15s; margin-top:2px; }
+.rest-stat:hover .stat-hint { opacity:1; }
+/* Method breakdown mini-bars */
+.method-bars { display:flex; gap:6px; justify-content:center; margin-top:6px; }
+.method-bars .mb { font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:3px; font-family:var(--mono); }
+/* Health dots */
+.health-row { display:flex; align-items:center; gap:6px; justify-content:center; margin-top:4px; }
+.health-dot { width:8px; height:8px; border-radius:50%; }
+.health-dot.online { background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5); }
+.health-dot.offline { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.5); }
+.health-dot.pending { background:#f59e0b; animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+/* Endpoint Index Modal */
+.ep-index-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; backdrop-filter:blur(4px); }
+.ep-index-overlay.open { display:flex; align-items:center; justify-content:center; }
+.ep-index-modal { background:var(--bg-1); border:1px solid var(--border); border-radius:12px; width:720px; max-width:90vw; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+.ep-index-header { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid var(--border); }
+.ep-index-header h3 { margin:0; font-size:1rem; color:var(--text-1); }
+.ep-index-search { margin:0; padding:0.5rem 1.25rem; border-bottom:1px solid var(--border); }
+.ep-index-search input { width:100%; background:var(--glass-bg); border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.6rem; font-size:0.8rem; color:var(--text-1); outline:none; }
+.ep-index-search input:focus { border-color:var(--accent-text); }
+.ep-index-body { overflow-y:auto; padding:0.5rem 0; flex:1; }
+.ep-index-item { display:flex; align-items:center; gap:0.6rem; padding:0.35rem 1.25rem; cursor:pointer; font-size:0.8rem; transition:background 0.1s; }
+.ep-index-item:hover { background:var(--glass-bg); }
+.ep-index-item .eii-domain { font-size:0.65rem; color:var(--text-3); margin-left:auto; min-width:80px; text-align:right; }
+.ep-index-close { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:1.2rem; padding:4px 8px; border-radius:4px; }
+.ep-index-close:hover { background:var(--glass-bg); color:var(--text-1); }
+/* Swagger link in domain header */
+.domain-swagger { font-size:0.68rem; color:var(--text-3); text-decoration:none; margin-left:0.5rem; padding:1px 6px; border-radius:4px; border:1px solid var(--border); transition:all 0.15s; }
+.domain-swagger:hover { color:var(--accent-text); border-color:var(--accent-text); }
+</style>
+
+<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.25rem">
+  <h1 class="text-glow-cyan" style="margin:0">REST Console</h1>
+  <span style="font-size:0.65rem;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:700;letter-spacing:0.5px">DEV</span>
+</div>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.25rem;line-height:1.5">Browse, test, and integrate with every API endpoint. Click tiles below for details.</p>
+
+<!-- Stats Row -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem">
+  <div class="card rest-stat" onclick="openEndpointIndex()">
+    <div class="stat-val" style="color:var(--cyan)" id="stat-total">69</div>
+    <div class="stat-label">Total Endpoints</div>
+    <div class="stat-hint">Click to browse all</div>
+  </div>
+  <div class="card rest-stat" onclick="openEndpointIndex()">
+    <div class="stat-val" style="color:#8b5cf6" id="stat-methods">—</div>
+    <div class="stat-label">Methods</div>
+    <div class="method-bars" id="method-bars"></div>
+    <div class="stat-hint">Click to filter</div>
+  </div>
+  <div class="card rest-stat" onclick="refreshHealth()">
+    <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:4px">
+      <div style="text-align:center">
+        <div class="health-row"><span class="health-dot pending" id="hd-agent"></span><span style="font-size:0.78rem;font-weight:600;color:var(--text-2)" id="hl-agent">...</span></div>
+        <div style="font-size:0.62rem;color:var(--text-3)">Agent :8010</div>
+      </div>
+      <div style="width:1px;height:24px;background:var(--border)"></div>
+      <div style="text-align:center">
+        <div class="health-row"><span class="health-dot pending" id="hd-tools"></span><span style="font-size:0.78rem;font-weight:600;color:var(--text-2)" id="hl-tools">...</span></div>
+        <div style="font-size:0.62rem;color:var(--text-3)">Tools :8011</div>
+      </div>
+    </div>
+    <div class="stat-label">Service Health</div>
+    <div class="stat-hint">Click to refresh</div>
+  </div>
+</div>
+
+<!-- Base URL Bar -->
+<div class="base-url-bar">
+  <span>Base URL:</span>
+  <code id="rest-base-url">/api</code>
+  <span class="toggle-svc active" onclick="setSvc('agent')" id="svc-agent">Agent Service</span>
+  <span class="toggle-svc" onclick="setSvc('tools')" id="svc-tools">Tools Service</span>
+  <div class="quick-links">
+    <a href="javascript:void(0)" onclick="window.open(getSwaggerUrl(), '_blank')">
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Swagger UI</a>
+    <a href="javascript:void(0)" onclick="window.open(getAgentDocsUrl(), '_blank')">OpenAPI JSON</a>
+  </div>
+</div>
+
+<!-- Endpoint Index Modal -->
+<div class="ep-index-overlay" id="ep-index-overlay" onclick="if(event.target===this)closeEndpointIndex()">
+  <div class="ep-index-modal">
+    <div class="ep-index-header">
+      <h3>All Endpoints</h3>
+      <button class="ep-index-close" onclick="closeEndpointIndex()">&times;</button>
+    </div>
+    <div class="ep-index-search"><input type="text" id="ep-index-filter" placeholder="Filter endpoints..." oninput="filterEndpointIndex()"></div>
+    <div class="ep-index-body" id="ep-index-body"></div>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="rest-layout">
+  <div class="rest-sidebar" id="rest-sidebar"></div>
+  <div class="rest-main" id="rest-main"></div>
+</div>
+
+<script>
+var currentSvc = 'agent';
+var currentDomain = 'execution';
+
+function getAgentDocsUrl() {
+  var u = window.location.origin.replace(':3000', ':8010');
+  return u + '/openapi.json';
+}
+function getSwaggerUrl() {
+  var u = window.location.origin.replace(':3000', ':8010');
+  return u + '/docs';
+}
+
+var API_CATALOG = {
+  execution: {
+    label: 'Agent Execution',
+    endpoints: [
+      { method: 'POST', path: '/agent-run', desc: 'Run agent (blocking request/response)', body: '{"message":"What is 2+2?","session_id":"optional","model":"llama3","provider":"ollama","tools":["calculator"]}' },
+      { method: 'POST', path: '/agent-run/stream', desc: 'Run agent with SSE streaming', body: '{"message":"Hello","session_id":"optional"}' }
+    ]
+  },
+  agents: {
+    label: 'Agents',
+    endpoints: [
+      { method: 'GET', path: '/agents', desc: 'List all registered agents' },
+      { method: 'POST', path: '/agents', desc: 'Create a new agent', body: '{"name":"my-agent","model":"llama3","provider":"ollama","temperature":0.7,"system_prompt":"You are helpful.","skills":[],"tools":[],"guardrails":[]}' },
+      { method: 'GET', path: '/agents/:id', desc: 'Get agent configuration' },
+      { method: 'PUT', path: '/agents/:id', desc: 'Update agent', body: '{"name":"updated-agent","temperature":0.5}' },
+      { method: 'DELETE', path: '/agents/:id', desc: 'Delete agent (cannot delete default)' }
+    ]
+  },
+  skills: {
+    label: 'Skills',
+    endpoints: [
+      { method: 'GET', path: '/skills', desc: 'List all skills' },
+      { method: 'POST', path: '/skills', desc: 'Create a skill', body: '{"name":"researcher","description":"Web research skill","system_prompt":"You research topics.","tool_ids":["web_search"],"constraints":"Stay factual"}' },
+      { method: 'GET', path: '/skills/:id', desc: 'Get skill details' },
+      { method: 'PUT', path: '/skills/:id', desc: 'Update skill', body: '{"name":"updated-skill"}' },
+      { method: 'DELETE', path: '/skills/:id', desc: 'Delete skill' }
+    ]
+  },
+  prompts: {
+    label: 'Prompts',
+    endpoints: [
+      { method: 'GET', path: '/prompts', desc: 'List all prompts' },
+      { method: 'POST', path: '/prompts', desc: 'Create a prompt', body: '{"name":"summarizer","content":"Summarize the following: {{input}}","category":"utility","description":"Summarization prompt","tags":["summary"]}' },
+      { method: 'GET', path: '/prompts/:id', desc: 'Get prompt details' },
+      { method: 'PUT', path: '/prompts/:id', desc: 'Update prompt', body: '{"content":"Updated prompt text"}' },
+      { method: 'DELETE', path: '/prompts/:id', desc: 'Delete prompt' }
+    ]
+  },
+  tools: {
+    label: 'Tools',
+    endpoints: [
+      { method: 'GET', path: '/tools', desc: 'List built-in + custom tools' },
+      { method: 'GET', path: '/custom-tools', desc: 'List custom tools only' },
+      { method: 'POST', path: '/custom-tools', desc: 'Create a custom tool', body: '{"name":"my-api","description":"Calls my API","url":"https://api.example.com/data","method":"GET","category":"api","headers":"{}","body_template":""}' },
+      { method: 'GET', path: '/custom-tools/:id', desc: 'Get custom tool details' },
+      { method: 'PUT', path: '/custom-tools/:id', desc: 'Update custom tool', body: '{"description":"Updated description"}' },
+      { method: 'DELETE', path: '/custom-tools/:id', desc: 'Delete custom tool' }
+    ]
+  },
+  documents: {
+    label: 'Documents',
+    endpoints: [
+      { method: 'GET', path: '/documents', desc: 'List documents by collection' },
+      { method: 'GET', path: '/documents/stats', desc: 'Vector store statistics' },
+      { method: 'GET', path: '/documents/collections', desc: 'List ChromaDB collections' },
+      { method: 'POST', path: '/documents/ingest', desc: 'Ingest text into vector store', body: '{"text":"Document content here","source":"my-doc.txt","collection":"default","folder":"/","chunk_size":500}' },
+      { method: 'POST', path: '/documents/search', desc: 'Semantic search across documents', body: '{"query":"search query","k":5}' },
+      { method: 'POST', path: '/documents/fetch-url', desc: 'Fetch & extract text from URL', body: '{"url":"https://example.com"}' },
+      { method: 'DELETE', path: '/documents/:source', desc: 'Delete document by source name' },
+      { method: 'POST', path: '/documents/copy', desc: 'Copy documents between collections', body: '{"source_collection":"default","target_collection":"archive","source":"doc.txt"}' },
+      { method: 'GET', path: '/documents/registry', desc: 'List documents with filters (folder, agent_id, search)' },
+      { method: 'GET', path: '/documents/folders', desc: 'List unique folder paths with counts' },
+      { method: 'PUT', path: '/documents/registry/:doc_id/tags', desc: 'Set agent tags for a document', body: '{"agent_ids":["agent-1"]}' },
+      { method: 'PUT', path: '/documents/registry/:doc_id/folder', desc: 'Move document to folder', body: '{"folder":"/archive"}' },
+      { method: 'DELETE', path: '/documents/registry/:doc_id', desc: 'Delete document from registry' }
+    ]
+  },
+  sessions: {
+    label: 'Sessions',
+    endpoints: [
+      { method: 'GET', path: '/sessions', desc: 'List all conversation sessions' },
+      { method: 'GET', path: '/sessions/:session_id/history', desc: 'Get message history (limit=100)' },
+      { method: 'GET', path: '/sessions/:session_id/summary', desc: 'Get rolling conversation summary' },
+      { method: 'DELETE', path: '/sessions/:session_id', desc: 'Delete session and all messages' }
+    ]
+  },
+  guardrails: {
+    label: 'Guardrails',
+    endpoints: [
+      { method: 'GET', path: '/guardrails', desc: 'List all guardrails (built-in + custom)' },
+      { method: 'GET', path: '/guardrails/:id', desc: 'Get guardrail configuration' },
+      { method: 'PUT', path: '/guardrails/:id', desc: 'Update guardrail (enabled, severity, config)', body: '{"enabled":true,"severity":"high"}' }
+    ]
+  },
+  a2a: {
+    label: 'A2A Protocol',
+    endpoints: [
+      { method: 'GET', path: '/a2a/peers', desc: 'List registered peer agents' },
+      { method: 'POST', path: '/a2a/peers', desc: 'Register a peer agent', body: '{"name":"peer-agent","url":"http://peer:8010","description":"Remote agent","capabilities":["research"]}' },
+      { method: 'GET', path: '/a2a/peers/:id', desc: 'Get peer agent details' },
+      { method: 'PUT', path: '/a2a/peers/:id', desc: 'Update peer agent', body: '{"description":"Updated peer"}' },
+      { method: 'DELETE', path: '/a2a/peers/:id', desc: 'Unregister peer agent' },
+      { method: 'POST', path: '/a2a/peers/:id/ping', desc: 'Check peer health & fetch agent card' },
+      { method: 'POST', path: '/a2a/send', desc: 'Send task to a peer agent', body: '{"peer_id":"peer-1","message":"Research AI trends"}' },
+      { method: 'GET', path: '/a2a/card', desc: 'Get this agent\\\'s discovery card' }
+    ]
+  },
+  mcp: {
+    label: 'MCP Servers',
+    endpoints: [
+      { method: 'GET', path: '/mcp/servers', desc: 'List registered MCP servers' },
+      { method: 'POST', path: '/mcp/servers', desc: 'Register an MCP server', body: '{"name":"filesystem","url":"http://mcp-fs:3000","transport":"stdio","description":"File system access"}' },
+      { method: 'GET', path: '/mcp/servers/:id', desc: 'Get MCP server configuration' },
+      { method: 'PUT', path: '/mcp/servers/:id', desc: 'Update MCP server', body: '{"description":"Updated server"}' },
+      { method: 'DELETE', path: '/mcp/servers/:id', desc: 'Unregister MCP server' },
+      { method: 'POST', path: '/mcp/servers/:id/discover', desc: 'Discover available tools from server' },
+      { method: 'POST', path: '/mcp/servers/:id/invoke', desc: 'Invoke a tool on MCP server', body: '{"tool_name":"list_files","arguments":{"path":"/tmp"}}' }
+    ]
+  },
+  models: {
+    label: 'Models',
+    endpoints: [
+      { method: 'GET', path: '/models', desc: 'List available models & active model' },
+      { method: 'POST', path: '/models/switch', desc: 'Switch LLM provider and model', body: '{"provider":"ollama","model":"llama3"}' }
+    ]
+  },
+  system: {
+    label: 'System',
+    endpoints: [
+      { method: 'GET', path: '/health', desc: 'Health check' },
+      { method: 'GET', path: '/db-stats', desc: 'Database record counts & size' },
+      { method: 'GET', path: '/export', desc: 'Export all data as JSON backup' },
+      { method: 'POST', path: '/import', desc: 'Import/merge data from JSON backup', body: '{}' },
+      { method: 'GET', path: '/memory/stats', desc: 'Total messages, sessions, KB chunks' }
+    ]
+  },
+  versions: {
+    label: 'Versions & Audit',
+    endpoints: [
+      { method: 'GET', path: '/versions/:entity_type/:entity_id', desc: 'List version history (agent/skill/prompt)' },
+      { method: 'GET', path: '/versions/detail/:version_id', desc: 'Get version snapshot details' },
+      { method: 'POST', path: '/versions/:entity_type/:entity_id/rollback/:version_id', desc: 'Rollback entity to a previous version' },
+      { method: 'GET', path: '/audit-log', desc: 'List audit log entries (filterable by type, action)' }
+    ]
+  }
+};
+
+function setSvc(svc) {
+  currentSvc = svc;
+  document.getElementById('svc-agent').className = 'toggle-svc' + (svc === 'agent' ? ' active' : '');
+  document.getElementById('svc-tools').className = 'toggle-svc' + (svc === 'tools' ? ' active' : '');
+  document.getElementById('rest-base-url').textContent = svc === 'agent' ? '/api' : '/api/tools-svc';
+}
+
+// ── Compute method stats ──────────────────────────────
+function computeStats() {
+  var counts = { GET:0, POST:0, PUT:0, DELETE:0 };
+  var total = 0;
+  var keys = Object.keys(API_CATALOG);
+  for (var i = 0; i < keys.length; i++) {
+    var eps = API_CATALOG[keys[i]].endpoints;
+    total += eps.length;
+    for (var j = 0; j < eps.length; j++) counts[eps[j].method]++;
+  }
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-methods').textContent = Object.values(counts).filter(function(v){return v>0}).length + ' types';
+  var bars = document.getElementById('method-bars');
+  var colors = { GET:'rgba(16,185,129,0.15);color:#10b981', POST:'rgba(59,130,246,0.15);color:#3b82f6', PUT:'rgba(245,158,11,0.15);color:#f59e0b', DELETE:'rgba(239,68,68,0.15);color:#ef4444' };
+  var bhtml = '';
+  var mkeys = Object.keys(counts);
+  for (var m = 0; m < mkeys.length; m++) {
+    if (counts[mkeys[m]] > 0) bhtml += '<span class="mb" style="background:' + colors[mkeys[m]] + '">' + mkeys[m] + ' ' + counts[mkeys[m]] + '</span>';
+  }
+  bars.innerHTML = bhtml;
+}
+
+// ── Endpoint Index Modal ──────────────────────────────
+function getAllEndpoints() {
+  var all = [];
+  var keys = Object.keys(API_CATALOG);
+  for (var i = 0; i < keys.length; i++) {
+    var d = API_CATALOG[keys[i]];
+    for (var j = 0; j < d.endpoints.length; j++) {
+      all.push({ domain: keys[i], domainLabel: d.label, method: d.endpoints[j].method, path: d.endpoints[j].path, desc: d.endpoints[j].desc });
+    }
+  }
+  return all;
+}
+
+function openEndpointIndex() {
+  var overlay = document.getElementById('ep-index-overlay');
+  overlay.classList.add('open');
+  document.getElementById('ep-index-filter').value = '';
+  renderEndpointIndex('');
+  setTimeout(function(){ document.getElementById('ep-index-filter').focus(); }, 50);
+}
+function closeEndpointIndex() { document.getElementById('ep-index-overlay').classList.remove('open'); }
+function filterEndpointIndex() { renderEndpointIndex(document.getElementById('ep-index-filter').value); }
+
+function renderEndpointIndex(filter) {
+  var all = getAllEndpoints();
+  var q = filter.toLowerCase();
+  var body = document.getElementById('ep-index-body');
+  var html = '';
+  var shown = 0;
+  for (var i = 0; i < all.length; i++) {
+    var ep = all[i];
+    if (q && ep.method.toLowerCase().indexOf(q) === -1 && ep.path.toLowerCase().indexOf(q) === -1 && ep.desc.toLowerCase().indexOf(q) === -1 && ep.domainLabel.toLowerCase().indexOf(q) === -1) continue;
+    var m = ep.method.toLowerCase();
+    html += '<div class="ep-index-item" onclick="jumpToEndpoint(\\'' + ep.domain + '\\', \\'' + ep.path + '\\')">';
+    html += '<span class="ep-method ' + m + '">' + ep.method + '</span>';
+    html += '<span class="ep-path">' + highlightPath(ep.path) + '</span>';
+    html += '<span class="eii-domain">' + escapeHtml(ep.domainLabel) + '</span>';
+    html += '</div>';
+    shown++;
+  }
+  if (shown === 0) html = '<div style="padding:2rem;text-align:center;color:var(--text-3)">No endpoints match filter</div>';
+  body.innerHTML = html;
+}
+
+function jumpToEndpoint(domain, path) {
+  closeEndpointIndex();
+  selectDomain(domain);
+  // Scroll to the endpoint card after a tick
+  setTimeout(function() {
+    var eps = API_CATALOG[domain].endpoints;
+    for (var i = 0; i < eps.length; i++) {
+      if (eps[i].path === path) {
+        var card = document.getElementById('card-' + domain + '-' + i);
+        if (card) { card.scrollIntoView({ behavior:'smooth', block:'center' }); card.style.borderColor = 'var(--accent-text)'; setTimeout(function(){ card.style.borderColor = ''; }, 1500); }
+        break;
+      }
+    }
+  }, 100);
+}
+
+function renderSidebar() {
+  var sb = document.getElementById('rest-sidebar');
+  var html = '';
+  var keys = Object.keys(API_CATALOG);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var d = API_CATALOG[k];
+    var cnt = d.endpoints.length;
+    var cls = k === currentDomain ? ' active' : '';
+    html += '<div class="domain-item' + cls + '" onclick="selectDomain(\\'' + k + '\\')">';
+    html += '<span>' + escapeHtml(d.label) + '</span>';
+    html += '<span class="domain-count">' + cnt + '</span>';
+    html += '</div>';
+  }
+  sb.innerHTML = html;
+}
+
+function selectDomain(domain) {
+  currentDomain = domain;
+  renderSidebar();
+  renderEndpoints();
+}
+
+function highlightPath(path) {
+  return path.replace(/:[a-z_]+/g, function(m) {
+    return '<span class="param">' + m + '</span>';
+  });
+}
+
+function renderEndpoints() {
+  var main = document.getElementById('rest-main');
+  var d = API_CATALOG[currentDomain];
+  if (!d) { main.innerHTML = ''; return; }
+  var swaggerUrl = getSwaggerUrl() + '#/' + encodeURIComponent(d.label);
+  var html = '<div style="display:flex;align-items:center;margin-bottom:1rem">';
+  html += '<h2 style="font-size:1.1rem;margin:0;color:var(--text-1)">' + escapeHtml(d.label) + ' <span style="font-size:0.78rem;color:var(--text-3);font-weight:400">(' + d.endpoints.length + ' endpoints)</span></h2>';
+  html += '<a class="domain-swagger" href="' + swaggerUrl + '" target="_blank">Swagger &#x2197;</a>';
+  html += '</div>';
+  for (var i = 0; i < d.endpoints.length; i++) {
+    var ep = d.endpoints[i];
+    var m = ep.method.toLowerCase();
+    var epId = currentDomain + '-' + i;
+    html += '<div class="ep-card" id="card-' + epId + '">';
+    html += '<div class="ep-header" onclick="toggleTry(\\'' + epId + '\\')">';
+    html += '<span class="ep-method ' + m + '">' + ep.method + '</span>';
+    html += '<span class="ep-path">' + highlightPath(ep.path) + '</span>';
+    html += '<span class="ep-desc">' + escapeHtml(ep.desc) + '</span>';
+    html += '</div>';
+    // Try-it section
+    html += '<div class="ep-try" id="try-' + epId + '">';
+    // Param inputs
+    var params = ep.path.match(/:[a-z_]+/g) || [];
+    if (params.length > 0 || ep.body) {
+      html += '<div class="ep-try-grid">';
+      html += '<div>';
+      if (params.length > 0) {
+        html += '<label class="field-label">Path Parameters</label>';
+        for (var p = 0; p < params.length; p++) {
+          var pname = params[p].substring(1);
+          html += '<div style="margin-bottom:0.5rem"><label style="font-size:0.72rem;color:var(--text-3)">' + pname + '</label>';
+          html += '<input type="text" class="input" id="param-' + epId + '-' + pname + '" placeholder="' + pname + '" style="font-size:0.8rem;margin-top:2px"></div>';
+        }
+      }
+      if (!ep.body && params.length === 0) {
+        html += '<p style="font-size:0.78rem;color:var(--text-3)">No parameters required</p>';
+      }
+      html += '</div>';
+      html += '<div>';
+      if (ep.body) {
+        html += '<label class="field-label">Request Body (JSON)</label>';
+        html += '<textarea class="input" id="body-' + epId + '" rows="6" style="font-family:var(--mono);font-size:0.78rem;resize:vertical">' + escapeHtml(ep.body) + '</textarea>';
+      }
+      html += '</div>';
+      html += '</div>';
+    } else {
+      html += '<p style="font-size:0.78rem;color:var(--text-3);margin-bottom:0.75rem">No parameters required</p>';
+    }
+    html += '<div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.75rem">';
+    html += '<button class="btn btn-primary" onclick="sendRequest(\\'' + epId + '\\', \\'' + ep.method + '\\', \\'' + ep.path + '\\')">';
+    html += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Send</button>';
+    html += '<span id="status-' + epId + '"></span>';
+    html += '</div>';
+    html += '<div class="ep-response" id="resp-' + epId + '" style="display:none"><pre></pre></div>';
+    html += '</div>'; // ep-try
+    html += '</div>'; // ep-card
+  }
+  main.innerHTML = html;
+}
+
+function toggleTry(epId) {
+  var el = document.getElementById('try-' + epId);
+  if (el) el.classList.toggle('open');
+}
+
+async function sendRequest(epId, method, pathTemplate) {
+  // Build path with param substitution
+  var path = pathTemplate;
+  var params = pathTemplate.match(/:[a-z_]+/g) || [];
+  for (var i = 0; i < params.length; i++) {
+    var pname = params[i].substring(1);
+    var input = document.getElementById('param-' + epId + '-' + pname);
+    var val = input ? input.value.trim() : '';
+    if (!val) { showToast('Please fill in parameter: ' + pname, 'warning'); return; }
+    path = path.replace(params[i], encodeURIComponent(val));
+  }
+
+  var statusEl = document.getElementById('status-' + epId);
+  var respEl = document.getElementById('resp-' + epId);
+  var preEl = respEl.querySelector('pre');
+  statusEl.innerHTML = '<span style="color:#f59e0b;font-size:0.78rem">Sending...</span>';
+  respEl.style.display = 'none';
+
+  var url = '/api' + path;
+  var opts = { method: method, headers: {} };
+  if (method === 'POST' || method === 'PUT') {
+    opts.headers['Content-Type'] = 'application/json';
+    var bodyEl = document.getElementById('body-' + epId);
+    if (bodyEl && bodyEl.value.trim()) {
+      try {
+        JSON.parse(bodyEl.value);
+        opts.body = bodyEl.value.trim();
+      } catch(e) {
+        showToast('Invalid JSON in request body', 'error');
+        statusEl.innerHTML = '';
+        return;
+      }
+    }
+  }
+
+  var t0 = performance.now();
+  try {
+    var resp = await fetch(url, opts);
+    var elapsed = Math.round(performance.now() - t0);
+    var data;
+    var ct = resp.headers.get('content-type') || '';
+    if (ct.includes('json')) {
+      data = await resp.json();
+      preEl.textContent = JSON.stringify(data, null, 2);
+    } else {
+      data = await resp.text();
+      preEl.textContent = data;
+    }
+    var sCls = resp.status < 300 ? 's2xx' : resp.status < 500 ? 's4xx' : 's5xx';
+    statusEl.innerHTML = '<span class="ep-status ' + sCls + '">' + resp.status + '</span><span class="ep-timing">' + elapsed + 'ms</span>';
+    respEl.style.display = 'block';
+  } catch(e) {
+    statusEl.innerHTML = '<span class="ep-status s5xx">ERR</span><span class="ep-timing">' + e.message + '</span>';
+    preEl.textContent = e.message;
+    respEl.style.display = 'block';
+  }
+}
+
+async function checkHealth() {
+  var dotAgent = document.getElementById('hd-agent');
+  var lblAgent = document.getElementById('hl-agent');
+  var dotTools = document.getElementById('hd-tools');
+  var lblTools = document.getElementById('hl-tools');
+  dotAgent.className = 'health-dot pending';
+  dotTools.className = 'health-dot pending';
+  lblAgent.textContent = '...';
+  lblTools.textContent = '...';
+  try {
+    var r = await fetch('/api/health', { signal: AbortSignal.timeout(3000) });
+    dotAgent.className = 'health-dot ' + (r.ok ? 'online' : 'offline');
+    lblAgent.textContent = r.ok ? 'Online' : 'Error';
+    lblAgent.style.color = r.ok ? '#10b981' : '#ef4444';
+  } catch(e) {
+    dotAgent.className = 'health-dot offline';
+    lblAgent.textContent = 'Offline';
+    lblAgent.style.color = '#ef4444';
+  }
+  try {
+    var r2 = await fetch('/api/tools-health', { signal: AbortSignal.timeout(3000) });
+    dotTools.className = 'health-dot ' + (r2.ok ? 'online' : 'offline');
+    lblTools.textContent = r2.ok ? 'Online' : 'Error';
+    lblTools.style.color = r2.ok ? '#10b981' : '#ef4444';
+  } catch(e) {
+    dotTools.className = 'health-dot offline';
+    lblTools.textContent = 'Offline';
+    lblTools.style.color = '#ef4444';
+  }
+}
+var refreshHealth = checkHealth;
+
+computeStats();
+renderSidebar();
+renderEndpoints();
+checkHealth();
+<\/script>
+
+` }) %>

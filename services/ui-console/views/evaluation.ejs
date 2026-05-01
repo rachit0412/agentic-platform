@@ -54,7 +54,7 @@
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1rem">
-    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem;cursor:pointer" onclick="document.getElementById('eval-detail-table').scrollIntoView({behavior:'smooth',block:'start'})" title="View detailed scores">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
         <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Completion Rate</span>
         <span id="eval-completion" style="font-size:1.05rem;font-weight:700;color:#10b981">-</span>
@@ -62,7 +62,7 @@
       <div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div id="eval-completion-bar" style="height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;width:0%;transition:width 0.6s"></div></div>
       <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.35rem">% of traces with successful output</div>
     </div>
-    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem;cursor:pointer" onclick="document.getElementById('eval-detail-table').scrollIntoView({behavior:'smooth',block:'start'})" title="View detailed scores">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
         <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Latency Score</span>
         <span id="eval-latency" style="font-size:1.05rem;font-weight:700;color:#06b6d4">-</span>
@@ -70,7 +70,7 @@
       <div style="height:5px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div id="eval-latency-bar" style="height:100%;background:linear-gradient(90deg,#06b6d4,#8b5cf6);border-radius:3px;width:0%;transition:width 0.6s"></div></div>
       <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.35rem">% completing under 5s threshold</div>
     </div>
-    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem">
+    <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;padding:0.85rem;cursor:pointer" onclick="document.getElementById('eval-detail-table').scrollIntoView({behavior:'smooth',block:'start'})" title="View detailed scores">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem">
         <span style="font-size:0.82rem;font-weight:600;color:var(--text-1)">Tool Efficiency</span>
         <span id="eval-tool-eff" style="font-size:1.05rem;font-weight:700;color:#f59e0b">-</span>
@@ -81,7 +81,7 @@
   </div>
 
   <!-- Detailed Table -->
-  <table class="mt-1" style="font-size:0.82rem">
+  <table id="eval-detail-table" class="mt-1" style="font-size:0.82rem">
     <tr><th>Dimension</th><th>Score</th><th>Grade</th><th>Details</th></tr>
     <tr><td style="font-weight:600">Completion Rate</td><td id="eval-row-completion" class="mono">-</td><td id="eval-grade-completion">-</td><td style="color:var(--text-3);font-size:0.78rem">Traces with valid non-error output</td></tr>
     <tr><td style="font-weight:600">Response Latency</td><td id="eval-row-latency" class="mono">-</td><td id="eval-grade-latency">-</td><td style="color:var(--text-3);font-size:0.78rem">Avg response time (target &lt; 5s)</td></tr>

@@ -69,7 +69,7 @@ for svc in "${services[@]}"; do
     agent)        desc="FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry" ;;
     tools)        desc="FastAPI tools-service — math, HTTP, file, datetime tools" ;;
     ui)           desc="Static HTML UI served by nginx" ;;
-    ui-console)   desc="Express.js platform dashboard — 13 pages, API proxies" ;;
+    ui-console)   desc="Express.js platform dashboard — ${#pages[@]} pages, API proxies" ;;
     otel)         desc="OpenTelemetry Collector configuration" ;;
     *)            desc="Service" ;;
   esac

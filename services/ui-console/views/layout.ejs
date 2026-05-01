@@ -153,17 +153,25 @@
       </li>
       <!-- ── Protocols ── -->
       <li><div class="rail-divider"></div></li>
-      <li>
-        <a href="/a2a" class="rail-item <%= page === 'a2a' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          <span class="rail-tooltip">A2A Protocol <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:4px;font-weight:600">BETA</span></span>
+      <li class="rail-group">
+        <a href="/a2a" class="rail-item <%= ['a2a','mcp','rest'].includes(page) ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="7.5" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16.5" cy="11" r="1"/></svg>
         </a>
-      </li>
-      <li>
-        <a href="/mcp" class="rail-item <%= page === 'mcp' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6"/><circle cx="12" cy="12" r="4"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6m8 0h6"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>
-          <span class="rail-tooltip">MCP Registry <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:4px;font-weight:600">BETA</span></span>
-        </a>
+        <div class="rail-submenu">
+          <div class="rail-submenu-title">Protocols <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:4px;font-weight:600">DEV</span></div>
+          <a href="/a2a" class="<%= page === 'a2a' ? 'sub-active' : '' %>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            A2A Protocol <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:3px;font-weight:600">BETA</span>
+          </a>
+          <a href="/mcp" class="<%= page === 'mcp' ? 'sub-active' : '' %>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 8v6"/><circle cx="12" cy="12" r="4"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6m8 0h6"/></svg>
+            MCP Registry <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:3px;font-weight:600">BETA</span>
+          </a>
+          <a href="/rest" class="<%= page === 'rest' ? 'sub-active' : '' %>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            REST Console
+          </a>
+        </div>
       </li>
       <!-- ── Monitoring ── -->
       <li><div class="rail-divider"></div></li>

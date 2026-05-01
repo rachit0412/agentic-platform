@@ -10,7 +10,7 @@
 [![Ollama](https://img.shields.io/badge/Ollama-Local%20LLMs-000000?logo=ollama&logoColor=white)](#the-stack--why-every-piece-matters)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**One `docker compose up` → 13 services → your own AI agent factory, running locally, with zero API costs.**
+**One `docker compose up` → 13 containers → your own AI agent factory, running locally, with zero API costs.**
 
 [Quick Start](#-quick-start) · [Why Fork This](#-why-fork-this) · [The Stack](#the-stack--why-every-piece-matters) · [Architecture](docs/ARCHITECTURE.md) · [Install Guide](INSTALL.md)
 
@@ -43,10 +43,10 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **4 LLM Providers**   | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                 |
 | **Auto-RAG**          | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context                  |
 | **A2A Protocol**      | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                 |
-| **MCP Protocol**      | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime             |
+| **MCP Registry**      | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime             |
 | **Full Traceability** | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                               |
 | **Responsible AI**    | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                |
-| **22-page Dashboard** | Not a CLI-only project. A real UI for building, running, and monitoring agents                                            |
+| **22-page Dashboard** | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                               |
 | **One-command setup** | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                       |
 
 <details>
@@ -145,7 +145,7 @@ curl -X POST http://localhost:8010/run \
 
 ## 🗺️ What's Inside
 
-### Services (12 containers)
+### Services (13 containers)
 
 | Service            | Port    | Purpose                                                                  |
 | ------------------ | ------- | ------------------------------------------------------------------------ |
@@ -155,6 +155,7 @@ curl -X POST http://localhost:8010/run \
 | **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more           |
 | **chromadb**       | `8200`  | Vector store for knowledge base and RAG retrieval                        |
 | **n8n**            | `5678`  | Workflow orchestration, webhooks, and scheduled automation               |
+| **n8n-proxy**      | `5679`  | Reverse proxy for n8n cross-origin access                                |
 | **langfuse**       | `3012`  | LLM tracing, cost tracking, evaluation, prompt analytics                 |
 | **grafana**        | `3013`  | Monitoring dashboards (pre-configured with Prometheus + Loki)            |
 | **prometheus**     | `9090`  | Metrics collection and alerting                                          |
@@ -171,14 +172,15 @@ curl -X POST http://localhost:8010/run \
 | Agent Builder    | Visual agent composition with templates and live test  |
 | AI Studio        | IDE-style code editor with chat, preview, and projects |
 | Agent Hub        | Agent factory overview dashboard                       |
-| Agents           | Create and manage agent definitions                    |
+| Agent Registry   | Create and manage agent definitions                    |
 | Skills           | Build reusable skill packages                          |
 | Prompts          | Prompt template library                                |
 | Tools            | Manage agent tools and capabilities                    |
 | Knowledge Base   | Upload, search, manage RAG docs                        |
 | Workflows        | n8n workflow monitoring                                |
 | A2A Protocol     | Register peer agents for inter-agent delegation        |
-| MCP Protocol     | Connect external tool servers                          |
+| MCP Registry     | Connect and manage external tool servers               |
+| REST Console     | Interactive API console — test all 69 endpoints        |
 | Intelligence Hub | Operational intelligence overview                      |
 | Traceability     | Langfuse trace timeline and deep-dive                  |
 | Evaluation       | Agent quality scoring and model comparison             |
@@ -187,7 +189,6 @@ curl -X POST http://localhost:8010/run \
 | Marketplace      | Browse and install templates                           |
 | Admin            | System admin — DB stats, export/import, diagnostics    |
 | Documentation    | Auto-generated API & architecture docs                 |
-| Test Agent       | Floating chat panel — available on every page          |
 
 ---
 
@@ -260,13 +261,13 @@ k6 run tests/load/load-test.js
 
 ```
 agentic-platform/
-├── docker-compose.yml           # All 13 services — one command to rule them all
+├── docker-compose.yml           # All 13 containers — one command to rule them all
 ├── README.md                    # You are here
 ├── INSTALL.md                   # Detailed install guide (Windows/Mac/Linux/GPU)
 ├── CONTRIBUTING.md              # Contribution guidelines
 ├── docs/ARCHITECTURE.md         # Deep-dive architecture & protocols
 ├── services/
-│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (50+ API routes)
+│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (69 API endpoints)
 │   ├── tools/                   # 🔧 FastAPI tool endpoints (9 tools)
 │   ├── ui-console/              # 🖥️  Express.js dashboard (22 pages)
 │   └── otel/                    # 📡 OpenTelemetry collector config

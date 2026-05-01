@@ -6,19 +6,19 @@
 
 <!-- Stats Row -->
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('servers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View all servers">
     <div style="font-size:1.75rem;font-weight:700;color:var(--cyan)" id="stat-servers">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Registered Servers</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('servers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View connected servers">
     <div style="font-size:1.75rem;font-weight:700;color:#10b981" id="stat-connected">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Connected</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('invoke-section').scrollIntoView({behavior:'smooth',block:'start'})" title="Test available tools">
     <div style="font-size:1.75rem;font-weight:700;color:#8b5cf6" id="stat-tools">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Available Tools</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('servers-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View enabled servers">
     <div style="font-size:1.75rem;font-weight:700;color:#f59e0b" id="stat-enabled">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Enabled</div>
   </div>

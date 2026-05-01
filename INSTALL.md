@@ -40,7 +40,7 @@ cd agentic-platform
 # 2. (Optional) Copy and customise environment
 cp .env.example .env
 
-# 3. Start all 13 services
+# 3. Start all 13 containers
 docker compose up -d --build
 
 # 4. Pull a model (first time only — ~4 GB)
@@ -330,9 +330,10 @@ After successful installation:
 5. Pull additional models: `docker exec ollama ollama pull mistral`
 6. Ingest documents into the knowledge base
 7. Explore API docs at http://localhost:8010/docs
-8. Create workflows in n8n at http://localhost:5678
-9. Review LLM traces in Langfuse at http://localhost:3012
-10. Monitor platform health in Grafana at http://localhost:3013
+8. Use the **REST Console** at http://localhost:3000/rest to test all 69 endpoints
+9. Create workflows in n8n at http://localhost:5678
+10. Review LLM traces in Langfuse at http://localhost:3012
+11. Monitor platform health in Grafana at http://localhost:3013
 
 ---
 

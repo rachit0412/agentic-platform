@@ -28,28 +28,28 @@
 
 <!-- Stats Row -->
 <div class="grid-4 mb-2" style="margin-bottom:1.5rem">
-  <div class="stat-card animate-fade-up">
+  <div class="stat-card animate-fade-up" style="cursor:pointer" onclick="filterCat('all');document.getElementById('guardrails-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View all guardrails">
     <div class="stat-icon stat-icon-emerald">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     </div>
     <div class="stat-label">Total Guardrails</div>
     <div class="stat-number" id="stat-total">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-100">
+  <div class="stat-card animate-fade-up delay-100" style="cursor:pointer" onclick="filterCat('all');document.getElementById('guardrails-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View active guardrails">
     <div class="stat-icon stat-icon-cyan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
     </div>
     <div class="stat-label">Active</div>
     <div class="stat-number" id="stat-active" style="color:#10b981">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-200">
+  <div class="stat-card animate-fade-up delay-200" style="cursor:pointer" onclick="filterCat('all');document.getElementById('guardrails-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View disabled guardrails">
     <div class="stat-icon" style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.08));color:#ef4444">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
     </div>
     <div class="stat-label">Disabled</div>
     <div class="stat-number" id="stat-disabled" style="color:#ef4444">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-300">
+  <div class="stat-card animate-fade-up delay-300" style="cursor:pointer" onclick="document.getElementById('guardrails-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View safety score details">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
     </div>
