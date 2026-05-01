@@ -2,12 +2,15 @@
 
 ## Guides
 
-| Document                            | Description                                          |
-| ----------------------------------- | ---------------------------------------------------- |
-| [README](../README.md)              | Project overview, quick start, configuration         |
-| [Architecture](ARCHITECTURE.md)     | System overview, data flows, services, telemetry     |
-| [Installation Guide](../INSTALL.md) | Prerequisites, per-platform setup, GPU configuration |
-| [Contributing](../CONTRIBUTING.md)  | Code style, PR process, commit conventions           |
+| Document                              | Description                                           |
+| ------------------------------------- | ----------------------------------------------------- |
+| [README](../README.md)                | Project overview, quick start, configuration          |
+| [Architecture](ARCHITECTURE.md)       | System overview, data flows, services, telemetry      |
+| [Principles](PRINCIPLES.md)           | 10 architecture principles guiding all design choices |
+| [Building Blocks](BUILDING-BLOCKS.md) | ABBs (abstract) and SBBs (solution) with traceability |
+| [Decisions](DECISIONS.md)             | 10 Architecture Decision Records (ADRs)               |
+| [Installation Guide](../INSTALL.md)   | Prerequisites, per-platform setup, GPU configuration  |
+| [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions            |
 
 ## Interactive API Console
 
