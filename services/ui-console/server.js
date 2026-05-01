@@ -613,7 +613,7 @@ app.get("/api/a2a/card", async (req, res) => {
   } catch (e) { res.json({ error: e.message }); }
 });
 
-// ── API: MCP Protocol ─────────────────────────────────
+// ── API: MCP Registry ─────────────────────────────────
 // MCP servers CRUD
 app.get("/api/mcp/servers", async (req, res) => {
   try {

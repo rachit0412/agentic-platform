@@ -1,14 +1,14 @@
-<%- include('layout', { title: 'Model Context Protocol (MCP)', page: 'mcp', body: `
+<%- include('layout', { title: 'MCP Registry', page: 'mcp', body: `
 
-<h1 class="text-glow-cyan">Model Context Protocol</h1>
-<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Connect to <strong style="color:#8b5cf6">MCP servers</strong> to extend your agents with external tools, resources, and data sources via the <strong style="color:#06b6d4">standardized MCP protocol</strong>.</p>
-<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">MCP servers expose tools that any agent can discover and invoke. Add a server, discover its tools, and your agents gain new <strong style="color:#f59e0b">superpowers</strong> — databases, APIs, file systems, and more.</p>
+<h1 class="text-glow-cyan">MCP Registry</h1>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Register, manage, and monitor <strong style="color:#8b5cf6">MCP servers</strong> in a central registry — extend your agents with external tools, resources, and data sources.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Each registered server exposes tools that agents can discover and invoke on demand. Add a server, discover its tools, and your agents gain new <strong style="color:#f59e0b">superpowers</strong> — databases, APIs, file systems, and more.</p>
 
 <!-- Stats Row -->
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
   <div class="card" style="text-align:center;padding:1rem">
     <div style="font-size:1.75rem;font-weight:700;color:var(--cyan)" id="stat-servers">0</div>
-    <div style="font-size:0.75rem;color:var(--text-3)">MCP Servers</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Registered Servers</div>
   </div>
   <div class="card" style="text-align:center;padding:1rem">
     <div style="font-size:1.75rem;font-weight:700;color:#10b981" id="stat-connected">0</div>
@@ -31,13 +31,13 @@
   </div>
   <button class="btn btn-primary" onclick="showServerForm()">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Add MCP Server
+    Register Server
   </button>
 </div>
 
 <!-- Create / Edit Form -->
 <div class="card animate-fade-up" id="server-form" style="display:none;margin-bottom:1.5rem">
-  <h3 id="form-title">Add MCP Server</h3>
+  <h3 id="form-title">Register MCP Server</h3>
   <input type="hidden" id="edit-id" value="">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
     <div>
@@ -73,7 +73,7 @@
 <div id="servers-grid" style="display:grid;grid-template-columns:1fr;gap:1rem"></div>
 <div id="servers-empty" class="card" style="display:none;text-align:center;padding:3rem;color:var(--text-3)">
   <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto 1rem;opacity:0.3"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-  <p>No MCP servers configured. Click <strong>Add MCP Server</strong> to connect to an external tool provider.</p>
+  <p>No MCP servers registered. Click <strong>Register Server</strong> to add an external tool provider to the registry.</p>
 </div>
 
 <!-- Tool Invocation Section -->
@@ -208,7 +208,7 @@ function renderServers() {
 
 function showServerForm() {
   document.getElementById('server-form').style.display = 'block';
-  document.getElementById('form-title').textContent = 'Add MCP Server';
+  document.getElementById('form-title').textContent = 'Register MCP Server';
   document.getElementById('edit-id').value = '';
   document.getElementById('server-name').value = '';
   document.getElementById('server-url').value = '';
@@ -224,7 +224,7 @@ function editServer(id) {
   const s = servers.find(x => x.id === id);
   if (!s) return;
   document.getElementById('server-form').style.display = 'block';
-  document.getElementById('form-title').textContent = 'Edit MCP Server';
+  document.getElementById('form-title').textContent = 'Edit Server Registration';
   document.getElementById('edit-id').value = s.id;
   document.getElementById('server-name').value = s.name;
   document.getElementById('server-url').value = s.url;
@@ -257,7 +257,7 @@ async function saveServer() {
 }
 
 async function deleteServer(id) {
-  if (!confirm('Delete this MCP server?')) return;
+  if (!confirm('Remove this server from the registry?')) return;
   try {
     const res = await fetch('/api/mcp/servers/' + id, { method: 'DELETE' });
     if (!res.ok) { showToast('Delete failed: ' + res.statusText, 'error'); return; }
