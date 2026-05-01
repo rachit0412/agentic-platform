@@ -12,7 +12,7 @@
   .docs-sidebar .ds-link { display:block; padding:0.4rem 1.25rem 0.4rem 1.5rem; font-size:0.82rem; color:var(--text-2); text-decoration:none; border-left:2px solid transparent; transition:all 0.15s; cursor:pointer; }
   .docs-sidebar .ds-link:hover { color:var(--text-1); background:rgba(6,182,212,0.05); }
   .docs-sidebar .ds-link.active { color:#06b6d4; border-left-color:#06b6d4; background:rgba(6,182,212,0.08); font-weight:600; }
-  .docs-content { padding:2rem 2.5rem; max-width:860px; }
+  .docs-content { padding:2rem 2.5rem; max-width:1100px; }
   .docs-content h1 { font-size:1.8rem; font-weight:700; margin-bottom:0.5rem; }
   .docs-content h2 { font-size:1.25rem; font-weight:700; margin:2rem 0 0.75rem; padding-bottom:0.5rem; border-bottom:1px solid var(--glass-border); }
   .docs-content h3 { font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; }
@@ -69,7 +69,9 @@
   .node-info-popup-link:hover { text-decoration:underline; }
 
   /* Diagram zoom lightbox — HD */
-  .docs-diagram { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:1.5rem; margin:1.25rem 0; text-align:center; position:relative; cursor:zoom-in; }
+  .docs-diagram { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:2rem; margin:1.5rem 0; text-align:center; position:relative; cursor:zoom-in; }
+  .docs-diagram .mermaid svg { min-height:350px; width:100% !important; }
+  .docs-diagram-full { max-width:none; width:calc(100% + 2rem); margin-left:-1rem; padding:2rem 2.5rem; }
   .docs-diagram::after { content:'🔍 Click to zoom'; position:absolute; top:0.5rem; right:0.75rem; font-size:0.65rem; color:var(--text-3); background:var(--glass-bg); padding:0.15rem 0.5rem; border-radius:6px; border:1px solid var(--glass-border); opacity:0; transition:opacity 0.15s; pointer-events:none; }
   .docs-diagram:hover::after { opacity:1; }
   .diagram-lightbox { position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.88); backdrop-filter:blur(12px); display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; }
@@ -109,6 +111,7 @@
       <a class="ds-link" data-section="decisions" onclick="showDoc('decisions')">Decisions (ADRs)</a>
       <a class="ds-link" data-section="architecture" onclick="showDoc('architecture')">System Architecture</a>
       <a class="ds-link" data-section="dataflow" onclick="showDoc('dataflow')">Data Flow</a>
+      <a class="ds-link" data-section="network" onclick="showDoc('network')">Network Architecture</a>
       <a class="ds-link" data-section="services" onclick="showDoc('services')">Service Reference</a>
     </div>
 
@@ -310,56 +313,273 @@ node server.js</code></pre>
     <div id="doc-architecture" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
       <h1>System Architecture</h1>
-      <p>The platform follows a microservices architecture with clear separation of concerns.</p>
+      <p>The Agentic Platform is a containerised microservices system that runs 13 services on a single Docker bridge network (<code>platform-net</code>). Services are grouped into five architectural layers, each with a distinct responsibility. Every service is independently deployable and communicates over HTTP/gRPC within the internal network.</p>
 
-      <h2>Service Interaction</h2>
-      <div class="docs-diagram">
+      <div class="docs-callout info">
+        <strong>Design Philosophy:</strong> Local-first, container-native, defence-in-depth. The entire platform boots with a single <code>docker-compose up -d</code> — no cloud accounts, no API keys, no build step. Cloud providers (Azure OpenAI, OpenAI, Azure AI Foundry) are optional drop-in replacements for the local Ollama default.
+      </div>
+
+      <h2>Platform Architecture</h2>
+      <div class="docs-diagram docs-diagram-full">
+        <div class="mermaid">
+graph TD
+    subgraph PRESENTATION["🖥️ Presentation Layer"]
+        UI["<b>UI Console</b><br/>Express.js + EJS<br/>:3001 → :3000"]
+        N8P["<b>n8n Proxy</b><br/>Nginx reverse proxy<br/>:8080 → :5679"]
+    end
+
+    subgraph APPLICATION["⚙️ Application Layer"]
+        AGENT["<b>Agent Service</b><br/>FastAPI + LangGraph<br/>:8000 → :8010"]
+        TOOLS["<b>Tools Service</b><br/>FastAPI sandbox<br/>:8001 → :8011"]
+        N8N["<b>n8n</b><br/>Workflow engine<br/>:5678"]
+    end
+
+    subgraph INTELLIGENCE["🧠 Intelligence Layer"]
+        OLLAMA["<b>Ollama</b><br/>Local LLM runtime<br/>:11434 → :11436"]
+        CHROMA["<b>ChromaDB</b><br/>Vector store (RAG)<br/>:8000 → :8200"]
+    end
+
+    subgraph DATA["💾 Data Layer"]
+        SQLITE[("<b>SQLite</b><br/>memory.db<br/>12 tables")]
+        LFDB[("<b>PostgreSQL</b><br/>Langfuse DB")]
+    end
+
+    subgraph OBSERVABILITY["📊 Observability Layer"]
+        OTEL["<b>OTel Collector</b><br/>:4317 / :4318"]
+        PROM["<b>Prometheus</b><br/>:9090"]
+        GRAF["<b>Grafana</b><br/>:3000 → :3013"]
+        LOKI["<b>Loki</b><br/>:3100"]
+        LF["<b>Langfuse</b><br/>:3000 → :3012"]
+    end
+
+    UI -->|"POST /agent/run (SSE)"| AGENT
+    UI -->|"API proxy /api/*"| AGENT
+    UI -.->|"iframe embed"| N8P
+    N8P -->|"proxy pass"| N8N
+    AGENT -->|"HTTP tool calls"| TOOLS
+    AGENT -->|"chat completions"| OLLAMA
+    AGENT -->|"vector search/store"| CHROMA
+    AGENT -->|"read/write"| SQLITE
+    AGENT -->|"OTLP traces"| OTEL
+    AGENT -->|"LLM traces"| LF
+    TOOLS -->|"code sandbox"| TOOLS
+    LF -->|"persist"| LFDB
+    OTEL -->|"metrics"| PROM
+    OTEL -->|"logs"| LOKI
+    PROM --> GRAF
+    LOKI --> GRAF
+
+    classDef pres fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef app fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef intel fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef data fill:#059669,stroke:#10b981,color:#fff,rx:8
+    classDef obs fill:#6366f1,stroke:#818cf8,color:#fff,rx:8
+
+    class UI,N8P pres
+    class AGENT,TOOLS,N8N app
+    class OLLAMA,CHROMA intel
+    class SQLITE,LFDB data
+    class OTEL,PROM,GRAF,LOKI,LF obs
+        </div>
+      </div>
+
+      <h2>Layer Responsibilities</h2>
+      <table class="docs-table">
+        <tr><th style="width:180px">Layer</th><th>Services</th><th>Responsibility</th></tr>
+        <tr><td><strong>🖥️ Presentation</strong></td><td>UI Console, n8n Proxy</td><td>User-facing interfaces. UI Console serves 23 EJS pages and proxies API calls to backend services. n8n Proxy strips security headers for iframe embedding.</td></tr>
+        <tr><td><strong>⚙️ Application</strong></td><td>Agent Service, Tools Service, n8n</td><td>Core business logic. Agent Service runs the LangGraph ReAct loop, manages agents/skills/prompts/guardrails, and orchestrates LLM calls and tool execution. Tools Service provides a sandboxed runtime for untrusted operations. n8n handles visual workflow automation.</td></tr>
+        <tr><td><strong>🧠 Intelligence</strong></td><td>Ollama, ChromaDB</td><td>AI inference and knowledge retrieval. Ollama serves local LLM models (llama3, mistral, phi3). ChromaDB stores document embeddings for RAG retrieval with cosine similarity search.</td></tr>
+        <tr><td><strong>💾 Data</strong></td><td>SQLite, PostgreSQL</td><td>Persistent state. SQLite stores all platform configuration (agents, skills, prompts, guardrails, tools, A2A peers, MCP servers) plus conversation history and session summaries. PostgreSQL backs the Langfuse observability database.</td></tr>
+        <tr><td><strong>📊 Observability</strong></td><td>OTel Collector, Prometheus, Grafana, Loki, Langfuse</td><td>Three-pipeline monitoring. Metrics (Prometheus), logs (Loki), and LLM traces (Langfuse) converge in Grafana dashboards. OTel Collector routes OTLP telemetry to the appropriate backends.</td></tr>
+      </table>
+
+      <h2>Request Flow (Sequence)</h2>
+      <p>The following sequence diagram shows a typical user interaction from prompt to streamed response, including memory loading, RAG retrieval, LLM inference, tool execution, and telemetry emission.</p>
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 sequenceDiagram
-    participant U as User
-    participant UI as UI Console
-    participant A as Agent Service
-    participant LLM as LLM Provider
-    participant T as Tools Service
-    participant KB as ChromaDB
-    participant M as SQLite
+    participant U as 👤 User
+    participant UI as 🖥️ UI Console<br/>(:3000)
+    participant A as ⚙️ Agent Service<br/>(:8010)
+    participant M as 💾 SQLite<br/>(memory.db)
+    participant KB as 🧠 ChromaDB<br/>(:8200)
+    participant LLM as 🧠 Ollama<br/>(:11436)
+    participant T as ⚙️ Tools Service<br/>(:8011)
+    participant OT as 📊 OTel + Langfuse
 
     U->>UI: Submit prompt
-    UI->>A: POST /agent/run (SSE)
-    A->>M: Load conversation history
-    A->>KB: RAG retrieval (if relevant)
-    A->>LLM: Generate response
+    UI->>A: POST /agent/run {message, session_id} (SSE)
+    activate A
+    A->>M: Load conversation history (STM)
+    A->>M: Load session summary (LTM)
+    A->>KB: Semantic search for relevant docs
+    KB-->>A: Top-k document chunks
+    Note over A: Build context:<br/>system prompt + memory +<br/>RAG chunks + guardrails
+    A->>A: Run input guardrails (PII, injection, topic)
+    A->>LLM: Chat completion (streaming)
     LLM-->>A: Stream tokens
-    A->>T: Execute tool calls
-    T-->>A: Tool results
-    A->>LLM: Continue with tool results
-    LLM-->>A: Final response
-    A->>M: Save to memory
-    A-->>UI: SSE stream
-    UI-->>U: Rendered response
+    alt Tool call detected
+        A->>T: POST /tools/{name} {args}
+        T-->>A: Tool result (JSON)
+        A->>LLM: Continue with tool results
+        LLM-->>A: Final response stream
+    end
+    A->>A: Run output guardrails (toxicity, PII, length)
+    A->>M: Save messages to conversations table
+    A->>M: Update session summary (if threshold)
+    A-->>OT: Emit OTLP span + Langfuse trace
+    deactivate A
+    A-->>UI: SSE stream (tokens)
+    UI-->>U: Rendered markdown response
         </div>
       </div>
 
       <h2>Directory Structure</h2>
-      <pre><code>agentic-platform/
+      <details>
+        <summary style="cursor:pointer;font-weight:600;color:var(--text-1);padding:0.5rem 0">📁 Click to expand project layout</summary>
+        <pre><code>agentic-platform/
 ├── services/
-│   ├── agent/          # Python FastAPI agent service
-│   │   ├── agent/      # Core agent modules
-│   │   │   ├── graph.py        # LangGraph ReAct agent
-│   │   │   ├── llm.py          # Multi-provider LLM factory
-│   │   │   ├── memory.py       # SQLite STM + LTM
-│   │   │   ├── tools.py        # Tool definitions
-│   │   │   ├── vectorstore.py  # ChromaDB integration
-│   │   │   └── observability.py # OTel + Langfuse
-│   │   └── main.py     # FastAPI app & routes
-│   ├── tools/           # External tools microservice
-│   ├── ui-console/      # Express.js dashboard
-│   └── otel/            # OpenTelemetry collector config
-├── n8n/workflows/       # n8n workflow definitions
-├── observability/       # Grafana, Prometheus, Loki configs
-├── tests/               # Unit, integration, e2e, load tests
-├── docs/                # Generated documentation
-└── docker-compose.yml   # 13-service orchestration</code></pre>
+│   ├── agent/              # Python FastAPI agent service
+│   │   ├── agent/          # Core agent modules
+│   │   │   ├── graph.py           # LangGraph ReAct state graph
+│   │   │   ├── llm.py            # Multi-provider LLM factory
+│   │   │   ├── memory.py         # SQLite STM + LTM + CRUD
+│   │   │   ├── tools.py          # Tool definitions & proxy
+│   │   │   ├── vectorstore.py    # ChromaDB RAG integration
+│   │   │   └── observability.py  # OTel + Langfuse telemetry
+│   │   └── main.py         # FastAPI app, 40+ REST endpoints
+│   ├── tools/               # Sandboxed tool execution service
+│   │   └── main.py          # math, HTTP, file, code, search
+│   ├── ui-console/          # Express.js platform dashboard
+│   │   ├── server.js        # 23 routes + API proxies
+│   │   ├── views/           # 23 EJS page templates
+│   │   └── public/          # CSS design system
+│   ├── otel/                # OpenTelemetry Collector config
+│   └── n8n-proxy/           # Nginx reverse proxy for n8n
+├── n8n/workflows/           # 5 pre-built n8n workflow JSONs
+├── observability/           # Grafana, Prometheus, Loki configs
+│   ├── grafana/             # Dashboard + datasource provisioning
+│   ├── prometheus/          # Scrape target configuration
+│   └── loki/               # Log aggregation configuration
+├── tests/                   # Unit, integration, e2e, load, smoke
+├── docs/                    # Architecture documentation
+│   ├── PRINCIPLES.md        # 18 architecture principles
+│   ├── BUILDING-BLOCKS.md   # 12 ABB/SBB pairs
+│   ├── DECISIONS.md         # 10 ADRs
+│   └── ARCHITECTURE.md      # Auto-generated overview
+└── docker-compose.yml       # 13-service orchestration</code></pre>
+      </details>
+    </div>
+
+    <!-- ── Network Architecture ── -->
+    <div id="doc-network" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>Network Architecture</h1>
+      <p>All 13 services communicate over a single Docker bridge network (<code>platform-net</code>). Services reference each other by container name (DNS). The host machine accesses services through mapped ports. No service is exposed to the public internet by default.</p>
+
+      <h2>Network Topology</h2>
+      <div class="docs-diagram docs-diagram-full">
+        <div class="mermaid">
+graph LR
+    subgraph HOST["🖥️ Host Machine"]
+        direction TB
+        P3000["Port 3000"]
+        P5678["Port 5678"]
+        P5679["Port 5679"]
+        P8010["Port 8010"]
+        P8011["Port 8011"]
+        P8200["Port 8200"]
+        P9090["Port 9090"]
+        P3012["Port 3012"]
+        P3013["Port 3013"]
+        P3100["Port 3100"]
+        P4317["Port 4317"]
+        P11436["Port 11436"]
+    end
+
+    subgraph NET["🌐 platform-net  (Docker Bridge Network)"]
+        direction TB
+        UI["ui-console<br/>:3001"]
+        AGENT["agent-service<br/>:8000"]
+        TOOLS["tools-service<br/>:8001"]
+        N8N["n8n<br/>:5678"]
+        N8P["n8n-proxy<br/>:8080"]
+        OLLAMA["ollama<br/>:11434"]
+        CHROMA["chromadb<br/>:8000"]
+        LF["langfuse<br/>:3000"]
+        LFDB["langfuse-db<br/>:5432"]
+        OTEL["otel-collector<br/>:4317"]
+        PROM["prometheus<br/>:9090"]
+        GRAF["grafana<br/>:3000"]
+        LOKI["loki<br/>:3100"]
+    end
+
+    P3000 ---|"→ :3001"| UI
+    P8010 ---|"→ :8000"| AGENT
+    P8011 ---|"→ :8001"| TOOLS
+    P5678 ---|"→ :5678"| N8N
+    P5679 ---|"→ :8080"| N8P
+    P8200 ---|"→ :8000"| CHROMA
+    P9090 ---|"→ :9090"| PROM
+    P3012 ---|"→ :3000"| LF
+    P3013 ---|"→ :3000"| GRAF
+    P3100 ---|"→ :3100"| LOKI
+    P4317 ---|"→ :4317"| OTEL
+    P11436 ---|"→ :11434"| OLLAMA
+
+    classDef host fill:#1e293b,stroke:#475569,color:#e2e8f0,rx:6
+    classDef net fill:#0f172a,stroke:#334155,color:#94a3b8,rx:8
+
+    class P3000,P5678,P5679,P8010,P8011,P8200,P9090,P3012,P3013,P3100,P4317,P11436 host
+        </div>
+      </div>
+
+      <h2>Port Reference</h2>
+      <table class="docs-table">
+        <tr><th>Service</th><th>Internal Port</th><th>External Port</th><th>Protocol</th><th>Purpose</th></tr>
+        <tr><td>UI Console</td><td>3001</td><td>3000</td><td>HTTP</td><td>Platform dashboard &amp; API proxy</td></tr>
+        <tr><td>Agent Service</td><td>8000</td><td>8010</td><td>HTTP/SSE</td><td>Agent runtime, REST API</td></tr>
+        <tr><td>Tools Service</td><td>8001</td><td>8011</td><td>HTTP</td><td>Sandboxed tool execution</td></tr>
+        <tr><td>n8n</td><td>5678</td><td>5678</td><td>HTTP</td><td>Workflow automation UI</td></tr>
+        <tr><td>n8n Proxy</td><td>8080</td><td>5679</td><td>HTTP</td><td>Iframe-safe n8n proxy</td></tr>
+        <tr><td>Ollama</td><td>11434</td><td>11436</td><td>HTTP</td><td>Local LLM inference</td></tr>
+        <tr><td>ChromaDB</td><td>8000</td><td>8200</td><td>HTTP</td><td>Vector store for RAG</td></tr>
+        <tr><td>Langfuse</td><td>3000</td><td>3012</td><td>HTTP</td><td>LLM tracing &amp; evaluation</td></tr>
+        <tr><td>Langfuse DB</td><td>5432</td><td>—</td><td>TCP</td><td>PostgreSQL (internal only)</td></tr>
+        <tr><td>OTel Collector</td><td>4317/4318</td><td>4317/4318</td><td>gRPC/HTTP</td><td>OTLP telemetry receiver</td></tr>
+        <tr><td>Prometheus</td><td>9090</td><td>9090</td><td>HTTP</td><td>Metrics scraping &amp; PromQL</td></tr>
+        <tr><td>Grafana</td><td>3000</td><td>3013</td><td>HTTP</td><td>Dashboards &amp; visualization</td></tr>
+        <tr><td>Loki</td><td>3100</td><td>3100</td><td>HTTP</td><td>Log aggregation</td></tr>
+      </table>
+
+      <h2>Docker Volumes</h2>
+      <p>Seven named volumes persist data across container restarts:</p>
+      <table class="docs-table">
+        <tr><th>Volume</th><th>Mounted By</th><th>Content</th></tr>
+        <tr><td><code>n8n-data</code></td><td>n8n</td><td>Workflow definitions, credentials, execution logs</td></tr>
+        <tr><td><code>ollama-data</code></td><td>Ollama</td><td>Downloaded model weights (llama3, nomic-embed-text)</td></tr>
+        <tr><td><code>chroma-data</code></td><td>ChromaDB</td><td>Vector store collections and HNSW indexes</td></tr>
+        <tr><td><code>langfuse-db-data</code></td><td>Langfuse DB</td><td>PostgreSQL tables (traces, scores, datasets)</td></tr>
+        <tr><td><code>prometheus-data</code></td><td>Prometheus</td><td>Time-series metrics (15-day retention)</td></tr>
+        <tr><td><code>grafana-data</code></td><td>Grafana</td><td>Dashboard state, alert rules, user preferences</td></tr>
+        <tr><td><code>loki-data</code></td><td>Loki</td><td>Compressed log chunks (BoltDB index + filesystem)</td></tr>
+      </table>
+
+      <h2>Inter-Service Communication</h2>
+      <div class="docs-callout info">
+        All inter-service calls use container DNS names (e.g. <code>http://agent-service:8000</code>, <code>http://ollama:11434</code>). Services never use <code>localhost</code> or host ports to reach each other. The only external dependency is the host network for user access.
+      </div>
+      <ul>
+        <li><strong>UI → Agent:</strong> HTTP POST with SSE streaming for real-time responses</li>
+        <li><strong>Agent → Tools:</strong> HTTP POST with JSON payloads for sandboxed tool execution</li>
+        <li><strong>Agent → Ollama:</strong> OpenAI-compatible <code>/v1/chat/completions</code> API</li>
+        <li><strong>Agent → ChromaDB:</strong> REST API for document embedding and similarity search</li>
+        <li><strong>Agent → OTel:</strong> OTLP/gRPC on port 4317 for distributed tracing</li>
+        <li><strong>Agent → Langfuse:</strong> Langfuse SDK for LLM-specific trace data</li>
+        <li><strong>OTel → Prometheus:</strong> Remote-write metrics pipeline</li>
+        <li><strong>OTel → Loki:</strong> Log forwarding pipeline</li>
+        <li><strong>Langfuse → PostgreSQL:</strong> Standard <code>pg</code> connection for trace persistence</li>
+      </ul>
     </div>
 
     <!-- ── Services ── -->
@@ -389,54 +609,216 @@ sequenceDiagram
       </table>
 
       <h2>Tools Service</h2>
-      <p>Standalone microservice for external tool execution.</p>
+      <p>Sandboxed microservice that executes tool calls on behalf of agents. All untrusted operations (web requests, code execution, file I/O) run in this isolated container.</p>
+      <table class="docs-table">
+        <tr><th>Aspect</th><th>Detail</th></tr>
+        <tr><td>Runtime</td><td>Python 3.11 + FastAPI</td></tr>
+        <tr><td>Port</td><td>8001 (internal) → 8011 (external)</td></tr>
+        <tr><td>Endpoints</td><td>/tools/{name}, /health, /tools/list</td></tr>
+        <tr><td>Security</td><td>Container-level isolation, no network access to host, resource-limited</td></tr>
+      </table>
+      <h3>Built-in Tools</h3>
+      <table class="docs-table">
+        <tr><th>Tool</th><th>Endpoint</th><th>Description</th></tr>
+        <tr><td>Calculator</td><td><code>/tools/calculator</code></td><td>Mathematical expression evaluation (safe eval)</td></tr>
+        <tr><td>Web Search</td><td><code>/tools/web_search</code></td><td>Internet search via DuckDuckGo API</td></tr>
+        <tr><td>HTTP Request</td><td><code>/tools/http_request</code></td><td>Fetch content from URLs (GET/POST)</td></tr>
+        <tr><td>Note Taking</td><td><code>/tools/note</code></td><td>Save and retrieve persistent notes</td></tr>
+        <tr><td>Document Lookup</td><td><code>/tools/doc_lookup</code></td><td>Query the ChromaDB knowledge base</td></tr>
+      </table>
 
       <h2>Observability Stack</h2>
-      <ul>
-        <li><strong>Prometheus</strong> (:9090) — Metrics scraping &amp; alerting</li>
-        <li><strong>Grafana</strong> (:3003) — Dashboards &amp; visualization</li>
-        <li><strong>Loki</strong> (:3100) — Log aggregation</li>
-        <li><strong>OTel Collector</strong> (:4317) — Distributed tracing</li>
-        <li><strong>Langfuse</strong> (:3014) — LLM-specific tracing &amp; evaluation</li>
-      </ul>
+      <p>Five services form a complete observability pipeline covering metrics, logs, and LLM-specific traces.</p>
+      <table class="docs-table">
+        <tr><th>Service</th><th>Port</th><th>Role</th><th>Data Source</th></tr>
+        <tr><td><strong>OTel Collector</strong></td><td>:4317 (gRPC), :4318 (HTTP)</td><td>Central telemetry receiver — routes OTLP data to backends</td><td>Agent Service, Tools Service</td></tr>
+        <tr><td><strong>Prometheus</strong></td><td>:9090</td><td>Time-series metrics storage, PromQL queries, alerting</td><td>OTel Collector (remote write)</td></tr>
+        <tr><td><strong>Grafana</strong></td><td>:3013</td><td>Dashboards, alerting rules, visualization</td><td>Prometheus, Loki</td></tr>
+        <tr><td><strong>Loki</strong></td><td>:3100</td><td>Log aggregation with label-based querying</td><td>OTel Collector (log push)</td></tr>
+        <tr><td><strong>Langfuse</strong></td><td>:3012</td><td>LLM trace explorer, evaluation datasets, scoring</td><td>Agent Service (Langfuse SDK)</td></tr>
+      </table>
+
+      <h2>Supporting Services</h2>
+      <table class="docs-table">
+        <tr><th>Service</th><th>Port</th><th>Purpose</th></tr>
+        <tr><td><strong>n8n</strong></td><td>:5678</td><td>Visual workflow automation (RAG ingest, scheduled summaries, webhooks)</td></tr>
+        <tr><td><strong>n8n Proxy</strong></td><td>:5679</td><td>Nginx reverse proxy — strips X-Frame-Options for iframe embedding in UI</td></tr>
+        <tr><td><strong>Langfuse DB</strong></td><td>:5432 (internal)</td><td>PostgreSQL backing store for Langfuse traces and datasets</td></tr>
+        <tr><td><strong>Ollama</strong></td><td>:11436</td><td>Local LLM inference server (llama3, mistral, phi3, nomic-embed-text)</td></tr>
+        <tr><td><strong>ChromaDB</strong></td><td>:8200</td><td>Vector store for RAG — cosine similarity with HNSW index</td></tr>
+      </table>
     </div>
 
     <!-- ── Data Flow ── -->
     <div id="doc-dataflow" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
       <h1>Data Flow</h1>
-      <p>How data moves through the platform during an agent interaction.</p>
+      <p>This section traces how data moves through the platform across three primary pipelines: the agent request lifecycle, the RAG ingestion/retrieval pipeline, and the telemetry collection flow.</p>
 
-      <h2>Request Lifecycle</h2>
-      <div class="docs-diagram">
+      <h2>1. Agent Request Lifecycle</h2>
+      <p>Every user prompt traverses the following path — from input validation through LLM inference to streamed output.</p>
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
-flowchart LR
-    A[User Prompt] --> B{Input Guardrails}
-    B -->|Pass| C[Load Memory]
-    B -->|Block| X[Return Error]
-    C --> D[RAG Retrieval]
-    D --> E[LLM Inference]
-    E --> F{Tool Call?}
-    F -->|Yes| G[Execute Tool]
-    G --> E
-    F -->|No| H{Output Guardrails}
-    H -->|Pass| I[Stream Response]
-    H -->|Flag| I
-    I --> J[Save to Memory]
-    J --> K[Emit Telemetry]
+flowchart TD
+    subgraph INPUT["📥 Input Processing"]
+        A["👤 User Prompt"] --> B{"🛡️ Input Guardrails<br/>(PII · injection · topic)"}
+        B -->|"❌ Block"| X["⛔ Return error<br/>+ log violation"]
+        B -->|"✅ Pass"| C["💾 Load STM<br/>(last 100 msgs)"]
+        C --> C2["💾 Load LTM<br/>(session summary)"]
+    end
+
+    subgraph RAG["🔍 Knowledge Retrieval"]
+        C2 --> D["🧠 Embed query<br/>(nomic-embed-text)"]
+        D --> D2["🧠 ChromaDB<br/>cosine similarity search"]
+        D2 --> D3["📄 Top-k document chunks"]
+    end
+
+    subgraph INFERENCE["🤖 LLM Inference Loop"]
+        D3 --> E["📝 Build prompt<br/>(system + memory + RAG + tools)"]
+        E --> F["🧠 LLM Chat Completion<br/>(streaming)"]
+        F --> G{"🔧 Tool call<br/>in response?"}
+        G -->|"Yes"| H["⚙️ Tools Service<br/>(sandboxed exec)"]
+        H --> H2["📋 Tool result JSON"]
+        H2 --> F
+        G -->|"No"| I{"🛡️ Output Guardrails<br/>(toxicity · length · PII)"}
+    end
+
+    subgraph OUTPUT["📤 Output & Persistence"]
+        I -->|"✅ Pass"| J["📡 SSE stream to UI"]
+        I -->|"⚠️ Flag"| J
+        J --> K["💾 Save messages<br/>to conversations"]
+        K --> L["💾 Update session<br/>summary (if threshold)"]
+        L --> M["📊 Emit OTLP span<br/>+ Langfuse trace"]
+    end
+
+    classDef input fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef rag fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef infer fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef output fill:#059669,stroke:#10b981,color:#fff,rx:8
+
+    class A,B,C,C2,X input
+    class D,D2,D3 rag
+    class E,F,G,H,H2,I infer
+    class J,K,L,M output
         </div>
       </div>
 
-      <h2>Memory Architecture</h2>
-      <p>The platform uses a dual-layer memory system:</p>
-      <ul>
-        <li><strong>Short-Term Memory (STM):</strong> Last 100 messages per session, stored in the <code>conversations</code> table</li>
-        <li><strong>Long-Term Memory (LTM):</strong> Rolling 2KB summaries per session in <code>session_summaries</code> table</li>
-      </ul>
+      <h2>2. RAG Ingestion Pipeline</h2>
+      <p>Documents flow through chunking, embedding, and indexing before they become available for retrieval.</p>
+      <div class="docs-diagram docs-diagram-full">
+        <div class="mermaid">
+flowchart LR
+    subgraph INGEST["📄 Document Ingestion"]
+        A["📁 Upload via<br/>Documents page"] --> B["📃 Extract text<br/>(PDF, TXT, MD)"]
+        A2["🔄 n8n RAG<br/>Ingest workflow"] --> B
+        B --> C["✂️ Chunk text<br/>(size=1000, overlap=200)<br/>RecursiveCharacterTextSplitter"]
+    end
 
-      <div class="docs-callout info">
-        Memory is SQLite-based and lives on a Docker volume. No vector/semantic memory for conversations — that's reserved for the Knowledge Base (ChromaDB).
+    subgraph EMBED["🧠 Embedding"]
+        C --> D["🧠 Generate embeddings<br/>(nomic-embed-text<br/>via Ollama)"]
+        D --> E["📦 Store vectors<br/>in ChromaDB<br/>(HNSW index)"]
+    end
+
+    subgraph RETRIEVE["🔍 Query-time Retrieval"]
+        F["❓ User query"] --> G["🧠 Embed query<br/>(same model)"]
+        G --> H["🔎 Cosine similarity<br/>search (top-k)"]
+        H --> I["📄 Ranked chunks<br/>injected into prompt"]
+    end
+
+    E -.->|"indexed &amp; ready"| H
+
+    classDef ingest fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef embed fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef retrieve fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+
+    class A,A2,B,C ingest
+    class D,E embed
+    class F,G,H,I retrieve
+        </div>
       </div>
+
+      <h2>3. Telemetry Data Flow</h2>
+      <p>Three parallel telemetry streams ensure full observability — metrics, logs, and LLM-specific traces.</p>
+      <div class="docs-diagram docs-diagram-full">
+        <div class="mermaid">
+flowchart LR
+    subgraph SOURCES["📡 Telemetry Sources"]
+        AGENT["⚙️ Agent Service"]
+        TOOLS["⚙️ Tools Service"]
+        UI["🖥️ UI Console"]
+    end
+
+    subgraph COLLECTION["📥 Collection"]
+        OTEL["📊 OTel Collector<br/>(:4317 gRPC / :4318 HTTP)"]
+        LF["📊 Langfuse SDK<br/>(direct from Agent)"]
+    end
+
+    subgraph STORAGE["💾 Storage Backends"]
+        PROM["📈 Prometheus<br/>(metrics TSDB)"]
+        LOKI2["📋 Loki<br/>(log chunks)"]
+        LFDB["🗄️ Langfuse DB<br/>(PostgreSQL)"]
+    end
+
+    subgraph VIS["🖥️ Visualization"]
+        GRAF["📊 Grafana<br/>dashboards"]
+        LFUI["📊 Langfuse UI<br/>trace explorer"]
+        IH["📊 Intelligence Hub<br/>(UI Console)"]
+    end
+
+    AGENT -->|"OTLP spans<br/>+ metrics"| OTEL
+    TOOLS -->|"OTLP spans"| OTEL
+    AGENT -->|"LLM traces<br/>+ scores"| LF
+    UI -->|"page metrics"| OTEL
+
+    OTEL -->|"remote write"| PROM
+    OTEL -->|"log push"| LOKI2
+    LF -->|"persist"| LFDB
+
+    PROM --> GRAF
+    LOKI2 --> GRAF
+    LFDB --> LFUI
+    LFUI -.->|"embedded"| IH
+    GRAF -.->|"embedded"| IH
+
+    classDef src fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef col fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef store fill:#059669,stroke:#10b981,color:#fff,rx:8
+    classDef vis fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+
+    class AGENT,TOOLS,UI src
+    class OTEL,LF col
+    class PROM,LOKI2,LFDB store
+    class GRAF,LFUI,IH vis
+        </div>
+      </div>
+
+      <h2>Memory Lifecycle</h2>
+      <p>The dual-layer memory system manages conversation context across turns and sessions:</p>
+      <div class="docs-diagram">
+        <div class="mermaid">
+stateDiagram-v2
+    [*] --> NewMessage: User sends message
+    NewMessage --> STMWrite: Save to conversations table
+    STMWrite --> STMCheck: Check message count
+    STMCheck --> UnderLimit: count lte 100
+    STMCheck --> OverLimit: count gt 100
+    OverLimit --> Truncate: Remove oldest messages
+    Truncate --> UnderLimit
+    UnderLimit --> SummaryCheck: Check summary threshold
+    SummaryCheck --> NoUpdate: Below threshold
+    SummaryCheck --> LTMUpdate: Above threshold
+    LTMUpdate --> Summarize: LLM summarizes recent msgs
+    Summarize --> WriteLTM: Update session_summaries
+    WriteLTM --> [*]
+    NoUpdate --> [*]
+        </div>
+      </div>
+      <table class="docs-table">
+        <tr><th>Layer</th><th>Storage</th><th>Capacity</th><th>Lifecycle</th></tr>
+        <tr><td><strong>STM</strong></td><td><code>conversations</code> table</td><td>100 messages/session</td><td>FIFO — oldest dropped when limit reached</td></tr>
+        <tr><td><strong>LTM</strong></td><td><code>session_summaries</code> table</td><td>2KB rolling/session</td><td>LLM-generated summary, updated periodically</td></tr>
+        <tr><td><strong>Knowledge</strong></td><td>ChromaDB collections</td><td>Unlimited</td><td>Persistent until explicit deletion</td></tr>
+      </table>
     </div>
 
     <!-- ── Agent System ── -->
@@ -482,45 +864,80 @@ stateDiagram-v2
     <div id="doc-llm" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
       <h1>LLM Providers</h1>
-      <p>The platform supports 4 LLM providers with automatic fallback.</p>
+      <p>The platform supports 4 LLM providers with automatic fallback. A multi-provider LLM factory (<code>agent/llm.py</code>) abstracts provider differences behind a unified interface — agents never interact with provider APIs directly.</p>
 
+      <h2>Provider Matrix</h2>
       <table class="docs-table">
-        <tr><th>Provider</th><th>Models</th><th>Config</th></tr>
-        <tr><td>Ollama (Local)</td><td>llama3, mistral, phi3</td><td><code>OLLAMA_HOST</code></td></tr>
-        <tr><td>Azure OpenAI</td><td>GPT-4o, GPT-4, GPT-3.5</td><td><code>AZURE_OPENAI_API_KEY</code>, <code>AZURE_OPENAI_ENDPOINT</code></td></tr>
-        <tr><td>OpenAI</td><td>GPT-4o, GPT-4, GPT-3.5</td><td><code>OPENAI_API_KEY</code></td></tr>
-        <tr><td>Azure AI Foundry</td><td>Custom deployments</td><td><code>AZURE_AI_FOUNDRY_ENDPOINT</code>, <code>AZURE_AI_FOUNDRY_KEY</code></td></tr>
+        <tr><th>Provider</th><th>Models</th><th>Type</th><th>API Keys Required</th><th>Configuration</th></tr>
+        <tr><td><strong>Ollama</strong> (Default)</td><td>llama3, mistral, phi3</td><td>Local</td><td>None</td><td><code>OLLAMA_HOST</code> (default: <code>http://ollama:11434</code>)</td></tr>
+        <tr><td><strong>Azure OpenAI</strong></td><td>GPT-4o, GPT-4, GPT-3.5</td><td>Cloud</td><td>Yes</td><td><code>AZURE_OPENAI_API_KEY</code>, <code>AZURE_OPENAI_ENDPOINT</code></td></tr>
+        <tr><td><strong>OpenAI</strong></td><td>GPT-4o, GPT-4, GPT-3.5</td><td>Cloud</td><td>Yes</td><td><code>OPENAI_API_KEY</code></td></tr>
+        <tr><td><strong>Azure AI Foundry</strong></td><td>Custom deployments</td><td>Cloud</td><td>Yes</td><td><code>AZURE_AI_FOUNDRY_ENDPOINT</code>, <code>AZURE_AI_FOUNDRY_KEY</code></td></tr>
       </table>
 
-      <div class="docs-callout tip">
-        <strong>Tip:</strong> Ollama works out of the box with no API keys. For cloud providers, set the appropriate environment variables in your <code>.env</code> file.
+      <h2>Provider Selection &amp; Fallback</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+flowchart LR
+    A["Agent run request<br/>(provider + model)"] --> B{"Selected provider<br/>available?"}
+    B -->|"✅ Yes"| C["Use selected provider"]
+    B -->|"❌ No"| D{"Try next provider<br/>in fallback chain"}
+    D -->|"Available"| C
+    D -->|"None available"| E["⛔ Return error"]
+    C --> F["LangChain ChatModel<br/>(streaming)"]
+        </div>
       </div>
+      <p>Users select the provider/model from the Run Agent page dropdown. If the selected provider is unreachable (network error, invalid key), the factory tries the next configured provider. Ollama is always available as a fallback since it runs locally.</p>
 
-      <h2>Provider Selection</h2>
-      <p>When running an agent, you can select the provider/model from the dropdown. The platform will attempt to use the selected provider and fall back to others if unavailable.</p>
+      <div class="docs-callout tip">
+        <strong>Zero-config start:</strong> Ollama works out of the box with no API keys. The platform pulls <code>llama3</code> and <code>nomic-embed-text</code> models automatically. For cloud providers, set the appropriate environment variables in your <code>.env</code> file.
+      </div>
     </div>
 
     <!-- ── Memory & Knowledge ── -->
     <div id="doc-memory" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
       <h1>Memory &amp; Knowledge Base</h1>
+      <p>The platform manages two distinct data systems: <strong>conversation memory</strong> (SQLite) for session context and <strong>knowledge base</strong> (ChromaDB) for document retrieval. They serve different purposes and never overlap.</p>
 
       <h2>Conversation Memory</h2>
-      <p>SQLite-based dual-layer system:</p>
+      <p>SQLite-based dual-layer system that gives agents context about past interactions:</p>
       <table class="docs-table">
-        <tr><th>Layer</th><th>Table</th><th>Capacity</th><th>Purpose</th></tr>
-        <tr><td>Short-Term (STM)</td><td><code>conversations</code></td><td>100 messages/session</td><td>Recent conversation context</td></tr>
-        <tr><td>Long-Term (LTM)</td><td><code>session_summaries</code></td><td>2KB rolling/session</td><td>Compressed session summaries</td></tr>
+        <tr><th>Layer</th><th>Table</th><th>Capacity</th><th>Trigger</th><th>Purpose</th></tr>
+        <tr><td><strong>Short-Term (STM)</strong></td><td><code>conversations</code></td><td>100 messages/session</td><td>Every message</td><td>Recent conversation context — injected into every LLM prompt</td></tr>
+        <tr><td><strong>Long-Term (LTM)</strong></td><td><code>session_summaries</code></td><td>2KB rolling/session</td><td>Message count threshold</td><td>LLM-generated compressed summary — provides continuity when STM overflows</td></tr>
       </table>
 
+      <h3>Memory Lifecycle</h3>
+      <div class="docs-diagram">
+        <div class="mermaid">
+flowchart LR
+    A["New message"] --> B["Write to STM<br/>(conversations table)"]
+    B --> C{"STM count<br/>&gt; 100?"}
+    C -->|"No"| D{"Summary<br/>threshold?"}
+    C -->|"Yes"| E["Drop oldest<br/>messages (FIFO)"]
+    E --> D
+    D -->|"No"| F["✅ Done"]
+    D -->|"Yes"| G["LLM summarizes<br/>recent messages"]
+    G --> H["Update LTM<br/>(session_summaries)"]
+    H --> F
+        </div>
+      </div>
+
       <h2>Knowledge Base (RAG)</h2>
-      <p>ChromaDB-powered vector store for document retrieval:</p>
-      <ul>
-        <li><strong>Chunking:</strong> RecursiveCharacterTextSplitter (chunk_size=1000, overlap=200)</li>
-        <li><strong>Embeddings:</strong> nomic-embed-text via Ollama</li>
-        <li><strong>Search:</strong> Cosine similarity with HNSW index</li>
-        <li><strong>Ingestion:</strong> Upload via Documents page or n8n RAG workflow</li>
-      </ul>
+      <p>ChromaDB-powered vector store for document retrieval. Completely separate from conversation memory — used for augmenting LLM responses with domain-specific knowledge.</p>
+      <table class="docs-table">
+        <tr><th>Stage</th><th>Component</th><th>Detail</th></tr>
+        <tr><td><strong>Chunking</strong></td><td>RecursiveCharacterTextSplitter</td><td>chunk_size=1000, overlap=200, separators: \\n\\n, \\n, space</td></tr>
+        <tr><td><strong>Embedding</strong></td><td>nomic-embed-text (Ollama)</td><td>768-dimensional vectors, local inference</td></tr>
+        <tr><td><strong>Indexing</strong></td><td>ChromaDB HNSW</td><td>Approximate nearest neighbor, cosine distance metric</td></tr>
+        <tr><td><strong>Retrieval</strong></td><td>Similarity search</td><td>Top-k results injected into prompt context window</td></tr>
+        <tr><td><strong>Ingestion</strong></td><td>Documents page / n8n workflow</td><td>Supports PDF, TXT, MD file uploads</td></tr>
+      </table>
+
+      <div class="docs-callout info">
+        <strong>Design Note:</strong> Conversation memory (SQLite) and knowledge base (ChromaDB) are intentionally separate. Memory tracks <em>what was said</em>; knowledge stores <em>what is known</em>. They converge only at prompt-build time, where both are injected into the LLM context.
+      </div>
     </div>
 
     <!-- ── Guardrails ── -->
@@ -564,18 +981,49 @@ stateDiagram-v2
     <div id="doc-tools" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
       <h1>Tools &amp; MCP</h1>
-      <p>Agents can use tools to interact with external systems. The platform supports the Model Context Protocol (MCP).</p>
+      <p>Agents extend their capabilities through tools — functions they can invoke during the ReAct reasoning loop. The platform supports both built-in tools (hosted in the Tools Service) and external tools via the Model Context Protocol (MCP).</p>
+
+      <h2>Tool Execution Flow</h2>
+      <div class="docs-diagram">
+        <div class="mermaid">
+flowchart LR
+    A["🤖 LLM Response"] --> B{"🔧 Tool call<br/>in output?"}
+    B -->|"No"| C["📡 Stream to user"]
+    B -->|"Yes"| D["⚙️ Agent Service<br/>parses tool call"]
+    D --> E{"Built-in<br/>or MCP?"}
+    E -->|"Built-in"| F["⚙️ Tools Service<br/>(sandboxed container)"]
+    E -->|"MCP"| G["🌐 MCP Server<br/>(external)"]
+    F --> H["📋 Tool result JSON"]
+    G --> H
+    H --> I["🤖 Re-inject into<br/>LLM context"]
+    I --> A
+        </div>
+      </div>
 
       <h2>Built-in Tools</h2>
-      <ul>
-        <li><strong>Web Search:</strong> Search the internet for current information</li>
-        <li><strong>Calculator:</strong> Mathematical computations</li>
-        <li><strong>Document Lookup:</strong> Query the knowledge base</li>
-        <li><strong>Note Taking:</strong> Save and retrieve notes</li>
-      </ul>
+      <table class="docs-table">
+        <tr><th>Tool</th><th>Input</th><th>Output</th><th>Security</th></tr>
+        <tr><td><strong>Web Search</strong></td><td>Search query string</td><td>Top results with titles, URLs, snippets</td><td>Rate-limited, DuckDuckGo API</td></tr>
+        <tr><td><strong>Calculator</strong></td><td>Math expression</td><td>Numeric result</td><td>Safe eval — no exec/import</td></tr>
+        <tr><td><strong>Document Lookup</strong></td><td>Natural language query</td><td>Top-k relevant document chunks</td><td>Read-only ChromaDB access</td></tr>
+        <tr><td><strong>Note Taking</strong></td><td>Action (save/list) + content</td><td>Saved note or note list</td><td>File-scoped, container-local</td></tr>
+        <tr><td><strong>HTTP Request</strong></td><td>URL + method + body</td><td>Response body (truncated)</td><td>Container-isolated, timeout-limited</td></tr>
+      </table>
 
       <h2>MCP Integration</h2>
-      <p>Connect external MCP-compatible tools via the <a href="/mcp" style="color:#06b6d4">MCP</a> page. The platform acts as an MCP client, allowing agents to discover and use tools from MCP servers.</p>
+      <p>The Model Context Protocol (MCP) allows agents to discover and call tools hosted on external MCP-compliant servers. The platform acts as an <strong>MCP client</strong>.</p>
+      <table class="docs-table">
+        <tr><th>Aspect</th><th>Detail</th></tr>
+        <tr><td>Protocol</td><td>JSON-RPC 2.0 over HTTP/SSE</td></tr>
+        <tr><td>Discovery</td><td>Agents call <code>tools/list</code> on MCP servers to enumerate available tools</td></tr>
+        <tr><td>Invocation</td><td>Agent Service proxies tool calls to the configured MCP server endpoint</td></tr>
+        <tr><td>Configuration</td><td>Register MCP servers via the <a href="/mcp" style="color:#06b6d4">MCP page</a> (name, URL, auth)</td></tr>
+        <tr><td>Security</td><td>Optional API key auth, configurable timeout, response size limits</td></tr>
+      </table>
+
+      <div class="docs-callout info">
+        <strong>Sandboxing:</strong> All built-in tool execution happens inside the Tools Service container — a separate process from the Agent Service. This provides container-level isolation: a misbehaving tool cannot crash the agent, leak memory, or access agent data.
+      </div>
     </div>
 
     <!-- ── Observability ── -->
