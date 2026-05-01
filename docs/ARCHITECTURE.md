@@ -5,7 +5,6 @@
 ## System Overview
 
 The Agentic Platform is a containerised agent factory built with:
-
 - **Frontend**: Express.js + EJS (ui-console)
 - **Agent Runtime**: FastAPI + LangGraph (agent-service)
 - **Tool Runtime**: FastAPI (tools-service)
@@ -17,51 +16,25 @@ The Agentic Platform is a containerised agent factory built with:
 
 ## Services (5 source directories)
 
-| Directory             | Description                                                                                    |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| `services/agent`      | FastAPI agent-service — LangGraph ReAct agent, 69 REST endpoints, agent/skill/A2A/MCP registry |
-| `services/n8n-proxy`  | Express.js n8n reverse proxy for cross-origin workflow access                                  |
-| `services/otel`       | OpenTelemetry Collector configuration                                                          |
-| `services/tools`      | FastAPI tools-service — math, HTTP, file, datetime, web search, code execute, vector tools     |
-| `services/ui-console` | Express.js platform dashboard — 22 pages, API proxies, REST Console                            |
+| Directory | Description |
+| --------- | ----------- |
+| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry |
+| `services/n8n-proxy` | Service |
+| `services/otel` | OpenTelemetry Collector configuration |
+| `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
+| `services/ui-console` | Express.js platform dashboard — 22 pages, API proxies |
 
-## Docker Compose Services (13 containers)
+## Docker Compose Services (21 containers)
 
-`agent-service` `chromadb` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `otel-collector` `prometheus` `tools-service` `ui-console`
+`agent-service` `chroma-data` `chromadb` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `n8n-proxy` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
 
 ## UI Pages (22 pages)
 
-- a2a
-- admin
-- agent-builder
-- agent-hub
-- agents
-- ai-studio
-- docs
-- documents
-- evaluation
-- guardrails
-- intelligence-hub
-- marketplace
-- mcp
-- observability
-- overview
-- prompts
-- rest
-- run-agent
-- skills
-- tools
-- traceability
-- workflows
+
 
 ## Test Suites
 
-- `tests/contract/`
-- `tests/e2e/`
-- `tests/integration/`
-- `tests/load/`
-- `tests/smoke/`
-- `tests/unit/`
+
 
 ## Telemetry Pipeline
 
@@ -75,5 +48,4 @@ Grafana ← Prometheus + Loki
 ## Protocols
 
 - **A2A (Agent-to-Agent)**: Peer agents registered by URL; agents delegate sub-tasks via HTTP
-- **MCP (Model Context Protocol)**: External tool servers provide dynamic tool discovery via MCP Registry
-- **REST Console**: Interactive API console for testing all 69 agent-service + 10 tools-service endpoints
+- **MCP (Model Context Protocol)**: External tool servers provide dynamic tool discovery
