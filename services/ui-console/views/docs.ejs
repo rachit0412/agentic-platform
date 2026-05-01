@@ -107,6 +107,9 @@
       <a class="ds-link" data-section="architecture" onclick="showDoc('architecture')">System Architecture</a>
       <a class="ds-link" data-section="services" onclick="showDoc('services')">Service Reference</a>
       <a class="ds-link" data-section="dataflow" onclick="showDoc('dataflow')">Data Flow</a>
+      <a class="ds-link" data-section="principles" onclick="showDoc('principles')">Principles</a>
+      <a class="ds-link" data-section="building-blocks" onclick="showDoc('building-blocks')">Building Blocks</a>
+      <a class="ds-link" data-section="decisions" onclick="showDoc('decisions')">Decisions (ADRs)</a>
     </div>
 
     <div class="ds-group">
@@ -724,6 +727,306 @@ docker-compose --profile gpu up -d</code></pre>
 
       <h2>n8n Workflows</h2>
       <p>Pre-built workflows in <code>n8n/workflows/</code> are imported on first boot. Custom workflows persist in the n8n database.</p>
+    </div>
+
+    <!-- ── Principles ── -->
+    <div id="doc-principles" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>Architecture Principles</h1>
+      <p>18 guiding principles for the Agentic Platform. Every design choice and ADR traces back to one or more of these principles. Principles are categorised by <strong>Enterprise Maturity Level</strong>.</p>
+
+      <div class="docs-callout info">
+        <strong>Maturity Levels:</strong>
+        🟢 <strong>Current</strong> — implemented and validated today &nbsp;|&nbsp;
+        🟡 <strong>Next</strong> — foundations exist, targeted for next cycle &nbsp;|&nbsp;
+        🔴 <strong>Target</strong> — required for production enterprise deployment
+      </div>
+
+      <h2>Enterprise Maturity Model</h2>
+      <div style="display:grid;grid-template-columns:1fr;gap:0;margin-bottom:1.5rem">
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px 10px 0 0;padding:1rem 1.25rem">
+          <strong style="color:#ef4444;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em">🔴 Target State (Production)</strong>
+          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-11 Identity &amp; Access &nbsp;·&nbsp; AP-13 Elastic Scaling &nbsp;·&nbsp; AP-14 Compliance &amp; Governance &nbsp;·&nbsp; AP-15 Disaster Recovery &nbsp;·&nbsp; AP-16 Zero-Trust Networking &nbsp;·&nbsp; AP-17 Agent Lifecycle</p>
+        </div>
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-top:none;padding:1rem 1.25rem">
+          <strong style="color:#f59e0b;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em">🟡 Next State (Hardening)</strong>
+          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-1 API Versioning &nbsp;·&nbsp; AP-5 Always-On Telemetry &nbsp;·&nbsp; AP-7 Full Service Split &nbsp;·&nbsp; AP-9 Complete Versions &nbsp;·&nbsp; AP-12 Cost &amp; Metering &nbsp;·&nbsp; AP-18 Secret Management</p>
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-top:none;border-radius:0 0 10px 10px;padding:1rem 1.25rem">
+          <strong style="color:#10b981;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em">🟢 Current State (Foundation)</strong>
+          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-2 Local-First ✅ &nbsp;·&nbsp; AP-3 Container-Native ✅ &nbsp;·&nbsp; AP-4 Defence in Depth ✅ &nbsp;·&nbsp; AP-6 Protocol Extensibility ✅ &nbsp;·&nbsp; AP-8 Knowledge Mgmt ✅ &nbsp;·&nbsp; AP-10 Graceful Degradation ✅</p>
+        </div>
+      </div>
+
+      <h2>Foundational Principles (AP-1 – AP-10)</h2>
+      <table class="docs-table">
+        <tr><th>ID</th><th>Principle</th><th>Maturity</th><th>Status</th></tr>
+        <tr><td>AP-1</td><td>API-First Design</td><td>🟡 Next</td><td>⚠️ Partial — no API versioning; n8n auth logic in UI</td></tr>
+        <tr><td>AP-2</td><td>Local-First, Cloud-Ready</td><td>🟢 Current</td><td>✅ Fully Met</td></tr>
+        <tr><td>AP-3</td><td>Container-Native Composability</td><td>🟢 Current</td><td>✅ Fully Met</td></tr>
+        <tr><td>AP-4</td><td>Defence in Depth</td><td>🟢 Current</td><td>✅ Fully Met</td></tr>
+        <tr><td>AP-5</td><td>Observable by Default</td><td>🟡 Next</td><td>❌ Not Met — telemetry is opt-in; Grafana limited to Prometheus only</td></tr>
+        <tr><td>AP-6</td><td>Protocol-Driven Extensibility</td><td>🟢 Current</td><td>✅ Fully Met</td></tr>
+        <tr><td>AP-7</td><td>Separation of Concerns</td><td>🟡 Next</td><td>⚠️ Partial — vector tools run in-process</td></tr>
+        <tr><td>AP-8</td><td>Knowledge as First-Class Resource</td><td>🟢 Current</td><td>✅ Fully Met</td></tr>
+        <tr><td>AP-9</td><td>Configuration over Code</td><td>🟡 Next</td><td>⚠️ Partial — no versioning for guardrails/custom tools</td></tr>
+        <tr><td>AP-10</td><td>Graceful Degradation</td><td>🟢 Current</td><td>✅ Fully Met</td></tr>
+      </table>
+
+      <h2>Enterprise Principles (AP-11 – AP-18)</h2>
+      <table class="docs-table">
+        <tr><th>ID</th><th>Principle</th><th>Maturity</th><th>Status</th></tr>
+        <tr><td>AP-11</td><td>Identity &amp; Access Control</td><td>🔴 Target</td><td>❌ Not Met — no auth; all endpoints public</td></tr>
+        <tr><td>AP-12</td><td>Cost Accountability &amp; Metering</td><td>🟡 Next</td><td>⚠️ Partial — token tracking exists; no enforcement</td></tr>
+        <tr><td>AP-13</td><td>Elastic Scaling</td><td>🔴 Target</td><td>❌ Not Met — single-writer SQLite; no K8s</td></tr>
+        <tr><td>AP-14</td><td>Compliance &amp; Data Governance</td><td>🔴 Target</td><td>❌ Not Met — no data classification; no retention</td></tr>
+        <tr><td>AP-15</td><td>Disaster Recovery &amp; Continuity</td><td>🔴 Target</td><td>❌ Not Met — no backups; no RTO/RPO</td></tr>
+        <tr><td>AP-16</td><td>Zero-Trust Networking</td><td>🔴 Target</td><td>❌ Not Met — plain HTTP; single flat network</td></tr>
+        <tr><td>AP-17</td><td>Agent Lifecycle Governance</td><td>🔴 Target</td><td>⚠️ Partial — version history exists; no approval gates</td></tr>
+        <tr><td>AP-18</td><td>Secret &amp; Key Management</td><td>🟡 Next</td><td>❌ Not Met — secrets in plain text</td></tr>
+      </table>
+
+      <h2>Priority Roadmap</h2>
+      <table class="docs-table">
+        <tr><th>Priority</th><th>Action</th><th>Principle</th><th>Effort</th></tr>
+        <tr><td><strong>P1</strong></td><td>Pre-configure OTel endpoint in docker-compose.yml</td><td>AP-5</td><td>Low</td></tr>
+        <tr><td><strong>P1</strong></td><td>Add Loki log panels to Grafana dashboard</td><td>AP-5</td><td>Medium</td></tr>
+        <tr><td><strong>P1</strong></td><td>Move secrets to .env and add vault integration guide</td><td>AP-18</td><td>Medium</td></tr>
+        <tr><td><strong>P2</strong></td><td>Add /v1/ API prefix via FastAPI router</td><td>AP-1</td><td>Medium</td></tr>
+        <tr><td><strong>P2</strong></td><td>Add JWT/OAuth2 middleware with RBAC roles</td><td>AP-11</td><td>High</td></tr>
+        <tr><td><strong>P3</strong></td><td>Agent promotion workflow (draft → staging → prod)</td><td>AP-17</td><td>High</td></tr>
+        <tr><td><strong>P4</strong></td><td>Migrate SQLite → PostgreSQL for multi-writer</td><td>AP-13</td><td>High</td></tr>
+        <tr><td><strong>P4</strong></td><td>Add Kubernetes manifests and Helm charts</td><td>AP-13</td><td>High</td></tr>
+      </table>
+
+      <div class="docs-callout tip">
+        <strong>Full details:</strong> See <code>docs/PRINCIPLES.md</code> for per-principle validation evidence, code references, and phased implementation roadmaps.
+      </div>
+    </div>
+
+    <!-- ── Building Blocks ── -->
+    <div id="doc-building-blocks" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>Architecture Building Blocks</h1>
+      <p>ABBs define technology-agnostic capabilities. SBBs map each ABB to the concrete technology used in the platform.</p>
+
+      <h2>ABB / SBB Catalogue</h2>
+
+      <h3>1. Agent Reasoning Engine</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Capability</td><td>Multi-step reasoning with tool use</td><td>LangGraph ReAct graph (<code>graph.py</code>)</td></tr>
+        <tr><td>Pattern</td><td>Retrieve → Reason → Act → Synthesise</td><td>4-node state graph with conditional edges</td></tr>
+        <tr><td>Iteration Control</td><td>Bounded reasoning, max steps</td><td><code>MAX_REACT_ITERATIONS</code> env var (default 5)</td></tr>
+      </table>
+
+      <h3>2. LLM Abstraction Layer</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Capability</td><td>Uniform multi-provider LLM interface</td><td>LangChain <code>BaseChatModel</code> (<code>llm.py</code>)</td></tr>
+        <tr><td>Providers</td><td>Local + cloud inference</td><td>Ollama, Azure OpenAI, OpenAI, Azure AI Foundry</td></tr>
+        <tr><td>Selection</td><td>Runtime switching</td><td><code>LLM_PROVIDER</code> env var + <code>POST /models/switch</code></td></tr>
+      </table>
+
+      <h3>3. Knowledge Management (RAG)</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Capability</td><td>Ingest, chunk, embed, search docs</td><td>ChromaDB + SQLite document registry</td></tr>
+        <tr><td>Chunking</td><td>Text splitting pipeline</td><td>RecursiveCharacterTextSplitter (1000/200)</td></tr>
+        <tr><td>Retrieval</td><td>Semantic similarity search</td><td>Cosine distance, k=5 default, threshold 0.8</td></tr>
+      </table>
+
+      <h3>4. Conversation Memory</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Short-term</td><td>Recent message history</td><td>SQLite <code>conversations</code> table, 100 messages/session</td></tr>
+        <tr><td>Long-term</td><td>Compressed session summaries</td><td>SQLite <code>session_summaries</code>, ~2KB rolling</td></tr>
+        <tr><td>Isolation</td><td>Per-session state</td><td><code>session_id</code> partitioning</td></tr>
+      </table>
+
+      <h3>5. Tool Execution Runtime</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Capability</td><td>Sandboxed tool execution</td><td><code>tools-service</code> FastAPI (port 8001)</td></tr>
+        <tr><td>Built-in</td><td>Math, HTTP, file, code, search</td><td>7 proxy tools + 2 local vector tools</td></tr>
+        <tr><td>Sandboxing</td><td>Prevent SSRF, injection, abuse</td><td>URL whitelist, blocked imports, 10s timeout</td></tr>
+      </table>
+
+      <h3>6. Guardrails Engine</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Input Guards</td><td>Block dangerous prompts</td><td>PII detection, prompt-injection, topic restriction</td></tr>
+        <tr><td>Output Guards</td><td>Filter harmful responses</td><td>PII flagging, data-leak blocking, toxicity, length</td></tr>
+        <tr><td>Configuration</td><td>Per-guardrail control</td><td>10 guardrails in SQLite with CRUD API</td></tr>
+      </table>
+
+      <h3>7. Agent Configuration Store</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Capability</td><td>CRUD for agents, skills, prompts</td><td>SQLite <code>/data/memory.db</code></td></tr>
+        <tr><td>Tables</td><td>12 entity tables</td><td>agents, skills, prompts, guardrails, custom_tools, a2a_peers, mcp_servers, conversations, session_summaries, documents, version_history, audit_log</td></tr>
+        <tr><td>Migration</td><td>Import/export portability</td><td><code>GET /export</code> → JSON, <code>POST /import</code></td></tr>
+      </table>
+
+      <h3>8–9. A2A &amp; MCP Protocols</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Protocol</th><th>Capability</th><th>Implementation</th></tr>
+        <tr><td>A2A</td><td>Cross-agent task delegation</td><td>Peer registry + HTTP task dispatch + agent cards</td></tr>
+        <tr><td>MCP</td><td>Dynamic tool discovery</td><td>MCP server registry + JSON-RPC 2.0 auto-discovery</td></tr>
+      </table>
+
+      <h3>10. Observability Stack</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Signal</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
+        <tr><td>Tracing</td><td>Distributed trace context</td><td>OTel SDK → OTel Collector + Langfuse SDK</td></tr>
+        <tr><td>Metrics</td><td>Performance indicators</td><td>Prometheus (<code>llm_call_duration</code>, <code>tool_calls_total</code>)</td></tr>
+        <tr><td>Logs</td><td>Structured log aggregation</td><td>Loki via OTel Collector</td></tr>
+        <tr><td>Dashboards</td><td>Visual monitoring</td><td>Grafana + Prometheus/Loki datasources</td></tr>
+      </table>
+
+      <h3>11–12. Workflow Automation &amp; Dashboard</h3>
+      <table class="docs-table">
+        <tr><th style="width:140px">Block</th><th>Capability</th><th>Implementation</th></tr>
+        <tr><td>Workflows</td><td>Visual workflow orchestration</td><td>n8n (port 5678) with 5 pre-built templates</td></tr>
+        <tr><td>Dashboard</td><td>Unified management UI</td><td>Express.js + EJS, 23 views, light/dark theme</td></tr>
+      </table>
+
+      <h2>Traceability Matrix</h2>
+      <table class="docs-table">
+        <tr><th>ABB</th><th>SBB Technology</th><th>Service</th><th>Source</th></tr>
+        <tr><td>Agent Reasoning</td><td>LangGraph ReAct</td><td>agent-service</td><td><code>graph.py</code></td></tr>
+        <tr><td>LLM Abstraction</td><td>LangChain multi-provider</td><td>agent-service</td><td><code>llm.py</code></td></tr>
+        <tr><td>Knowledge Mgmt</td><td>ChromaDB + SQLite</td><td>agent-service + chromadb</td><td><code>vectorstore.py</code></td></tr>
+        <tr><td>Memory</td><td>SQLite</td><td>agent-service</td><td><code>memory.py</code></td></tr>
+        <tr><td>Tool Execution</td><td>FastAPI sandbox</td><td>tools-service</td><td><code>main.py</code></td></tr>
+        <tr><td>Guardrails</td><td>Regex + rules</td><td>agent-service</td><td><code>graph.py</code></td></tr>
+        <tr><td>Config Store</td><td>SQLite CRUD</td><td>agent-service</td><td><code>memory.py</code></td></tr>
+        <tr><td>A2A Protocol</td><td>HTTP peer registry</td><td>agent-service</td><td><code>main.py</code></td></tr>
+        <tr><td>MCP Protocol</td><td>HTTP tool registry</td><td>agent-service</td><td><code>main.py</code></td></tr>
+        <tr><td>Observability</td><td>OTel + Langfuse + Prom + Loki</td><td>otel, langfuse, prom, loki, grafana</td><td><code>observability.py</code></td></tr>
+        <tr><td>Workflows</td><td>n8n</td><td>n8n, n8n-proxy</td><td><code>n8n/workflows/</code></td></tr>
+        <tr><td>Dashboard</td><td>Express.js + EJS</td><td>ui-console</td><td><code>server.js</code>, <code>views/</code></td></tr>
+      </table>
+
+      <div class="docs-callout tip">
+        <strong>Full details:</strong> See <code>docs/BUILDING-BLOCKS.md</code> for detailed ABB/SBB attribute tables with code references and principle mappings.
+      </div>
+    </div>
+
+    <!-- ── Decisions (ADRs) ── -->
+    <div id="doc-decisions" class="docs-section">
+      <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
+      <h1>Architecture Decision Records</h1>
+      <p>Each ADR captures a significant design choice, its context, alternatives considered, and rationale.</p>
+
+      <h2>ADR Index</h2>
+      <table class="docs-table">
+        <tr><th>ID</th><th>Decision</th><th>Principles</th></tr>
+        <tr><td>ADR-001</td><td>LangGraph over AgentExecutor</td><td>AP-7, AP-5</td></tr>
+        <tr><td>ADR-002</td><td>SQLite for Config and Memory</td><td>AP-3, AP-10</td></tr>
+        <tr><td>ADR-003</td><td>Separate Tools Service</td><td>AP-4, AP-7</td></tr>
+        <tr><td>ADR-004</td><td>Multi-Provider LLM Switching</td><td>AP-2, AP-1</td></tr>
+        <tr><td>ADR-005</td><td>ChromaDB for Vector Storage</td><td>AP-3, AP-8</td></tr>
+        <tr><td>ADR-006</td><td>Three-Pipeline Observability</td><td>AP-5, AP-10</td></tr>
+        <tr><td>ADR-007</td><td>EJS + CSS Custom Properties</td><td>AP-3</td></tr>
+        <tr><td>ADR-008</td><td>Guardrails as Graph Gates</td><td>AP-4, AP-9</td></tr>
+        <tr><td>ADR-009</td><td>A2A and MCP Protocols</td><td>AP-6</td></tr>
+        <tr><td>ADR-010</td><td>Thin UI Proxy Pattern</td><td>AP-1, AP-7</td></tr>
+      </table>
+
+      <h2>ADR-001 · LangGraph over AgentExecutor</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>The agent needs a multi-step reasoning loop with explicit tool execution, guardrail gates, and retrieval context injection.</td></tr>
+        <tr><td>Decision</td><td>Use LangGraph <code>StateGraph</code> with explicit nodes (<code>retrieve_context</code>, <code>reason</code>, <code>execute_tools</code>, <code>generate_response</code>) and conditional edges.</td></tr>
+        <tr><td>Alternatives</td><td>(1) LangChain AgentExecutor — simpler but opaque. (2) Custom async loop — full control but no graph visualisation.</td></tr>
+        <tr><td>Consequences</td><td>Full visibility into each step. Guardrails inserted at any edge. State is typed (<code>AgentState</code>). Trade-off: more boilerplate.</td></tr>
+      </table>
+
+      <h2>ADR-002 · SQLite for Config and Memory</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>The platform stores agents, skills, prompts, guardrails, custom tools, A2A peers, MCP servers, conversation history, and session summaries.</td></tr>
+        <tr><td>Decision</td><td>Use SQLite at <code>/data/memory.db</code> with thread-local connections and recovery from stale handles.</td></tr>
+        <tr><td>Alternatives</td><td>(1) PostgreSQL — production-grade but adds complexity. (2) In-memory dicts — no persistence. (3) Redis — poor for relational queries.</td></tr>
+        <tr><td>Consequences</td><td>Zero-config persistence. Single-file backup. No network latency. Limitation: single-writer, unsuitable for horizontal scaling.</td></tr>
+      </table>
+
+      <h2>ADR-003 · Separate Tools Service</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>Agent tools execute untrusted operations. Running them in the agent process creates security and stability risks.</td></tr>
+        <tr><td>Decision</td><td>Run tools in an isolated <code>tools-service</code> (FastAPI, port 8001). Agent calls tools via HTTP.</td></tr>
+        <tr><td>Alternatives</td><td>(1) In-process — simpler but crashes affect agent. (2) Subprocess — isolation without a service boundary.</td></tr>
+        <tr><td>Consequences</td><td>Tool crashes don't affect reasoning. Independent scaling. ~5ms HTTP overhead. <strong>Exception:</strong> <code>vector_search</code>/<code>vector_store</code> run in-process for latency.</td></tr>
+      </table>
+
+      <h2>ADR-004 · Multi-Provider LLM Switching</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>Different use cases require different LLM providers: Ollama for offline, Azure OpenAI for compliance, OpenAI for latest models.</td></tr>
+        <tr><td>Decision</td><td>Abstract all providers behind LangChain's <code>BaseChatModel</code>. Runtime switching via <code>POST /models/switch</code>.</td></tr>
+        <tr><td>Alternatives</td><td>(1) Hardcoded Ollama. (2) Config file per environment. (3) LiteLLM proxy — overkill for 4 providers.</td></tr>
+        <tr><td>Consequences</td><td>Provider switch is a single API call. New providers need one <code>elif</code> branch. Active model is global state (single-writer).</td></tr>
+      </table>
+
+      <h2>ADR-005 · ChromaDB for Vector Storage</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>RAG requires a vector database. The platform must start with a single <code>docker-compose up</code>.</td></tr>
+        <tr><td>Decision</td><td>ChromaDB in HTTP mode (internal port 8000, external port 8200) with LangChain wrapper and Ollama embeddings.</td></tr>
+        <tr><td>Alternatives</td><td>(1) Pinecone — requires cloud account. (2) Weaviate — heavier. (3) FAISS — no persistence. (4) pgvector — requires PostgreSQL.</td></tr>
+        <tr><td>Consequences</td><td>Simple container, cosine search, collection isolation. Embeddings tied to model — switching requires re-ingestion.</td></tr>
+      </table>
+
+      <h2>ADR-006 · Three-Pipeline Observability</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>AI debugging requires three data types: LLM traces, quantitative metrics, and log aggregation. No single tool covers all.</td></tr>
+        <tr><td>Decision</td><td>Three parallel pipelines: Langfuse for LLM traces, Prometheus for metrics, Loki for logs. OTel Collector routes telemetry. Grafana unifies.</td></tr>
+        <tr><td>Alternatives</td><td>(1) Langfuse only — no metrics/logs. (2) Jaeger + Prometheus — no LLM cost tracking. (3) Datadog — SaaS cost.</td></tr>
+        <tr><td>Consequences</td><td>Full coverage. Six additional containers. All optional — agent degrades to no-op if keys absent.</td></tr>
+      </table>
+
+      <h2>ADR-007 · EJS + CSS Custom Properties</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>UI needs 23 pages with light/dark theme, fast SSR, and zero build step.</td></tr>
+        <tr><td>Decision</td><td>Express.js + EJS with CSS custom properties. Theme toggle via <code>.dark</code> class on <code>&lt;html&gt;</code>.</td></tr>
+        <tr><td>Alternatives</td><td>(1) React/Next.js — adds build pipeline. (2) HTMX — less ecosystem. (3) Svelte — requires compilation.</td></tr>
+        <tr><td>Consequences</td><td>Zero build step. &lt;50ms SSR. Theme tokens enforced via Copilot skill. Trade-off: no component model.</td></tr>
+      </table>
+
+      <h2>ADR-008 · Guardrails as Graph Gates</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>Safety checks need to run at specific pipeline points — before LLM calls and after response generation.</td></tr>
+        <tr><td>Decision</td><td>Guardrails as functions within graph nodes, not FastAPI middleware. Input in <code>reason()</code>, output in <code>generate_response()</code>.</td></tr>
+        <tr><td>Alternatives</td><td>(1) FastAPI middleware — no agent state access. (2) Separate service — adds latency. (3) LLM-based — expensive and recursive.</td></tr>
+        <tr><td>Consequences</td><td>Full <code>AgentState</code> access. Can short-circuit graph. Regex-based detection is fast (&lt;1ms). Config in SQLite.</td></tr>
+      </table>
+
+      <h2>ADR-009 · A2A and MCP Protocols</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>Platform needs to interact with external agents and tool servers. Proprietary APIs would create vendor lock-in.</td></tr>
+        <tr><td>Decision</td><td>Implement Google's A2A for agent communication and Anthropic's MCP for tool discovery. Both use JSON-over-HTTP.</td></tr>
+        <tr><td>Alternatives</td><td>(1) Custom RPC — non-standard. (2) gRPC — harder to debug. (3) GraphQL — overkill for task delegation.</td></tr>
+        <tr><td>Consequences</td><td>Any framework can register as A2A peer. Any MCP server can be added. Interoperable by default. Trade-off: specs still evolving.</td></tr>
+      </table>
+
+      <h2>ADR-010 · Thin UI Proxy Pattern</h2>
+      <table class="docs-table">
+        <tr><th style="width:120px">Field</th><th>Detail</th></tr>
+        <tr><td>Context</td><td>Browser-to-service calls fail due to CORS and internal Docker networking.</td></tr>
+        <tr><td>Decision</td><td><code>ui-console</code> acts as a thin API proxy. All <code>/api/*</code> routes forward to backend services. Zero business logic.</td></tr>
+        <tr><td>Alternatives</td><td>(1) API Gateway — heavyweight. (2) Nginx — static config. (3) Direct browser calls — blocked by Docker networking.</td></tr>
+        <tr><td>Consequences</td><td>Single entry point (port 3000). CORS handled once. ~2ms latency. <strong>Note:</strong> n8n auth logic lives in proxy — see AP-1.</td></tr>
+      </table>
+
+      <div class="docs-callout tip">
+        <strong>Full details:</strong> See <code>docs/DECISIONS.md</code> for complete ADR records with dates, status, and principle cross-references.
+      </div>
     </div>
 
   </main>
