@@ -74,9 +74,19 @@ from agent.memory import (
     save_version,
     list_audit_log,
     log_audit,
+    list_connectors,
+    get_connector,
+    create_connector,
+    update_connector,
+    delete_connector,
+    create_sync_job,
+    update_sync_job,
+    list_sync_jobs,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
+from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
+from agent.connectors.sync_engine import test_connector, run_sync
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1747,3 +1757,173 @@ async def audit_log_endpoint(
         limit=min(limit, 500), entity_type=entity_type, action=action
     )
     return {"entries": entries, "count": len(entries)}
+
+
+# ── Data Connectors endpoints ──────────────────────────────────────────────
+
+
+class ConnectorCreateRequest(BaseModel):
+    name: str
+    connector_type: str
+    config: dict = {}
+    auto_index: bool = False
+    schedule: str = ""
+
+
+class ConnectorUpdateRequest(BaseModel):
+    name: str | None = None
+    config: dict | None = None
+    enabled: bool | None = None
+    auto_index: bool | None = None
+    schedule: str | None = None
+
+
+class ConnectorTestRequest(BaseModel):
+    connector_type: str
+    config: dict
+
+
+class ConnectorSyncRequest(BaseModel):
+    auto_index: bool = False
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+
+
+@app.get("/connectors/catalog")
+async def connectors_catalog():
+    """List available connector types and their config schemas."""
+    return {"connectors": CONNECTOR_CATALOG}
+
+
+@app.get("/connectors")
+async def connectors_list():
+    """List all configured connectors."""
+    connectors = list_connectors()
+    return {"connectors": connectors}
+
+
+@app.get("/connectors/{connector_id}")
+async def connectors_get(connector_id: str):
+    """Get a single connector."""
+    c = get_connector(connector_id)
+    if not c:
+        return {"error": "Connector not found"}, 404
+    return c
+
+
+@app.post("/connectors")
+async def connectors_create(req: ConnectorCreateRequest):
+    """Create a new connector configuration."""
+    if req.connector_type not in CONNECTOR_CATALOG:
+        return {"error": f"Unknown connector type: {req.connector_type}"}, 400
+    cid = generate_connector_id()
+    connector = create_connector(cid, req.name, req.connector_type, req.config, req.auto_index, req.schedule)
+    log_audit("create", "connector", cid, req.name, {"type": req.connector_type})
+    return connector
+
+
+@app.put("/connectors/{connector_id}")
+async def connectors_update(connector_id: str, req: ConnectorUpdateRequest):
+    """Update a connector configuration."""
+    updates = {k: v for k, v in req.model_dump().items() if v is not None}
+    result = update_connector(connector_id, updates)
+    if not result:
+        return {"error": "Connector not found"}, 404
+    return result
+
+
+@app.delete("/connectors/{connector_id}")
+async def connectors_delete(connector_id: str):
+    """Delete a connector and its sync history."""
+    c = get_connector(connector_id)
+    if not c:
+        return {"error": "Connector not found"}, 404
+    delete_connector(connector_id)
+    log_audit("delete", "connector", connector_id, c["name"], {})
+    return {"status": "deleted"}
+
+
+@app.post("/connectors/test")
+async def connectors_test(req: ConnectorTestRequest):
+    """Test a connector's connectivity without saving."""
+    result = test_connector(req.connector_type, req.config)
+    return result
+
+
+@app.post("/connectors/{connector_id}/sync")
+async def connectors_sync(connector_id: str, req: ConnectorSyncRequest):
+    """Run a sync: pull data from source into filestore, optionally index."""
+    from agent.filestore import save_file
+
+    c = get_connector(connector_id)
+    if not c:
+        return {"error": "Connector not found"}, 404
+
+    job_id = generate_job_id()
+    create_sync_job(job_id, connector_id)
+
+    try:
+        documents = run_sync(c["connector_type"], c["config"])
+        docs_indexed = 0
+
+        for doc in documents:
+            doc_id = str(uuid.uuid4())
+            filename = doc["name"]
+            content = doc["content"]
+
+            # Stage in filestore
+            save_file(doc_id, filename, content)
+
+            # Create registry entry
+            ext = filename.rsplit(".", 1)[-1] if "." in filename else "txt"
+            create_document_registry(
+                doc_id=doc_id,
+                name=filename,
+                source=f"connector:{c['name']}",
+                file_type=ext,
+                status="uploaded",
+                source_type="connected",
+                storage_path=f"/data/filestore/{doc_id}/{filename}",
+            )
+
+            # Auto-index if requested
+            if req.auto_index or c.get("auto_index"):
+                from agent.vectorstore import ingest_text
+                chunks = ingest_text(
+                    content, filename,
+                    chunk_size=req.chunk_size,
+                    chunk_overlap=req.chunk_overlap,
+                )
+                update_document_registry(doc_id, {
+                    "status": "indexed",
+                    "chunk_count": chunks,
+                })
+                docs_indexed += 1
+
+        # Update job and connector
+        update_sync_job(job_id, "completed", docs_pulled=len(documents), docs_indexed=docs_indexed)
+        update_connector(connector_id, {
+            "last_sync": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            "last_status": "completed",
+            "doc_count": c["doc_count"] + len(documents),
+        })
+
+        return {
+            "status": "completed",
+            "job_id": job_id,
+            "docs_pulled": len(documents),
+            "docs_indexed": docs_indexed,
+        }
+
+    except Exception as e:
+        update_sync_job(job_id, "failed", error=str(e))
+        update_connector(connector_id, {"last_status": "failed"})
+        logger.error(f"Connector sync failed: {e}")
+        return {"error": str(e), "job_id": job_id, "status": "failed"}
+
+
+@app.get("/connectors/{connector_id}/jobs")
+async def connectors_jobs(connector_id: str, limit: int = 20):
+    """List sync job history for a connector."""
+    jobs = list_sync_jobs(connector_id=connector_id, limit=limit)
+    return {"jobs": jobs}

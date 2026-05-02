@@ -924,6 +924,86 @@ app.get("/api/observability/prometheus/targets", async (req, res) => {
   }
 });
 
+// ── API: Data Connectors ──────────────────────────────
+app.get("/api/connectors/catalog", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors/catalog`);
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.get("/api/connectors", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors`);
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.post("/api/connectors", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.put("/api/connectors/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors/${req.params.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.delete("/api/connectors/:id", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors/${req.params.id}`, { method: "DELETE" });
+    const data = await resp.json();
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.post("/api/connectors/test", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors/test`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.post("/api/connectors/:id/sync", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors/${req.params.id}/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.get("/api/connectors/:id/jobs", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/connectors/${req.params.id}/jobs`);
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: ChromaDB stats ───────────────────────────────
 app.get("/api/chromadb/stats", async (req, res) => {
   try {

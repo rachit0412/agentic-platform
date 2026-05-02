@@ -190,6 +190,20 @@
       <div id="search-results" class="mt-1"></div>
     </div>
 
+    <!-- Data Connectors -->
+    <div class="card animate-fade-up delay-250" style="margin-bottom:1.25rem">
+      <div class="section-header">
+        <h3 style="display:flex;align-items:center;gap:0.5rem">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Data Connectors
+          <span class="badge badge-primary" style="font-size:0.6rem;padding:0.1rem 0.4rem">HYBRID</span>
+        </h3>
+        <button class="btn btn-primary btn-sm" onclick="openNewConnectorModal()">+ New Connector</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-3);margin:0.4rem 0">Pull data from databases, cloud storage, APIs, Google Drive, SharePoint — or use Airbyte for 300+ sources.</p>
+      <div id="connectors-list" class="mt-1" style="font-size:0.82rem;color:var(--text-3)">Loading connectors...</div>
+    </div>
+
     <!-- Indexed Documents -->
     <div class="card animate-fade-up delay-300">
       <div class="section-header">
@@ -239,6 +253,41 @@
   </div>
 </div>
 
+<!-- New Connector Modal -->
+<div id="connector-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div class="card" style="width:560px;max-width:92vw;max-height:85vh;overflow-y:auto">
+    <h3 style="margin-bottom:0.75rem">New Data Connector</h3>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.78rem;font-weight:600">Connector Type</label>
+      <select id="connector-type-select" style="width:100%;margin-top:0.25rem" onchange="renderConnectorConfigForm()">
+        <option value="">— Select source type —</option>
+        <option value="database">Database (PostgreSQL, MySQL, SQL Server)</option>
+        <option value="cloud_storage">Cloud Storage (S3, Azure Blob, GCS)</option>
+        <option value="api">REST API</option>
+        <option value="google_drive">Google Drive</option>
+        <option value="sharepoint">SharePoint</option>
+        <option value="airbyte">Airbyte (300+ Sources)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.78rem;font-weight:600">Connector Name</label>
+      <input id="connector-name" placeholder="e.g. Production DB, Marketing Docs..." style="width:100%;margin-top:0.25rem" />
+    </div>
+    <div id="connector-config-form" style="margin-bottom:1rem"></div>
+    <div style="margin-bottom:1rem;display:flex;gap:1rem;align-items:center">
+      <label style="font-size:0.78rem;display:flex;align-items:center;gap:0.35rem">
+        <input type="checkbox" id="connector-auto-index" /> Auto-index after sync
+      </label>
+    </div>
+    <div id="connector-test-result" style="margin-bottom:0.75rem"></div>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+      <button class="btn" onclick="closeConnectorModal()">Cancel</button>
+      <button class="btn btn-secondary" onclick="testNewConnector()">Test Connection</button>
+      <button class="btn btn-primary" onclick="saveNewConnector()">Create Connector</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let allAgents = [];
 let allFolders = [];
@@ -250,6 +299,7 @@ async function init() {
   populateIngestSelectors();
   loadStats();
   loadDocs();
+  loadConnectors();
 }
 
 async function loadAgentsList() {
@@ -778,11 +828,201 @@ async function confirmTagAgent() {
 }
 
 // ── Refresh ──
+// ── Data Connectors ──
+let connectorCatalog = {};
+
+async function loadConnectors() {
+  const el = document.getElementById('connectors-list');
+  try {
+    const [catRes, listRes] = await Promise.all([
+      fetch('/api/connectors/catalog'),
+      fetch('/api/connectors'),
+    ]);
+    connectorCatalog = (await catRes.json()).connectors || {};
+    const data = await listRes.json();
+    const connectors = data.connectors || [];
+    if (!connectors.length) {
+      el.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:1rem 0">No connectors configured. Click <strong>+ New Connector</strong> to add a data source.</p>';
+      return;
+    }
+    let html = '<table style="width:100%"><thead><tr>' +
+      '<th style="text-align:left">Name</th>' +
+      '<th style="text-align:left">Type</th>' +
+      '<th style="text-align:center">Docs</th>' +
+      '<th style="text-align:left">Last Sync</th>' +
+      '<th style="text-align:right">Actions</th>' +
+      '</tr></thead><tbody>';
+    connectors.forEach(function(c) {
+      const typeName = (connectorCatalog[c.connector_type] || {}).name || c.connector_type;
+      const statusColors = { completed: 'color:#10b981', failed: 'color:#f43f5e', '': 'color:var(--text-3)' };
+      const statusStyle = statusColors[c.last_status] || statusColors[''];
+      const lastSync = c.last_sync ? new Date(c.last_sync).toLocaleString() : 'Never';
+      html += '<tr>' +
+        '<td class="mono" style="font-size:0.8rem">' + escapeHtml(c.name) + '</td>' +
+        '<td style="font-size:0.75rem;color:var(--text-2)">' + escapeHtml(typeName) + '</td>' +
+        '<td style="text-align:center;font-size:0.78rem">' + (c.doc_count || 0) + '</td>' +
+        '<td style="font-size:0.72rem;' + statusStyle + '">' + escapeHtml(lastSync) + (c.last_status === 'failed' ? ' <span style="color:#f43f5e">&#x2718;</span>' : '') + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn btn-primary btn-sm" onclick="syncConnector(\\'' + escapeHtml(c.id) + '\\')" title="Run Sync" style="padding:0.2rem 0.5rem;font-size:0.7rem;margin-right:0.25rem">' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Sync' +
+          '</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteConnector(\\'' + escapeHtml(c.id) + '\\', \\'' + escapeHtml(c.name) + '\\')" title="Delete" style="padding:0.2rem 0.4rem;font-size:0.7rem">' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</td></tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--danger)">Failed to load connectors.</p>';
+  }
+}
+
+function openNewConnectorModal() {
+  document.getElementById('connector-modal').style.display = 'flex';
+  document.getElementById('connector-type-select').value = '';
+  document.getElementById('connector-name').value = '';
+  document.getElementById('connector-config-form').innerHTML = '';
+  document.getElementById('connector-test-result').innerHTML = '';
+  document.getElementById('connector-auto-index').checked = false;
+}
+
+function closeConnectorModal() {
+  document.getElementById('connector-modal').style.display = 'none';
+}
+
+function renderConnectorConfigForm() {
+  const type = document.getElementById('connector-type-select').value;
+  const container = document.getElementById('connector-config-form');
+  if (!type || !connectorCatalog[type]) {
+    container.innerHTML = '';
+    return;
+  }
+  const schema = connectorCatalog[type].config_schema;
+  let html = '';
+  Object.entries(schema).forEach(function([key, spec]) {
+    const label = key.replace(/_/g, ' ').replace(/\\b\\w/g, function(l) { return l.toUpperCase(); });
+    const req = spec.required ? ' <span style="color:#f43f5e">*</span>' : '';
+    html += '<div style="margin-bottom:0.6rem">';
+    html += '<label style="font-size:0.72rem;font-weight:600">' + label + req + '</label>';
+    if (spec.description) html += '<span style="font-size:0.65rem;color:var(--text-3);margin-left:0.4rem">' + escapeHtml(spec.description) + '</span>';
+    if (spec.type === 'select') {
+      html += '<select id="conn-cfg-' + key + '" style="width:100%;margin-top:0.2rem">';
+      (spec.options || []).forEach(function(opt) {
+        html += '<option value="' + escapeHtml(opt) + '">' + escapeHtml(opt) + '</option>';
+      });
+      html += '</select>';
+    } else if (spec.type === 'textarea') {
+      html += '<textarea id="conn-cfg-' + key + '" placeholder="' + escapeHtml(spec.placeholder || '') + '" style="width:100%;margin-top:0.2rem;min-height:60px;font-size:0.78rem" rows="3"></textarea>';
+    } else if (spec.type === 'password') {
+      html += '<input id="conn-cfg-' + key + '" type="password" placeholder="' + escapeHtml(spec.placeholder || '') + '" style="width:100%;margin-top:0.2rem" />';
+    } else {
+      html += '<input id="conn-cfg-' + key + '" type="' + (spec.type === 'number' ? 'number' : 'text') + '" placeholder="' + escapeHtml(spec.placeholder || '') + '" style="width:100%;margin-top:0.2rem" />';
+    }
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function getConnectorConfig() {
+  const type = document.getElementById('connector-type-select').value;
+  if (!type || !connectorCatalog[type]) return {};
+  const schema = connectorCatalog[type].config_schema;
+  const config = {};
+  Object.keys(schema).forEach(function(key) {
+    const el = document.getElementById('conn-cfg-' + key);
+    if (el) config[key] = el.value;
+  });
+  return config;
+}
+
+async function testNewConnector() {
+  const type = document.getElementById('connector-type-select').value;
+  const config = getConnectorConfig();
+  const el = document.getElementById('connector-test-result');
+  el.innerHTML = '<span style="color:var(--text-3);font-size:0.78rem">Testing...</span>';
+  try {
+    const r = await fetch('/api/connectors/test', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ connector_type: type, config: config }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      el.innerHTML = '<span style="color:#10b981;font-size:0.78rem">&#x2714; ' + escapeHtml(d.message) + '</span>';
+    } else {
+      el.innerHTML = '<span style="color:#f43f5e;font-size:0.78rem">&#x2718; ' + escapeHtml(d.message) + '</span>';
+    }
+  } catch(e) {
+    el.innerHTML = '<span style="color:#f43f5e;font-size:0.78rem">&#x2718; ' + escapeHtml(e.message) + '</span>';
+  }
+}
+
+async function saveNewConnector() {
+  const type = document.getElementById('connector-type-select').value;
+  const name = document.getElementById('connector-name').value.trim();
+  const autoIndex = document.getElementById('connector-auto-index').checked;
+  if (!type || !name) { showToast('Name and type are required', 'error'); return; }
+  const config = getConnectorConfig();
+  try {
+    const r = await fetch('/api/connectors', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name: name, connector_type: type, config: config, auto_index: autoIndex }),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      showToast('Connector created: ' + name, 'success');
+      closeConnectorModal();
+      loadConnectors();
+    } else {
+      showToast('Error: ' + (d.error || 'Failed'), 'error');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function syncConnector(connectorId) {
+  if (!confirm('Run sync now? This will pull data from the source and stage documents.')) return;
+  showToast('Sync started...', 'info');
+  try {
+    const r = await fetch('/api/connectors/' + connectorId + '/sync', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ auto_index: false, chunk_size: 1000, chunk_overlap: 200 }),
+    });
+    const d = await r.json();
+    if (d.status === 'completed') {
+      showToast('Sync complete: ' + d.docs_pulled + ' docs pulled, ' + d.docs_indexed + ' indexed', 'success');
+    } else {
+      showToast('Sync failed: ' + (d.error || 'Unknown error'), 'error');
+    }
+    loadConnectors();
+    loadDocs();
+    loadStats();
+  } catch(e) {
+    showToast('Sync error: ' + e.message, 'error');
+  }
+}
+
+async function deleteConnector(connectorId, name) {
+  if (!confirm('Delete connector "' + name + '"? This will not delete already-staged documents.')) return;
+  try {
+    await fetch('/api/connectors/' + connectorId, { method: 'DELETE' });
+    showToast('Connector deleted', 'success');
+    loadConnectors();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
 async function refreshAll() {
   await loadFolders();
   populateIngestSelectors();
   loadStats();
   loadDocs();
+  loadConnectors();
 }
 
 init().catch(function(e) {

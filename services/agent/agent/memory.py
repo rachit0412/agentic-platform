@@ -161,6 +161,37 @@ def init_db():
             updated_at  TEXT NOT NULL
         )
         """)
+    # ── Data Connectors table ──
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS connectors (
+            id              TEXT PRIMARY KEY,
+            name            TEXT NOT NULL,
+            connector_type  TEXT NOT NULL,
+            config          TEXT DEFAULT '{}',
+            enabled         INTEGER DEFAULT 1,
+            schedule        TEXT DEFAULT '',
+            auto_index      INTEGER DEFAULT 0,
+            last_sync       TEXT DEFAULT '',
+            last_status     TEXT DEFAULT '',
+            doc_count       INTEGER DEFAULT 0,
+            created_at      TEXT NOT NULL,
+            updated_at      TEXT NOT NULL
+        )
+        """)
+    # ── Sync Jobs table ──
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sync_jobs (
+            id              TEXT PRIMARY KEY,
+            connector_id    TEXT NOT NULL,
+            status          TEXT DEFAULT 'pending',
+            started_at      TEXT DEFAULT '',
+            completed_at    TEXT DEFAULT '',
+            docs_pulled     INTEGER DEFAULT 0,
+            docs_indexed    INTEGER DEFAULT 0,
+            error           TEXT DEFAULT '',
+            created_at      TEXT NOT NULL
+        )
+        """)
     # Ensure default agent exists
     existing = conn.execute("SELECT id FROM agents WHERE is_default = 1").fetchone()
     if not existing:
@@ -1728,6 +1759,130 @@ def list_audit_log(
             "entity_name": r["entity_name"],
             "details": json.loads(r["details"]),
             "performed_by": r["performed_by"],
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
+# ── Connectors CRUD ────────────────────────────────────────────────────────
+
+
+def _row_to_connector(row) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "connector_type": row["connector_type"],
+        "config": json.loads(row["config"]) if row["config"] else {},
+        "enabled": bool(row["enabled"]),
+        "schedule": row["schedule"] or "",
+        "auto_index": bool(row["auto_index"]),
+        "last_sync": row["last_sync"] or "",
+        "last_status": row["last_status"] or "",
+        "doc_count": row["doc_count"] or 0,
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_connectors() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM connectors ORDER BY created_at DESC").fetchall()
+    return [_row_to_connector(r) for r in rows]
+
+
+def get_connector(connector_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM connectors WHERE id = ?", (connector_id,)).fetchone()
+    return _row_to_connector(row) if row else None
+
+
+def create_connector(connector_id: str, name: str, connector_type: str, config: dict, auto_index: bool = False, schedule: str = "") -> dict:
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO connectors (id, name, connector_type, config, enabled, schedule, auto_index, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)",
+        (connector_id, name, connector_type, json.dumps(config), schedule, int(auto_index), now, now),
+    )
+    conn.commit()
+    return get_connector(connector_id)
+
+
+def update_connector(connector_id: str, updates: dict) -> dict | None:
+    conn = _get_conn()
+    allowed = {"name", "config", "enabled", "schedule", "auto_index", "last_sync", "last_status", "doc_count"}
+    sets = []
+    vals = []
+    for k, v in updates.items():
+        if k not in allowed:
+            continue
+        if k == "config":
+            v = json.dumps(v)
+        elif k in ("enabled", "auto_index"):
+            v = int(v)
+        sets.append(f"{k} = ?")
+        vals.append(v)
+    if not sets:
+        return get_connector(connector_id)
+    sets.append("updated_at = ?")
+    vals.append(datetime.now(timezone.utc).isoformat())
+    vals.append(connector_id)
+    conn.execute(f"UPDATE connectors SET {', '.join(sets)} WHERE id = ?", vals)
+    conn.commit()
+    return get_connector(connector_id)
+
+
+def delete_connector(connector_id: str) -> bool:
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM connectors WHERE id = ?", (connector_id,))
+    conn.execute("DELETE FROM sync_jobs WHERE connector_id = ?", (connector_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+# ── Sync Jobs CRUD ─────────────────────────────────────────────────────────
+
+
+def create_sync_job(job_id: str, connector_id: str) -> dict:
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO sync_jobs (id, connector_id, status, started_at, created_at) VALUES (?, ?, 'running', ?, ?)",
+        (job_id, connector_id, now, now),
+    )
+    conn.commit()
+    return {"id": job_id, "connector_id": connector_id, "status": "running", "started_at": now}
+
+
+def update_sync_job(job_id: str, status: str, docs_pulled: int = 0, docs_indexed: int = 0, error: str = ""):
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "UPDATE sync_jobs SET status = ?, completed_at = ?, docs_pulled = ?, docs_indexed = ?, error = ? WHERE id = ?",
+        (status, now, docs_pulled, docs_indexed, error, job_id),
+    )
+    conn.commit()
+
+
+def list_sync_jobs(connector_id: str = "", limit: int = 20) -> list[dict]:
+    conn = _get_conn()
+    if connector_id:
+        rows = conn.execute(
+            "SELECT * FROM sync_jobs WHERE connector_id = ? ORDER BY created_at DESC LIMIT ?",
+            (connector_id, limit),
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM sync_jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "connector_id": r["connector_id"],
+            "status": r["status"],
+            "started_at": r["started_at"] or "",
+            "completed_at": r["completed_at"] or "",
+            "docs_pulled": r["docs_pulled"] or 0,
+            "docs_indexed": r["docs_indexed"] or 0,
+            "error": r["error"] or "",
             "created_at": r["created_at"],
         }
         for r in rows
