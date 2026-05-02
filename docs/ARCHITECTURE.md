@@ -22,13 +22,13 @@ The Agentic Platform is a containerised agent factory built with:
 | `services/n8n-proxy` | Service |
 | `services/otel` | OpenTelemetry Collector configuration |
 | `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
-| `services/ui-console` | Express.js platform dashboard — 22 pages, API proxies |
+| `services/ui-console` | Express.js platform dashboard — 23 pages, API proxies |
 
 ## Docker Compose Services (21 containers)
 
 `agent-service` `chroma-data` `chromadb` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `n8n-proxy` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
 
-## UI Pages (22 pages)
+## UI Pages (23 pages)
 
 
 
