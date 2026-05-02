@@ -448,6 +448,68 @@ app.get("/api/documents/stats", async (req, res) => {
   }
 });
 
+// ── Enterprise Document Management (staging) ──────────
+app.post("/api/documents/upload", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+app.post("/api/documents/connect", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/connect`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+app.post("/api/documents/shortcut", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/shortcut`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+app.post("/api/documents/:id/index", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/documents/${req.params.id}/index`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(resp.status).json(data);
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
 app.post("/api/documents/ingest", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/documents/ingest`, {

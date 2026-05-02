@@ -5,6 +5,7 @@ Two categories:
 1. Proxy tools — call endpoints on tools-service (math, http_fetch, file_write, file_read, datetime, web_search, code_execute)
 2. Local tools  — run in-process (vector_search, vector_store)
 """
+
 import os
 import json
 import logging
@@ -19,6 +20,7 @@ TOOLS_SERVICE_URL = os.getenv("TOOLS_SERVICE_URL", "http://tools-service:8001")
 
 
 # ── Helper: call tools-service endpoint ─────────────────────────────────────
+
 
 async def _proxy_call(endpoint: str, payload: dict) -> dict:
     """POST to tools-service and return JSON."""
@@ -35,6 +37,7 @@ async def _proxy_call(endpoint: str, payload: dict) -> dict:
 
 
 # ── Proxy tools ─────────────────────────────────────────────────────────────
+
 
 @tool
 async def math(expression: str) -> str:
@@ -53,7 +56,9 @@ async def http_fetch(url: str) -> str:
 @tool
 async def file_write(filename: str, content: str) -> str:
     """Save a text note to persistent storage. Filename must be simple (no path separators)."""
-    result = await _proxy_call("/tools/file-write", {"filename": filename, "content": content})
+    result = await _proxy_call(
+        "/tools/file-write", {"filename": filename, "content": content}
+    )
     return json.dumps(result)
 
 
@@ -74,24 +79,60 @@ async def datetime_tool() -> str:
 @tool
 async def web_search(query: str, max_results: int = 5) -> str:
     """Search the web using DuckDuckGo. Returns relevant search results for the query."""
-    result = await _proxy_call("/tools/web-search", {"query": query, "max_results": max_results})
+    result = await _proxy_call(
+        "/tools/web-search", {"query": query, "max_results": max_results}
+    )
     return json.dumps(result)
 
 
 @tool
 async def code_execute(code: str, language: str = "python") -> str:
     """Execute code in a sandboxed environment. Supports Python. Returns stdout, stderr, and exit code."""
-    result = await _proxy_call("/tools/code-execute", {"code": code, "language": language})
+    result = await _proxy_call(
+        "/tools/code-execute", {"code": code, "language": language}
+    )
     return json.dumps(result)
 
 
 # ── Local tools (vector operations) ─────────────────────────────────────────
+
+
+@tool
+async def delegate_to_agent(agent_id: str, task: str) -> str:
+    """Delegate a task to another agent by its ID. Use when a sub-agent is better suited for a specific part of your task. Returns the sub-agent's response."""
+    try:
+        from agent.memory import get_agent
+        from agent.graph import run_agent
+        import uuid
+
+        agent_cfg = get_agent(agent_id)
+        if not agent_cfg:
+            return json.dumps({"error": f"Agent '{agent_id}' not found"})
+
+        # Prevent deep recursion
+        result = await run_agent(
+            prompt=task,
+            session_id=f"delegation-{uuid.uuid4().hex[:8]}",
+            request_id=f"del-{uuid.uuid4().hex[:6]}",
+            agent_config=agent_cfg,
+        )
+        return json.dumps(
+            {
+                "agent_name": agent_cfg.get("name", agent_id),
+                "response": result.get("response", ""),
+                "tools_used": result.get("tools_used", []),
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": f"Delegation failed: {str(e)}"})
+
 
 @tool
 async def vector_search(query: str, k: int = 5) -> str:
     """Search the document knowledge base for information relevant to the query. Uses semantic similarity."""
     try:
         from agent.vectorstore import search_similar
+
         results = search_similar(query, k=k)
         return json.dumps({"results": results, "count": len(results)})
     except Exception as e:
@@ -103,6 +144,7 @@ async def vector_store(text: str, source: str) -> str:
     """Store a document in the knowledge base for later retrieval. Provide the text content and a source name."""
     try:
         from agent.vectorstore import ingest_document
+
         result = ingest_document(text, source)
         return json.dumps(result)
     except Exception as e:
@@ -110,6 +152,7 @@ async def vector_store(text: str, source: str) -> str:
 
 
 # ── Tool registry ───────────────────────────────────────────────────────────
+
 
 def get_all_tools() -> list:
     """Return all available LangChain tools (built-in + custom dynamic)."""
@@ -121,11 +164,13 @@ def get_all_tools() -> list:
         datetime_tool,
         web_search,
         code_execute,
+        delegate_to_agent,
         vector_search,
         vector_store,
     ]
     try:
         from agent.memory import list_custom_tools
+
         custom = list_custom_tools()
         for ct in custom:
             if not ct.get("enabled", True):
@@ -155,7 +200,9 @@ def _make_custom_tool(ct: dict):
                 if method == "GET":
                     resp = await client.get(url, params=kwargs, headers=headers)
                 else:
-                    resp = await client.request(method, url, json=kwargs, headers=headers)
+                    resp = await client.request(
+                        method, url, json=kwargs, headers=headers
+                    )
                 resp.raise_for_status()
                 try:
                     return json.dumps(resp.json())
@@ -186,6 +233,7 @@ def _make_custom_tool(ct: dict):
         fields["input"] = (Optional[str], None)
 
     from pydantic import create_model
+
     InputModel = create_model(f"{name}_Input", **fields)
 
     return StructuredTool.from_function(
@@ -199,15 +247,24 @@ def _make_custom_tool(ct: dict):
 # ── Legacy compatibility ────────────────────────────────────────────────────
 # These keep the old graph.py imports working during migration.
 
+
 def _get_tool_catalogue() -> list[dict]:
     """Build a fresh tool catalogue including custom tools."""
     return [
-        {"name": t.name, "description": t.description, "endpoint": "", "method": "POST", "parameters": {}}
+        {
+            "name": t.name,
+            "description": t.description,
+            "endpoint": "",
+            "method": "POST",
+            "parameters": {},
+        }
         for t in get_all_tools()
     ]
 
+
 # Lazy property: rebuilt on access so custom tools are always included.
 TOOL_CATALOGUE: list[dict] = []
+
 
 def _refresh_catalogue():
     global TOOL_CATALOGUE

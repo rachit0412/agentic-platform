@@ -2,15 +2,15 @@
 
 ## Guides
 
-| Document                              | Description                                           |
-| ------------------------------------- | ----------------------------------------------------- |
-| [README](../README.md)                | Project overview, quick start, configuration          |
-| [Architecture](ARCHITECTURE.md)       | System overview, data flows, services, telemetry      |
-| [Principles](PRINCIPLES.md)           | 10 architecture principles guiding all design choices |
-| [Building Blocks](BUILDING-BLOCKS.md) | ABBs (abstract) and SBBs (solution) with traceability |
-| [Decisions](DECISIONS.md)             | 10 Architecture Decision Records (ADRs)               |
-| [Installation Guide](../INSTALL.md)   | Prerequisites, per-platform setup, GPU configuration  |
-| [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions            |
+| Document                              | Description                                              |
+| ------------------------------------- | -------------------------------------------------------- |
+| [README](../README.md)                | Project overview, quick start, configuration             |
+| [Architecture](ARCHITECTURE.md)       | System overview, data flows, services, orchestration     |
+| [Principles](PRINCIPLES.md)           | 10 architecture principles guiding all design choices    |
+| [Building Blocks](BUILDING-BLOCKS.md) | 13 ABBs (abstract) and SBBs (solution) with traceability |
+| [Decisions](DECISIONS.md)             | 12 Architecture Decision Records (ADRs)                  |
+| [Installation Guide](../INSTALL.md)   | Prerequisites, per-platform setup, GPU configuration     |
+| [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions               |
 
 ## Interactive API Console
 
@@ -38,6 +38,8 @@ Interactive API docs are available at **http://localhost:8010/docs** (agent-serv
 | GET    | `/agents/{id}` | Get agent by ID |
 | PUT    | `/agents/{id}` | Update agent    |
 | DELETE | `/agents/{id}` | Delete agent    |
+
+**Agent fields:** `name`, `description`, `provider`, `model`, `temperature`, `top_p`, `system_prompt`, `skill_ids` (array), `tool_ids` (array), `sub_agent_ids` (array — for orchestration), `kb_collection`, `max_iterations`, `memory_enabled`
 
 #### Skill CRUD
 

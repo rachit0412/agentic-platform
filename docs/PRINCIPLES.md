@@ -191,12 +191,13 @@
 | **Rationale**    | RAG quality depends on knowledge freshness, organisation, and agent-specific relevance. Treating documents as first-class resources enables folder management, agent tagging, collection isolation, and cross-collection copying.                                                                                        |
 | **Implications** | `vectorstore.py` manages ChromaDB collections. The document registry in SQLite tracks metadata, folders, and agent tags separately from embeddings. Documents can be ingested from text, URL, or file upload with configurable chunk size and overlap. Agents can be scoped to specific collections via `kb_collection`. |
 
-| Validation                          | Status                                                                                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Full CRUD on documents              | **YES** — 13 document endpoints covering ingest, search, list, delete, copy, fetch-url                                                            |
-| Document registry with folders/tags | **YES** — SQLite `documents` table with folder, agent_tags, metadata fields                                                                       |
-| Agent-scoped collections            | **YES** — `agents` table has `kb_collection` column. `graph.py` passes `kb_coll` to `search_similar()` and `get_collection_stats()` per agent run |
-| Cross-collection copying            | **YES** — `POST /documents/copy` endpoint implemented in `vectorstore.py`                                                                         |
+| Validation                          | Status                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full CRUD on documents              | **YES** — 13 document endpoints covering ingest, search, list, delete, copy, fetch-url                                                                              |
+| Document registry with folders/tags | **YES** — SQLite `documents` table with folder, agent_tags, metadata fields                                                                                         |
+| Agent-scoped collections            | **YES** — `agents` table has `kb_collection` column (auto-named `agent_{name}_kb`). `graph.py` passes `kb_coll` to `search_similar()` per agent run. Full isolation |
+| Cross-collection copying            | **YES** — `POST /documents/copy` endpoint implemented in `vectorstore.py`                                                                                           |
+| Per-agent KB isolation              | **YES** — Each agent gets a unique ChromaDB collection; documents uploaded for one agent are invisible to other agents' retrieval                                   |
 
 **Status: FULLY MET** ✅
 

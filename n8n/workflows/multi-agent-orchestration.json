@@ -1,0 +1,196 @@
+{
+  "name": "Multi-Agent Orchestration Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "multi-agent",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"strategy\"]}}",
+              "operation": "equals",
+              "value2": "sequential"
+            }
+          ]
+        }
+      },
+      "id": "router",
+      "name": "Strategy Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "prompt", "value": "={{$json[\"prompt\"]}}" },
+            { "name": "agent_id", "value": "={{$json[\"agents\"][0]}}" },
+            {
+              "name": "session_id",
+              "value": "={{$json[\"session_id\"] || 'orchestration-' + $runIndex}}"
+            }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "agent-a",
+      "name": "Agent A (First)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [750, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "prompt",
+              "value": "Based on previous output: {{$node[\"Agent A (First)\"].json[\"response\"]}}\\n\\nNow: ={{$json[\"prompt\"]}}"
+            },
+            {
+              "name": "agent_id",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"agents\"][1]}}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"session_id\"] || 'orchestration-' + $runIndex}}"
+            }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "agent-b",
+      "name": "Agent B (Second)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1000, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "prompt", "value": "={{$json[\"prompt\"]}}" },
+            { "name": "agent_id", "value": "={{$json[\"agents\"][0]}}" },
+            {
+              "name": "session_id",
+              "value": "={{$json[\"session_id\"] || 'orchestration-' + $runIndex}}"
+            }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "parallel-a",
+      "name": "Parallel Agent A",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [750, 450]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "prompt", "value": "={{$json[\"prompt\"]}}" },
+            { "name": "agent_id", "value": "={{$json[\"agents\"][1]}}" },
+            {
+              "name": "session_id",
+              "value": "={{$json[\"session_id\"] || 'orchestration-' + $runIndex}}"
+            }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "parallel-b",
+      "name": "Parallel Agent B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [750, 600]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "mergeByFields": {},
+        "options": {}
+      },
+      "id": "merge-parallel",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1000, 520]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({ strategy: $node[\"Strategy Router\"].json ? 'sequential' : 'parallel', responses: $json })}}"
+      },
+      "id": "respond-sequential",
+      "name": "Respond Sequential",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({ strategy: 'parallel', responses: $json })}}"
+      },
+      "id": "respond-parallel",
+      "name": "Respond Parallel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 520]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Strategy Router", "type": "main", "index": 0 }]]
+    },
+    "Strategy Router": {
+      "main": [
+        [{ "node": "Agent A (First)", "type": "main", "index": 0 }],
+        [
+          { "node": "Parallel Agent A", "type": "main", "index": 0 },
+          { "node": "Parallel Agent B", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Agent A (First)": {
+      "main": [[{ "node": "Agent B (Second)", "type": "main", "index": 0 }]]
+    },
+    "Agent B (Second)": {
+      "main": [[{ "node": "Respond Sequential", "type": "main", "index": 0 }]]
+    },
+    "Parallel Agent A": {
+      "main": [[{ "node": "Merge Results", "type": "main", "index": 0 }]]
+    },
+    "Parallel Agent B": {
+      "main": [[{ "node": "Merge Results", "type": "main", "index": 1 }]]
+    },
+    "Merge Results": {
+      "main": [[{ "node": "Respond Parallel", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "Multi-agent orchestration: supports sequential (Agent A output feeds Agent B) and parallel (all agents run simultaneously, results merged) strategies. POST to /webhook/multi-agent with body: { strategy: 'sequential'|'parallel', prompt: '...', agents: ['agent_id_1', 'agent_id_2'], session_id?: '...' }"
+  }
+}

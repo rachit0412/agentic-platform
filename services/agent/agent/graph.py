@@ -7,6 +7,7 @@ Graph:
 Uses ChatOllama (LangChain) instead of raw HTTP.
 Persists exchanges to SQLite memory.
 """
+
 import os
 import json
 import logging
@@ -14,16 +15,26 @@ from typing import TypedDict, Annotated, AsyncIterator
 
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import (
-    HumanMessage, AIMessage, SystemMessage, ToolMessage,
+    HumanMessage,
+    AIMessage,
+    SystemMessage,
+    ToolMessage,
 )
 
-from agent.memory import get_history, save_message, get_session_summary, update_session_summary
+from agent.memory import (
+    get_history,
+    save_message,
+    get_session_summary,
+    update_session_summary,
+)
 from agent.tools import get_all_tools, catalogue_as_text, call_tool, TOOL_CATALOGUE
 from agent.llm import get_llm
 from agent.llm import get_active_model as _get_active_model
 from agent.observability import (
-    LangfuseTrace, track_llm_call,
-    tool_call_counter, agent_run_counter,
+    LangfuseTrace,
+    track_llm_call,
+    tool_call_counter,
+    agent_run_counter,
 )
 import re as _re
 
@@ -35,19 +46,30 @@ MAX_ITERATIONS = int(os.getenv("MAX_REACT_ITERATIONS", "5"))
 # ── Guardrail enforcement ───────────────────────────────────────────────────
 
 _PII_PATTERNS = {
-    "email": _re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'),
-    "phone": _re.compile(r'\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b'),
-    "ssn": _re.compile(r'\b\d{3}-\d{2}-\d{4}\b'),
-    "credit_card": _re.compile(r'\b(?:\d{4}[-\s]?){3}\d{4}\b'),
+    "email": _re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"),
+    "phone": _re.compile(r"\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"),
+    "ssn": _re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+    "credit_card": _re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"),
 }
 
 _INJECTION_PATTERNS = [
-    "ignore previous", "ignore all previous", "disregard above",
-    "disregard all", "new instructions", "override system",
-    "forget everything", "you are now", "act as if",
-    "ignore the above", "bypass", "jailbreak",
-    "do not follow", "do anything now", "pretend you",
-    "system prompt", "reveal your instructions",
+    "ignore previous",
+    "ignore all previous",
+    "disregard above",
+    "disregard all",
+    "new instructions",
+    "override system",
+    "forget everything",
+    "you are now",
+    "act as if",
+    "ignore the above",
+    "bypass",
+    "jailbreak",
+    "do not follow",
+    "do anything now",
+    "pretend you",
+    "system prompt",
+    "reveal your instructions",
 ]
 
 
@@ -57,6 +79,7 @@ def _check_guardrails_input(text: str, agent_config: dict | None = None) -> list
     results = []
     try:
         from agent.memory import list_guardrails
+
         guardrails = list_guardrails()
     except Exception:
         return results
@@ -83,11 +106,24 @@ def _check_guardrails_input(text: str, agent_config: dict | None = None) -> list
                 patterns = _INJECTION_PATTERNS
             for pat in patterns:
                 if pat.lower() in lower:
-                    results.append({"guardrail": name, "id": gid, "status": "blocked",
-                                    "detail": f"Prompt injection pattern detected: '{pat}'"})
+                    results.append(
+                        {
+                            "guardrail": name,
+                            "id": gid,
+                            "status": "blocked",
+                            "detail": f"Prompt injection pattern detected: '{pat}'",
+                        }
+                    )
                     break
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "No injection detected"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": "No injection detected",
+                    }
+                )
 
         elif gid == "gr-pii":
             found = []
@@ -95,10 +131,23 @@ def _check_guardrails_input(text: str, agent_config: dict | None = None) -> list
                 if regex.search(text):
                     found.append(ptype)
             if found:
-                results.append({"guardrail": name, "id": gid, "status": "flagged",
-                                "detail": f"PII detected: {', '.join(found)}"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "flagged",
+                        "detail": f"PII detected: {', '.join(found)}",
+                    }
+                )
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "No PII detected"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": "No PII detected",
+                    }
+                )
 
         elif gid == "gr-topic-restrict":
             cfg = gr.get("config", {})
@@ -106,11 +155,24 @@ def _check_guardrails_input(text: str, agent_config: dict | None = None) -> list
             lower = text.lower()
             for topic in blocked:
                 if topic.lower() in lower:
-                    results.append({"guardrail": name, "id": gid, "status": "blocked",
-                                    "detail": f"Blocked topic: '{topic}'"})
+                    results.append(
+                        {
+                            "guardrail": name,
+                            "id": gid,
+                            "status": "blocked",
+                            "detail": f"Blocked topic: '{topic}'",
+                        }
+                    )
                     break
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "Topic allowed"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": "Topic allowed",
+                    }
+                )
 
     return results
 
@@ -120,6 +182,7 @@ def _check_guardrails_output(text: str, agent_config: dict | None = None) -> lis
     results = []
     try:
         from agent.memory import list_guardrails
+
         guardrails = list_guardrails()
     except Exception:
         return results
@@ -142,46 +205,102 @@ def _check_guardrails_output(text: str, agent_config: dict | None = None) -> lis
                 if regex.search(text):
                     found.append(ptype)
             if found:
-                results.append({"guardrail": name, "id": gid, "status": "flagged",
-                                "detail": f"PII in output: {', '.join(found)}"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "flagged",
+                        "detail": f"PII in output: {', '.join(found)}",
+                    }
+                )
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "Clean"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": "Clean",
+                    }
+                )
 
         elif gid == "gr-output-length":
             cfg = gr.get("config", {})
             max_len = cfg.get("max_tokens", 2048)
             word_count = len(text.split())
             if word_count > max_len:
-                results.append({"guardrail": name, "id": gid, "status": "flagged",
-                                "detail": f"Output {word_count} words exceeds limit {max_len}"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "flagged",
+                        "detail": f"Output {word_count} words exceeds limit {max_len}",
+                    }
+                )
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed",
-                                "detail": f"{word_count} words (limit: {max_len})"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": f"{word_count} words (limit: {max_len})",
+                    }
+                )
 
         elif gid == "gr-data-leak":
             lower = text.lower()
-            leak_patterns = ["system prompt:", "api_key", "internal configuration",
-                             "you are a helpful ai assistant with access to tools"]
+            leak_patterns = [
+                "system prompt:",
+                "api_key",
+                "internal configuration",
+                "you are a helpful ai assistant with access to tools",
+            ]
             for pat in leak_patterns:
                 if pat in lower:
-                    results.append({"guardrail": name, "id": gid, "status": "flagged",
-                                    "detail": f"Potential data leak: system prompt fragment"})
+                    results.append(
+                        {
+                            "guardrail": name,
+                            "id": gid,
+                            "status": "flagged",
+                            "detail": f"Potential data leak: system prompt fragment",
+                        }
+                    )
                     break
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "No leakage detected"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": "No leakage detected",
+                    }
+                )
 
         elif gid == "gr-toxicity":
             toxic_words = ["kill", "hate", "destroy all"]
             lower = text.lower()
             for w in toxic_words:
                 if w in lower:
-                    results.append({"guardrail": name, "id": gid, "status": "flagged",
-                                    "detail": f"Potentially toxic content detected"})
+                    results.append(
+                        {
+                            "guardrail": name,
+                            "id": gid,
+                            "status": "flagged",
+                            "detail": f"Potentially toxic content detected",
+                        }
+                    )
                     break
             else:
-                results.append({"guardrail": name, "id": gid, "status": "passed", "detail": "Content safe"})
+                results.append(
+                    {
+                        "guardrail": name,
+                        "id": gid,
+                        "status": "passed",
+                        "detail": "Content safe",
+                    }
+                )
 
     return results
+
 
 # ── Prompt templates ────────────────────────────────────────────────────────
 
@@ -214,6 +333,7 @@ Using the information above, provide a clear and helpful final answer to the use
 
 # ── State ───────────────────────────────────────────────────────────────────
 
+
 class AgentState(TypedDict):
     prompt: str
     session_id: str
@@ -231,6 +351,7 @@ class AgentState(TypedDict):
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 import re
+
 
 def _parse_tool_calls(text: str) -> list[dict]:
     """
@@ -256,14 +377,20 @@ def _parse_tool_calls(text: str) -> list[dict]:
     if not calls:
         text_stripped = text.strip()
         if text_stripped.startswith("```"):
-            text_stripped = re.sub(r'^```\w*\n?', '', text_stripped)
-            text_stripped = re.sub(r'\n?```$', '', text_stripped)
+            text_stripped = re.sub(r"^```\w*\n?", "", text_stripped)
+            text_stripped = re.sub(r"\n?```$", "", text_stripped)
         try:
             obj = json.loads(text_stripped)
             if isinstance(obj, dict) and "tool" in obj:
                 name = obj["tool"]
                 if any(t["name"] == name for t in TOOL_CATALOGUE):
-                    calls.append({"name": name, "arguments": obj.get("arguments", {}), "result": None})
+                    calls.append(
+                        {
+                            "name": name,
+                            "arguments": obj.get("arguments", {}),
+                            "result": None,
+                        }
+                    )
         except (json.JSONDecodeError, ValueError):
             pass
 
@@ -291,35 +418,46 @@ async def _ollama_chat(messages: list[dict], step: str = "default") -> str:
 
 # ── Graph nodes ─────────────────────────────────────────────────────────────
 
+
 async def retrieve_context(state: AgentState) -> dict:
     """Auto-retrieve relevant KB docs and build memory summary before reasoning."""
     import time as _time
+
     prompt = state["prompt"]
     session_id = state["session_id"]
+    agent_config = state.get("agent_config")
 
     # ── Knowledge base retrieval ────────────────────────────────────────
-    # Only run the expensive embedding + search when there are actually
-    # chunks in the collection.  get_collection_stats() is a cheap
-    # metadata call that does NOT invoke the embedding model.
-    # Skip KB for very short queries (greetings, etc.) — embedding
-    # "hi" through Ollama costs 3-4 s with zero useful context.
     kb_context = ""
-    skip_kb = len(prompt.strip()) < 20
+    use_kb = agent_config.get("use_kb", True) if agent_config else True
+    kb_coll = agent_config.get("kb_collection") if agent_config else None
+    skip_kb = (not use_kb) or len(prompt.strip()) < 20
     if skip_kb:
-        logger.info("req=%s kb_search SKIPPED (short query: %r)", state["request_id"], prompt)
+        logger.info(
+            "req=%s kb_search SKIPPED (short query: %r)", state["request_id"], prompt
+        )
     else:
         try:
             from agent.vectorstore import search_similar, get_collection_stats
+
             t0 = _time.time()
-            stats = get_collection_stats()
+            stats = get_collection_stats(collection_name=kb_coll)
             total_chunks = stats.get("total_chunks", 0)
-            logger.info("req=%s kb_stats check took %dms  chunks=%d",
-                         state["request_id"], int((_time.time()-t0)*1000), total_chunks)
+            logger.info(
+                "req=%s kb_stats check took %dms  chunks=%d",
+                state["request_id"],
+                int((_time.time() - t0) * 1000),
+                total_chunks,
+            )
             if total_chunks > 0:
                 t0 = _time.time()
-                results = search_similar(prompt, k=3)
-                logger.info("req=%s kb_search took %dms  results=%d",
-                             state["request_id"], int((_time.time()-t0)*1000), len(results))
+                results = search_similar(prompt, k=3, collection_name=kb_coll)
+                logger.info(
+                    "req=%s kb_search took %dms  results=%d",
+                    state["request_id"],
+                    int((_time.time() - t0) * 1000),
+                    len(results),
+                )
                 if results:
                     kb_snippets = []
                     for r in results:
@@ -340,10 +478,12 @@ async def retrieve_context(state: AgentState) -> dict:
     except Exception as e:
         logger.warning("Memory summary failed: %s", e)
 
-    logger.info("req=%s kb_chunks=%d memory_summary=%s",
-                state["request_id"],
-                len(kb_context.split("---")) if kb_context else 0,
-                "yes" if memory_summary else "no")
+    logger.info(
+        "req=%s kb_chunks=%d memory_summary=%s",
+        state["request_id"],
+        len(kb_context.split("---")) if kb_context else 0,
+        "yes" if memory_summary else "no",
+    )
 
     return {"kb_context": kb_context, "memory_summary": memory_summary}
 
@@ -351,8 +491,10 @@ async def retrieve_context(state: AgentState) -> dict:
 async def reason(state: AgentState) -> dict:
     """Send the prompt + history + prior tool results to LLM; decide if more tools are needed."""
     import time as _time
+
     kb_context = state.get("kb_context", "")
     memory_summary = state.get("memory_summary", "")
+    agent_config = state.get("agent_config")
 
     kb_section = ""
     if kb_context:
@@ -371,6 +513,45 @@ async def reason(state: AgentState) -> dict:
         kb_section=kb_section,
         memory_section=memory_section,
     )
+
+    # Merge agent custom prompt + skill prompts
+    extra_system_parts = []
+    if agent_config:
+        if agent_config.get("system_prompt"):
+            extra_system_parts.append(agent_config["system_prompt"])
+        skill_ids = agent_config.get("skill_ids", [])
+        if skill_ids:
+            from agent.memory import get_skill
+
+            for sid in skill_ids:
+                sk = get_skill(sid)
+                if sk and sk.get("system_prompt"):
+                    extra_system_parts.append(
+                        f"[Skill: {sk['name']}]\n{sk['system_prompt']}"
+                    )
+        # Inject sub-agent list for orchestrators
+        sub_agent_ids = agent_config.get("sub_agent_ids", [])
+        if sub_agent_ids:
+            from agent.memory import get_agent
+
+            sub_agents_desc = []
+            for sa_id in sub_agent_ids:
+                sa = get_agent(sa_id)
+                if sa:
+                    sub_agents_desc.append(
+                        f"- {sa['name']} (id: {sa['id']}): {sa.get('description', '')}"
+                    )
+            if sub_agents_desc:
+                extra_system_parts.append(
+                    "[Orchestration]\n"
+                    "You can delegate tasks to these sub-agents using the delegate_to_agent tool:\n"
+                    + "\n".join(sub_agents_desc)
+                    + "\n"
+                    "Use delegate_to_agent when a sub-agent is better suited for a specific part of the task."
+                )
+    if extra_system_parts:
+        system += "\n\n" + "\n\n".join(extra_system_parts)
+
     iteration = state.get("iteration", 0)
 
     messages = [{"role": "system", "content": system}]
@@ -383,21 +564,33 @@ async def reason(state: AgentState) -> dict:
     if existing_calls:
         results_text = "\n".join(
             f"Tool '{tc['name']}' returned: {json.dumps(tc.get('result', {}))}"
-            for tc in existing_calls if tc.get("result") is not None
+            for tc in existing_calls
+            if tc.get("result") is not None
         )
-        messages.append({"role": "assistant", "content": f"I called some tools. Results:\n{results_text}\n\nLet me decide if I need more tools or can answer now."})
+        messages.append(
+            {
+                "role": "assistant",
+                "content": f"I called some tools. Results:\n{results_text}\n\nLet me decide if I need more tools or can answer now.",
+            }
+        )
 
     t0 = _time.time()
     raw = await _ollama_chat(messages, step=f"reason_iter_{iteration}")
-    logger.info("req=%s reason iter=%d took %dms raw=%s",
-                state["request_id"], iteration, int((_time.time()-t0)*1000), raw[:200])
+    logger.info(
+        "req=%s reason iter=%d took %dms raw=%s",
+        state["request_id"],
+        iteration,
+        int((_time.time() - t0) * 1000),
+        raw[:200],
+    )
 
     new_tool_calls = _parse_tool_calls(raw)
 
     return {
         "llm_raw": raw,
         "tool_calls": existing_calls + new_tool_calls,
-        "tools_used": state.get("tools_used", []) + [tc["name"] for tc in new_tool_calls],
+        "tools_used": state.get("tools_used", [])
+        + [tc["name"] for tc in new_tool_calls],
         "iteration": iteration + 1,
     }
 
@@ -411,7 +604,12 @@ async def execute_tools(state: AgentState) -> dict:
         tool_call_counter.labels(tool_name=tc["name"]).inc()
         result = await call_tool(tc["name"], tc["arguments"])
         tc["result"] = result
-        logger.info("req=%s tool=%s result=%s", state["request_id"], tc["name"], str(result)[:200])
+        logger.info(
+            "req=%s tool=%s result=%s",
+            state["request_id"],
+            tc["name"],
+            str(result)[:200],
+        )
     return {"tool_calls": tool_calls}
 
 
@@ -427,11 +625,17 @@ async def generate_response(state: AgentState) -> dict:
             for tc in tool_calls
         )
         messages = [
-            {"role": "system", "content": "You are a helpful assistant. Synthesise tool results into a clear answer."},
-            {"role": "user", "content": FINAL_PROMPT.format(
-                prompt=state["prompt"],
-                tool_results=results_text,
-            )},
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. Synthesise tool results into a clear answer.",
+            },
+            {
+                "role": "user",
+                "content": FINAL_PROMPT.format(
+                    prompt=state["prompt"],
+                    tool_results=results_text,
+                ),
+            },
         ]
         response = await _ollama_chat(messages, step="generate_response")
 
@@ -448,6 +652,7 @@ async def generate_response(state: AgentState) -> dict:
 
 
 # ── Routing ─────────────────────────────────────────────────────────────────
+
 
 def should_continue(state: AgentState) -> str:
     """Decide: execute tools, continue reasoning, or finalize."""
@@ -478,6 +683,7 @@ def after_tools(state: AgentState) -> str:
 
 # ── Build graph ─────────────────────────────────────────────────────────────
 
+
 def build_graph():
     g = StateGraph(AgentState)
     g.add_node("retrieve_context", retrieve_context)
@@ -487,10 +693,14 @@ def build_graph():
 
     g.set_entry_point("retrieve_context")
     g.add_edge("retrieve_context", "reason")
-    g.add_conditional_edges("reason", should_continue, {
-        "execute_tools": "execute_tools",
-        "generate_response": "generate_response",
-    })
+    g.add_conditional_edges(
+        "reason",
+        should_continue,
+        {
+            "execute_tools": "execute_tools",
+            "generate_response": "generate_response",
+        },
+    )
     g.add_edge("execute_tools", "generate_response")
     g.add_edge("generate_response", END)
 
@@ -502,11 +712,18 @@ _graph = build_graph()
 
 # ── Public API ──────────────────────────────────────────────────────────────
 
-async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
+
+async def run_agent(
+    prompt: str, session_id: str, request_id: str, agent_config: dict | None = None
+) -> dict:
     """Run the agent graph and return {response, tools_used, trace_id}."""
     lf_trace = LangfuseTrace("agent-run", session_id, request_id, prompt)
 
-    history = get_history(session_id, limit=5)
+    memory_window = 5
+    if agent_config:
+        memory_window = agent_config.get("memory_window", 5) or 5
+
+    history = get_history(session_id, limit=memory_window)
     initial_state: AgentState = {
         "prompt": prompt,
         "session_id": session_id,
@@ -519,6 +736,7 @@ async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
         "response": "",
         "tools_used": [],
         "iteration": 0,
+        "agent_config": agent_config,
     }
 
     try:
@@ -539,7 +757,10 @@ async def run_agent(prompt: str, session_id: str, request_id: str) -> dict:
 
 # ── Streaming support ──────────────────────────────────────────────────────
 
-async def _ollama_chat_stream(messages: list[dict], usage_out: dict | None = None) -> AsyncIterator[str]:
+
+async def _ollama_chat_stream(
+    messages: list[dict], usage_out: dict | None = None
+) -> AsyncIterator[str]:
     """Stream tokens from ChatOllama.  If *usage_out* is supplied, the final
     chunk's ``usage_metadata`` is written into it (keys: prompt_tokens,
     completion_tokens, total_tokens)."""
@@ -562,13 +783,21 @@ async def _ollama_chat_stream(messages: list[dict], usage_out: dict | None = Non
         if usage_out is not None:
             um = getattr(chunk, "usage_metadata", None)
             if um:
-                usage_out["prompt_tokens"] = getattr(um, "input_tokens", 0) or um.get("input_tokens", 0)
-                usage_out["completion_tokens"] = getattr(um, "output_tokens", 0) or um.get("output_tokens", 0)
-                usage_out["total_tokens"] = getattr(um, "total_tokens", 0) or um.get("total_tokens", 0)
+                usage_out["prompt_tokens"] = getattr(um, "input_tokens", 0) or um.get(
+                    "input_tokens", 0
+                )
+                usage_out["completion_tokens"] = getattr(
+                    um, "output_tokens", 0
+                ) or um.get("output_tokens", 0)
+                usage_out["total_tokens"] = getattr(um, "total_tokens", 0) or um.get(
+                    "total_tokens", 0
+                )
 
 
 async def run_agent_stream(
-    prompt: str, session_id: str, request_id: str,
+    prompt: str,
+    session_id: str,
+    request_id: str,
     agent_config: dict | None = None,
 ) -> AsyncIterator[dict]:
     """
@@ -585,7 +814,9 @@ async def run_agent_stream(
     max_iterations = MAX_ITERATIONS
     if agent_config:
         memory_window = agent_config.get("memory_window", 5) or 5
-        max_iterations = agent_config.get("max_iterations", MAX_ITERATIONS) or MAX_ITERATIONS
+        max_iterations = (
+            agent_config.get("max_iterations", MAX_ITERATIONS) or MAX_ITERATIONS
+        )
     history = get_history(session_id, limit=memory_window)
 
     # Build merged system prompt from agent config + skills
@@ -597,37 +828,80 @@ async def run_agent_stream(
         skill_ids = agent_config.get("skill_ids", [])
         if skill_ids:
             from agent.memory import get_skill
+
             for sid in skill_ids:
                 sk = get_skill(sid)
                 if sk and sk.get("system_prompt"):
-                    extra_system_parts.append(f"[Skill: {sk['name']}]\n{sk['system_prompt']}")
+                    extra_system_parts.append(
+                        f"[Skill: {sk['name']}]\n{sk['system_prompt']}"
+                    )
 
     agent_extra_prompt = "\n\n".join(extra_system_parts) if extra_system_parts else ""
 
     # ── Step 0: Input guardrails ────────────────────────────────────────
-    yield {"event": "step", "data": {"step": "guardrails_input", "status": "started", "label": "Running input guardrails"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "guardrails_input",
+            "status": "started",
+            "label": "Running input guardrails",
+        },
+    }
     t0 = _time.time()
     input_gr_results = _check_guardrails_input(prompt, agent_config=agent_config)
     blocked = [g for g in input_gr_results if g["status"] == "blocked"]
-    yield {"event": "guardrails", "data": {"phase": "input", "results": input_gr_results}}
-    yield {"event": "step", "data": {"step": "guardrails_input", "status": "done",
-           "duration_ms": int((_time.time()-t0)*1000),
-           "detail": f"{len(input_gr_results)} checks, {len(blocked)} blocked"}}
+    yield {
+        "event": "guardrails",
+        "data": {"phase": "input", "results": input_gr_results},
+    }
+    yield {
+        "event": "step",
+        "data": {
+            "step": "guardrails_input",
+            "status": "done",
+            "duration_ms": int((_time.time() - t0) * 1000),
+            "detail": f"{len(input_gr_results)} checks, {len(blocked)} blocked",
+        },
+    }
 
     if blocked:
-        block_msg = "Request blocked by guardrails: " + "; ".join([g["detail"] for g in blocked])
+        block_msg = "Request blocked by guardrails: " + "; ".join(
+            [g["detail"] for g in blocked]
+        )
         yield {"event": "token", "data": block_msg}
-        yield {"event": "done", "data": {
-            "response": block_msg, "tools_used": [], "request_id": request_id,
-            "trace_id": "", "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-            "model": "", "provider": "",
-            "guardrails": {"input": input_gr_results, "output": []},
-        }}
+        yield {
+            "event": "done",
+            "data": {
+                "response": block_msg,
+                "tools_used": [],
+                "request_id": request_id,
+                "trace_id": "",
+                "usage": {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                },
+                "model": "",
+                "provider": "",
+                "guardrails": {"input": input_gr_results, "output": []},
+            },
+        }
         return
 
     # ── Step 1: Retrieve context ────────────────────────────────────────
     use_kb = agent_config.get("use_kb", True) if agent_config else True
-    yield {"event": "step", "data": {"step": "retrieve_context", "status": "started", "label": "Retrieving from Knowledge Base" if use_kb else "KB retrieval skipped (disabled)"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "retrieve_context",
+            "status": "started",
+            "label": (
+                "Retrieving from Knowledge Base"
+                if use_kb
+                else "KB retrieval skipped (disabled)"
+            ),
+        },
+    }
     t0 = _time.time()
 
     kb_context = ""
@@ -636,41 +910,93 @@ async def run_agent_stream(
     # Skip KB entirely if user toggled it off, or for very short queries
     skip_kb = (not use_kb) or len(prompt.strip()) < 20
     if skip_kb:
-        logger.info("req=%s stream kb_search SKIPPED (use_kb=%s, short=%s)", request_id, use_kb, len(prompt.strip()) < 20)
+        logger.info(
+            "req=%s stream kb_search SKIPPED (use_kb=%s, short=%s)",
+            request_id,
+            use_kb,
+            len(prompt.strip()) < 20,
+        )
     else:
         try:
             from agent.vectorstore import search_similar, get_collection_stats
+
             stats = get_collection_stats(collection_name=kb_coll)
             total_chunks = stats.get("total_chunks", 0)
             logger.info("req=%s stream kb_stats chunks=%d", request_id, total_chunks)
             if total_chunks > 0:
                 results = search_similar(prompt, k=3, collection_name=kb_coll)
-                snippets = [f"[{r.get('metadata',{}).get('source','unknown')}]: {r['content'][:500]}"
-                            for r in results if r.get("score", 1.0) < 0.8]
+                snippets = [
+                    f"[{r.get('metadata',{}).get('source','unknown')}]: {r['content'][:500]}"
+                    for r in results
+                    if r.get("score", 1.0) < 0.8
+                ]
                 if snippets:
                     kb_context = "\n---\n".join(snippets)
                     kb_chunks = len(snippets)
         except Exception:
-            logger.warning("req=%s stream KB retrieval skipped (unavailable)", request_id)
+            logger.warning(
+                "req=%s stream KB retrieval skipped (unavailable)", request_id
+            )
 
-    yield {"event": "step", "data": {"step": "retrieve_context", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": "Disabled" if not use_kb else f"Found {kb_chunks} chunks"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "retrieve_context",
+            "status": "done",
+            "duration_ms": int((_time.time() - t0) * 1000),
+            "detail": "Disabled" if not use_kb else f"Found {kb_chunks} chunks",
+        },
+    }
 
     # ── Step 2: Load memory ─────────────────────────────────────────────
-    yield {"event": "step", "data": {"step": "load_memory", "status": "started", "label": "Loading conversation memory"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "load_memory",
+            "status": "started",
+            "label": "Loading conversation memory",
+        },
+    }
     t0 = _time.time()
 
     memory_summary = get_session_summary(session_id) or ""
 
-    yield {"event": "step", "data": {"step": "load_memory", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": "Has context" if memory_summary else "New conversation"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "load_memory",
+            "status": "done",
+            "duration_ms": int((_time.time() - t0) * 1000),
+            "detail": "Has context" if memory_summary else "New conversation",
+        },
+    }
 
     # ── Step 3: Reasoning ───────────────────────────────────────────────
-    kb_section = f"Relevant knowledge base context:\n{kb_context}" if kb_context else "No relevant knowledge base documents found for this query."
-    memory_section = f"Conversation summary so far:\n{memory_summary}" if memory_summary else "This is a new conversation with no prior context."
+    kb_section = (
+        f"Relevant knowledge base context:\n{kb_context}"
+        if kb_context
+        else "No relevant knowledge base documents found for this query."
+    )
+    memory_section = (
+        f"Conversation summary so far:\n{memory_summary}"
+        if memory_summary
+        else "This is a new conversation with no prior context."
+    )
 
-    yield {"event": "step", "data": {"step": "reason", "status": "started", "label": "Reasoning", "iteration": 1}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "reason",
+            "status": "started",
+            "label": "Reasoning",
+            "iteration": 1,
+        },
+    }
     t0 = _time.time()
 
-    system = SYSTEM_PROMPT.format(tools=catalogue_as_text(), kb_section=kb_section, memory_section=memory_section)
+    system = SYSTEM_PROMPT.format(
+        tools=catalogue_as_text(), kb_section=kb_section, memory_section=memory_section
+    )
     if agent_extra_prompt:
         system += "\n\n" + agent_extra_prompt
     messages = [{"role": "system", "content": system}]
@@ -682,7 +1008,11 @@ async def run_agent_stream(
     active_info = _get_active_model()
     lf_gen_reason = lf_trace.generation(
         name="reasoning",
-        model=agent_config.get("model", active_info["model"]) if agent_config else active_info["model"],
+        model=(
+            agent_config.get("model", active_info["model"])
+            if agent_config
+            else active_info["model"]
+        ),
         input=messages,
     )
 
@@ -697,30 +1027,70 @@ async def run_agent_stream(
     tool_calls = _parse_tool_calls(raw)
     tools_used = [tc["name"] for tc in tool_calls]
 
-    reason_ms = int((_time.time()-t0)*1000)
-    lf_gen_reason.end(output=raw[:500], usage={
-        "input": usage_reason.get("prompt_tokens", 0),
-        "output": usage_reason.get("completion_tokens", 0),
-        "total": usage_reason.get("total_tokens", 0),
-    })
+    reason_ms = int((_time.time() - t0) * 1000)
+    lf_gen_reason.end(
+        output=raw[:500],
+        usage={
+            "input": usage_reason.get("prompt_tokens", 0),
+            "output": usage_reason.get("completion_tokens", 0),
+            "total": usage_reason.get("total_tokens", 0),
+        },
+    )
 
-    yield {"event": "step", "data": {"step": "reason", "status": "done", "duration_ms": reason_ms, "detail": f"{'Needs tools: ' + ', '.join(tools_used) if tools_used else 'Direct answer'}"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "reason",
+            "status": "done",
+            "duration_ms": reason_ms,
+            "detail": f"{'Needs tools: ' + ', '.join(tools_used) if tools_used else 'Direct answer'}",
+        },
+    }
 
     # ── Step 4: Tool execution (if needed) ──────────────────────────────
     if tool_calls:
         for tc in tool_calls:
-            yield {"event": "step", "data": {"step": "tool_call", "status": "started", "label": f"Calling tool: {tc['name']}", "tool": tc["name"], "args": tc["arguments"]}}
+            yield {
+                "event": "step",
+                "data": {
+                    "step": "tool_call",
+                    "status": "started",
+                    "label": f"Calling tool: {tc['name']}",
+                    "tool": tc["name"],
+                    "args": tc["arguments"],
+                },
+            }
             t0 = _time.time()
             tool_call_counter.labels(tool_name=tc["name"]).inc()
-            lf_tool_span = lf_trace.span(name=f"tool:{tc['name']}", input=tc["arguments"])
+            lf_tool_span = lf_trace.span(
+                name=f"tool:{tc['name']}", input=tc["arguments"]
+            )
             result = await call_tool(tc["name"], tc["arguments"])
             tc["result"] = result
-            logger.info("req=%s tool=%s result=%s", request_id, tc["name"], str(result)[:200])
+            logger.info(
+                "req=%s tool=%s result=%s", request_id, tc["name"], str(result)[:200]
+            )
             lf_tool_span.end(output=str(result)[:500])
-            yield {"event": "step", "data": {"step": "tool_call", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "tool": tc["name"], "detail": str(result)[:150]}}
+            yield {
+                "event": "step",
+                "data": {
+                    "step": "tool_call",
+                    "status": "done",
+                    "duration_ms": int((_time.time() - t0) * 1000),
+                    "tool": tc["name"],
+                    "detail": str(result)[:150],
+                },
+            }
 
     # ── Step 5: Generating response ─────────────────────────────────────
-    yield {"event": "step", "data": {"step": "generate_response", "status": "started", "label": "Generating response"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "generate_response",
+            "status": "started",
+            "label": "Generating response",
+        },
+    }
     t0 = _time.time()
 
     full_response = ""
@@ -735,31 +1105,57 @@ async def run_agent_stream(
             for tc in tool_calls
         )
         synth_messages = [
-            {"role": "system", "content": "You are a helpful assistant. Synthesise tool results into a clear answer."},
-            {"role": "user", "content": FINAL_PROMPT.format(prompt=prompt, tool_results=results_text)},
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. Synthesise tool results into a clear answer.",
+            },
+            {
+                "role": "user",
+                "content": FINAL_PROMPT.format(
+                    prompt=prompt, tool_results=results_text
+                ),
+            },
         ]
         lf_gen_synth = lf_trace.generation(
             name="synthesis",
-            model=agent_config.get("model", active_info["model"]) if agent_config else active_info["model"],
+            model=(
+                agent_config.get("model", active_info["model"])
+                if agent_config
+                else active_info["model"]
+            ),
             input=synth_messages,
         )
         async for token in _ollama_chat_stream(synth_messages, usage_out=usage_synth):
             full_response += token
             yield {"event": "token", "data": token}
-        lf_gen_synth.end(output=full_response[:500], usage={
-            "input": usage_synth.get("prompt_tokens", 0),
-            "output": usage_synth.get("completion_tokens", 0),
-            "total": usage_synth.get("total_tokens", 0),
-        })
+        lf_gen_synth.end(
+            output=full_response[:500],
+            usage={
+                "input": usage_synth.get("prompt_tokens", 0),
+                "output": usage_synth.get("completion_tokens", 0),
+                "total": usage_synth.get("total_tokens", 0),
+            },
+        )
 
     # Aggregate token usage across LLM calls
     total_usage = {
-        "prompt_tokens": usage_reason.get("prompt_tokens", 0) + usage_synth.get("prompt_tokens", 0),
-        "completion_tokens": usage_reason.get("completion_tokens", 0) + usage_synth.get("completion_tokens", 0),
-        "total_tokens": usage_reason.get("total_tokens", 0) + usage_synth.get("total_tokens", 0),
+        "prompt_tokens": usage_reason.get("prompt_tokens", 0)
+        + usage_synth.get("prompt_tokens", 0),
+        "completion_tokens": usage_reason.get("completion_tokens", 0)
+        + usage_synth.get("completion_tokens", 0),
+        "total_tokens": usage_reason.get("total_tokens", 0)
+        + usage_synth.get("total_tokens", 0),
     }
 
-    yield {"event": "step", "data": {"step": "generate_response", "status": "done", "duration_ms": int((_time.time()-t0)*1000), "detail": f"{len(full_response)} chars"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "generate_response",
+            "status": "done",
+            "duration_ms": int((_time.time() - t0) * 1000),
+            "detail": f"{len(full_response)} chars",
+        },
+    }
 
     save_message(session_id, "user", prompt)
     save_message(session_id, "assistant", full_response)
@@ -771,21 +1167,47 @@ async def run_agent_stream(
     agent_run_counter.labels(status="success").inc()
 
     # ── Output guardrails ───────────────────────────────────────────────
-    yield {"event": "step", "data": {"step": "guardrails_output", "status": "started", "label": "Running output guardrails"}}
+    yield {
+        "event": "step",
+        "data": {
+            "step": "guardrails_output",
+            "status": "started",
+            "label": "Running output guardrails",
+        },
+    }
     t0 = _time.time()
-    output_gr_results = _check_guardrails_output(full_response, agent_config=agent_config)
-    yield {"event": "guardrails", "data": {"phase": "output", "results": output_gr_results}}
-    yield {"event": "step", "data": {"step": "guardrails_output", "status": "done",
-           "duration_ms": int((_time.time()-t0)*1000),
-           "detail": f"{len(output_gr_results)} checks"}}
+    output_gr_results = _check_guardrails_output(
+        full_response, agent_config=agent_config
+    )
+    yield {
+        "event": "guardrails",
+        "data": {"phase": "output", "results": output_gr_results},
+    }
+    yield {
+        "event": "step",
+        "data": {
+            "step": "guardrails_output",
+            "status": "done",
+            "duration_ms": int((_time.time() - t0) * 1000),
+            "detail": f"{len(output_gr_results)} checks",
+        },
+    }
 
     lf_trace.update(
         output=full_response,
         metadata={
             "request_id": request_id,
             "tools_used": tools_used,
-            "model": agent_config.get("model") if agent_config and agent_config.get("model") else active_info["model"],
-            "provider": agent_config.get("provider") if agent_config and agent_config.get("provider") else active_info["provider"],
+            "model": (
+                agent_config.get("model")
+                if agent_config and agent_config.get("model")
+                else active_info["model"]
+            ),
+            "provider": (
+                agent_config.get("provider")
+                if agent_config and agent_config.get("provider")
+                else active_info["provider"]
+            ),
             "usage": total_usage,
         },
     )
@@ -799,8 +1221,16 @@ async def run_agent_stream(
             "request_id": request_id,
             "trace_id": lf_trace.trace_id,
             "usage": total_usage,
-            "model": agent_config.get("model") if agent_config and agent_config.get("model") else _get_active_model()["model"],
-            "provider": agent_config.get("provider") if agent_config and agent_config.get("provider") else _get_active_model()["provider"],
+            "model": (
+                agent_config.get("model")
+                if agent_config and agent_config.get("model")
+                else _get_active_model()["model"]
+            ),
+            "provider": (
+                agent_config.get("provider")
+                if agent_config and agent_config.get("provider")
+                else _get_active_model()["provider"]
+            ),
             "guardrails": {"input": input_gr_results, "output": output_gr_results},
         },
     }

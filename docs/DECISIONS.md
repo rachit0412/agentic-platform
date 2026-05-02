@@ -144,17 +144,47 @@
 
 ---
 
+## ADR-011 · Dual-Mode Multi-Agent Orchestration
+
+| Field            | Detail                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-05                                                                                                                                                                                                                                                                                                                |
+| **Status**       | Accepted                                                                                                                                                                                                                                                                                                               |
+| **Context**      | The platform needs multi-agent orchestration where one agent delegates sub-tasks to specialist agents. Two patterns emerged: (1) the orchestrator LLM autonomously decides which sub-agent to invoke (runtime), and (2) deterministic pipelines where agents always run in a fixed sequence or parallel (pre-planned). |
+| **Decision**     | Implement both patterns with clear separation: runtime LLM-driven delegation via `delegate_to_agent` tool in agent-service; pre-planned sequential/parallel pipelines via n8n workflows calling `/run` with different `agent_id` per branch.                                                                           |
+| **Alternatives** | (1) All orchestration in n8n — inflexible, LLM can't decide dynamically. (2) All orchestration in agent-service — reinvents workflow engine for fixed patterns. (3) External orchestrator service — adds complexity without benefit.                                                                                   |
+| **Consequences** | No redundancy between n8n and agent-service. Agent-service owns "which agent" (LLM decides); n8n owns "in what order" (DAG decides). `sub_agent_ids` on agent config enables the `reason` node to inject sub-agent descriptions so the LLM knows its delegation options. Recursion guard prevents infinite delegation. |
+| **Principles**   | AP-7 Separation of Concerns, AP-9 Configuration over Code, AP-6 Protocol-Driven Extensibility                                                                                                                                                                                                                          |
+
+---
+
+## ADR-012 · Per-Agent Knowledge Base Isolation
+
+| Field            | Detail                                                                                                                                                                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-05                                                                                                                                                                                                                                       |
+| **Status**       | Accepted                                                                                                                                                                                                                                      |
+| **Context**      | When multiple agents exist, documents uploaded for one agent's KB should not pollute another agent's retrieval results. The original design used a single shared ChromaDB collection.                                                         |
+| **Decision**     | Each agent gets a dedicated ChromaDB collection named `agent_{name}_kb` (auto-generated from agent name). The `kb_collection` field on the agent config controls which collection is used for RAG retrieval during that agent's runs.         |
+| **Alternatives** | (1) Shared collection with metadata filtering — simpler but risks cross-contamination if filters fail. (2) Namespace prefixes within one collection — Chroma doesn't natively support namespaces. (3) Separate ChromaDB instances — overkill. |
+| **Consequences** | Complete isolation. Each agent's `retrieve_context` node reads from its own collection. Multi-agent orchestration naturally uses each sub-agent's isolated KB. Trade-off: more collections to manage; collection names must be unique.        |
+| **Principles**   | AP-8 Knowledge as First-Class Resource, AP-4 Defence in Depth                                                                                                                                                                                 |
+
+---
+
 ## ADR Index
 
-| ID      | Title                        | Principles  |
-| ------- | ---------------------------- | ----------- |
-| ADR-001 | LangGraph over AgentExecutor | AP-7, AP-5  |
-| ADR-002 | SQLite for Config and Memory | AP-3, AP-10 |
-| ADR-003 | Separate Tools Service       | AP-4, AP-7  |
-| ADR-004 | Multi-Provider LLM Switching | AP-2, AP-1  |
-| ADR-005 | ChromaDB for Vector Storage  | AP-3, AP-8  |
-| ADR-006 | Three-Pipeline Observability | AP-5, AP-10 |
-| ADR-007 | EJS + CSS Custom Properties  | AP-3        |
-| ADR-008 | Guardrails as Graph Gates    | AP-4, AP-9  |
-| ADR-009 | A2A and MCP Protocols        | AP-6        |
-| ADR-010 | Thin UI Proxy Pattern        | AP-1, AP-7  |
+| ID      | Title                               | Principles       |
+| ------- | ----------------------------------- | ---------------- |
+| ADR-001 | LangGraph over AgentExecutor        | AP-7, AP-5       |
+| ADR-002 | SQLite for Config and Memory        | AP-3, AP-10      |
+| ADR-003 | Separate Tools Service              | AP-4, AP-7       |
+| ADR-004 | Multi-Provider LLM Switching        | AP-2, AP-1       |
+| ADR-005 | ChromaDB for Vector Storage         | AP-3, AP-8       |
+| ADR-006 | Three-Pipeline Observability        | AP-5, AP-10      |
+| ADR-007 | EJS + CSS Custom Properties         | AP-3             |
+| ADR-008 | Guardrails as Graph Gates           | AP-4, AP-9       |
+| ADR-009 | A2A and MCP Protocols               | AP-6             |
+| ADR-010 | Thin UI Proxy Pattern               | AP-1, AP-7       |
+| ADR-011 | Dual-Mode Multi-Agent Orchestration | AP-7, AP-9, AP-6 |
+| ADR-012 | Per-Agent KB Isolation              | AP-8, AP-4       |

@@ -102,12 +102,6 @@
           <span class="rail-tooltip">Agent Builder</span>
         </a>
       </li>
-      <li>
-        <a href="/ai-studio" class="rail-item <%= page === 'ai-studio' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="12" y1="14" x2="17" y2="14"/></svg>
-          <span class="rail-tooltip">AI Studio <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:4px;font-weight:600">DEV</span></span>
-        </a>
-      </li>
       <!-- ── Agent Configuration ── -->
       <li class="rail-group">
         <a href="/agent-hub" class="rail-item <%= ['agent-hub','agents','skills','prompts','tools'].includes(page) ? 'active' : '' %>">
@@ -136,6 +130,12 @@
             Tools
           </a>
         </div>
+      </li>
+      <li>
+        <a href="/ai-studio" class="rail-item <%= page === 'ai-studio' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="12" y1="14" x2="17" y2="14"/></svg>
+          <span class="rail-tooltip">AI Studio <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:4px;font-weight:600">DEV</span></span>
+        </a>
       </li>
       <!-- ── Data & Automation ── -->
       <li><div class="rail-divider"></div></li>

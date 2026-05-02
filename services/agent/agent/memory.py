@@ -3,6 +3,7 @@ SQLite-based conversation memory.
 Stores message history per sessionId in /data/memory.db.
 Also stores skills and agent configurations.
 """
+
 import os
 import json
 import logging
@@ -53,8 +54,7 @@ def _reset_conn():
 
 def init_db():
     conn = _get_conn()
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT NOT NULL,
@@ -62,23 +62,17 @@ def init_db():
             content    TEXT NOT NULL,
             timestamp  TEXT NOT NULL
         )
-        """
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)"
-    )
-    conn.execute(
-        """
+        """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_session ON conversations(session_id)")
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS session_summaries (
             session_id TEXT PRIMARY KEY,
             summary    TEXT NOT NULL,
             turn_count INTEGER NOT NULL DEFAULT 0,
             updated_at TEXT NOT NULL
         )
-        """
-    )
-    conn.execute(
-        """
+        """)
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS skills (
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL UNIQUE,
@@ -89,10 +83,8 @@ def init_db():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
-        """
-    )
-    conn.execute(
-        """
+        """)
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS agents (
             id              TEXT PRIMARY KEY,
             name            TEXT NOT NULL UNIQUE,
@@ -104,6 +96,7 @@ def init_db():
             system_prompt   TEXT DEFAULT '',
             skill_ids       TEXT DEFAULT '[]',
             tool_ids        TEXT DEFAULT '[]',
+            sub_agent_ids   TEXT DEFAULT '[]',
             kb_collection   TEXT DEFAULT 'agentic_docs',
             max_iterations  INTEGER DEFAULT 5,
             memory_enabled  INTEGER DEFAULT 1,
@@ -111,17 +104,21 @@ def init_db():
             created_at      TEXT NOT NULL,
             updated_at      TEXT NOT NULL
         )
-        """
-    )
+        """)
     # ── Migration: add top_p column if missing (existing DBs) ──
     try:
         conn.execute("ALTER TABLE agents ADD COLUMN top_p REAL DEFAULT 1.0")
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
+    # ── Migration: add sub_agent_ids column if missing ──
+    try:
+        conn.execute("ALTER TABLE agents ADD COLUMN sub_agent_ids TEXT DEFAULT '[]'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ── A2A Peers table ──
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS a2a_peers (
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL,
@@ -134,11 +131,9 @@ def init_db():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
-        """
-    )
+        """)
     # ── MCP Servers table ──
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS mcp_servers (
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL,
@@ -152,11 +147,9 @@ def init_db():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
-        """
-    )
+        """)
     # ── Prompts Library table ──
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS prompts (
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL UNIQUE,
@@ -167,15 +160,30 @@ def init_db():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
-        """
-    )
+        """)
     # Ensure default agent exists
     existing = conn.execute("SELECT id FROM agents WHERE is_default = 1").fetchone()
     if not existing:
         now = datetime.now(timezone.utc).isoformat()
         conn.execute(
             "INSERT INTO agents (id, name, description, provider, model, temperature, system_prompt, skill_ids, tool_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("default", "Assistant", "Default general-purpose AI assistant", "ollama", os.getenv("OLLAMA_MODEL", "llama3"), 0.7, "", "[]", "[]", "agentic_docs", 5, 1, 1, now, now),
+            (
+                "default",
+                "Assistant",
+                "Default general-purpose AI assistant",
+                "ollama",
+                os.getenv("OLLAMA_MODEL", "llama3"),
+                0.7,
+                "",
+                "[]",
+                "[]",
+                "agentic_docs",
+                5,
+                1,
+                1,
+                now,
+                now,
+            ),
         )
     conn.commit()
 
@@ -285,9 +293,15 @@ def update_session_summary(session_id: str, user_msg: str, assistant_msg: str):
 def get_memory_stats() -> dict:
     """Return global memory statistics."""
     conn = _get_conn()
-    total_messages = conn.execute("SELECT COUNT(*) as c FROM conversations").fetchone()["c"]
-    total_sessions = conn.execute("SELECT COUNT(DISTINCT session_id) as c FROM conversations").fetchone()["c"]
-    sessions_with_summary = conn.execute("SELECT COUNT(*) as c FROM session_summaries").fetchone()["c"]
+    total_messages = conn.execute("SELECT COUNT(*) as c FROM conversations").fetchone()[
+        "c"
+    ]
+    total_sessions = conn.execute(
+        "SELECT COUNT(DISTINCT session_id) as c FROM conversations"
+    ).fetchone()["c"]
+    sessions_with_summary = conn.execute(
+        "SELECT COUNT(*) as c FROM session_summaries"
+    ).fetchone()["c"]
     return {
         "total_messages": total_messages,
         "total_sessions": total_sessions,
@@ -298,9 +312,20 @@ def get_memory_stats() -> dict:
 def get_db_stats() -> dict:
     """Return database path and record counts for all tables."""
     conn = _get_conn()
-    tables = ["agents", "skills", "prompts", "conversations", "documents",
-              "mcp_servers", "a2a_peers", "guardrails", "custom_tools", "session_summaries",
-              "version_history", "audit_log"]
+    tables = [
+        "agents",
+        "skills",
+        "prompts",
+        "conversations",
+        "documents",
+        "mcp_servers",
+        "a2a_peers",
+        "guardrails",
+        "custom_tools",
+        "session_summaries",
+        "version_history",
+        "audit_log",
+    ]
     counts = {}
     for table in tables:
         try:
@@ -323,9 +348,20 @@ def get_db_stats() -> dict:
 def export_all_data() -> dict:
     """Export all data from all tables as a JSON-serializable dict."""
     conn = _get_conn()
-    tables = ["agents", "skills", "prompts", "guardrails", "custom_tools",
-              "mcp_servers", "a2a_peers", "documents", "conversations", "session_summaries",
-              "version_history", "audit_log"]
+    tables = [
+        "agents",
+        "skills",
+        "prompts",
+        "guardrails",
+        "custom_tools",
+        "mcp_servers",
+        "a2a_peers",
+        "documents",
+        "conversations",
+        "session_summaries",
+        "version_history",
+        "audit_log",
+    ]
     result = {}
     for table in tables:
         try:
@@ -371,6 +407,7 @@ def get_relevant_context(query: str, k: int = 3) -> list[dict]:
     """
     try:
         from agent.vectorstore import search_similar
+
         results = search_similar(query, k=k)
         return results
     except Exception:
@@ -378,6 +415,7 @@ def get_relevant_context(query: str, k: int = 3) -> list[dict]:
 
 
 # ── Skills CRUD ────────────────────────────────────────────────────────────
+
 
 def _row_to_skill(row) -> dict:
     return {
@@ -404,14 +442,28 @@ def get_skill(skill_id: str) -> dict | None:
     return _row_to_skill(row) if row else None
 
 
-def create_skill(name: str, description: str = "", system_prompt: str = "",
-                 tool_ids: list[str] | None = None, constraints: list[str] | None = None) -> dict:
+def create_skill(
+    name: str,
+    description: str = "",
+    system_prompt: str = "",
+    tool_ids: list[str] | None = None,
+    constraints: list[str] | None = None,
+) -> dict:
     conn = _get_conn()
     skill_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO skills (id, name, description, system_prompt, tool_ids, constraints, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (skill_id, name, description, system_prompt, json.dumps(tool_ids or []), json.dumps(constraints or []), now, now),
+        (
+            skill_id,
+            name,
+            description,
+            system_prompt,
+            json.dumps(tool_ids or []),
+            json.dumps(constraints or []),
+            now,
+            now,
+        ),
     )
     conn.commit()
     log_audit("create", "skill", skill_id, name)
@@ -424,7 +476,13 @@ def update_skill(skill_id: str, **kwargs) -> dict | None:
     if not existing:
         return None
     save_version("skill", skill_id, existing)
-    log_audit("update", "skill", skill_id, existing.get("name", ""), {"fields": list(kwargs.keys())})
+    log_audit(
+        "update",
+        "skill",
+        skill_id,
+        existing.get("name", ""),
+        {"fields": list(kwargs.keys())},
+    )
     fields = []
     values = []
     for key in ("name", "description", "system_prompt"):
@@ -456,6 +514,7 @@ def delete_skill(skill_id: str) -> bool:
 
 # ── Agents CRUD ────────────────────────────────────────────────────────────
 
+
 def _row_to_agent(row) -> dict:
     return {
         "id": row["id"],
@@ -468,6 +527,9 @@ def _row_to_agent(row) -> dict:
         "system_prompt": row["system_prompt"],
         "skill_ids": json.loads(row["skill_ids"]),
         "tool_ids": json.loads(row["tool_ids"]),
+        "sub_agent_ids": (
+            json.loads(row["sub_agent_ids"]) if "sub_agent_ids" in row.keys() else []
+        ),
         "kb_collection": row["kb_collection"],
         "max_iterations": row["max_iterations"],
         "memory_enabled": bool(row["memory_enabled"]),
@@ -479,7 +541,9 @@ def _row_to_agent(row) -> dict:
 
 def list_agents() -> list[dict]:
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM agents ORDER BY is_default DESC, name").fetchall()
+    rows = conn.execute(
+        "SELECT * FROM agents ORDER BY is_default DESC, name"
+    ).fetchall()
     return [_row_to_agent(r) for r in rows]
 
 
@@ -489,19 +553,45 @@ def get_agent(agent_id: str) -> dict | None:
     return _row_to_agent(row) if row else None
 
 
-def create_agent(name: str, description: str = "", provider: str = "ollama",
-                 model: str = "llama3", temperature: float = 0.7, top_p: float = 1.0,
-                 system_prompt: str = "", skill_ids: list[str] | None = None,
-                 tool_ids: list[str] | None = None, kb_collection: str = "agentic_docs",
-                 max_iterations: int = 5, memory_enabled: bool = True) -> dict:
+def create_agent(
+    name: str,
+    description: str = "",
+    provider: str = "ollama",
+    model: str = "llama3",
+    temperature: float = 0.7,
+    top_p: float = 1.0,
+    system_prompt: str = "",
+    skill_ids: list[str] | None = None,
+    tool_ids: list[str] | None = None,
+    sub_agent_ids: list[str] | None = None,
+    kb_collection: str = "agentic_docs",
+    max_iterations: int = 5,
+    memory_enabled: bool = True,
+) -> dict:
     conn = _get_conn()
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (agent_id, name, description, provider, model, temperature, top_p, system_prompt,
-         json.dumps(skill_ids or []), json.dumps(tool_ids or []), kb_collection,
-         max_iterations, int(memory_enabled), 0, now, now),
+        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            agent_id,
+            name,
+            description,
+            provider,
+            model,
+            temperature,
+            top_p,
+            system_prompt,
+            json.dumps(skill_ids or []),
+            json.dumps(tool_ids or []),
+            json.dumps(sub_agent_ids or []),
+            kb_collection,
+            max_iterations,
+            int(memory_enabled),
+            0,
+            now,
+            now,
+        ),
     )
     conn.commit()
     log_audit("create", "agent", agent_id, name)
@@ -515,10 +605,23 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         return None
     # Save version before update
     save_version("agent", agent_id, existing)
-    log_audit("update", "agent", agent_id, existing.get("name", ""), {"fields": list(kwargs.keys())})
+    log_audit(
+        "update",
+        "agent",
+        agent_id,
+        existing.get("name", ""),
+        {"fields": list(kwargs.keys())},
+    )
     fields = []
     values = []
-    for key in ("name", "description", "provider", "model", "system_prompt", "kb_collection"):
+    for key in (
+        "name",
+        "description",
+        "provider",
+        "model",
+        "system_prompt",
+        "kb_collection",
+    ):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
@@ -534,7 +637,7 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(int(kwargs[key]))
-    for key in ("skill_ids", "tool_ids"):
+    for key in ("skill_ids", "tool_ids", "sub_agent_ids"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))
@@ -550,7 +653,9 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
 def delete_agent(agent_id: str) -> bool:
     conn = _get_conn()
     # Cannot delete default agent
-    row = conn.execute("SELECT is_default FROM agents WHERE id = ?", (agent_id,)).fetchone()
+    row = conn.execute(
+        "SELECT is_default FROM agents WHERE id = ?", (agent_id,)
+    ).fetchone()
     if row and row["is_default"]:
         return False
     existing = get_agent(agent_id)
@@ -562,6 +667,7 @@ def delete_agent(agent_id: str) -> bool:
 
 
 # ── A2A Peers CRUD ─────────────────────────────────────────────────────────
+
 
 def _row_to_a2a_peer(row) -> dict:
     return {
@@ -590,8 +696,9 @@ def get_a2a_peer(peer_id: str) -> dict | None:
     return _row_to_a2a_peer(row) if row else None
 
 
-def create_a2a_peer(name: str, url: str, description: str = "",
-                    capabilities: list[str] | None = None) -> dict:
+def create_a2a_peer(
+    name: str, url: str, description: str = "", capabilities: list[str] | None = None
+) -> dict:
     conn = _get_conn()
     peer_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
@@ -640,6 +747,7 @@ def delete_a2a_peer(peer_id: str) -> bool:
 
 # ── MCP Servers CRUD ───────────────────────────────────────────────────────
 
+
 def _row_to_mcp_server(row) -> dict:
     return {
         "id": row["id"],
@@ -664,18 +772,34 @@ def list_mcp_servers() -> list[dict]:
 
 def get_mcp_server(server_id: str) -> dict | None:
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM mcp_servers WHERE id = ?", (server_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM mcp_servers WHERE id = ?", (server_id,)
+    ).fetchone()
     return _row_to_mcp_server(row) if row else None
 
 
-def create_mcp_server(name: str, url: str, transport: str = "stdio",
-                      description: str = "", tools: list[dict] | None = None) -> dict:
+def create_mcp_server(
+    name: str,
+    url: str,
+    transport: str = "stdio",
+    description: str = "",
+    tools: list[dict] | None = None,
+) -> dict:
     conn = _get_conn()
     server_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO mcp_servers (id, name, url, transport, description, tools, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (server_id, name, url, transport, description, json.dumps(tools or []), now, now),
+        (
+            server_id,
+            name,
+            url,
+            transport,
+            description,
+            json.dumps(tools or []),
+            now,
+            now,
+        ),
     )
     conn.commit()
     return get_mcp_server(server_id)
@@ -718,6 +842,7 @@ def delete_mcp_server(server_id: str) -> bool:
 
 # ── Prompts CRUD ───────────────────────────────────────────────────────────
 
+
 def _row_to_prompt(row) -> dict:
     return {
         "id": row["id"],
@@ -743,14 +868,28 @@ def get_prompt(prompt_id: str) -> dict | None:
     return _row_to_prompt(row) if row else None
 
 
-def create_prompt(name: str, content: str, category: str = "general",
-                  description: str = "", tags: list[str] | None = None) -> dict:
+def create_prompt(
+    name: str,
+    content: str,
+    category: str = "general",
+    description: str = "",
+    tags: list[str] | None = None,
+) -> dict:
     conn = _get_conn()
     prompt_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO prompts (id, name, category, content, description, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (prompt_id, name, category, content, description, json.dumps(tags or []), now, now),
+        (
+            prompt_id,
+            name,
+            category,
+            content,
+            description,
+            json.dumps(tags or []),
+            now,
+            now,
+        ),
     )
     conn.commit()
     log_audit("create", "prompt", prompt_id, name)
@@ -763,7 +902,13 @@ def update_prompt(prompt_id: str, **kwargs) -> dict | None:
     if not existing:
         return None
     save_version("prompt", prompt_id, existing)
-    log_audit("update", "prompt", prompt_id, existing.get("name", ""), {"fields": list(kwargs.keys())})
+    log_audit(
+        "update",
+        "prompt",
+        prompt_id,
+        existing.get("name", ""),
+        {"fields": list(kwargs.keys())},
+    )
     fields = []
     values = []
     for key in ("name", "category", "content", "description"):
@@ -795,10 +940,10 @@ def delete_prompt(prompt_id: str) -> bool:
 
 # ── Guardrails ──────────────────────────────────────────────────────────────
 
+
 def _init_guardrails_table():
     conn = _get_conn()
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS guardrails (
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL UNIQUE,
@@ -810,8 +955,7 @@ def _init_guardrails_table():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
-        """
-    )
+        """)
     conn.commit()
 
 
@@ -822,26 +966,131 @@ def _ensure_default_guardrails():
         return
     now = datetime.now(timezone.utc).isoformat()
     defaults = [
-        ("gr-pii", "PII Detection", "content_safety", "Detects and redacts personally identifiable information (emails, phone numbers, SSNs, credit cards) from inputs and outputs", 1, "high",
-         json.dumps({"patterns": ["email", "phone", "ssn", "credit_card"], "action": "redact"})),
-        ("gr-toxicity", "Toxicity Filter", "content_safety", "Blocks or flags toxic, harmful, hateful, or violent content in user prompts and agent responses", 1, "high",
-         json.dumps({"threshold": 0.7, "action": "block", "categories": ["hate", "violence", "self_harm", "sexual"]})),
-        ("gr-prompt-injection", "Prompt Injection Guard", "content_safety", "Detects and blocks prompt injection attempts that try to override system instructions", 1, "critical",
-         json.dumps({"action": "block", "patterns": ["ignore previous", "disregard above", "new instructions"]})),
-        ("gr-hallucination", "Hallucination Detection", "quality", "Flags responses that may contain fabricated facts not grounded in the knowledge base or tool results", 0, "medium",
-         json.dumps({"action": "warn", "confidence_threshold": 0.5})),
-        ("gr-bias", "Bias Detection", "fairness", "Monitors for biased language or stereotyping across protected categories", 0, "medium",
-         json.dumps({"categories": ["gender", "race", "age", "religion"], "action": "flag"})),
-        ("gr-topic-restrict", "Topic Restriction", "compliance", "Restricts conversations to approved topics and prevents off-topic discussions", 0, "low",
-         json.dumps({"allowed_topics": [], "blocked_topics": [], "action": "redirect"})),
-        ("gr-output-length", "Output Length Limit", "quality", "Enforces maximum response length to prevent excessively long outputs", 1, "low",
-         json.dumps({"max_tokens": 2048, "action": "truncate"})),
-        ("gr-data-leak", "Data Leakage Prevention", "compliance", "Prevents the agent from revealing system prompts, internal configurations, or training data details", 1, "high",
-         json.dumps({"action": "block", "protected": ["system_prompt", "config", "api_keys"]})),
-        ("gr-citation", "Source Citation Required", "quality", "Requires the agent to cite sources when using knowledge base content", 0, "low",
-         json.dumps({"action": "enforce", "format": "inline"})),
-        ("gr-rate-limit", "Rate Limiting", "operational", "Limits the number of agent calls per session to prevent abuse", 1, "medium",
-         json.dumps({"max_calls_per_minute": 20, "max_calls_per_session": 100, "action": "throttle"})),
+        (
+            "gr-pii",
+            "PII Detection",
+            "content_safety",
+            "Detects and redacts personally identifiable information (emails, phone numbers, SSNs, credit cards) from inputs and outputs",
+            1,
+            "high",
+            json.dumps(
+                {
+                    "patterns": ["email", "phone", "ssn", "credit_card"],
+                    "action": "redact",
+                }
+            ),
+        ),
+        (
+            "gr-toxicity",
+            "Toxicity Filter",
+            "content_safety",
+            "Blocks or flags toxic, harmful, hateful, or violent content in user prompts and agent responses",
+            1,
+            "high",
+            json.dumps(
+                {
+                    "threshold": 0.7,
+                    "action": "block",
+                    "categories": ["hate", "violence", "self_harm", "sexual"],
+                }
+            ),
+        ),
+        (
+            "gr-prompt-injection",
+            "Prompt Injection Guard",
+            "content_safety",
+            "Detects and blocks prompt injection attempts that try to override system instructions",
+            1,
+            "critical",
+            json.dumps(
+                {
+                    "action": "block",
+                    "patterns": [
+                        "ignore previous",
+                        "disregard above",
+                        "new instructions",
+                    ],
+                }
+            ),
+        ),
+        (
+            "gr-hallucination",
+            "Hallucination Detection",
+            "quality",
+            "Flags responses that may contain fabricated facts not grounded in the knowledge base or tool results",
+            0,
+            "medium",
+            json.dumps({"action": "warn", "confidence_threshold": 0.5}),
+        ),
+        (
+            "gr-bias",
+            "Bias Detection",
+            "fairness",
+            "Monitors for biased language or stereotyping across protected categories",
+            0,
+            "medium",
+            json.dumps(
+                {"categories": ["gender", "race", "age", "religion"], "action": "flag"}
+            ),
+        ),
+        (
+            "gr-topic-restrict",
+            "Topic Restriction",
+            "compliance",
+            "Restricts conversations to approved topics and prevents off-topic discussions",
+            0,
+            "low",
+            json.dumps(
+                {"allowed_topics": [], "blocked_topics": [], "action": "redirect"}
+            ),
+        ),
+        (
+            "gr-output-length",
+            "Output Length Limit",
+            "quality",
+            "Enforces maximum response length to prevent excessively long outputs",
+            1,
+            "low",
+            json.dumps({"max_tokens": 2048, "action": "truncate"}),
+        ),
+        (
+            "gr-data-leak",
+            "Data Leakage Prevention",
+            "compliance",
+            "Prevents the agent from revealing system prompts, internal configurations, or training data details",
+            1,
+            "high",
+            json.dumps(
+                {
+                    "action": "block",
+                    "protected": ["system_prompt", "config", "api_keys"],
+                }
+            ),
+        ),
+        (
+            "gr-citation",
+            "Source Citation Required",
+            "quality",
+            "Requires the agent to cite sources when using knowledge base content",
+            0,
+            "low",
+            json.dumps({"action": "enforce", "format": "inline"}),
+        ),
+        (
+            "gr-rate-limit",
+            "Rate Limiting",
+            "operational",
+            "Limits the number of agent calls per session to prevent abuse",
+            1,
+            "medium",
+            json.dumps(
+                {
+                    "max_calls_per_minute": 20,
+                    "max_calls_per_session": 100,
+                    "action": "throttle",
+                }
+            ),
+        ),
     ]
     for d in defaults:
         conn.execute(
@@ -861,7 +1110,9 @@ def list_guardrails() -> list[dict]:
 
 def get_guardrail(guardrail_id: str) -> dict | None:
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM guardrails WHERE id = ?", (guardrail_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM guardrails WHERE id = ?", (guardrail_id,)
+    ).fetchone()
     return _row_to_guardrail(row) if row else None
 
 
@@ -881,7 +1132,11 @@ def update_guardrail(guardrail_id: str, **kwargs) -> dict | None:
         values.append(1 if kwargs["enabled"] else 0)
     if "config" in kwargs:
         fields.append("config = ?")
-        values.append(json.dumps(kwargs["config"]) if isinstance(kwargs["config"], dict) else kwargs["config"])
+        values.append(
+            json.dumps(kwargs["config"])
+            if isinstance(kwargs["config"], dict)
+            else kwargs["config"]
+        )
     if fields:
         fields.append("updated_at = ?")
         values.append(datetime.now(timezone.utc).isoformat())
@@ -903,10 +1158,10 @@ def _row_to_guardrail(row) -> dict:
 
 # ── Custom Tools CRUD ──────────────────────────────────────────────────────
 
+
 def _init_custom_tools_table():
     conn = _get_conn()
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS custom_tools (
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL UNIQUE,
@@ -921,8 +1176,7 @@ def _init_custom_tools_table():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
-        """
-    )
+        """)
     conn.commit()
 
 
@@ -957,19 +1211,35 @@ def get_custom_tool(tool_id: str) -> dict | None:
     return _row_to_custom_tool(row) if row else None
 
 
-def create_custom_tool(name: str, description: str = "", category: str = "proxy",
-                       endpoint: str = "", method: str = "POST",
-                       headers: dict | None = None, body_template: dict | None = None,
-                       parameters: list[dict] | None = None) -> dict:
+def create_custom_tool(
+    name: str,
+    description: str = "",
+    category: str = "proxy",
+    endpoint: str = "",
+    method: str = "POST",
+    headers: dict | None = None,
+    body_template: dict | None = None,
+    parameters: list[dict] | None = None,
+) -> dict:
     _init_custom_tools_table()
     conn = _get_conn()
     tool_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO custom_tools (id, name, description, category, endpoint, method, headers, body_template, parameters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (tool_id, name, description, category, endpoint, method,
-         json.dumps(headers or {}), json.dumps(body_template or {}),
-         json.dumps(parameters or []), now, now),
+        (
+            tool_id,
+            name,
+            description,
+            category,
+            endpoint,
+            method,
+            json.dumps(headers or {}),
+            json.dumps(body_template or {}),
+            json.dumps(parameters or []),
+            now,
+            now,
+        ),
     )
     conn.commit()
     return get_custom_tool(tool_id)
@@ -998,7 +1268,9 @@ def update_custom_tool(tool_id: str, **kwargs) -> dict | None:
         fields.append("updated_at = ?")
         values.append(datetime.now(timezone.utc).isoformat())
         values.append(tool_id)
-        conn.execute(f"UPDATE custom_tools SET {', '.join(fields)} WHERE id = ?", values)
+        conn.execute(
+            f"UPDATE custom_tools SET {', '.join(fields)} WHERE id = ?", values
+        )
         conn.commit()
     return get_custom_tool(tool_id)
 
@@ -1013,26 +1285,48 @@ def delete_custom_tool(tool_id: str) -> bool:
 
 # ── Document Registry ──────────────────────────────────────────────────────
 
+
 def _init_documents_table():
     conn = _get_conn()
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS documents (
-            id          TEXT PRIMARY KEY,
-            name        TEXT NOT NULL,
-            source      TEXT NOT NULL,
-            collection  TEXT NOT NULL DEFAULT 'agentic_docs',
-            folder      TEXT DEFAULT '/',
-            agent_tags  TEXT DEFAULT '[]',
-            file_type   TEXT DEFAULT '',
-            file_size   INTEGER DEFAULT 0,
-            chunk_count INTEGER DEFAULT 0,
-            metadata    TEXT DEFAULT '{}',
-            created_at  TEXT NOT NULL,
-            updated_at  TEXT NOT NULL
+            id            TEXT PRIMARY KEY,
+            name          TEXT NOT NULL,
+            source        TEXT NOT NULL,
+            collection    TEXT NOT NULL DEFAULT 'agentic_docs',
+            folder        TEXT DEFAULT '/',
+            agent_tags    TEXT DEFAULT '[]',
+            file_type     TEXT DEFAULT '',
+            file_size     INTEGER DEFAULT 0,
+            chunk_count   INTEGER DEFAULT 0,
+            metadata      TEXT DEFAULT '{}',
+            status        TEXT DEFAULT 'uploaded',
+            storage_path  TEXT DEFAULT '',
+            source_type   TEXT DEFAULT 'upload',
+            shortcut_ref  TEXT DEFAULT '',
+            created_at    TEXT NOT NULL,
+            updated_at    TEXT NOT NULL
         )
-        """
-    )
+        """)
+    # Migrations for existing databases
+    try:
+        conn.execute("ALTER TABLE documents ADD COLUMN status TEXT DEFAULT 'uploaded'")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE documents ADD COLUMN storage_path TEXT DEFAULT ''")
+    except Exception:
+        pass
+    try:
+        conn.execute(
+            "ALTER TABLE documents ADD COLUMN source_type TEXT DEFAULT 'upload'"
+        )
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE documents ADD COLUMN shortcut_ref TEXT DEFAULT ''")
+    except Exception:
+        pass
     conn.commit()
 
 
@@ -1048,12 +1342,21 @@ def _row_to_doc(row) -> dict:
         "file_size": row["file_size"],
         "chunk_count": row["chunk_count"],
         "metadata": json.loads(row["metadata"] or "{}"),
+        "status": row["status"] if "status" in row.keys() else "uploaded",
+        "storage_path": row["storage_path"] if "storage_path" in row.keys() else "",
+        "source_type": row["source_type"] if "source_type" in row.keys() else "upload",
+        "shortcut_ref": row["shortcut_ref"] if "shortcut_ref" in row.keys() else "",
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
 
 
-def list_documents_registry(folder: str | None = None, agent_id: str | None = None, search: str | None = None, collection: str | None = None) -> list[dict]:
+def list_documents_registry(
+    folder: str | None = None,
+    agent_id: str | None = None,
+    search: str | None = None,
+    collection: str | None = None,
+) -> list[dict]:
     _init_documents_table()
     conn = _get_conn()
     query = "SELECT * FROM documents WHERE 1=1"
@@ -1082,10 +1385,21 @@ def get_document_registry(doc_id: str) -> dict | None:
     return _row_to_doc(row) if row else None
 
 
-def create_document_registry(name: str, source: str, collection: str = "agentic_docs",
-                             folder: str = "/", agent_tags: list | None = None,
-                             file_type: str = "", file_size: int = 0,
-                             chunk_count: int = 0, metadata: dict | None = None) -> dict:
+def create_document_registry(
+    name: str,
+    source: str,
+    collection: str = "agentic_docs",
+    folder: str = "/",
+    agent_tags: list | None = None,
+    file_type: str = "",
+    file_size: int = 0,
+    chunk_count: int = 0,
+    metadata: dict | None = None,
+    status: str = "uploaded",
+    storage_path: str = "",
+    source_type: str = "upload",
+    shortcut_ref: str = "",
+) -> dict:
     _init_documents_table()
     conn = _get_conn()
     doc_id = str(uuid.uuid4())[:12]
@@ -1096,8 +1410,25 @@ def create_document_registry(name: str, source: str, collection: str = "agentic_
     if not folder.endswith("/"):
         folder = folder + "/"
     conn.execute(
-        "INSERT INTO documents (id, name, source, collection, folder, agent_tags, file_type, file_size, chunk_count, metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (doc_id, name, source, collection, folder, json.dumps(agent_tags or []), file_type, file_size, chunk_count, json.dumps(metadata or {}), now, now),
+        "INSERT INTO documents (id, name, source, collection, folder, agent_tags, file_type, file_size, chunk_count, metadata, status, storage_path, source_type, shortcut_ref, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            doc_id,
+            name,
+            source,
+            collection,
+            folder,
+            json.dumps(agent_tags or []),
+            file_type,
+            file_size,
+            chunk_count,
+            json.dumps(metadata or {}),
+            status,
+            storage_path,
+            source_type,
+            shortcut_ref,
+            now,
+            now,
+        ),
     )
     conn.commit()
     return get_document_registry(doc_id)
@@ -1106,7 +1437,19 @@ def create_document_registry(name: str, source: str, collection: str = "agentic_
 def update_document_registry(doc_id: str, **kwargs) -> dict | None:
     _init_documents_table()
     conn = _get_conn()
-    allowed = {"name", "source", "folder", "agent_tags", "file_type", "chunk_count", "metadata"}
+    allowed = {
+        "name",
+        "source",
+        "folder",
+        "agent_tags",
+        "file_type",
+        "chunk_count",
+        "metadata",
+        "status",
+        "storage_path",
+        "source_type",
+        "shortcut_ref",
+    }
     fields, values = [], []
     for k, v in kwargs.items():
         if k not in allowed:
@@ -1139,11 +1482,16 @@ def delete_document_registry(doc_id: str) -> bool:
     return cursor.rowcount > 0
 
 
-def delete_document_registry_by_source(source: str, collection: str = "agentic_docs") -> int:
+def delete_document_registry_by_source(
+    source: str, collection: str = "agentic_docs"
+) -> int:
     """Delete registry records matching a source + collection."""
     _init_documents_table()
     conn = _get_conn()
-    cursor = conn.execute("DELETE FROM documents WHERE source = ? AND collection = ?", (source, collection))
+    cursor = conn.execute(
+        "DELETE FROM documents WHERE source = ? AND collection = ?",
+        (source, collection),
+    )
     conn.commit()
     return cursor.rowcount
 
@@ -1152,7 +1500,9 @@ def list_folders() -> list[dict]:
     """Return all unique folder paths with document counts."""
     _init_documents_table()
     conn = _get_conn()
-    rows = conn.execute("SELECT folder, COUNT(*) as count FROM documents GROUP BY folder ORDER BY folder").fetchall()
+    rows = conn.execute(
+        "SELECT folder, COUNT(*) as count FROM documents GROUP BY folder ORDER BY folder"
+    ).fetchall()
     return [{"path": r["folder"], "count": r["count"]} for r in rows]
 
 
@@ -1181,13 +1531,19 @@ def untag_all_for_agent(agent_id: str) -> int:
     """Remove an agent tag from ALL documents that reference it."""
     _init_documents_table()
     conn = _get_conn()
-    rows = conn.execute("SELECT id, agent_tags FROM documents WHERE agent_tags LIKE ?", (f'%"{agent_id}"%',)).fetchall()
+    rows = conn.execute(
+        "SELECT id, agent_tags FROM documents WHERE agent_tags LIKE ?",
+        (f'%"{agent_id}"%',),
+    ).fetchall()
     count = 0
     now = datetime.now(timezone.utc).isoformat()
     for row in rows:
         tags = json.loads(row["agent_tags"] or "[]")
         tags = [t for t in tags if t != agent_id]
-        conn.execute("UPDATE documents SET agent_tags = ?, updated_at = ? WHERE id = ?", (json.dumps(tags), now, row["id"]))
+        conn.execute(
+            "UPDATE documents SET agent_tags = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(tags), now, row["id"]),
+        )
         count += 1
     conn.commit()
     return count
@@ -1204,10 +1560,10 @@ def delete_documents_by_collection(collection: str) -> int:
 
 # ── Version History ────────────────────────────────────────────────────────
 
+
 def _init_version_history_table():
     conn = _get_conn()
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS version_history (
             id          TEXT PRIMARY KEY,
             entity_type TEXT NOT NULL,
@@ -1217,13 +1573,16 @@ def _init_version_history_table():
             changed_by  TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL
         )
-        """
+        """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_vh_entity ON version_history(entity_type, entity_id)"
     )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_vh_entity ON version_history(entity_type, entity_id)")
     conn.commit()
 
 
-def save_version(entity_type: str, entity_id: str, snapshot: dict, changed_by: str = "system"):
+def save_version(
+    entity_type: str, entity_id: str, snapshot: dict, changed_by: str = "system"
+):
     """Save a versioned snapshot of an entity before it is modified."""
     _init_version_history_table()
     conn = _get_conn()
@@ -1237,7 +1596,15 @@ def save_version(entity_type: str, entity_id: str, snapshot: dict, changed_by: s
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO version_history (id, entity_type, entity_id, version, snapshot, changed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (vid, entity_type, entity_id, next_version, json.dumps(snapshot), changed_by, now),
+        (
+            vid,
+            entity_type,
+            entity_id,
+            next_version,
+            json.dumps(snapshot),
+            changed_by,
+            now,
+        ),
     )
     conn.commit()
     return {"id": vid, "version": next_version}
@@ -1252,9 +1619,15 @@ def list_versions(entity_type: str, entity_id: str) -> list[dict]:
         (entity_type, entity_id),
     ).fetchall()
     return [
-        {"id": r["id"], "entity_type": r["entity_type"], "entity_id": r["entity_id"],
-         "version": r["version"], "snapshot": json.loads(r["snapshot"]),
-         "changed_by": r["changed_by"], "created_at": r["created_at"]}
+        {
+            "id": r["id"],
+            "entity_type": r["entity_type"],
+            "entity_id": r["entity_id"],
+            "version": r["version"],
+            "snapshot": json.loads(r["snapshot"]),
+            "changed_by": r["changed_by"],
+            "created_at": r["created_at"],
+        }
         for r in rows
     ]
 
@@ -1263,20 +1636,28 @@ def get_version(version_id: str) -> dict | None:
     """Get a specific version snapshot."""
     _init_version_history_table()
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM version_history WHERE id = ?", (version_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM version_history WHERE id = ?", (version_id,)
+    ).fetchone()
     if not row:
         return None
-    return {"id": row["id"], "entity_type": row["entity_type"], "entity_id": row["entity_id"],
-            "version": row["version"], "snapshot": json.loads(row["snapshot"]),
-            "changed_by": row["changed_by"], "created_at": row["created_at"]}
+    return {
+        "id": row["id"],
+        "entity_type": row["entity_type"],
+        "entity_id": row["entity_id"],
+        "version": row["version"],
+        "snapshot": json.loads(row["snapshot"]),
+        "changed_by": row["changed_by"],
+        "created_at": row["created_at"],
+    }
 
 
 # ── Audit Log ──────────────────────────────────────────────────────────────
 
+
 def _init_audit_log_table():
     conn = _get_conn()
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
             id          TEXT PRIMARY KEY,
             action      TEXT NOT NULL,
@@ -1287,15 +1668,19 @@ def _init_audit_log_table():
             performed_by TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL
         )
-        """
-    )
+        """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(created_at)")
     conn.commit()
 
 
-def log_audit(action: str, entity_type: str, entity_id: str = "",
-              entity_name: str = "", details: dict | None = None,
-              performed_by: str = "system"):
+def log_audit(
+    action: str,
+    entity_type: str,
+    entity_id: str = "",
+    entity_name: str = "",
+    details: dict | None = None,
+    performed_by: str = "system",
+):
     """Record an audit log entry."""
     _init_audit_log_table()
     conn = _get_conn()
@@ -1303,13 +1688,23 @@ def log_audit(action: str, entity_type: str, entity_id: str = "",
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO audit_log (id, action, entity_type, entity_id, entity_name, details, performed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (aid, action, entity_type, entity_id, entity_name, json.dumps(details or {}), performed_by, now),
+        (
+            aid,
+            action,
+            entity_type,
+            entity_id,
+            entity_name,
+            json.dumps(details or {}),
+            performed_by,
+            now,
+        ),
     )
     conn.commit()
 
 
-def list_audit_log(limit: int = 100, entity_type: str | None = None,
-                   action: str | None = None) -> list[dict]:
+def list_audit_log(
+    limit: int = 100, entity_type: str | None = None, action: str | None = None
+) -> list[dict]:
     """Return recent audit log entries with optional filters."""
     _init_audit_log_table()
     conn = _get_conn()
@@ -1325,9 +1720,15 @@ def list_audit_log(limit: int = 100, entity_type: str | None = None,
     params.append(limit)
     rows = conn.execute(query, params).fetchall()
     return [
-        {"id": r["id"], "action": r["action"], "entity_type": r["entity_type"],
-         "entity_id": r["entity_id"], "entity_name": r["entity_name"],
-         "details": json.loads(r["details"]), "performed_by": r["performed_by"],
-         "created_at": r["created_at"]}
+        {
+            "id": r["id"],
+            "action": r["action"],
+            "entity_type": r["entity_type"],
+            "entity_id": r["entity_id"],
+            "entity_name": r["entity_name"],
+            "details": json.loads(r["details"]),
+            "performed_by": r["performed_by"],
+            "created_at": r["created_at"],
+        }
         for r in rows
     ]

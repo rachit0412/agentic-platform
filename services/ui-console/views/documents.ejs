@@ -51,58 +51,89 @@
   <!-- Main Content -->
   <div style="flex:1;min-width:0">
 
-    <!-- Ingest Form — Multi-Source Importer -->
+    <!-- Ingest Form — Enterprise Document Store -->
     <div class="card animate-fade-up delay-100" style="margin-bottom:1.25rem">
-      <h3 style="margin-bottom:0.75rem">Import Data</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+        <h3 style="margin:0">Add Documents</h3>
+        <span style="font-size:0.7rem;color:var(--text-3);background:rgba(6,182,212,0.08);padding:0.2rem 0.6rem;border-radius:4px">Files are staged before indexing — like Google Drive</span>
+      </div>
 
       <!-- Tabs -->
       <div style="display:flex;gap:0;border-bottom:2px solid var(--glass-border);margin-bottom:1.25rem">
         <button class="importer-tab active" onclick="switchTab('file')" id="tab-file" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          File Upload
+          Upload
         </button>
         <button class="importer-tab" onclick="switchTab('url')" id="tab-url" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          URL Import
+          Connect URL
+        </button>
+        <button class="importer-tab" onclick="switchTab('shortcut')" id="tab-shortcut" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Shortcut
         </button>
         <button class="importer-tab" onclick="switchTab('text')" id="tab-text" style="padding:0.6rem 1.25rem;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-3);transition:all 0.2s;margin-bottom:-2px;display:flex;align-items:center;gap:0.4rem">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Paste Text
+          Paste &amp; Index
         </button>
       </div>
 
-      <!-- Tab: File Upload -->
+      <!-- Tab: File Upload (stages to file store) -->
       <div id="panel-file" class="importer-panel">
         <div id="drop-zone" style="border:2px dashed rgba(6,182,212,0.3);border-radius:14px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(6,182,212,0.02)" ondragover="event.preventDefault();this.style.borderColor='#06b6d4';this.style.background='rgba(6,182,212,0.06)'" ondragleave="this.style.borderColor='rgba(6,182,212,0.3)';this.style.background='rgba(6,182,212,0.02)'" ondrop="handleDrop(event)" onclick="document.getElementById('file-input').click()">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#06b6d4" stroke-width="1.5" style="margin-bottom:0.5rem"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <p style="color:var(--text-2);font-size:0.85rem;margin:0 0 0.15rem;font-weight:600">Drop files here or click to browse</p>
-          <p style="color:var(--text-3);font-size:0.72rem;margin:0">.txt, .md, .json, .csv, .pdf — max 5 MB</p>
+          <p style="color:var(--text-3);font-size:0.72rem;margin:0">.txt, .md, .json, .csv, .pdf — max 5 MB &bull; Files are staged, not indexed immediately</p>
           <input type="file" id="file-input" multiple accept=".txt,.md,.json,.csv,.pdf,.log,.yaml,.yml,.xml,.html" style="display:none" onchange="handleFiles(this.files)" />
         </div>
         <div id="file-list" style="margin-top:0.75rem"></div>
       </div>
 
-      <!-- Tab: URL Import -->
+      <!-- Tab: Connect URL (fetches & stages) -->
       <div id="panel-url" class="importer-panel" style="display:none">
+        <p style="font-size:0.75rem;color:var(--text-3);margin:0 0 0.75rem">Connect an external URL. Content is fetched and stored locally for later indexing.</p>
         <div class="mt-1">
-          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">URL to Import</label>
-          <input id="import-url" placeholder="https://example.com/article" style="margin-top:0.375rem" />
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">URL to Connect</label>
+          <input id="import-url" placeholder="https://example.com/article or API endpoint" style="margin-top:0.375rem" />
         </div>
         <div class="mt-1">
-          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name (optional)</label>
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Display Name (optional)</label>
           <input id="url-source" placeholder="Auto-detected from URL if empty" style="max-width:400px;margin-top:0.375rem" />
         </div>
         <div class="flex mt-1" style="align-items:center;gap:0.75rem">
-          <button class="btn btn-primary" id="fetchUrlBtn" onclick="fetchAndIngestUrl()">
+          <button class="btn btn-primary" id="fetchUrlBtn" onclick="connectUrl()">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            Fetch & Ingest
+            Connect &amp; Stage
           </button>
           <span id="url-status" style="font-size:0.78rem;color:var(--text-3)"></span>
         </div>
       </div>
 
-      <!-- Tab: Paste Text -->
+      <!-- Tab: Shortcut (reference to existing doc) -->
+      <div id="panel-shortcut" class="importer-panel" style="display:none">
+        <p style="font-size:0.75rem;color:var(--text-3);margin:0 0 0.75rem">Create a shortcut to an existing document. No data is duplicated — the shortcut references the original.</p>
+        <div class="mt-1">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Target Document</label>
+          <select id="shortcut-target" style="font-size:0.82rem;min-width:300px;margin-top:0.375rem">
+            <option value="">— Select a document —</option>
+          </select>
+        </div>
+        <div class="mt-1">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Shortcut Name (optional)</label>
+          <input id="shortcut-name" placeholder="Auto-generated if empty" style="max-width:400px;margin-top:0.375rem" />
+        </div>
+        <div class="flex mt-1" style="align-items:center;gap:0.75rem">
+          <button class="btn btn-primary" id="shortcutBtn" onclick="createShortcut()">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Create Shortcut
+          </button>
+          <span id="shortcut-status" style="font-size:0.78rem;color:var(--text-3)"></span>
+        </div>
+      </div>
+
+      <!-- Tab: Paste Text (legacy direct ingest) -->
       <div id="panel-text" class="importer-panel" style="display:none">
+        <p style="font-size:0.75rem;color:var(--text-3);margin:0 0 0.75rem">Paste text to directly index into the knowledge base (skips staging).</p>
         <div class="mt-1">
           <label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Source Name</label>
           <input id="ingest-source" placeholder="e.g. company-policy.pdf" style="max-width:400px;margin-top:0.375rem" />
@@ -114,7 +145,7 @@
         <div class="flex mt-1" style="align-items:center">
           <button class="btn btn-primary" id="ingestBtn" onclick="ingestDoc()">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Ingest
+            Paste &amp; Index
           </button>
         </div>
       </div>
@@ -162,8 +193,15 @@
     <!-- Indexed Documents -->
     <div class="card animate-fade-up delay-300">
       <div class="section-header">
-        <h3>Indexed Documents</h3>
+        <h3>Document Store</h3>
         <div style="display:flex;gap:0.5rem;align-items:center">
+          <select id="doc-status-filter" style="font-size:0.75rem;padding:0.3rem 0.5rem" onchange="loadDocs()">
+            <option value="">All Status</option>
+            <option value="uploaded">Uploaded (Staged)</option>
+            <option value="indexed">Indexed</option>
+            <option value="processing">Processing</option>
+            <option value="failed">Failed</option>
+          </select>
           <input id="doc-search-filter" placeholder="Filter by name..." style="width:180px;font-size:0.78rem;padding:0.35rem 0.6rem" oninput="loadDocs()">
           <button class="btn btn-secondary btn-sm" onclick="refreshAll()">Refresh</button>
         </div>
@@ -358,22 +396,21 @@ function readAndIngestFile(file, id) {
   statusEl.style.color = '#f59e0b';
   const reader = new FileReader();
   reader.onload = async function(e) {
-    statusEl.textContent = 'Ingesting...';
+    statusEl.textContent = 'Uploading to store...';
     const extras = getIngestExtras();
     try {
-      const r = await fetch('/api/documents/ingest', {
+      const r = await fetch('/api/documents/upload', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          source: file.name,
-          text: e.target.result,
-          chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
-          chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+          filename: file.name,
+          content: e.target.result,
           ...extras,
         })
       });
       const d = await r.json();
-      statusEl.textContent = 'Done: ' + (d.chunks || 0) + ' chunks';
+      if (!r.ok) throw new Error(d.detail || d.error || 'Upload failed');
+      statusEl.textContent = 'Staged (' + (d.size_bytes/1024).toFixed(1) + ' KB)';
       statusEl.style.color = '#10b981';
       refreshAll();
     } catch(err) {
@@ -385,42 +422,64 @@ function readAndIngestFile(file, id) {
   reader.readAsText(file);
 }
 
-// ── URL Import ──
-async function fetchAndIngestUrl() {
+// ── Connect URL (staging) ──
+async function connectUrl() {
   const url = document.getElementById('import-url').value.trim();
   if (!url) return alert('Please enter a URL');
   const statusEl = document.getElementById('url-status');
   const btn = document.getElementById('fetchUrlBtn');
   btn.disabled = true;
-  statusEl.textContent = 'Fetching content...';
+  statusEl.textContent = 'Connecting...';
   statusEl.style.color = '#f59e0b';
   const extras = getIngestExtras();
   try {
-    const r = await fetch('/api/documents/fetch-url', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ url })
-    });
-    if (!r.ok) { const err = await r.json(); throw new Error(err.detail || 'Fetch failed'); }
-    const fetched = await r.json();
-    statusEl.textContent = 'Ingesting ' + (fetched.text||'').length + ' chars...';
-    const source = document.getElementById('url-source').value.trim() || fetched.source || url;
-    const ingestR = await fetch('/api/documents/ingest', {
+    const r = await fetch('/api/documents/connect', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        source: source,
-        text: fetched.text,
-        chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
-        chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+        url: url,
+        name: document.getElementById('url-source').value.trim() || undefined,
         ...extras,
       })
     });
-    const d = await ingestR.json();
-    statusEl.textContent = 'Done: ' + (d.chunks || 0) + ' chunks from ' + source;
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || d.error || 'Connect failed');
+    statusEl.textContent = 'Connected: ' + d.name + ' (' + (d.size_bytes/1024).toFixed(1) + ' KB staged)';
     statusEl.style.color = '#10b981';
     document.getElementById('import-url').value = '';
     document.getElementById('url-source').value = '';
+    refreshAll();
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    statusEl.style.color = '#f43f5e';
+  } finally { btn.disabled = false; }
+}
+
+// ── Create Shortcut ──
+async function createShortcut() {
+  const targetId = document.getElementById('shortcut-target').value;
+  if (!targetId) return alert('Please select a target document');
+  const statusEl = document.getElementById('shortcut-status');
+  const btn = document.getElementById('shortcutBtn');
+  btn.disabled = true;
+  statusEl.textContent = 'Creating shortcut...';
+  statusEl.style.color = '#f59e0b';
+  const extras = getIngestExtras();
+  try {
+    const r = await fetch('/api/documents/shortcut', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        target_doc_id: targetId,
+        folder: extras.folder,
+        name: document.getElementById('shortcut-name').value.trim() || undefined,
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || d.error || 'Shortcut failed');
+    statusEl.textContent = 'Created: ' + d.name;
+    statusEl.style.color = '#10b981';
+    document.getElementById('shortcut-name').value = '';
     refreshAll();
   } catch(e) {
     statusEl.textContent = 'Error: ' + e.message;
@@ -471,7 +530,7 @@ async function loadStats() {
     if (!r.ok) throw new Error('stats failed');
     const d = await r.json();
     document.getElementById('stat-chunks').textContent = d.total_chunks || 0;
-    document.getElementById('stat-docs').textContent = d.unique_documents || 0;
+    document.getElementById('stat-docs').textContent = d.total_registry || d.unique_documents || 0;
   } catch(e) {
     document.getElementById('stat-chunks').textContent = '0';
     document.getElementById('stat-docs').textContent = '0';
@@ -490,6 +549,7 @@ async function loadStats() {
 async function loadDocs() {
   const el = document.getElementById('doc-list');
   const searchFilter = (document.getElementById('doc-search-filter').value || '').trim();
+  const statusFilter = (document.getElementById('doc-status-filter').value || '').trim();
   try {
     const params = new URLSearchParams();
     if (currentFolder) params.append('folder', currentFolder);
@@ -497,13 +557,21 @@ async function loadDocs() {
     const qs = params.toString() ? '?' + params.toString() : '';
     const r = await fetch('/api/documents/registry' + qs);
     const d = await r.json();
-    const docs = d.documents || [];
+    let docs = d.documents || [];
+    // Client-side status filter
+    if (statusFilter) {
+      docs = docs.filter(function(doc) { return (doc.status || 'uploaded') === statusFilter; });
+    }
     if (!docs.length) {
-      el.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:1.5rem 0">No documents' + (currentFolder ? ' in this folder' : '') + '.</p>';
+      el.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:1.5rem 0">No documents' + (currentFolder ? ' in this folder' : '') + (statusFilter ? ' with status "' + statusFilter + '"' : '') + '.</p>';
       return;
     }
+    // Populate shortcut selector
+    populateShortcutSelector(d.documents || []);
     let html = '<table style="width:100%"><thead><tr>' +
       '<th style="text-align:left">Name</th>' +
+      '<th style="text-align:left">Status</th>' +
+      '<th style="text-align:left">Type</th>' +
       '<th style="text-align:left">Folder</th>' +
       '<th style="text-align:left">Agents</th>' +
       '<th style="text-align:center">Chunks</th>' +
@@ -518,14 +586,32 @@ async function loadDocs() {
       const ext = doc.file_type ? '<span style="display:inline-block;padding:0.05rem 0.35rem;border-radius:3px;font-size:0.65rem;background:rgba(6,182,212,0.1);color:#06b6d4;margin-left:0.35rem">' + escapeHtml(doc.file_type) + '</span>' : '';
       const folderDisplay = doc.folder === '/' ? '/' : doc.folder.replace(/^\\//,'').replace(/\\/$/, '');
       const tagsJson = JSON.stringify(doc.agent_tags || []).replace(/'/g, "\\\\'").replace(/"/g, '&quot;');
+      // Status badge
+      const status = doc.status || 'uploaded';
+      const statusColors = { uploaded: 'background:rgba(251,191,36,0.15);color:#f59e0b', indexed: 'background:rgba(16,185,129,0.15);color:#10b981', processing: 'background:rgba(99,102,241,0.15);color:#6366f1', failed: 'background:rgba(244,63,94,0.15);color:#f43f5e' };
+      const statusBadge = '<span style="display:inline-block;padding:0.1rem 0.5rem;border-radius:4px;font-size:0.68rem;font-weight:600;' + (statusColors[status] || statusColors.uploaded) + '">' + status + '</span>';
+      // Source type badge
+      const srcType = doc.source_type || 'upload';
+      const typeIcons = { upload: '&#x1F4C4;', connected: '&#x1F517;', shortcut: '&#x21D7;', paste: '&#x1F4CB;' };
+      const typeBadge = '<span style="font-size:0.72rem;color:var(--text-3)" title="Source: ' + srcType + '">' + (typeIcons[srcType] || '&#x1F4C4;') + ' ' + srcType + '</span>';
+      // Index button (show for uploaded/failed, not shortcuts)
+      const canIndex = (status === 'uploaded' || status === 'failed') && srcType !== 'shortcut';
+      const indexBtn = canIndex
+        ? '<button class="btn btn-sm" onclick="indexDocument(\\'' + escapeHtml(doc.id) + '\\')" title="Index to Knowledge Base" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem;background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);color:#10b981">' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' +
+          '</button>'
+        : '';
       html += '<tr>' +
         '<td class="mono" style="font-size:0.8rem">' + escapeHtml(doc.name) + ext + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td>' + typeBadge + '</td>' +
         '<td style="font-size:0.75rem;color:var(--text-3)">' +
           '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
           escapeHtml(folderDisplay) + '</td>' +
         '<td>' + (agentBadges || '<span style="font-size:0.72rem;color:var(--text-3)">—</span>') + '</td>' +
         '<td style="text-align:center;font-size:0.78rem;color:var(--text-2)">' + (doc.chunk_count || 0) + '</td>' +
         '<td style="text-align:right;white-space:nowrap">' +
+          indexBtn +
           '<button class="btn btn-sm" onclick="openMoveModal(\\'' + escapeHtml(doc.id) + '\\')" title="Move to folder" style="padding:0.2rem 0.4rem;font-size:0.7rem;margin-right:0.25rem">' +
             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
           '</button>' +
@@ -542,6 +628,39 @@ async function loadDocs() {
   } catch(e) {
     el.innerHTML = '<p style="color:var(--danger)">Failed to load documents. <button class="btn btn-sm" onclick="loadDocs()">Retry</button></p>';
   }
+}
+
+// ── Index Document (staging → ChromaDB) ──
+async function indexDocument(docId) {
+  if (!confirm('Index this document into the Knowledge Base? The agent will be able to retrieve it during RAG.')) return;
+  try {
+    const r = await fetch('/api/documents/' + docId + '/index', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        chunk_size: parseInt(document.getElementById('chunk-size').value) || 1000,
+        chunk_overlap: parseInt(document.getElementById('chunk-overlap').value) || 200,
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || d.error || 'Index failed');
+    showToast('Indexed: ' + d.chunks + ' chunks into KB', 'success');
+    refreshAll();
+  } catch(e) {
+    showToast('Index failed: ' + e.message, 'error');
+  }
+}
+
+// ── Shortcut Selector ──
+function populateShortcutSelector(docs) {
+  const sel = document.getElementById('shortcut-target');
+  let html = '<option value="">— Select a document —</option>';
+  docs.forEach(function(doc) {
+    if (doc.source_type !== 'shortcut') {
+      html += '<option value="' + escapeHtml(doc.id) + '">' + escapeHtml(doc.name) + ' (' + (doc.status || 'uploaded') + ')</option>';
+    }
+  });
+  sel.innerHTML = html;
 }
 
 // ── Search ──

@@ -2,6 +2,7 @@
 Agent Service — FastAPI + LangGraph
 Accepts prompts, runs an agent loop (tool-calling + Ollama), returns responses.
 """
+
 import os
 import uuid
 import json
@@ -15,22 +16,64 @@ from pydantic import BaseModel, Field
 
 from agent.graph import run_agent, run_agent_stream
 from agent.memory import (
-    init_db, get_history, list_sessions, delete_session,
-    get_session_summary, get_memory_stats, get_db_stats,
-    export_all_data, import_all_data,
-    list_skills, get_skill, create_skill, update_skill, delete_skill,
-    list_agents, get_agent, create_agent, update_agent, delete_agent,
-    list_a2a_peers, get_a2a_peer, create_a2a_peer, update_a2a_peer, delete_a2a_peer,
-    list_mcp_servers, get_mcp_server, create_mcp_server, update_mcp_server, delete_mcp_server,
-    list_prompts, get_prompt, create_prompt, update_prompt, delete_prompt,
-    list_guardrails, get_guardrail, update_guardrail,
-    list_custom_tools, get_custom_tool, create_custom_tool, update_custom_tool, delete_custom_tool,
-    list_documents_registry, get_document_registry, create_document_registry,
-    update_document_registry, delete_document_registry, delete_document_registry_by_source,
-    list_folders, tag_document_to_agent, untag_document_from_agent,
-    untag_all_for_agent, delete_documents_by_collection,
-    list_versions, get_version, save_version,
-    list_audit_log, log_audit,
+    init_db,
+    get_history,
+    list_sessions,
+    delete_session,
+    get_session_summary,
+    get_memory_stats,
+    get_db_stats,
+    export_all_data,
+    import_all_data,
+    list_skills,
+    get_skill,
+    create_skill,
+    update_skill,
+    delete_skill,
+    list_agents,
+    get_agent,
+    create_agent,
+    update_agent,
+    delete_agent,
+    list_a2a_peers,
+    get_a2a_peer,
+    create_a2a_peer,
+    update_a2a_peer,
+    delete_a2a_peer,
+    list_mcp_servers,
+    get_mcp_server,
+    create_mcp_server,
+    update_mcp_server,
+    delete_mcp_server,
+    list_prompts,
+    get_prompt,
+    create_prompt,
+    update_prompt,
+    delete_prompt,
+    list_guardrails,
+    get_guardrail,
+    update_guardrail,
+    list_custom_tools,
+    get_custom_tool,
+    create_custom_tool,
+    update_custom_tool,
+    delete_custom_tool,
+    list_documents_registry,
+    get_document_registry,
+    create_document_registry,
+    update_document_registry,
+    delete_document_registry,
+    delete_document_registry_by_source,
+    list_folders,
+    tag_document_to_agent,
+    untag_document_from_agent,
+    untag_all_for_agent,
+    delete_documents_by_collection,
+    list_versions,
+    get_version,
+    save_version,
+    list_audit_log,
+    log_audit,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
@@ -48,9 +91,14 @@ async def lifespan(app: FastAPI):
     init_db()
     stats = get_db_stats()
     logger.info("Memory DB initialised at %s", stats.get("db_path", "unknown"))
-    logger.info("DB stats: %s agents, %s skills, %s prompts, %s conversations, %s documents",
-                stats.get("agents", 0), stats.get("skills", 0), stats.get("prompts", 0),
-                stats.get("conversations", 0), stats.get("documents", 0))
+    logger.info(
+        "DB stats: %s agents, %s skills, %s prompts, %s conversations, %s documents",
+        stats.get("agents", 0),
+        stats.get("skills", 0),
+        stats.get("prompts", 0),
+        stats.get("conversations", 0),
+        stats.get("documents", 0),
+    )
     yield
 
 
@@ -72,15 +120,25 @@ setup_otel(app)
 class RunRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=4096)
     sessionId: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    model: str | None = Field(default=None, description="Model name to use (e.g. llama3, mistral)")
-    provider: str | None = Field(default=None, description="Provider: ollama or azure-openai")
+    model: str | None = Field(
+        default=None, description="Model name to use (e.g. llama3, mistral)"
+    )
+    provider: str | None = Field(
+        default=None, description="Provider: ollama or azure-openai"
+    )
     agent_id: str | None = Field(default=None, description="Agent config ID to use")
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, ge=0.0, le=1.0)
     system_prompt: str | None = Field(default=None, max_length=8192)
-    max_completion_tokens: int | None = Field(default=None, ge=1, le=32768, description="Max tokens in response")
-    use_kb: bool = Field(default=True, description="Whether to search the Knowledge Base for context")
-    memory_window: int | None = Field(default=None, ge=1, le=50, description="Number of past messages to include")
+    max_completion_tokens: int | None = Field(
+        default=None, ge=1, le=32768, description="Max tokens in response"
+    )
+    use_kb: bool = Field(
+        default=True, description="Whether to search the Knowledge Base for context"
+    )
+    memory_window: int | None = Field(
+        default=None, ge=1, le=50, description="Number of past messages to include"
+    )
 
 
 class RunResponse(BaseModel):
@@ -133,6 +191,7 @@ async def run(body: RunRequest, request: Request):
     # Switch model if requested explicitly
     if body.provider or body.model:
         from agent.llm import set_active_model as _switch
+
         _switch(
             provider=body.provider or "ollama",
             model=body.model or "",
@@ -142,26 +201,54 @@ async def run(body: RunRequest, request: Request):
         )
 
     # Load agent config if specified
+    agent_config = None
     if body.agent_id:
         agent_config = get_agent(body.agent_id)
         if agent_config and not (body.provider or body.model):
             from agent.llm import set_active_model as _switch
+
             _switch(
                 provider=agent_config.get("provider", "ollama"),
                 model=agent_config.get("model", "llama3"),
-                temperature=body.temperature if body.temperature is not None else agent_config.get("temperature"),
-                top_p=body.top_p if body.top_p is not None else agent_config.get("top_p"),
+                temperature=(
+                    body.temperature
+                    if body.temperature is not None
+                    else agent_config.get("temperature")
+                ),
+                top_p=(
+                    body.top_p if body.top_p is not None else agent_config.get("top_p")
+                ),
                 max_completion_tokens=body.max_completion_tokens,
             )
+
+    # Build agent_config for run_agent (same pattern as /run/stream)
+    if agent_config is None:
+        agent_config = {}
+    agent_config["use_kb"] = body.use_kb if hasattr(body, "use_kb") else True
+    if body.temperature is not None:
+        agent_config["temperature"] = body.temperature
+    if body.top_p is not None:
+        agent_config["top_p"] = body.top_p
+    if body.system_prompt:
+        agent_config["system_prompt"] = body.system_prompt
+    if hasattr(body, "memory_window") and body.memory_window is not None:
+        agent_config["memory_window"] = body.memory_window
 
     result = await run_agent(
         prompt=body.prompt,
         session_id=body.sessionId,
         request_id=request_id,
+        agent_config=agent_config,
     )
 
     active = get_active_model()
-    logger.info("req=%s done tools=%s model=%s/%s", request_id, result["tools_used"], active["provider"], active["model"])
+    logger.info(
+        "req=%s done tools=%s model=%s/%s",
+        request_id,
+        result["tools_used"],
+        active["provider"],
+        active["model"],
+    )
     return RunResponse(
         sessionId=body.sessionId,
         response=result["response"],
@@ -172,6 +259,7 @@ async def run(body: RunRequest, request: Request):
 
 
 # ── Streaming endpoint (SSE) ───────────────────────────────────────────────
+
 
 @app.post("/run/stream")
 async def run_stream(body: RunRequest):
@@ -189,6 +277,7 @@ async def run_stream(body: RunRequest):
     # Switch model if requested explicitly
     if body.provider or body.model:
         from agent.llm import set_active_model as _switch
+
         _switch(
             provider=body.provider or "ollama",
             model=body.model or "",
@@ -204,11 +293,18 @@ async def run_stream(body: RunRequest):
         if agent_config and not (body.provider or body.model):
             # Apply agent's model settings
             from agent.llm import set_active_model as _switch
+
             _switch(
                 provider=agent_config.get("provider", "ollama"),
                 model=agent_config.get("model", "llama3"),
-                temperature=body.temperature if body.temperature is not None else agent_config.get("temperature"),
-                top_p=body.top_p if body.top_p is not None else agent_config.get("top_p"),
+                temperature=(
+                    body.temperature
+                    if body.temperature is not None
+                    else agent_config.get("temperature")
+                ),
+                top_p=(
+                    body.top_p if body.top_p is not None else agent_config.get("top_p")
+                ),
                 max_completion_tokens=body.max_completion_tokens,
             )
 
@@ -232,7 +328,11 @@ async def run_stream(body: RunRequest):
             request_id=request_id,
             agent_config=agent_config,
         ):
-            data = json.dumps(event["data"]) if isinstance(event["data"], dict) else event["data"]
+            data = (
+                json.dumps(event["data"])
+                if isinstance(event["data"], dict)
+                else event["data"]
+            )
             yield f"event: {event['event']}\ndata: {data}\n\n"
 
     return StreamingResponse(
@@ -247,6 +347,7 @@ async def run_stream(body: RunRequest):
 
 
 # ── Model management ──────────────────────────────────────────────────────
+
 
 @app.get("/models")
 async def models_list():
@@ -271,6 +372,7 @@ async def models_switch(body: ModelSwitchRequest):
 
 
 # ── Session management ─────────────────────────────────────────────────────
+
 
 @app.get("/sessions")
 async def sessions_list():
@@ -297,10 +399,12 @@ async def session_summary(session_id: str):
 
 # ── Memory management ──────────────────────────────────────────────────────
 
+
 @app.get("/memory/stats")
 async def memory_stats():
     stats = get_memory_stats()
     from agent.vectorstore import get_collection_stats
+
     try:
         kb_stats = get_collection_stats()
     except Exception:
@@ -313,6 +417,7 @@ async def memory_stats():
 
 # ── Document / RAG endpoints ───────────────────────────────────────────────
 
+
 class DocumentIngestRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=100000)
     source: str = Field(..., min_length=1, max_length=500)
@@ -324,14 +429,271 @@ class DocumentIngestRequest(BaseModel):
     agent_id: str | None = Field(default=None, max_length=100)
 
 
+class DocumentUploadRequest(BaseModel):
+    """Upload a file to staging (does NOT index to ChromaDB immediately)."""
+
+    filename: str = Field(..., min_length=1, max_length=500)
+    content: str = Field(..., min_length=1, max_length=500000)
+    folder: str = Field(default="/", max_length=500)
+    agent_id: str | None = Field(default=None, max_length=100)
+    metadata: dict = Field(default_factory=dict)
+    collection: str = Field(default="agentic_docs", max_length=200)
+
+
+class DocumentConnectRequest(BaseModel):
+    """Connect an external URL as a document reference (fetches content on demand)."""
+
+    url: str = Field(..., min_length=1, max_length=2048)
+    name: str | None = Field(default=None, max_length=500)
+    folder: str = Field(default="/", max_length=500)
+    agent_id: str | None = Field(default=None, max_length=100)
+    collection: str = Field(default="agentic_docs", max_length=200)
+
+
+class DocumentShortcutRequest(BaseModel):
+    """Create a shortcut/reference to an existing document."""
+
+    target_doc_id: str = Field(..., min_length=1, max_length=100)
+    folder: str = Field(default="/", max_length=500)
+    name: str | None = Field(default=None, max_length=500)
+
+
+class DocumentIndexRequest(BaseModel):
+    """Trigger indexing of a staged document into ChromaDB."""
+
+    chunk_size: int = Field(default=1000, ge=100, le=5000)
+    chunk_overlap: int = Field(default=200, ge=0, le=1000)
+    collection: str | None = Field(default=None, max_length=200)
+
+
 class DocumentSearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)
     k: int = Field(default=5, ge=1, le=50)
 
 
+# ── Upload to staging (enterprise pattern) ─────────────────────────────────
+
+
+@app.post("/documents/upload")
+async def documents_upload(body: DocumentUploadRequest):
+    """Upload a file to the staging file store. Does NOT index to ChromaDB.
+    The file sits in staging until explicitly indexed."""
+    from agent.filestore import save_file
+
+    file_ext = body.filename.rsplit(".", 1)[-1].lower() if "." in body.filename else ""
+    agent_tags = [body.agent_id] if body.agent_id else []
+
+    # Create registry entry first to get the doc_id
+    doc = create_document_registry(
+        name=body.filename,
+        source=body.filename,
+        collection=body.collection,
+        folder=body.folder,
+        agent_tags=agent_tags,
+        file_type=file_ext,
+        file_size=len(body.content),
+        chunk_count=0,
+        metadata=body.metadata,
+        status="uploaded",
+        source_type="upload",
+        storage_path="",
+    )
+
+    # Save file to disk
+    store_result = save_file(doc["id"], body.filename, body.content)
+    update_document_registry(doc["id"], storage_path=store_result["storage_path"])
+    doc["storage_path"] = store_result["storage_path"]
+    doc["status"] = "uploaded"
+
+    return {
+        "id": doc["id"],
+        "name": doc["name"],
+        "status": "uploaded",
+        "storage_path": store_result["storage_path"],
+        "size_bytes": store_result["size_bytes"],
+        "message": "File staged successfully. Use POST /documents/{id}/index to index into knowledge base.",
+    }
+
+
+@app.post("/documents/connect")
+async def documents_connect(body: DocumentConnectRequest):
+    """Connect an external URL as a document reference.
+    Content is fetched and stored locally but NOT indexed until triggered."""
+    import httpx
+    from urllib.parse import urlparse
+    from agent.filestore import save_file
+
+    parsed = urlparse(body.url)
+    if not parsed.scheme or not parsed.netloc:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    # Fetch the content
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
+            resp = await client.get(body.url)
+            resp.raise_for_status()
+            text = resp.text
+    except httpx.HTTPStatusError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=502, detail=f"URL returned {e.response.status_code}"
+        )
+    except httpx.RequestError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=502, detail=f"Failed to fetch URL: {str(e)}")
+
+    source_name = body.name or parsed.path.split("/")[-1] or parsed.netloc
+    file_ext = source_name.rsplit(".", 1)[-1].lower() if "." in source_name else "html"
+    agent_tags = [body.agent_id] if body.agent_id else []
+
+    doc = create_document_registry(
+        name=source_name,
+        source=body.url,
+        collection=body.collection,
+        folder=body.folder,
+        agent_tags=agent_tags,
+        file_type=file_ext,
+        file_size=len(text),
+        chunk_count=0,
+        metadata={
+            "url": body.url,
+            "content_type": resp.headers.get("content-type", ""),
+        },
+        status="uploaded",
+        source_type="connected",
+        storage_path="",
+    )
+
+    # Store fetched content locally
+    store_result = save_file(doc["id"], source_name, text)
+    update_document_registry(doc["id"], storage_path=store_result["storage_path"])
+
+    return {
+        "id": doc["id"],
+        "name": source_name,
+        "status": "uploaded",
+        "source_type": "connected",
+        "url": body.url,
+        "size_bytes": store_result["size_bytes"],
+        "message": "URL content fetched and staged. Use POST /documents/{id}/index to index.",
+    }
+
+
+@app.post("/documents/shortcut")
+async def documents_shortcut(body: DocumentShortcutRequest):
+    """Create a shortcut (reference) to an existing document.
+    Shortcuts don't duplicate data — they point to the original."""
+    target = get_document_registry(body.target_doc_id)
+    if not target:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Target document not found")
+
+    shortcut_name = body.name or f"↗ {target['name']}"
+    doc = create_document_registry(
+        name=shortcut_name,
+        source=target["source"],
+        collection=target["collection"],
+        folder=body.folder,
+        agent_tags=target["agent_tags"],
+        file_type=target["file_type"],
+        file_size=target["file_size"],
+        chunk_count=target["chunk_count"],
+        metadata={"shortcut_to": body.target_doc_id, "original_name": target["name"]},
+        status=target["status"],
+        source_type="shortcut",
+        shortcut_ref=body.target_doc_id,
+    )
+
+    return {
+        "id": doc["id"],
+        "name": shortcut_name,
+        "source_type": "shortcut",
+        "target_id": body.target_doc_id,
+        "target_name": target["name"],
+        "message": "Shortcut created. References the same indexed content as the original.",
+    }
+
+
+@app.post("/documents/{doc_id}/index")
+async def documents_index(doc_id: str, body: DocumentIndexRequest):
+    """Process a staged document and index it into ChromaDB.
+    This is the explicit step that moves content from file store → vector DB."""
+    from agent.vectorstore import ingest_document
+    from agent.filestore import read_file as fs_read_file
+
+    doc = get_document_registry(doc_id)
+    if not doc:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if doc["source_type"] == "shortcut":
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot index a shortcut. Index the original document.",
+        )
+
+    # Update status to processing
+    update_document_registry(doc_id, status="processing")
+
+    # Read content from file store
+    text = fs_read_file(doc_id, doc["name"])
+    if not text:
+        update_document_registry(doc_id, status="failed")
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=404,
+            detail="File content not found in store. Re-upload required.",
+        )
+
+    collection = body.collection or doc["collection"]
+    try:
+        result = ingest_document(
+            text=text,
+            source=doc["source"],
+            metadata=doc.get("metadata", {}),
+            chunk_size=body.chunk_size,
+            chunk_overlap=body.chunk_overlap,
+            collection_name=collection,
+        )
+        update_document_registry(
+            doc_id,
+            status="indexed",
+            chunk_count=result.get("chunks", 0),
+        )
+        return {
+            "id": doc_id,
+            "name": doc["name"],
+            "status": "indexed",
+            "chunks": result.get("chunks", 0),
+            "collection": collection,
+            "message": "Document indexed successfully into knowledge base.",
+        }
+    except Exception as e:
+        update_document_registry(doc_id, status="failed")
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=500, detail=f"Indexing failed: {str(e)}")
+
+
+# ── Legacy direct ingest (backward compatible) ─────────────────────────────
+
+
 @app.post("/documents/ingest")
 async def documents_ingest(body: DocumentIngestRequest):
+    """Direct ingest into ChromaDB (legacy). For enterprise workflow, use
+    POST /documents/upload followed by POST /documents/{id}/index."""
     from agent.vectorstore import ingest_document
+    from agent.filestore import save_file
+
     result = ingest_document(
         text=body.text,
         source=body.source,
@@ -343,7 +705,7 @@ async def documents_ingest(body: DocumentIngestRequest):
     # Create registry record
     file_ext = body.source.rsplit(".", 1)[-1].lower() if "." in body.source else ""
     agent_tags = [body.agent_id] if body.agent_id else []
-    create_document_registry(
+    doc = create_document_registry(
         name=body.source,
         source=body.source,
         collection=body.collection,
@@ -353,6 +715,13 @@ async def documents_ingest(body: DocumentIngestRequest):
         file_size=len(body.text),
         chunk_count=result.get("chunks", 0),
         metadata=body.metadata,
+        status="indexed",
+        source_type="upload",
+    )
+    # Also save to file store for future reference
+    save_file(doc["id"], body.source, body.text)
+    update_document_registry(
+        doc["id"], storage_path=f"/data/filestore/{doc['id']}/{body.source}"
     )
     return result
 
@@ -360,6 +729,7 @@ async def documents_ingest(body: DocumentIngestRequest):
 @app.post("/documents/search")
 async def documents_search(body: DocumentSearchRequest):
     from agent.vectorstore import search_similar
+
     results = search_similar(body.query, k=body.k)
     return {"query": body.query, "results": results, "count": len(results)}
 
@@ -367,20 +737,39 @@ async def documents_search(body: DocumentSearchRequest):
 @app.get("/documents")
 async def documents_list(collection: str | None = None):
     from agent.vectorstore import list_documents
+
     return {"documents": list_documents(collection)}
 
 
 @app.get("/documents/stats")
 async def documents_stats():
     from agent.vectorstore import get_collection_stats
-    return get_collection_stats()
+    from agent.filestore import get_storage_stats
+
+    chroma_stats = get_collection_stats()
+    store_stats = get_storage_stats()
+    # Count by status from registry
+    docs = list_documents_registry()
+    status_counts = {}
+    for d in docs:
+        s = d.get("status", "uploaded")
+        status_counts[s] = status_counts.get(s, 0) + 1
+    return {
+        **chroma_stats,
+        "file_store": store_stats,
+        "status_counts": status_counts,
+        "total_registry": len(docs),
+    }
 
 
 @app.delete("/documents/{source}")
 async def documents_delete(source: str, collection: str | None = None):
     from agent.vectorstore import delete_document
+
     coll = collection or "agentic_docs"
-    result = delete_document(source, collection_name=coll if coll != "agentic_docs" else None)
+    result = delete_document(
+        source, collection_name=coll if coll != "agentic_docs" else None
+    )
     delete_document_registry_by_source(source, coll)
     return result
 
@@ -398,17 +787,27 @@ async def documents_fetch_url(body: FetchUrlRequest):
     parsed = urlparse(body.url)
     if parsed.scheme not in ("http", "https"):
         from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Only http/https URLs are supported")
+
+        raise HTTPException(
+            status_code=400, detail="Only http/https URLs are supported"
+        )
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True, max_redirects=5) as client:
-            resp = await client.get(body.url, headers={"User-Agent": "AgenticPlatform/1.0"})
+        async with httpx.AsyncClient(
+            timeout=10.0, follow_redirects=True, max_redirects=5
+        ) as client:
+            resp = await client.get(
+                body.url, headers={"User-Agent": "AgenticPlatform/1.0"}
+            )
             resp.raise_for_status()
 
             content_length = len(resp.content)
             if content_length > 512 * 1024:
                 from fastapi import HTTPException
-                raise HTTPException(status_code=413, detail="Content exceeds 512 KB limit")
+
+                raise HTTPException(
+                    status_code=413, detail="Content exceeds 512 KB limit"
+                )
 
             content_type = resp.headers.get("content-type", "")
             text = resp.text
@@ -416,10 +815,21 @@ async def documents_fetch_url(body: FetchUrlRequest):
             # Strip HTML tags for HTML content
             if "text/html" in content_type:
                 import re
-                text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
-                text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
-                text = re.sub(r'<[^>]+>', ' ', text)
-                text = re.sub(r'\s+', ' ', text).strip()
+
+                text = re.sub(
+                    r"<script[^>]*>.*?</script>",
+                    "",
+                    text,
+                    flags=re.DOTALL | re.IGNORECASE,
+                )
+                text = re.sub(
+                    r"<style[^>]*>.*?</style>",
+                    "",
+                    text,
+                    flags=re.DOTALL | re.IGNORECASE,
+                )
+                text = re.sub(r"<[^>]+>", " ", text)
+                text = re.sub(r"\s+", " ", text).strip()
 
             source_name = parsed.netloc + parsed.path
             if len(source_name) > 200:
@@ -433,9 +843,13 @@ async def documents_fetch_url(body: FetchUrlRequest):
             }
     except httpx.HTTPStatusError as e:
         from fastapi import HTTPException
-        raise HTTPException(status_code=502, detail=f"URL returned {e.response.status_code}")
+
+        raise HTTPException(
+            status_code=502, detail=f"URL returned {e.response.status_code}"
+        )
     except httpx.RequestError as e:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=502, detail=f"Failed to fetch URL: {str(e)}")
 
 
@@ -443,6 +857,7 @@ async def documents_fetch_url(body: FetchUrlRequest):
 async def documents_collections():
     """List all ChromaDB collections with doc counts."""
     from agent.vectorstore import list_collections
+
     return {"collections": list_collections()}
 
 
@@ -456,17 +871,27 @@ class CopyDocsRequest(BaseModel):
 async def documents_copy(body: CopyDocsRequest):
     """Copy documents from one collection to another (for KB reuse)."""
     from agent.vectorstore import copy_documents_to_collection
-    result = copy_documents_to_collection(body.sources, body.from_collection, body.to_collection)
+
+    result = copy_documents_to_collection(
+        body.sources, body.from_collection, body.to_collection
+    )
     return result
 
 
 # ── Document Registry endpoints ────────────────────────────────────────────
 
+
 @app.get("/documents/registry")
-async def documents_registry(folder: str | None = None, agent_id: str | None = None,
-                              search: str | None = None, collection: str | None = None):
+async def documents_registry(
+    folder: str | None = None,
+    agent_id: str | None = None,
+    search: str | None = None,
+    collection: str | None = None,
+):
     """List all documents in the registry with optional filters."""
-    docs = list_documents_registry(folder=folder, agent_id=agent_id, search=search, collection=collection)
+    docs = list_documents_registry(
+        folder=folder, agent_id=agent_id, search=search, collection=collection
+    )
     return {"documents": docs}
 
 
@@ -487,6 +912,7 @@ async def documents_update_tags(doc_id: str, body: UpdateDocTagsRequest):
     doc = update_document_registry(doc_id, agent_tags=body.agent_tags)
     if not doc:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Document not found"})
     return doc
 
@@ -501,20 +927,34 @@ async def documents_update_folder(doc_id: str, body: UpdateDocFolderRequest):
     doc = update_document_registry(doc_id, folder=body.folder)
     if not doc:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Document not found"})
     return doc
 
 
 @app.delete("/documents/registry/{doc_id}")
 async def documents_registry_delete(doc_id: str):
-    """Delete a document from registry and ChromaDB."""
+    """Delete a document from registry, file store, and ChromaDB."""
     doc = get_document_registry(doc_id)
     if not doc:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Document not found"})
-    # Delete from ChromaDB
-    from agent.vectorstore import delete_document
-    delete_document(doc["source"], collection_name=doc["collection"] if doc["collection"] != "agentic_docs" else None)
+    # Delete from ChromaDB (only if it was indexed)
+    if doc.get("status") == "indexed" and doc.get("source_type") != "shortcut":
+        from agent.vectorstore import delete_document
+
+        delete_document(
+            doc["source"],
+            collection_name=(
+                doc["collection"] if doc["collection"] != "agentic_docs" else None
+            ),
+        )
+    # Delete from file store (only if not a shortcut)
+    if doc.get("source_type") != "shortcut":
+        from agent.filestore import delete_file
+
+        delete_file(doc_id)
     # Delete from registry
     delete_document_registry(doc_id)
     return {"deleted": True, "source": doc["source"]}
@@ -522,10 +962,12 @@ async def documents_registry_delete(doc_id: str):
 
 # ── Tools endpoint ─────────────────────────────────────────────────────────
 
+
 @app.get("/tools")
 async def tools_list():
     """List all tools (built-in + custom)."""
     from agent.tools import get_all_tools
+
     builtin = get_all_tools()
     builtin_list = [
         {"name": t.name, "description": t.description, "type": "builtin"}
@@ -534,11 +976,19 @@ async def tools_list():
     custom = list_custom_tools()
     custom_list = [
         {
-            "id": t["id"], "name": t["name"], "description": t["description"],
-            "type": "custom", "category": t["category"], "endpoint": t["endpoint"],
-            "method": t["method"], "headers": t["headers"],
-            "body_template": t["body_template"], "parameters": t["parameters"],
-            "enabled": t["enabled"], "created_at": t["created_at"], "updated_at": t["updated_at"],
+            "id": t["id"],
+            "name": t["name"],
+            "description": t["description"],
+            "type": "custom",
+            "category": t["category"],
+            "endpoint": t["endpoint"],
+            "method": t["method"],
+            "headers": t["headers"],
+            "body_template": t["body_template"],
+            "parameters": t["parameters"],
+            "enabled": t["enabled"],
+            "created_at": t["created_at"],
+            "updated_at": t["updated_at"],
         }
         for t in custom
     ]
@@ -546,6 +996,7 @@ async def tools_list():
 
 
 # ── Custom Tools CRUD endpoints ───────────────────────────────────────────
+
 
 class CustomToolCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -556,6 +1007,7 @@ class CustomToolCreate(BaseModel):
     headers: dict = Field(default_factory=dict)
     body_template: dict = Field(default_factory=dict)
     parameters: list[dict] = Field(default_factory=list)
+
 
 class CustomToolUpdate(BaseModel):
     name: str | None = None
@@ -577,9 +1029,14 @@ async def custom_tools_list_endpoint():
 @app.post("/custom-tools")
 async def custom_tools_create_endpoint(body: CustomToolCreate):
     tool = create_custom_tool(
-        name=body.name, description=body.description, category=body.category,
-        endpoint=body.endpoint, method=body.method, headers=body.headers,
-        body_template=body.body_template, parameters=body.parameters,
+        name=body.name,
+        description=body.description,
+        category=body.category,
+        endpoint=body.endpoint,
+        method=body.method,
+        headers=body.headers,
+        body_template=body.body_template,
+        parameters=body.parameters,
     )
     return tool
 
@@ -589,6 +1046,7 @@ async def custom_tools_get_endpoint(tool_id: str):
     tool = get_custom_tool(tool_id)
     if not tool:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Custom tool not found")
     return tool
 
@@ -599,6 +1057,7 @@ async def custom_tools_update_endpoint(tool_id: str, body: CustomToolUpdate):
     tool = update_custom_tool(tool_id, **updates)
     if not tool:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Custom tool not found")
     return tool
 
@@ -611,12 +1070,14 @@ async def custom_tools_delete_endpoint(tool_id: str):
 
 # ── Skills CRUD endpoints ─────────────────────────────────────────────────
 
+
 class SkillCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: str = Field(default="", max_length=1000)
     system_prompt: str = Field(default="", max_length=10000)
     tool_ids: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
+
 
 class SkillUpdate(BaseModel):
     name: str | None = None
@@ -634,8 +1095,10 @@ async def skills_list_endpoint():
 @app.post("/skills")
 async def skills_create_endpoint(body: SkillCreate):
     skill = create_skill(
-        name=body.name, description=body.description,
-        system_prompt=body.system_prompt, tool_ids=body.tool_ids,
+        name=body.name,
+        description=body.description,
+        system_prompt=body.system_prompt,
+        tool_ids=body.tool_ids,
         constraints=body.constraints,
     )
     return skill
@@ -646,6 +1109,7 @@ async def skills_get_endpoint(skill_id: str):
     skill = get_skill(skill_id)
     if not skill:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Skill not found"})
     return skill
 
@@ -656,6 +1120,7 @@ async def skills_update_endpoint(skill_id: str, body: SkillUpdate):
     skill = update_skill(skill_id, **updates)
     if not skill:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Skill not found"})
     return skill
 
@@ -665,11 +1130,13 @@ async def skills_delete_endpoint(skill_id: str):
     ok = delete_skill(skill_id)
     if not ok:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Skill not found"})
     return {"deleted": True}
 
 
 # ── Prompts CRUD endpoints ────────────────────────────────────────────────
+
 
 class PromptCreate(BaseModel):
     name: str
@@ -677,6 +1144,7 @@ class PromptCreate(BaseModel):
     category: str = "general"
     description: str = ""
     tags: list[str] = Field(default_factory=list)
+
 
 class PromptUpdate(BaseModel):
     name: str | None = None
@@ -694,8 +1162,10 @@ async def prompts_list_endpoint():
 @app.post("/prompts")
 async def prompts_create_endpoint(body: PromptCreate):
     prompt = create_prompt(
-        name=body.name, content=body.content,
-        category=body.category, description=body.description,
+        name=body.name,
+        content=body.content,
+        category=body.category,
+        description=body.description,
         tags=body.tags,
     )
     return prompt
@@ -706,6 +1176,7 @@ async def prompts_get_endpoint(prompt_id: str):
     prompt = get_prompt(prompt_id)
     if not prompt:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
     return prompt
 
@@ -716,6 +1187,7 @@ async def prompts_update_endpoint(prompt_id: str, body: PromptUpdate):
     prompt = update_prompt(prompt_id, **updates)
     if not prompt:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
     return prompt
 
@@ -725,11 +1197,13 @@ async def prompts_delete_endpoint(prompt_id: str):
     ok = delete_prompt(prompt_id)
     if not ok:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Prompt not found"})
     return {"deleted": True}
 
 
 # ── Agents CRUD endpoints ─────────────────────────────────────────────────
+
 
 class AgentCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -741,9 +1215,11 @@ class AgentCreate(BaseModel):
     system_prompt: str = Field(default="", max_length=20000)
     skill_ids: list[str] = Field(default_factory=list)
     tool_ids: list[str] = Field(default_factory=list)
+    sub_agent_ids: list[str] = Field(default_factory=list)
     kb_collection: str = Field(default="agentic_docs")
     max_iterations: int = Field(default=5, ge=1, le=20)
     memory_enabled: bool = Field(default=True)
+
 
 class AgentUpdate(BaseModel):
     name: str | None = None
@@ -755,6 +1231,7 @@ class AgentUpdate(BaseModel):
     system_prompt: str | None = None
     skill_ids: list[str] | None = None
     tool_ids: list[str] | None = None
+    sub_agent_ids: list[str] | None = None
     kb_collection: str | None = None
     max_iterations: int | None = None
     memory_enabled: bool | None = None
@@ -768,12 +1245,18 @@ async def agents_list_endpoint():
 @app.post("/agents")
 async def agents_create_endpoint(body: AgentCreate):
     agent = create_agent(
-        name=body.name, description=body.description,
-        provider=body.provider, model=body.model,
-        temperature=body.temperature, top_p=body.top_p,
+        name=body.name,
+        description=body.description,
+        provider=body.provider,
+        model=body.model,
+        temperature=body.temperature,
+        top_p=body.top_p,
         system_prompt=body.system_prompt,
-        skill_ids=body.skill_ids, tool_ids=body.tool_ids,
-        kb_collection=body.kb_collection, max_iterations=body.max_iterations,
+        skill_ids=body.skill_ids,
+        tool_ids=body.tool_ids,
+        sub_agent_ids=body.sub_agent_ids,
+        kb_collection=body.kb_collection,
+        max_iterations=body.max_iterations,
         memory_enabled=body.memory_enabled,
     )
     return agent
@@ -784,6 +1267,7 @@ async def agents_get_endpoint(agent_id: str):
     agent = get_agent(agent_id)
     if not agent:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Agent not found"})
     return agent
 
@@ -794,6 +1278,7 @@ async def agents_update_endpoint(agent_id: str, body: AgentUpdate):
     agent = update_agent(agent_id, **updates)
     if not agent:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Agent not found"})
     return agent
 
@@ -803,17 +1288,22 @@ async def agents_delete_endpoint(agent_id: str):
     agent = get_agent(agent_id)
     if not agent:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Agent not found"})
     ok = delete_agent(agent_id)
     if not ok:
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=404, content={"error": "Agent not found or is default"})
+
+        return JSONResponse(
+            status_code=404, content={"error": "Agent not found or is default"}
+        )
     # Remove agent tags from global documents (keeps the docs, just removes the tag)
     untag_all_for_agent(agent_id)
     # Clean up the agent's isolated KB collection and its registry records
     kb = agent.get("kb_collection", "")
     if kb and kb != "agentic_docs" and kb.startswith("agent_"):
         from agent.vectorstore import delete_collection
+
         delete_collection(kb)
         delete_documents_by_collection(kb)
     return {"deleted": True}
@@ -821,17 +1311,20 @@ async def agents_delete_endpoint(agent_id: str):
 
 # ── A2A (Agent-to-Agent) endpoints ─────────────────────────────────────────
 
+
 class A2APeerCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     url: str = Field(..., min_length=1, max_length=500)
     description: str = Field(default="", max_length=1000)
     capabilities: list[str] = Field(default_factory=list)
 
+
 class A2APeerUpdate(BaseModel):
     name: str | None = None
     url: str | None = None
     description: str | None = None
     capabilities: list[str] | None = None
+
 
 class A2ATaskRequest(BaseModel):
     peer_id: str = Field(..., description="Target peer ID")
@@ -847,8 +1340,10 @@ async def a2a_list_peers():
 @app.post("/a2a/peers")
 async def a2a_create_peer(body: A2APeerCreate):
     peer = create_a2a_peer(
-        name=body.name, url=body.url,
-        description=body.description, capabilities=body.capabilities,
+        name=body.name,
+        url=body.url,
+        description=body.description,
+        capabilities=body.capabilities,
     )
     return peer
 
@@ -858,6 +1353,7 @@ async def a2a_get_peer(peer_id: str):
     peer = get_a2a_peer(peer_id)
     if not peer:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Peer not found"})
     return peer
 
@@ -868,6 +1364,7 @@ async def a2a_update_peer(peer_id: str, body: A2APeerUpdate):
     peer = update_a2a_peer(peer_id, **updates)
     if not peer:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Peer not found"})
     return peer
 
@@ -877,6 +1374,7 @@ async def a2a_delete_peer(peer_id: str):
     ok = delete_a2a_peer(peer_id)
     if not ok:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Peer not found"})
     return {"deleted": True}
 
@@ -885,9 +1383,11 @@ async def a2a_delete_peer(peer_id: str):
 async def a2a_ping_peer(peer_id: str):
     """Ping a peer agent to check connectivity and fetch its agent card."""
     import httpx
+
     peer = get_a2a_peer(peer_id)
     if not peer:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Peer not found"})
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -897,13 +1397,17 @@ async def a2a_ping_peer(peer_id: str):
             if resp.status_code == 200:
                 agent_card = resp.json()
                 from datetime import datetime, timezone
+
                 now = datetime.now(timezone.utc).isoformat()
-                update_a2a_peer(peer_id, status="online", agent_card=agent_card, last_seen=now)
+                update_a2a_peer(
+                    peer_id, status="online", agent_card=agent_card, last_seen=now
+                )
                 return {"status": "online", "agent_card": agent_card}
             # Fallback: try /health
             health_url = peer["url"].rstrip("/") + "/health"
             resp = await client.get(health_url)
             from datetime import datetime, timezone
+
             now = datetime.now(timezone.utc).isoformat()
             if resp.status_code == 200:
                 update_a2a_peer(peer_id, status="online", last_seen=now)
@@ -919,9 +1423,11 @@ async def a2a_ping_peer(peer_id: str):
 async def a2a_send_task(body: A2ATaskRequest):
     """Send a task to a peer agent via A2A protocol."""
     import httpx
+
     peer = get_a2a_peer(body.peer_id)
     if not peer:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Peer not found"})
     try:
         task_url = peer["url"].rstrip("/") + "/run"
@@ -929,9 +1435,18 @@ async def a2a_send_task(body: A2ATaskRequest):
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(task_url, json=payload)
             resp.raise_for_status()
-            return {"status": "completed", "peer": peer["name"], "response": resp.json()}
+            return {
+                "status": "completed",
+                "peer": peer["name"],
+                "response": resp.json(),
+            }
     except httpx.HTTPStatusError as exc:
-        return {"status": "error", "peer": peer["name"], "code": exc.response.status_code, "error": str(exc)}
+        return {
+            "status": "error",
+            "peer": peer["name"],
+            "code": exc.response.status_code,
+            "error": str(exc),
+        }
     except Exception as e:
         return {"status": "error", "peer": peer["name"], "error": str(e)}
 
@@ -940,6 +1455,7 @@ async def a2a_send_task(body: A2ATaskRequest):
 async def a2a_self_card():
     """Return this agent's own A2A agent card for discovery."""
     from agent.tools import get_all_tools
+
     tools = get_all_tools()
     agents = list_agents()
     return {
@@ -954,18 +1470,23 @@ async def a2a_self_card():
             "tool_use": True,
             "rag": True,
         },
-        "agents": [{"id": a["id"], "name": a["name"], "description": a["description"]} for a in agents],
+        "agents": [
+            {"id": a["id"], "name": a["name"], "description": a["description"]}
+            for a in agents
+        ],
         "tools": [{"name": t.name, "description": t.description} for t in tools],
     }
 
 
 # ── MCP (Model Context Protocol) endpoints ────────────────────────────────
 
+
 class MCPServerCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     url: str = Field(..., min_length=1, max_length=500)
     transport: str = Field(default="stdio", pattern="^(stdio|sse|http)$")
     description: str = Field(default="", max_length=1000)
+
 
 class MCPServerUpdate(BaseModel):
     name: str | None = None
@@ -983,8 +1504,10 @@ async def mcp_list_servers():
 @app.post("/mcp/servers")
 async def mcp_create_server(body: MCPServerCreate):
     server = create_mcp_server(
-        name=body.name, url=body.url,
-        transport=body.transport, description=body.description,
+        name=body.name,
+        url=body.url,
+        transport=body.transport,
+        description=body.description,
     )
     return server
 
@@ -994,6 +1517,7 @@ async def mcp_get_server(server_id: str):
     server = get_mcp_server(server_id)
     if not server:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "MCP server not found"})
     return server
 
@@ -1004,6 +1528,7 @@ async def mcp_update_server(server_id: str, body: MCPServerUpdate):
     server = update_mcp_server(server_id, **updates)
     if not server:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "MCP server not found"})
     return server
 
@@ -1013,6 +1538,7 @@ async def mcp_delete_server(server_id: str):
     ok = delete_mcp_server(server_id)
     if not ok:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "MCP server not found"})
     return {"deleted": True}
 
@@ -1021,21 +1547,28 @@ async def mcp_delete_server(server_id: str):
 async def mcp_discover_tools(server_id: str):
     """Discover available tools from an MCP server."""
     import httpx
+
     server = get_mcp_server(server_id)
     if not server:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "MCP server not found"})
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             # Try MCP tools/list endpoint
             tools_url = server["url"].rstrip("/") + "/tools/list"
-            resp = await client.post(tools_url, json={"jsonrpc": "2.0", "method": "tools/list", "id": 1})
+            resp = await client.post(
+                tools_url, json={"jsonrpc": "2.0", "method": "tools/list", "id": 1}
+            )
             if resp.status_code == 200:
                 data = resp.json()
                 tools = data.get("result", {}).get("tools", data.get("tools", []))
                 from datetime import datetime, timezone
+
                 now = datetime.now(timezone.utc).isoformat()
-                update_mcp_server(server_id, tools=tools, status="connected", last_seen=now)
+                update_mcp_server(
+                    server_id, tools=tools, status="connected", last_seen=now
+                )
                 return {"status": "connected", "tools": tools}
             # Fallback: try /tools
             tools_url = server["url"].rstrip("/") + "/tools"
@@ -1044,8 +1577,11 @@ async def mcp_discover_tools(server_id: str):
                 data = resp.json()
                 tools = data.get("tools", data if isinstance(data, list) else [])
                 from datetime import datetime, timezone
+
                 now = datetime.now(timezone.utc).isoformat()
-                update_mcp_server(server_id, tools=tools, status="connected", last_seen=now)
+                update_mcp_server(
+                    server_id, tools=tools, status="connected", last_seen=now
+                )
                 return {"status": "connected", "tools": tools}
             return {"status": "error", "code": resp.status_code}
     except Exception as e:
@@ -1057,9 +1593,11 @@ async def mcp_discover_tools(server_id: str):
 async def mcp_invoke_tool(server_id: str, tool_name: str, arguments: dict = {}):
     """Invoke a tool on an MCP server."""
     import httpx
+
     server = get_mcp_server(server_id)
     if not server:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "MCP server not found"})
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -1079,6 +1617,7 @@ async def mcp_invoke_tool(server_id: str, tool_name: str, arguments: dict = {}):
 
 # ── Guardrails ──────────────────────────────────────────────────────────────
 
+
 @app.get("/guardrails")
 async def api_list_guardrails():
     return {"guardrails": list_guardrails()}
@@ -1089,6 +1628,7 @@ async def api_get_guardrail(guardrail_id: str):
     g = get_guardrail(guardrail_id)
     if not g:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Guardrail not found"})
     return g
 
@@ -1099,18 +1639,24 @@ async def api_update_guardrail(guardrail_id: str, request: Request):
     g = update_guardrail(guardrail_id, **data)
     if not g:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Guardrail not found"})
     return g
 
 
 # ── Version History endpoints ──────────────────────────────────────────────
 
+
 @app.get("/versions/{entity_type}/{entity_id}")
 async def versions_list(entity_type: str, entity_id: str):
     """List all versions for an entity (agent, skill, prompt)."""
     if entity_type not in ("agent", "skill", "prompt"):
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=400, content={"error": "entity_type must be agent, skill, or prompt"})
+
+        return JSONResponse(
+            status_code=400,
+            content={"error": "entity_type must be agent, skill, or prompt"},
+        )
     versions = list_versions(entity_type, entity_id)
     return {"versions": versions, "count": len(versions)}
 
@@ -1121,6 +1667,7 @@ async def versions_detail(version_id: str):
     v = get_version(version_id)
     if not v:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "Version not found"})
     return v
 
@@ -1130,36 +1677,73 @@ async def versions_rollback(entity_type: str, entity_id: str, version_id: str):
     """Rollback an entity to a previous version."""
     if entity_type not in ("agent", "skill", "prompt"):
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=400, content={"error": "entity_type must be agent, skill, or prompt"})
+
+        return JSONResponse(
+            status_code=400,
+            content={"error": "entity_type must be agent, skill, or prompt"},
+        )
     v = get_version(version_id)
     if not v or v["entity_type"] != entity_type or v["entity_id"] != entity_id:
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=404, content={"error": "Version not found or does not match entity"})
+
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Version not found or does not match entity"},
+        )
     snapshot = v["snapshot"]
     # Apply rollback based on entity type
     if entity_type == "agent":
-        result = update_agent(entity_id, **{k: v for k, v in snapshot.items()
-                              if k not in ("id", "created_at", "updated_at", "is_default")})
+        result = update_agent(
+            entity_id,
+            **{
+                k: v
+                for k, v in snapshot.items()
+                if k not in ("id", "created_at", "updated_at", "is_default")
+            },
+        )
     elif entity_type == "skill":
-        result = update_skill(entity_id, **{k: v for k, v in snapshot.items()
-                              if k not in ("id", "created_at", "updated_at")})
+        result = update_skill(
+            entity_id,
+            **{
+                k: v
+                for k, v in snapshot.items()
+                if k not in ("id", "created_at", "updated_at")
+            },
+        )
     elif entity_type == "prompt":
-        result = update_prompt(entity_id, **{k: v for k, v in snapshot.items()
-                               if k not in ("id", "created_at", "updated_at")})
+        result = update_prompt(
+            entity_id,
+            **{
+                k: v
+                for k, v in snapshot.items()
+                if k not in ("id", "created_at", "updated_at")
+            },
+        )
     else:
         result = None
     if not result:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=500, content={"error": "Rollback failed"})
-    log_audit("rollback", entity_type, entity_id, snapshot.get("name", ""), {"to_version": v["version"]})
+    log_audit(
+        "rollback",
+        entity_type,
+        entity_id,
+        snapshot.get("name", ""),
+        {"to_version": v["version"]},
+    )
     return {"status": "rolled_back", "version": v["version"], "entity": result}
 
 
 # ── Audit Log endpoints ───────────────────────────────────────────────────
 
+
 @app.get("/audit-log")
-async def audit_log_endpoint(limit: int = 100, entity_type: str | None = None,
-                              action: str | None = None):
+async def audit_log_endpoint(
+    limit: int = 100, entity_type: str | None = None, action: str | None = None
+):
     """List recent audit log entries."""
-    entries = list_audit_log(limit=min(limit, 500), entity_type=entity_type, action=action)
+    entries = list_audit_log(
+        limit=min(limit, 500), entity_type=entity_type, action=action
+    )
     return {"entries": entries, "count": len(entries)}

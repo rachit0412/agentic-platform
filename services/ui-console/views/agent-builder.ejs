@@ -13,6 +13,29 @@
   </div>
 </div>
 
+<!-- ═══ AGENT IDENTITY ═══ -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem;padding:1.25rem 1.5rem">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(6,182,212,0.08));display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    </div>
+    <div>
+      <h3 style="margin:0;font-size:1rem">Agent Identity</h3>
+      <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Give your agent a name and describe its purpose.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div>
+      <label class="field-label">Agent Name</label>
+      <input type="text" id="ab-name" class="input" placeholder="e.g. Research Agent" maxlength="100" oninput="abRenderCollections()">
+    </div>
+    <div>
+      <label class="field-label">Description</label>
+      <input type="text" id="ab-desc" class="input" placeholder="Brief purpose of this agent" maxlength="500">
+    </div>
+  </div>
+</div>
+
 <!-- ═══ FLOW PIPELINE ═══ -->
 <div id="ab-pipeline" style="display:flex;align-items:stretch;gap:0;margin-bottom:1.5rem;position:relative">
 
@@ -116,18 +139,6 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Save to Library
       </button>
-    </div>
-  </div>
-
-  <!-- Agent identity -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-    <div>
-      <label class="field-label">Agent Name</label>
-      <input type="text" id="ab-name" class="input" placeholder="e.g. Research Agent" maxlength="100">
-    </div>
-    <div>
-      <label class="field-label">Description</label>
-      <input type="text" id="ab-desc" class="input" placeholder="Brief purpose of this agent" maxlength="500">
     </div>
   </div>
 
@@ -448,6 +459,16 @@
           <input type="number" id="ab-memory-window" class="input" min="1" max="50" value="5">
           <span style="font-size:0.68rem;color:var(--text-3)">Number of past messages included as context</span>
         </div>
+        <div>
+          <label class="field-label" style="display:flex;align-items:center;justify-content:space-between">
+            <span>Sub-Agents (Orchestration)</span>
+            <a href="/agents" style="font-size:0.68rem;color:#06b6d4;font-weight:400;text-decoration:none">Registry &rarr;</a>
+          </label>
+          <p style="font-size:0.68rem;color:var(--text-3);margin:0 0 0.35rem">Assign sub-agents this agent can delegate tasks to at runtime.</p>
+          <div id="ab-sub-agents-list" style="display:flex;flex-direction:column;gap:0.35rem;max-height:180px;overflow-y:auto;padding:0.25rem 0">
+            <p style="color:var(--text-3);font-size:0.78rem">Loading agents...</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -557,7 +578,7 @@ var abCurrentStep = 1;
 var abEditingId = '';
 var abData = {
   skills: [], prompts: [], tools: [], collections: [], guardrails: [], mcpServers: [], agents: [],
-  selectedSkills: [], selectedTools: [], selectedGuardrails: []
+  selectedSkills: [], selectedTools: [], selectedGuardrails: [], selectedSubAgents: []
 };
 
 /* ═══ INIT ═══ */
@@ -585,6 +606,7 @@ async function abInit() {
     abRenderTools();
     abRenderCollections();
     abRenderGuardrails();
+    abRenderSubAgents();
     abRenderMCP();
     abRenderAgentSelector();
     abGoTo(1);
@@ -815,17 +837,35 @@ function abFilterTools() {
 }
 
 /* ═══ KNOWLEDGE BASE ═══ */
+function abGetAgentCollectionName() {
+  var name = (document.getElementById('ab-name').value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  return name ? 'agent_' + name + '_kb' : '';
+}
+
 function abRenderCollections() {
   var sel = document.getElementById('ab-kb-collection');
-  sel.innerHTML = '<option value="agentic_docs">agentic_docs (global)</option>';
+  var agentCol = abGetAgentCollectionName();
+  sel.innerHTML = '';
+  if (agentCol) {
+    var opt = document.createElement('option');
+    opt.value = agentCol;
+    opt.textContent = agentCol + ' (this agent)';
+    sel.appendChild(opt);
+  }
+  var globalOpt = document.createElement('option');
+  globalOpt.value = 'agentic_docs';
+  globalOpt.textContent = 'agentic_docs (global)';
+  sel.appendChild(globalOpt);
   abData.collections.forEach(function(c) {
     var name = typeof c === 'string' ? c : c.name;
     if (name === 'agentic_docs') return;
+    if (name === agentCol) return;
     var opt = document.createElement('option');
     opt.value = name;
     opt.textContent = name;
     sel.appendChild(opt);
   });
+  if (agentCol) sel.value = agentCol;
   abLoadKBDocs();
 }
 
@@ -894,7 +934,8 @@ function abUploadDoc() {
   var text = document.getElementById('ab-kb-text').value.trim();
   var source = document.getElementById('ab-kb-source').value.trim() || 'uploaded-doc';
   var newCol = document.getElementById('ab-kb-new').value.trim();
-  var collection = newCol || document.getElementById('ab-kb-collection').value || 'agentic_docs';
+  var agentCol = abGetAgentCollectionName();
+  var collection = newCol || document.getElementById('ab-kb-collection').value || agentCol || 'agentic_docs';
   if (!text) { alert('Provide text content or select a file'); return; }
 
   fetch('/api/documents/ingest', {
@@ -967,6 +1008,36 @@ function abRenderGuardrails() {
 }
 
 /* ═══ AGENT SELECTOR ═══ */
+function abRenderSubAgents() {
+  var el = document.getElementById('ab-sub-agents-list');
+  var agents = abData.agents || [];
+  var currentName = (document.getElementById('ab-name').value || '').trim().toLowerCase();
+  var available = agents.filter(function(a) { return a.name.toLowerCase() !== currentName; });
+  if (available.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem">No other agents available. Create agents first, then assign them as sub-agents.</p>';
+    return;
+  }
+  el.innerHTML = available.map(function(a) {
+    var checked = (abData.selectedSubAgents || []).indexOf(a.id) >= 0 ? ' checked' : '';
+    return '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.65rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px">' +
+      '<input type="checkbox" value="' + a.id + '"' + checked + ' onchange="abSubAgentToggle(this)" style="accent-color:#6366f1;width:16px;height:16px;flex-shrink:0">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:0.82rem;font-weight:600;color:var(--text-1)">' + escapeHtml(a.name) + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(a.description || 'No description') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+function abSubAgentToggle(cb) {
+  if (!abData.selectedSubAgents) abData.selectedSubAgents = [];
+  if (cb.checked) {
+    if (abData.selectedSubAgents.indexOf(cb.value) < 0) abData.selectedSubAgents.push(cb.value);
+  } else {
+    abData.selectedSubAgents = abData.selectedSubAgents.filter(function(id) { return id !== cb.value; });
+  }
+  abUpdateStatuses();
+}
+
 function abRenderAgentSelector() {
   var sel = document.getElementById('ab-load-agent');
   sel.innerHTML = '<option value="">New Agent</option>';
@@ -992,6 +1063,7 @@ function abLoadExisting() {
 
   abData.selectedSkills = (agent.skill_ids || []).slice();
   abData.selectedTools = (agent.tool_ids || []).slice();
+  abData.selectedSubAgents = (agent.sub_agent_ids || []).slice();
 
   document.getElementById('ab-provider').value = agent.provider || 'azure-foundry';
   abProviderChanged();
@@ -1025,6 +1097,7 @@ function abLoadExisting() {
 
   abRenderSkills();
   abRenderTools();
+  abRenderSubAgents();
   abUpdateStatuses();
   abGoTo(1);
 }
@@ -1039,6 +1112,7 @@ function abReset() {
   abUpdatePromptChars();
   abData.selectedSkills = [];
   abData.selectedTools = [];
+  abData.selectedSubAgents = [];
   document.getElementById('ab-provider').value = 'azure-foundry';
   abProviderChanged();
   document.getElementById('ab-model').value = 'gpt-5-nano';
@@ -1058,6 +1132,7 @@ function abReset() {
   document.getElementById('ab-test-result').textContent = '';
   abRenderSkills();
   abRenderTools();
+  abRenderSubAgents();
   abLoadKBDocs();
   abUpdateStatuses();
   abGoTo(1);
@@ -1120,6 +1195,10 @@ function abBuildReview() {
 function abGetConfig() {
   var newCol = document.getElementById('ab-kb-new').value.trim();
   var name = document.getElementById('ab-name').value.trim();
+  var subAgentIds = [];
+  document.querySelectorAll('#ab-sub-agents-list input[type=checkbox]:checked').forEach(function(cb) {
+    subAgentIds.push(cb.value);
+  });
   return {
     name: name || 'Untitled Agent',
     description: document.getElementById('ab-desc').value.trim(),
@@ -1133,7 +1212,8 @@ function abGetConfig() {
     response_format: document.getElementById('ab-response-format').value || 'text',
     skill_ids: abData.selectedSkills.slice(),
     tool_ids: abData.selectedTools.slice(),
-    kb_collection: newCol || document.getElementById('ab-kb-collection').value || 'agentic_docs',
+    sub_agent_ids: subAgentIds,
+    kb_collection: newCol || document.getElementById('ab-kb-collection').value || abGetAgentCollectionName() || 'agentic_docs',
     max_iterations: parseInt(document.getElementById('ab-max-iter').value) || 5,
     memory_enabled: document.getElementById('ab-memory').value === '1'
   };
