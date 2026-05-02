@@ -1817,7 +1817,9 @@ async def connectors_create(req: ConnectorCreateRequest):
     if req.connector_type not in CONNECTOR_CATALOG:
         return {"error": f"Unknown connector type: {req.connector_type}"}, 400
     cid = generate_connector_id()
-    connector = create_connector(cid, req.name, req.connector_type, req.config, req.auto_index, req.schedule)
+    connector = create_connector(
+        cid, req.name, req.connector_type, req.config, req.auto_index, req.schedule
+    )
     log_audit("create", "connector", cid, req.name, {"type": req.connector_type})
     return connector
 
@@ -1889,24 +1891,36 @@ async def connectors_sync(connector_id: str, req: ConnectorSyncRequest):
             # Auto-index if requested
             if req.auto_index or c.get("auto_index"):
                 from agent.vectorstore import ingest_text
+
                 chunks = ingest_text(
-                    content, filename,
+                    content,
+                    filename,
                     chunk_size=req.chunk_size,
                     chunk_overlap=req.chunk_overlap,
                 )
-                update_document_registry(doc_id, {
-                    "status": "indexed",
-                    "chunk_count": chunks,
-                })
+                update_document_registry(
+                    doc_id,
+                    {
+                        "status": "indexed",
+                        "chunk_count": chunks,
+                    },
+                )
                 docs_indexed += 1
 
         # Update job and connector
-        update_sync_job(job_id, "completed", docs_pulled=len(documents), docs_indexed=docs_indexed)
-        update_connector(connector_id, {
-            "last_sync": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
-            "last_status": "completed",
-            "doc_count": c["doc_count"] + len(documents),
-        })
+        update_sync_job(
+            job_id, "completed", docs_pulled=len(documents), docs_indexed=docs_indexed
+        )
+        update_connector(
+            connector_id,
+            {
+                "last_sync": __import__("datetime")
+                .datetime.now(__import__("datetime").timezone.utc)
+                .isoformat(),
+                "last_status": "completed",
+                "doc_count": c["doc_count"] + len(documents),
+            },
+        )
 
         return {
             "status": "completed",

@@ -1793,16 +1793,34 @@ def list_connectors() -> list[dict]:
 
 def get_connector(connector_id: str) -> dict | None:
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM connectors WHERE id = ?", (connector_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM connectors WHERE id = ?", (connector_id,)
+    ).fetchone()
     return _row_to_connector(row) if row else None
 
 
-def create_connector(connector_id: str, name: str, connector_type: str, config: dict, auto_index: bool = False, schedule: str = "") -> dict:
+def create_connector(
+    connector_id: str,
+    name: str,
+    connector_type: str,
+    config: dict,
+    auto_index: bool = False,
+    schedule: str = "",
+) -> dict:
     conn = _get_conn()
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO connectors (id, name, connector_type, config, enabled, schedule, auto_index, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)",
-        (connector_id, name, connector_type, json.dumps(config), schedule, int(auto_index), now, now),
+        (
+            connector_id,
+            name,
+            connector_type,
+            json.dumps(config),
+            schedule,
+            int(auto_index),
+            now,
+            now,
+        ),
     )
     conn.commit()
     return get_connector(connector_id)
@@ -1810,7 +1828,16 @@ def create_connector(connector_id: str, name: str, connector_type: str, config: 
 
 def update_connector(connector_id: str, updates: dict) -> dict | None:
     conn = _get_conn()
-    allowed = {"name", "config", "enabled", "schedule", "auto_index", "last_sync", "last_status", "doc_count"}
+    allowed = {
+        "name",
+        "config",
+        "enabled",
+        "schedule",
+        "auto_index",
+        "last_sync",
+        "last_status",
+        "doc_count",
+    }
     sets = []
     vals = []
     for k, v in updates.items():
@@ -1851,10 +1878,21 @@ def create_sync_job(job_id: str, connector_id: str) -> dict:
         (job_id, connector_id, now, now),
     )
     conn.commit()
-    return {"id": job_id, "connector_id": connector_id, "status": "running", "started_at": now}
+    return {
+        "id": job_id,
+        "connector_id": connector_id,
+        "status": "running",
+        "started_at": now,
+    }
 
 
-def update_sync_job(job_id: str, status: str, docs_pulled: int = 0, docs_indexed: int = 0, error: str = ""):
+def update_sync_job(
+    job_id: str,
+    status: str,
+    docs_pulled: int = 0,
+    docs_indexed: int = 0,
+    error: str = "",
+):
     conn = _get_conn()
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
@@ -1872,7 +1910,9 @@ def list_sync_jobs(connector_id: str = "", limit: int = 20) -> list[dict]:
             (connector_id, limit),
         ).fetchall()
     else:
-        rows = conn.execute("SELECT * FROM sync_jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        rows = conn.execute(
+            "SELECT * FROM sync_jobs ORDER BY created_at DESC LIMIT ?", (limit,)
+        ).fetchall()
     return [
         {
             "id": r["id"],

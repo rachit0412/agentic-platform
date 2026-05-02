@@ -63,6 +63,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion, multi-agent pipelines
 - **Full Observability** — Prometheus + Grafana dashboards + Loki logs + OpenTelemetry pipeline
 - **Security Hardening** — XSS protection, input validation, SSRF protection, path traversal prevention
+- **Data Connectors** — Hybrid ingestion framework: built-in connectors (Database, REST API, Cloud Storage, Google Drive, SharePoint) + Airbyte for 300+ sources
 - **Marketplace** — Browse and install agent/skill/workflow templates
 - **GPU Support** — Uncomment one block in docker-compose.yml for NVIDIA GPU acceleration
 
@@ -245,19 +246,31 @@ Key settings:
 
 ## 🧪 Testing
 
+The platform has **185 automated tests** across Python and JavaScript:
+
 ```bash
-# Python unit tests
-cd tests && pytest -v
+# All Python tests (156 tests — comprehensive platform + API endpoint coverage)
+python -m pytest tests/e2e/test_platform_comprehensive.py tests/e2e/test_api_endpoints.py -v
 
-# JavaScript tests
-cd tests/unit && npx jest
+# UI Console tests (29 tests — Express routes, proxies, marketplace)
+cd services/ui-console && node node_modules/jest/bin/jest.js --forceExit
 
-# Smoke test
+# Smoke test (service health)
 bash tests/smoke/smoke-test.sh
 
 # Load test (k6)
 k6 run tests/load/load-test.js
 ```
+
+**Test coverage includes:**
+- Data ingestion (connectors, sync jobs, document lifecycle)
+- Agent CRUD and multi-agent orchestration
+- Skills, prompts, custom tools management
+- A2A protocol and MCP registry
+- Guardrails (input/output safety gates)
+- Versioning and audit logging
+- Export/import, sessions, model switching
+- UI routes, API proxies, marketplace install/uninstall
 
 ---
 
@@ -272,6 +285,7 @@ agentic-platform/
 ├── docs/ARCHITECTURE.md         # Deep-dive architecture & protocols
 ├── services/
 │   ├── agent/                   # 🧠 FastAPI + LangGraph agent (69 API endpoints)
+│   │   └── agent/connectors/    # 🔌 Data connectors (DB, API, Cloud, Drives, Airbyte)
 │   ├── tools/                   # 🔧 FastAPI tool endpoints (9 tools)
 │   ├── ui-console/              # 🖥️  Express.js dashboard (22 pages)
 │   └── otel/                    # 📡 OpenTelemetry collector config

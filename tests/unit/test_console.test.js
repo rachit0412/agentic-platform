@@ -12,8 +12,8 @@ global.fetch = jest.fn(() =>
   })
 );
 
-const app = require("../server");
-const marketplace = require("../marketplace");
+const app = require("../../services/ui-console/server");
+const marketplace = require("../../services/ui-console/marketplace");
 const express = require("express");
 
 // ── Health ─────────────────────────────────────────────
@@ -29,7 +29,7 @@ describe("GET /health", () => {
 
 // ── Pages ──────────────────────────────────────────────
 
-const pages = ["/", "/run-agent", "/documents", "/workflows", "/llm-activity", "/observability", "/marketplace", "/admin"];
+const pages = ["/", "/run-agent", "/documents", "/workflows", "/observability", "/marketplace", "/admin"];
 
 pages.forEach((path) => {
   describe(`GET ${path}`, () => {
@@ -38,6 +38,16 @@ pages.forEach((path) => {
       expect(res.status).toBe(200);
       expect(res.headers["content-type"]).toMatch(/html/);
     });
+  });
+});
+
+// ── Redirects ──────────────────────────────────────────
+
+describe("GET /llm-activity", () => {
+  it("redirects to /intelligence-hub", async () => {
+    const res = await request(app).get("/llm-activity");
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe("/intelligence-hub");
   });
 });
 
@@ -137,13 +147,14 @@ describe("Marketplace", () => {
   });
 
   it("POST install / uninstall cycle", async () => {
-    let res = await request(mktApp).post("/api/marketplace/templates/wf-agent-run/install");
+    // Use a template that is NOT installed by default
+    let res = await request(mktApp).post("/api/marketplace/templates/tool-web-search/install");
     expect(res.status).toBe(200);
-    expect(res.body.installed).toBe(true);
+    expect(res.body.status).toBe("installed");
 
-    res = await request(mktApp).post("/api/marketplace/templates/wf-agent-run/uninstall");
+    res = await request(mktApp).post("/api/marketplace/templates/tool-web-search/uninstall");
     expect(res.status).toBe(200);
-    expect(res.body.installed).toBe(false);
+    expect(res.body.status).toBe("uninstalled");
   });
 
   it("search filters templates", async () => {

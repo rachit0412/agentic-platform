@@ -147,6 +147,21 @@
 
 ---
 
+### 14. Data Connectors (Hybrid Ingestion)
+
+| Attribute            | ABB (Abstract)                                              | SBB (Solution)                                                                                             |
+| -------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Capability**       | Unified data ingestion from heterogeneous external sources  | Connector framework at `services/agent/agent/connectors/`                                                  |
+| **Built-in Sources** | Database, REST API, Cloud Storage, Google Drive, SharePoint | `database.py`, `api_connector.py`, `cloud_storage.py`, `drives.py` (Google Drive + SharePoint)             |
+| **Extended Sources** | 300+ sources via Airbyte integration                        | Airbyte connector type with managed sync                                                                   |
+| **Sync Engine**      | Job-based pull with status tracking                         | `sync_engine.py` — `run_sync()` dispatches per connector type, tracks `sync_jobs` in SQLite                |
+| **Catalog**          | Self-describing connector type catalog with config schemas  | `/connectors/catalog` API returns `config_schema` per type (JSON Schema)                                   |
+| **Lifecycle**        | Full CRUD + test + sync operations                          | `POST /connectors`, `POST /connectors/:id/test`, `POST /connectors/:id/sync`, `GET /connectors/:id/jobs`  |
+| **Pipeline**         | Fetched data → chunk → embed → index into vector store      | Sync engine calls `ingest_text()` to push content through the RAG pipeline                                 |
+| **Principles**       | AP-6 Protocol-Driven Extensibility, AP-8 Knowledge as First-Class Resource |
+
+---
+
 ## ABB → SBB Traceability Matrix
 
 | ABB                       | SBB Technology                                | Service                                             | Source                                   |
@@ -164,3 +179,4 @@
 | Workflow Automation       | n8n                                           | n8n, n8n-proxy                                      | `n8n/workflows/`                         |
 | Platform Dashboard        | Express.js + EJS                              | ui-console                                          | `server.js`, `views/`                    |
 | Multi-Agent Orchestration | delegate_to_agent + sub_agent_ids + n8n DAGs  | agent-service + n8n                                 | `tools.py`, `graph.py`, `n8n/workflows/` |
+| Data Connectors           | Hybrid connector framework + Airbyte          | agent-service                                       | `connectors/`                            |
