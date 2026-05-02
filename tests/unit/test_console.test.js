@@ -29,7 +29,7 @@ describe("GET /health", () => {
 
 // ── Pages ──────────────────────────────────────────────
 
-const pages = ["/", "/run-agent", "/documents", "/workflows", "/observability", "/marketplace", "/admin"];
+const pages = ["/", "/run-agent", "/documents", "/workflows", "/observability", "/marketplace", "/admin", "/data-ingestion"];
 
 pages.forEach((path) => {
   describe(`GET ${path}`, () => {

@@ -1040,6 +1040,7 @@ app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));
 app.get("/rest", (req, res) => res.render("rest", { urls: externalUrls }));
 app.get("/intelligence-hub", (req, res) => res.render("intelligence-hub", { urls: externalUrls }));
 app.get("/agent-hub", (req, res) => res.render("agent-hub", { urls: externalUrls }));
+app.get("/data-ingestion", (req, res) => res.render("data-ingestion", { urls: externalUrls }));
 app.get("/llm-activity", (req, res) => res.redirect("/intelligence-hub"));
 app.get("/traceability", (req, res) => res.render("traceability", { urls: externalUrls }));
 app.get("/evaluation", (req, res) => res.render("evaluation", { urls: externalUrls }));

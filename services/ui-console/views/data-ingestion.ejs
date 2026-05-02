@@ -1,0 +1,333 @@
+<%- include('layout', { title: 'Data Ingestion', page: 'data-ingestion', body: `
+
+<h1 class="text-glow-cyan">Data Ingestion</h1>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Connect to <strong style="color:#8b5cf6">external data sources</strong>, configure sync schedules, and ingest enterprise data into your <strong style="color:#06b6d4">knowledge base</strong> automatically.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Supports <strong style="color:#10b981">6 connector types</strong>: Database (PostgreSQL/MySQL/MSSQL), Cloud Storage (S3/Azure Blob/GCS), REST API, Google Drive, SharePoint, and <strong style="color:#f59e0b">Airbyte (300+ sources)</strong>.</p>
+
+<!-- Stats Row -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('connectors-grid').scrollIntoView({behavior:'smooth',block:'start'})">
+    <div style="font-size:1.75rem;font-weight:700;color:var(--cyan)" id="stat-total">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Connectors</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('connectors-grid').scrollIntoView({behavior:'smooth',block:'start'})">
+    <div style="font-size:1.75rem;font-weight:700;color:#10b981" id="stat-active">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Active / Healthy</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('jobs-section').scrollIntoView({behavior:'smooth',block:'start'})">
+    <div style="font-size:1.75rem;font-weight:700;color:#8b5cf6" id="stat-syncs">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Total Syncs</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s">
+    <div style="font-size:1.75rem;font-weight:700;color:#f59e0b" id="stat-docs">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Docs Ingested</div>
+  </div>
+</div>
+
+<!-- Action Bar -->
+<div class="flex-between mb-2">
+  <div style="display:flex;gap:0.5rem;align-items:center">
+    <span id="connector-count" class="badge" style="font-size:0.78rem">0 connectors</span>
+  </div>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn btn-primary" onclick="showCreateModal()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Connector
+    </button>
+    <button class="btn" onclick="loadConnectors()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<!-- Connector Catalog (Type Selector) -->
+<div class="card" style="margin-bottom:1.5rem" id="catalog-section">
+  <h3 style="margin-bottom:1rem;font-size:0.9rem">Connector Catalog</h3>
+  <div id="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem">
+    <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Loading catalog...</div>
+  </div>
+</div>
+
+<!-- Connectors List -->
+<div class="card" style="margin-bottom:1.5rem" id="connectors-grid">
+  <h3 style="margin-bottom:1rem;font-size:0.9rem">Configured Connectors</h3>
+  <div id="connectors-list" style="display:flex;flex-direction:column;gap:0.75rem">
+    <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Loading...</div>
+  </div>
+</div>
+
+<!-- Recent Sync Jobs -->
+<div class="card" id="jobs-section">
+  <h3 style="margin-bottom:1rem;font-size:0.9rem">Recent Sync Jobs</h3>
+  <div id="jobs-list" style="max-height:300px;overflow-y:auto">
+    <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Select a connector to view sync history</div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal()">
+  <div class="card" style="width:560px;max-width:90vw;max-height:85vh;overflow-y:auto;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 id="modal-title" style="margin:0">New Connector</h3>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem">&times;</button>
+    </div>
+    <form id="connector-form" onsubmit="handleSubmit(event)">
+      <div style="margin-bottom:1rem">
+        <label style="display:block;font-size:0.78rem;font-weight:600;margin-bottom:0.3rem;color:var(--text-2)">Connector Type</label>
+        <select id="f-type" onchange="renderConfigFields()" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--glass-border);background:var(--bg-2);color:var(--text-1);font-size:0.82rem">
+          <option value="">Select a type...</option>
+        </select>
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="display:block;font-size:0.78rem;font-weight:600;margin-bottom:0.3rem;color:var(--text-2)">Name</label>
+        <input id="f-name" type="text" placeholder="My Database Connector" required style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--glass-border);background:var(--bg-2);color:var(--text-1);font-size:0.82rem">
+      </div>
+      <div id="config-fields" style="margin-bottom:1rem"></div>
+      <div style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem">
+        <input type="checkbox" id="f-auto-index" checked>
+        <label for="f-auto-index" style="font-size:0.78rem;color:var(--text-2)">Auto-index into knowledge base after sync</label>
+      </div>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+        <button type="button" class="btn" onclick="testConnection()" id="btn-test">Test Connection</button>
+        <button type="submit" class="btn btn-primary" id="btn-save">Save Connector</button>
+      </div>
+      <div id="form-status" style="margin-top:0.75rem;font-size:0.78rem;display:none"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+let catalog = {};
+let connectors = [];
+let editingId = null;
+
+async function loadCatalog() {
+  try {
+    const res = await fetch('/api/connectors/catalog');
+    const data = await res.json();
+    catalog = data.connectors || {};
+    renderCatalog();
+    populateTypeSelect();
+  } catch(e) { console.error('Failed to load catalog', e); }
+}
+
+function renderCatalog() {
+  const grid = document.getElementById('catalog-grid');
+  const icons = { database: '\u{1F5C4}', cloud: '\u2601\uFE0F', api: '\u{1F310}', drive: '\u{1F4C1}', sharepoint: '\u{1F4CE}', airbyte: '\u26A1' };
+  grid.innerHTML = Object.entries(catalog).map(([key, c]) => {
+    return '<div style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s;background:var(--bg-2)" onclick="showCreateModal(\\'' + key + '\\')" onmouseover="this.style.borderColor=\\'var(--cyan)\\'" onmouseout="this.style.borderColor=\\'var(--glass-border)\\'"><div style="font-size:1.25rem;margin-bottom:0.3rem">' + (icons[c.icon] || '\u{1F50C}') + '</div><div style="font-size:0.82rem;font-weight:600;color:var(--text-1)">' + c.name + '</div><div style="font-size:0.7rem;color:var(--text-3);margin-top:0.2rem;line-height:1.3">' + c.description + '</div></div>';
+  }).join('');
+}
+
+function populateTypeSelect() {
+  const sel = document.getElementById('f-type');
+  sel.innerHTML = '<option value="">Select a type...</option>' + Object.entries(catalog).map(([key, c]) =>
+    '<option value="' + key + '">' + c.name + '</option>'
+  ).join('');
+}
+
+async function loadConnectors() {
+  try {
+    const res = await fetch('/api/connectors');
+    const data = await res.json();
+    connectors = data.connectors || [];
+    renderConnectors();
+    updateStats();
+  } catch(e) { console.error('Failed to load connectors', e); }
+}
+
+function renderConnectors() {
+  const el = document.getElementById('connectors-list');
+  if (!connectors.length) {
+    el.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem;padding:1rem;text-align:center">No connectors configured yet. Click <strong>New Connector</strong> to get started.</div>';
+    return;
+  }
+  const icons = { database: '\u{1F5C4}', cloud_storage: '\u2601\uFE0F', api: '\u{1F310}', google_drive: '\u{1F4C1}', sharepoint: '\u{1F4CE}', airbyte: '\u26A1' };
+  const statusColors = { completed: '#10b981', failed: '#ef4444', pending: '#f59e0b', running: '#3b82f6' };
+  el.innerHTML = connectors.map(c => {
+    const statusColor = statusColors[c.last_status] || 'var(--text-3)';
+    const icon = icons[c.connector_type] || '\u{1F50C}';
+    return '<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--bg-2);transition:all 0.2s" onmouseover="this.style.borderColor=\\'var(--cyan)\\'" onmouseout="this.style.borderColor=\\'var(--glass-border)\\'"><div style="font-size:1.5rem">' + icon + '</div><div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600;color:var(--text-1)">' + c.name + '</div><div style="font-size:0.72rem;color:var(--text-3)">' + (catalog[c.connector_type]?.name || c.connector_type) + ' &bull; ' + (c.doc_count || 0) + ' docs &bull; Last: ' + (c.last_sync ? new Date(c.last_sync).toLocaleString() : 'Never') + '</div></div><div style="display:flex;gap:0.3rem;align-items:center"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span><span style="font-size:0.72rem;color:' + statusColor + '">' + (c.last_status || 'new') + '</span></div><div style="display:flex;gap:0.3rem"><button class="btn btn-sm" onclick="syncConnector(\\'' + c.id + '\\')" title="Sync now" style="padding:0.25rem 0.5rem;font-size:0.7rem">\u{1F504} Sync</button><button class="btn btn-sm" onclick="viewJobs(\\'' + c.id + '\\')" title="View jobs" style="padding:0.25rem 0.5rem;font-size:0.7rem">\u{1F4CB}</button><button class="btn btn-sm" onclick="deleteConnector(\\'' + c.id + '\\')" title="Delete" style="padding:0.25rem 0.5rem;font-size:0.7rem;color:#ef4444">\u{1F5D1}</button></div></div>';
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = connectors.length;
+  document.getElementById('stat-active').textContent = connectors.filter(c => c.last_status === 'completed').length;
+  const totalDocs = connectors.reduce((s, c) => s + (c.doc_count || 0), 0);
+  document.getElementById('stat-docs').textContent = totalDocs;
+  document.getElementById('connector-count').textContent = connectors.length + ' connector' + (connectors.length !== 1 ? 's' : '');
+}
+
+function showCreateModal(type) {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'New Connector';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-auto-index').checked = true;
+  document.getElementById('form-status').style.display = 'none';
+  if (type) document.getElementById('f-type').value = type;
+  else document.getElementById('f-type').value = '';
+  renderConfigFields();
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+
+function renderConfigFields() {
+  const type = document.getElementById('f-type').value;
+  const container = document.getElementById('config-fields');
+  if (!type || !catalog[type]) { container.innerHTML = ''; return; }
+  const schema = catalog[type].config_schema;
+  container.innerHTML = '<div style="font-size:0.78rem;font-weight:600;color:var(--text-2);margin-bottom:0.5rem">Configuration</div>' +
+    Object.entries(schema).map(([key, def]) => {
+      let input = '';
+      if (def.type === 'select') {
+        input = '<select id="cfg-' + key + '" ' + (def.required ? 'required' : '') + ' style="width:100%;padding:0.45rem;border-radius:6px;border:1px solid var(--glass-border);background:var(--bg-2);color:var(--text-1);font-size:0.8rem">' +
+          '<option value="">Select...</option>' + def.options.map(o => '<option value="' + o + '">' + o + '</option>').join('') + '</select>';
+      } else if (def.type === 'textarea') {
+        input = '<textarea id="cfg-' + key + '" ' + (def.required ? 'required' : '') + ' placeholder="' + (def.placeholder || '') + '" rows="3" style="width:100%;padding:0.45rem;border-radius:6px;border:1px solid var(--glass-border);background:var(--bg-2);color:var(--text-1);font-size:0.8rem;resize:vertical"></textarea>';
+      } else {
+        const inputType = def.type === 'password' ? 'password' : (def.type === 'number' ? 'number' : 'text');
+        input = '<input type="' + inputType + '" id="cfg-' + key + '" ' + (def.required ? 'required' : '') + ' placeholder="' + (def.placeholder || '') + '" style="width:100%;padding:0.45rem;border-radius:6px;border:1px solid var(--glass-border);background:var(--bg-2);color:var(--text-1);font-size:0.8rem">';
+      }
+      return '<div style="margin-bottom:0.6rem"><label style="display:block;font-size:0.72rem;font-weight:500;margin-bottom:0.2rem;color:var(--text-3)">' + key.replace(/_/g, ' ') + (def.required ? ' *' : '') + (def.description ? ' <span style=\\'color:var(--text-3);font-weight:400\\'>(' + def.description + ')</span>' : '') + '</label>' + input + '</div>';
+    }).join('');
+}
+
+function getConfigValues() {
+  const type = document.getElementById('f-type').value;
+  if (!type || !catalog[type]) return {};
+  const schema = catalog[type].config_schema;
+  const config = {};
+  Object.keys(schema).forEach(key => {
+    const el = document.getElementById('cfg-' + key);
+    if (el && el.value) config[key] = el.value;
+  });
+  return config;
+}
+
+async function testConnection() {
+  const type = document.getElementById('f-type').value;
+  const config = getConfigValues();
+  const statusEl = document.getElementById('form-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--text-3)';
+  statusEl.textContent = 'Testing connection...';
+  try {
+    const res = await fetch('/api/connectors/test', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ connector_type: type, config })
+    });
+    const data = await res.json();
+    if (data.success) {
+      statusEl.style.color = '#10b981';
+      statusEl.textContent = '\u2713 Connection successful' + (data.message ? ': ' + data.message : '');
+    } else {
+      statusEl.style.color = '#ef4444';
+      statusEl.textContent = '\u2717 Connection failed: ' + (data.error || 'Unknown error');
+    }
+  } catch(e) {
+    statusEl.style.color = '#ef4444';
+    statusEl.textContent = '\u2717 Test failed: ' + e.message;
+  }
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  const type = document.getElementById('f-type').value;
+  const name = document.getElementById('f-name').value;
+  const config = getConfigValues();
+  const autoIndex = document.getElementById('f-auto-index').checked;
+  const statusEl = document.getElementById('form-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--text-3)';
+  statusEl.textContent = 'Saving...';
+  try {
+    const url = editingId ? '/api/connectors/' + editingId : '/api/connectors';
+    const method = editingId ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method, headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name, connector_type: type, config, auto_index: autoIndex })
+    });
+    const data = await res.json();
+    if (data.error) {
+      statusEl.style.color = '#ef4444';
+      statusEl.textContent = '\u2717 ' + data.error;
+    } else {
+      statusEl.style.color = '#10b981';
+      statusEl.textContent = '\u2713 Connector saved!';
+      setTimeout(() => { closeModal(); loadConnectors(); }, 800);
+    }
+  } catch(e) {
+    statusEl.style.color = '#ef4444';
+    statusEl.textContent = '\u2717 ' + e.message;
+  }
+}
+
+async function syncConnector(id) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '\u23F3';
+  try {
+    const res = await fetch('/api/connectors/' + id + '/sync', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ auto_index: true })
+    });
+    const data = await res.json();
+    if (data.status === 'completed') {
+      btn.textContent = '\u2713 ' + data.docs_pulled + ' docs';
+      btn.style.color = '#10b981';
+    } else {
+      btn.textContent = '\u2717 ' + (data.error || 'Failed');
+      btn.style.color = '#ef4444';
+    }
+    loadConnectors();
+    setTimeout(() => { btn.textContent = '\u{1F504} Sync'; btn.style.color = ''; btn.disabled = false; }, 3000);
+  } catch(e) {
+    btn.textContent = '\u2717 Error';
+    btn.style.color = '#ef4444';
+    setTimeout(() => { btn.textContent = '\u{1F504} Sync'; btn.style.color = ''; btn.disabled = false; }, 3000);
+  }
+}
+
+async function viewJobs(id) {
+  const el = document.getElementById('jobs-list');
+  el.innerHTML = '<div style="color:var(--text-3);font-size:0.8rem;padding:0.5rem">Loading jobs...</div>';
+  document.getElementById('jobs-section').scrollIntoView({behavior:'smooth',block:'start'});
+  try {
+    const res = await fetch('/api/connectors/' + id + '/jobs');
+    const data = await res.json();
+    const jobs = data.jobs || [];
+    document.getElementById('stat-syncs').textContent = jobs.length;
+    if (!jobs.length) {
+      el.innerHTML = '<div style="color:var(--text-3);font-size:0.8rem;padding:0.5rem;text-align:center">No sync jobs yet for this connector.</div>';
+      return;
+    }
+    const statusColors = { completed: '#10b981', failed: '#ef4444', pending: '#f59e0b', running: '#3b82f6' };
+    el.innerHTML = '<table style="width:100%;font-size:0.78rem;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--glass-border);color:var(--text-3)"><th style="text-align:left;padding:0.4rem">Job ID</th><th style="text-align:left;padding:0.4rem">Status</th><th style="text-align:left;padding:0.4rem">Docs Pulled</th><th style="text-align:left;padding:0.4rem">Indexed</th><th style="text-align:left;padding:0.4rem">Started</th></tr></thead><tbody>' +
+      jobs.map(j => '<tr style="border-bottom:1px solid var(--glass-border)"><td style="padding:0.4rem;font-family:monospace;font-size:0.7rem">' + j.id + '</td><td style="padding:0.4rem"><span style="color:' + (statusColors[j.status] || 'var(--text-3)') + ';font-weight:600">' + j.status + '</span></td><td style="padding:0.4rem">' + (j.docs_pulled || 0) + '</td><td style="padding:0.4rem">' + (j.docs_indexed || 0) + '</td><td style="padding:0.4rem">' + (j.started_at ? new Date(j.started_at).toLocaleString() : '-') + '</td></tr>').join('') +
+      '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:0.5rem">Failed to load jobs: ' + e.message + '</div>';
+  }
+}
+
+async function deleteConnector(id) {
+  if (!confirm('Delete this connector and all its sync history?')) return;
+  try {
+    await fetch('/api/connectors/' + id, { method: 'DELETE' });
+    loadConnectors();
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+// Init
+loadCatalog();
+loadConnectors();
+</script>
+
+` }) %>
