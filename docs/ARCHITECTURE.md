@@ -18,8 +18,7 @@ The Agentic Platform is a containerised agent factory built with:
 
 | Directory | Description |
 | --------- | ----------- |
-| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry, data connectors |
-| `services/agent/agent/connectors` | Hybrid data ingestion — Database, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte |
+| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry |
 | `services/n8n-proxy` | Service |
 | `services/otel` | OpenTelemetry Collector configuration |
 | `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
@@ -35,12 +34,7 @@ The Agentic Platform is a containerised agent factory built with:
 
 ## Test Suites
 
-| Suite | File | Tests | Coverage |
-| ----- | ---- | ----- | -------- |
-| Platform Comprehensive | `tests/e2e/test_platform_comprehensive.py` | 106 | Agents, skills, prompts, tools, documents, connectors, A2A, MCP, guardrails, versioning, audit, export/import |
-| API Endpoints | `tests/e2e/test_api_endpoints.py` | 50 | HTTP-level testing of all FastAPI routes via TestClient |
-| UI Console | `tests/unit/test_console.test.js` | 29 | Express routes, API proxies, marketplace, health |
-| **Total** | | **185** | End-to-end coverage of all platform features |
+
 
 ## Telemetry Pipeline
 
@@ -55,4 +49,3 @@ Grafana ← Prometheus + Loki
 
 - **A2A (Agent-to-Agent)**: Peer agents registered by URL; agents delegate sub-tasks via HTTP
 - **MCP (Model Context Protocol)**: External tool servers provide dynamic tool discovery
-- **Data Connectors**: Hybrid ingestion framework — 5 built-in connector types (Database, REST API, Cloud Storage, Google Drive, SharePoint) + Airbyte integration for 300+ sources. Sync engine manages job lifecycle and feeds data into the RAG pipeline.
