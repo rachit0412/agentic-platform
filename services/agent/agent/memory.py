@@ -135,6 +135,7 @@ def init_db():
             tool_ids        TEXT DEFAULT '[]',
             sub_agent_ids   TEXT DEFAULT '[]',
             kb_collection   TEXT DEFAULT 'agentic_docs',
+            retrieval_mode  TEXT DEFAULT 'basic',
             max_iterations  INTEGER DEFAULT 5,
             memory_enabled  INTEGER DEFAULT 1,
             is_default      INTEGER DEFAULT 0,
@@ -151,6 +152,12 @@ def init_db():
     # ── Migration: add sub_agent_ids column if missing ──
     try:
         conn.execute("ALTER TABLE agents ADD COLUMN sub_agent_ids TEXT DEFAULT '[]'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+    # ── Migration: add retrieval_mode column if missing ──
+    try:
+        conn.execute("ALTER TABLE agents ADD COLUMN retrieval_mode TEXT DEFAULT 'basic'")
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
@@ -633,6 +640,7 @@ def create_agent(
     tool_ids: list[str] | None = None,
     sub_agent_ids: list[str] | None = None,
     kb_collection: str = "agentic_docs",
+    retrieval_mode: str = "basic",
     max_iterations: int = 5,
     memory_enabled: bool = True,
 ) -> dict:
@@ -640,7 +648,7 @@ def create_agent(
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, kb_collection, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             agent_id,
             name,
@@ -654,6 +662,7 @@ def create_agent(
             json.dumps(tool_ids or []),
             json.dumps(sub_agent_ids or []),
             kb_collection,
+            retrieval_mode,
             max_iterations,
             int(memory_enabled),
             0,
@@ -689,6 +698,7 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         "model",
         "system_prompt",
         "kb_collection",
+        "retrieval_mode",
     ):
         if key in kwargs:
             fields.append(f"{key} = ?")

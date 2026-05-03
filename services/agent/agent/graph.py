@@ -431,12 +431,38 @@ async def retrieve_context(state: AgentState) -> dict:
     kb_context = ""
     use_kb = agent_config.get("use_kb", True) if agent_config else True
     kb_coll = agent_config.get("kb_collection") if agent_config else None
-    skip_kb = (not use_kb) or len(prompt.strip()) < 20
+    retrieval_mode = agent_config.get("retrieval_mode", "basic") if agent_config else "basic"
+    skip_kb = (not use_kb) or retrieval_mode == "none" or len(prompt.strip()) < 20
     if skip_kb:
         logger.info(
-            "req=%s kb_search SKIPPED (short query: %r)", state["request_id"], prompt
+            "req=%s kb_search SKIPPED (mode=%s, short query: %r)", state["request_id"], retrieval_mode, prompt
         )
-    else:
+    elif retrieval_mode == "advanced":
+        # ── Advanced retrieval via LlamaIndex (hybrid + rerank) ──────
+        try:
+            from agent.advanced_retrieval import advanced_search
+
+            t0 = _time.time()
+            results = advanced_search(query=prompt, mode="hybrid", k=5, collection_name=kb_coll)
+            logger.info(
+                "req=%s kb_advanced_search took %dms  results=%d",
+                state["request_id"],
+                int((_time.time() - t0) * 1000),
+                len(results),
+            )
+            if results:
+                kb_snippets = []
+                for r in results:
+                    source = r.get("source", "unknown")
+                    kb_snippets.append(f"[{source}]: {r['content'][:500]}")
+                if kb_snippets:
+                    kb_context = "\n---\n".join(kb_snippets)
+        except Exception as e:
+            logger.warning("Advanced KB retrieval failed, falling back to basic: %s", e)
+            retrieval_mode = "basic"  # fall through to basic below
+
+    if not kb_context and retrieval_mode == "basic" and not skip_kb:
+        # ── Basic retrieval via direct ChromaDB similarity search ─────
         try:
             from agent.vectorstore import search_similar, get_collection_stats
 

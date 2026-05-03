@@ -154,7 +154,7 @@
   <!-- Settings -->
   <div style="margin-top:1.25rem">
     <div class="section-header"><h4 style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Settings</h4></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:0.5rem">
       <div>
         <label class="field-label">Max Iterations</label>
         <input type="number" id="agent-iterations" class="input" min="1" max="20" value="5">
@@ -164,6 +164,14 @@
         <select id="agent-memory" class="input">
           <option value="1">Enabled</option>
           <option value="0">Disabled</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Retrieval Mode</label>
+        <select id="agent-retrieval-mode" class="input">
+          <option value="basic">Basic (fast)</option>
+          <option value="advanced">Advanced (hybrid + rerank)</option>
+          <option value="none">None (tools only)</option>
         </select>
       </div>
     </div>
@@ -373,6 +381,7 @@
     document.getElementById('agent-kb').value = '';
     document.getElementById('agent-iterations').value = '5';
     document.getElementById('agent-memory').value = '1';
+    document.getElementById('agent-retrieval-mode').value = 'basic';
     renderSkillCheckboxes([]);
     document.getElementById('agent-kb-filename').textContent = 'No file selected';
     document.getElementById('agent-kb-text').value = '';
@@ -408,6 +417,7 @@
       document.getElementById('agent-kb').value = a.kb_collection || '';
       document.getElementById('agent-iterations').value = a.max_iterations || 5;
       document.getElementById('agent-memory').value = a.memory_enabled ? '1' : '0';
+      document.getElementById('agent-retrieval-mode').value = a.retrieval_mode || 'basic';
       renderSkillCheckboxes(a.skill_ids || []);
       document.getElementById('agent-kb-filename').textContent = 'No file selected';
       document.getElementById('agent-kb-text').value = '';
@@ -445,6 +455,7 @@
       skill_ids: getSelectedSkillIds(),
       tool_ids: getSelectedToolIds(),
       kb_collection: kbVal || (id ? 'agent_' + id + '_kb' : ''),
+      retrieval_mode: document.getElementById('agent-retrieval-mode').value,
       max_iterations: parseInt(document.getElementById('agent-iterations').value) || 5,
       memory_enabled: document.getElementById('agent-memory').value === '1',
     };
@@ -661,6 +672,7 @@
         ['Max Iterations', a.max_iterations],
         ['Memory', a.memory_enabled ? 'Enabled' : 'Disabled'],
         ['KB Collection', a.kb_collection || 'agentic_docs'],
+        ['Retrieval Mode', a.retrieval_mode || 'basic'],
         ['Default Agent', a.is_default ? 'Yes' : 'No'],
         ['Created', a.created_at ? new Date(a.created_at).toLocaleString() : '—'],
         ['Updated', a.updated_at ? new Date(a.updated_at).toLocaleString() : '—'],

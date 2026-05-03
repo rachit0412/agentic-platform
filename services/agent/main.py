@@ -1253,6 +1253,7 @@ class AgentCreate(BaseModel):
     tool_ids: list[str] = Field(default_factory=list)
     sub_agent_ids: list[str] = Field(default_factory=list)
     kb_collection: str = Field(default="agentic_docs")
+    retrieval_mode: str = Field(default="basic")
     max_iterations: int = Field(default=5, ge=1, le=20)
     memory_enabled: bool = Field(default=True)
 
@@ -1269,6 +1270,7 @@ class AgentUpdate(BaseModel):
     tool_ids: list[str] | None = None
     sub_agent_ids: list[str] | None = None
     kb_collection: str | None = None
+    retrieval_mode: str | None = None
     max_iterations: int | None = None
     memory_enabled: bool | None = None
 
@@ -1292,6 +1294,7 @@ async def agents_create_endpoint(body: AgentCreate):
         tool_ids=body.tool_ids,
         sub_agent_ids=body.sub_agent_ids,
         kb_collection=body.kb_collection,
+        retrieval_mode=body.retrieval_mode,
         max_iterations=body.max_iterations,
         memory_enabled=body.memory_enabled,
     )
