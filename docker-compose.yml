@@ -111,6 +111,26 @@ services:
       retries: 5
       start_period: 20s
 
+  # ── Datastore — PostgreSQL (Document Registry) ──────────────────────────
+  datastore-db:
+    image: postgres:16-alpine
+    container_name: datastore-db
+    ports:
+      - "${DATASTORE_DB_PORT:-5433}:5432"
+    environment:
+      - POSTGRES_USER=agentic
+      - POSTGRES_PASSWORD=${DATASTORE_DB_PASSWORD:-agentic}
+      - POSTGRES_DB=datastore
+    volumes:
+      - datastore-db-data:/var/lib/postgresql/data
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ── Agent Service — FastAPI + LangGraph ──────────────────────────────────
   agent-service:
     build:
@@ -145,6 +165,7 @@ services:
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-sk-lf-local-dev}
       - LANGFUSE_HOST=http://langfuse:3000
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - DATASTORE_DB_URL=postgresql://agentic:${DATASTORE_DB_PASSWORD:-agentic}@datastore-db:5432/datastore
     volumes:
       - ./services/agent:/app
       - ./data:/data
@@ -154,6 +175,8 @@ services:
       tools-service:
         condition: service_healthy
       chromadb:
+        condition: service_healthy
+      datastore-db:
         condition: service_healthy
     networks:
       - platform-net
@@ -366,6 +389,7 @@ volumes:
   n8n-data:
   ollama-data:
   chroma-data:
+  datastore-db-data:
   langfuse-db-data:
   prometheus-data:
   grafana-data:

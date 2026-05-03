@@ -34,7 +34,7 @@ def setup_env(tmp_path, monkeypatch):
 
     mem._reset_conn()
     monkeypatch.setattr(mem, "MEMORY_DIR", db_dir)
-    monkeypatch.setattr(mem, "DB_PATH", os.path.join(db_dir, "memory.db"))
+    monkeypatch.setattr(mem, "DB_PATH", os.path.join(db_dir, "platform.db"))
     monkeypatch.setattr(fs, "FILESTORE_ROOT", fs_dir)
     mem.init_db()
     mem.list_guardrails()  # Init guardrails table

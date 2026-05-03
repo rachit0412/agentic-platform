@@ -1,7 +1,15 @@
 """
-SQLite-based conversation memory.
-Stores message history per sessionId in /data/memory.db.
-Also stores skills and agent configurations.
+SQLite-based platform state + PostgreSQL document datastore.
+
+Two databases:
+  - platform.db  (SQLite, embedded) — config, conversation memory, audit
+  - datastore-db (PostgreSQL, container :5433) — document registry
+
+Platform.db tables: conversations, session_summaries, agents, skills, prompts,
+  guardrails, custom_tools, a2a_peers, mcp_servers, connectors, sync_jobs,
+  version_history, audit_log.
+
+Datastore (Postgres) tables: documents.
 """
 
 import os
@@ -13,9 +21,14 @@ import uuid
 from datetime import datetime, timezone
 
 MEMORY_DIR = os.getenv("MEMORY_DIR", "/data")
-DB_PATH = os.path.join(MEMORY_DIR, "memory.db")
+DB_PATH = os.path.join(MEMORY_DIR, "platform.db")
+DATASTORE_DB_URL = os.getenv(
+    "DATASTORE_DB_URL",
+    "postgresql://agentic:agentic@datastore-db:5432/datastore",
+)
 
 _local = threading.local()
+_ds_pool = None
 
 
 logger = logging.getLogger(__name__)
@@ -50,6 +63,30 @@ def _reset_conn():
         except Exception:
             pass
         _local.conn = None
+
+
+# ── Datastore (PostgreSQL) connection pool ──────────────────────────────────
+
+def _get_ds_pool():
+    """Lazy-init a connection pool for the document datastore."""
+    global _ds_pool
+    if _ds_pool is None:
+        import psycopg2
+        from psycopg2 import pool as pg_pool
+        from psycopg2.extras import RealDictCursor  # noqa: F401
+
+        _ds_pool = pg_pool.SimpleConnectionPool(1, 5, DATASTORE_DB_URL)
+    return _ds_pool
+
+
+def _get_datastore_conn():
+    """Get a connection from the Postgres datastore pool."""
+    return _get_ds_pool().getconn()
+
+
+def _release_datastore_conn(conn):
+    """Return a connection to the pool."""
+    _get_ds_pool().putconn(conn)
 
 
 def init_db():
@@ -1314,69 +1351,60 @@ def delete_custom_tool(tool_id: str) -> bool:
     return cursor.rowcount > 0
 
 
-# ── Document Registry ──────────────────────────────────────────────────────
+# ── Document Registry (PostgreSQL datastore) ──────────────────────────────
 
 
 def _init_documents_table():
-    conn = _get_conn()
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS documents (
-            id            TEXT PRIMARY KEY,
-            name          TEXT NOT NULL,
-            source        TEXT NOT NULL,
-            collection    TEXT NOT NULL DEFAULT 'agentic_docs',
-            folder        TEXT DEFAULT '/',
-            agent_tags    TEXT DEFAULT '[]',
-            file_type     TEXT DEFAULT '',
-            file_size     INTEGER DEFAULT 0,
-            chunk_count   INTEGER DEFAULT 0,
-            metadata      TEXT DEFAULT '{}',
-            status        TEXT DEFAULT 'uploaded',
-            storage_path  TEXT DEFAULT '',
-            source_type   TEXT DEFAULT 'upload',
-            shortcut_ref  TEXT DEFAULT '',
-            created_at    TEXT NOT NULL,
-            updated_at    TEXT NOT NULL
-        )
-        """)
-    # Migrations for existing databases
+    conn = _get_datastore_conn()
     try:
-        conn.execute("ALTER TABLE documents ADD COLUMN status TEXT DEFAULT 'uploaded'")
-    except Exception:
-        pass
-    try:
-        conn.execute("ALTER TABLE documents ADD COLUMN storage_path TEXT DEFAULT ''")
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            "ALTER TABLE documents ADD COLUMN source_type TEXT DEFAULT 'upload'"
-        )
-    except Exception:
-        pass
-    try:
-        conn.execute("ALTER TABLE documents ADD COLUMN shortcut_ref TEXT DEFAULT ''")
-    except Exception:
-        pass
-    conn.commit()
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS documents (
+                    id            TEXT PRIMARY KEY,
+                    name          TEXT NOT NULL,
+                    source        TEXT NOT NULL,
+                    collection    TEXT NOT NULL DEFAULT 'agentic_docs',
+                    folder        TEXT DEFAULT '/',
+                    agent_tags    JSONB DEFAULT '[]',
+                    file_type     TEXT DEFAULT '',
+                    file_size     INTEGER DEFAULT 0,
+                    chunk_count   INTEGER DEFAULT 0,
+                    metadata      JSONB DEFAULT '{}',
+                    status        TEXT DEFAULT 'uploaded',
+                    storage_path  TEXT DEFAULT '',
+                    source_type   TEXT DEFAULT 'upload',
+                    shortcut_ref  TEXT DEFAULT '',
+                    created_at    TEXT NOT NULL,
+                    updated_at    TEXT NOT NULL
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_documents_collection ON documents(collection)
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_documents_folder ON documents(folder)
+            """)
+        conn.commit()
+    finally:
+        _release_datastore_conn(conn)
 
 
-def _row_to_doc(row) -> dict:
+def _row_to_doc(row: dict) -> dict:
     return {
         "id": row["id"],
         "name": row["name"],
         "source": row["source"],
         "collection": row["collection"],
         "folder": row["folder"],
-        "agent_tags": json.loads(row["agent_tags"] or "[]"),
+        "agent_tags": row["agent_tags"] if isinstance(row["agent_tags"], list) else json.loads(row["agent_tags"] or "[]"),
         "file_type": row["file_type"],
         "file_size": row["file_size"],
         "chunk_count": row["chunk_count"],
-        "metadata": json.loads(row["metadata"] or "{}"),
-        "status": row["status"] if "status" in row.keys() else "uploaded",
-        "storage_path": row["storage_path"] if "storage_path" in row.keys() else "",
-        "source_type": row["source_type"] if "source_type" in row.keys() else "upload",
-        "shortcut_ref": row["shortcut_ref"] if "shortcut_ref" in row.keys() else "",
+        "metadata": row["metadata"] if isinstance(row["metadata"], dict) else json.loads(row["metadata"] or "{}"),
+        "status": row.get("status", "uploaded"),
+        "storage_path": row.get("storage_path", ""),
+        "source_type": row.get("source_type", "upload"),
+        "shortcut_ref": row.get("shortcut_ref", ""),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
@@ -1389,31 +1417,45 @@ def list_documents_registry(
     collection: str | None = None,
 ) -> list[dict]:
     _init_documents_table()
-    conn = _get_conn()
-    query = "SELECT * FROM documents WHERE 1=1"
-    params: list = []
-    if folder and folder != "/":
-        query += " AND folder = ?"
-        params.append(folder)
-    if collection:
-        query += " AND collection = ?"
-        params.append(collection)
-    if agent_id:
-        query += " AND agent_tags LIKE ?"
-        params.append(f'%"{agent_id}"%')
-    if search:
-        query += " AND (name LIKE ? OR source LIKE ?)"
-        params.extend([f"%{search}%", f"%{search}%"])
-    query += " ORDER BY folder, name"
-    rows = conn.execute(query, params).fetchall()
-    return [_row_to_doc(r) for r in rows]
+    conn = _get_datastore_conn()
+    try:
+        from psycopg2.extras import RealDictCursor
+
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            query = "SELECT * FROM documents WHERE true"
+            params: list = []
+            if folder and folder != "/":
+                query += " AND folder = %s"
+                params.append(folder)
+            if collection:
+                query += " AND collection = %s"
+                params.append(collection)
+            if agent_id:
+                query += " AND agent_tags @> %s::jsonb"
+                params.append(json.dumps([agent_id]))
+            if search:
+                query += " AND (name ILIKE %s OR source ILIKE %s)"
+                params.extend([f"%{search}%", f"%{search}%"])
+            query += " ORDER BY folder, name"
+            cur.execute(query, params)
+            rows = cur.fetchall()
+        return [_row_to_doc(r) for r in rows]
+    finally:
+        _release_datastore_conn(conn)
 
 
 def get_document_registry(doc_id: str) -> dict | None:
     _init_documents_table()
-    conn = _get_conn()
-    row = conn.execute("SELECT * FROM documents WHERE id = ?", (doc_id,)).fetchone()
-    return _row_to_doc(row) if row else None
+    conn = _get_datastore_conn()
+    try:
+        from psycopg2.extras import RealDictCursor
+
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM documents WHERE id = %s", (doc_id,))
+            row = cur.fetchone()
+        return _row_to_doc(row) if row else None
+    finally:
+        _release_datastore_conn(conn)
 
 
 def create_document_registry(
@@ -1432,85 +1474,83 @@ def create_document_registry(
     shortcut_ref: str = "",
 ) -> dict:
     _init_documents_table()
-    conn = _get_conn()
-    doc_id = str(uuid.uuid4())[:12]
-    now = datetime.now(timezone.utc).isoformat()
-    # Normalize folder path
-    if not folder.startswith("/"):
-        folder = "/" + folder
-    if not folder.endswith("/"):
-        folder = folder + "/"
-    conn.execute(
-        "INSERT INTO documents (id, name, source, collection, folder, agent_tags, file_type, file_size, chunk_count, metadata, status, storage_path, source_type, shortcut_ref, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (
-            doc_id,
-            name,
-            source,
-            collection,
-            folder,
-            json.dumps(agent_tags or []),
-            file_type,
-            file_size,
-            chunk_count,
-            json.dumps(metadata or {}),
-            status,
-            storage_path,
-            source_type,
-            shortcut_ref,
-            now,
-            now,
-        ),
-    )
-    conn.commit()
+    conn = _get_datastore_conn()
+    try:
+        doc_id = str(uuid.uuid4())[:12]
+        now = datetime.now(timezone.utc).isoformat()
+        if not folder.startswith("/"):
+            folder = "/" + folder
+        if not folder.endswith("/"):
+            folder = folder + "/"
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO documents
+                   (id, name, source, collection, folder, agent_tags, file_type,
+                    file_size, chunk_count, metadata, status, storage_path,
+                    source_type, shortcut_ref, created_at, updated_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (
+                    doc_id, name, source, collection, folder,
+                    json.dumps(agent_tags or []), file_type, file_size,
+                    chunk_count, json.dumps(metadata or {}), status,
+                    storage_path, source_type, shortcut_ref, now, now,
+                ),
+            )
+        conn.commit()
+    finally:
+        _release_datastore_conn(conn)
     return get_document_registry(doc_id)
 
 
 def update_document_registry(doc_id: str, **kwargs) -> dict | None:
     _init_documents_table()
-    conn = _get_conn()
-    allowed = {
-        "name",
-        "source",
-        "folder",
-        "agent_tags",
-        "file_type",
-        "chunk_count",
-        "metadata",
-        "status",
-        "storage_path",
-        "source_type",
-        "shortcut_ref",
-    }
-    fields, values = [], []
-    for k, v in kwargs.items():
-        if k not in allowed:
-            continue
-        if k in ("agent_tags",):
-            v = json.dumps(v) if isinstance(v, list) else v
-        if k == "metadata":
-            v = json.dumps(v) if isinstance(v, dict) else v
-        if k == "folder":
-            if not v.startswith("/"):
-                v = "/" + v
-            if not v.endswith("/"):
-                v = v + "/"
-        fields.append(f"{k} = ?")
-        values.append(v)
-    if fields:
-        fields.append("updated_at = ?")
-        values.append(datetime.now(timezone.utc).isoformat())
-        values.append(doc_id)
-        conn.execute(f"UPDATE documents SET {', '.join(fields)} WHERE id = ?", values)
-        conn.commit()
+    conn = _get_datastore_conn()
+    try:
+        allowed = {
+            "name", "source", "folder", "agent_tags", "file_type",
+            "chunk_count", "metadata", "status", "storage_path",
+            "source_type", "shortcut_ref",
+        }
+        fields, values = [], []
+        for k, v in kwargs.items():
+            if k not in allowed:
+                continue
+            if k == "agent_tags":
+                v = json.dumps(v) if isinstance(v, list) else v
+            if k == "metadata":
+                v = json.dumps(v) if isinstance(v, dict) else v
+            if k == "folder":
+                if not v.startswith("/"):
+                    v = "/" + v
+                if not v.endswith("/"):
+                    v = v + "/"
+            fields.append(f"{k} = %s")
+            values.append(v)
+        if fields:
+            fields.append("updated_at = %s")
+            values.append(datetime.now(timezone.utc).isoformat())
+            values.append(doc_id)
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE documents SET {', '.join(fields)} WHERE id = %s", values
+                )
+            conn.commit()
+    finally:
+        _release_datastore_conn(conn)
     return get_document_registry(doc_id)
 
 
 def delete_document_registry(doc_id: str) -> bool:
     _init_documents_table()
-    conn = _get_conn()
-    cursor = conn.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
-    conn.commit()
-    return cursor.rowcount > 0
+    conn = _get_datastore_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM documents WHERE id = %s", (doc_id,))
+            count = cur.rowcount
+        conn.commit()
+        return count > 0
+    finally:
+        _release_datastore_conn(conn)
 
 
 def delete_document_registry_by_source(
@@ -1518,23 +1558,35 @@ def delete_document_registry_by_source(
 ) -> int:
     """Delete registry records matching a source + collection."""
     _init_documents_table()
-    conn = _get_conn()
-    cursor = conn.execute(
-        "DELETE FROM documents WHERE source = ? AND collection = ?",
-        (source, collection),
-    )
-    conn.commit()
-    return cursor.rowcount
+    conn = _get_datastore_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM documents WHERE source = %s AND collection = %s",
+                (source, collection),
+            )
+            count = cur.rowcount
+        conn.commit()
+        return count
+    finally:
+        _release_datastore_conn(conn)
 
 
 def list_folders() -> list[dict]:
     """Return all unique folder paths with document counts."""
     _init_documents_table()
-    conn = _get_conn()
-    rows = conn.execute(
-        "SELECT folder, COUNT(*) as count FROM documents GROUP BY folder ORDER BY folder"
-    ).fetchall()
-    return [{"path": r["folder"], "count": r["count"]} for r in rows]
+    conn = _get_datastore_conn()
+    try:
+        from psycopg2.extras import RealDictCursor
+
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "SELECT folder, COUNT(*) as count FROM documents GROUP BY folder ORDER BY folder"
+            )
+            rows = cur.fetchall()
+        return [{"path": r["folder"], "count": r["count"]} for r in rows]
+    finally:
+        _release_datastore_conn(conn)
 
 
 def tag_document_to_agent(doc_id: str, agent_id: str) -> dict | None:
@@ -1561,32 +1613,44 @@ def untag_document_from_agent(doc_id: str, agent_id: str) -> dict | None:
 def untag_all_for_agent(agent_id: str) -> int:
     """Remove an agent tag from ALL documents that reference it."""
     _init_documents_table()
-    conn = _get_conn()
-    rows = conn.execute(
-        "SELECT id, agent_tags FROM documents WHERE agent_tags LIKE ?",
-        (f'%"{agent_id}"%',),
-    ).fetchall()
-    count = 0
-    now = datetime.now(timezone.utc).isoformat()
-    for row in rows:
-        tags = json.loads(row["agent_tags"] or "[]")
-        tags = [t for t in tags if t != agent_id]
-        conn.execute(
-            "UPDATE documents SET agent_tags = ?, updated_at = ? WHERE id = ?",
-            (json.dumps(tags), now, row["id"]),
-        )
-        count += 1
-    conn.commit()
-    return count
+    conn = _get_datastore_conn()
+    try:
+        from psycopg2.extras import RealDictCursor
+
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "SELECT id, agent_tags FROM documents WHERE agent_tags @> %s::jsonb",
+                (json.dumps([agent_id]),),
+            )
+            rows = cur.fetchall()
+            count = 0
+            now = datetime.now(timezone.utc).isoformat()
+            for row in rows:
+                tags = row["agent_tags"] if isinstance(row["agent_tags"], list) else json.loads(row["agent_tags"] or "[]")
+                tags = [t for t in tags if t != agent_id]
+                cur.execute(
+                    "UPDATE documents SET agent_tags = %s, updated_at = %s WHERE id = %s",
+                    (json.dumps(tags), now, row["id"]),
+                )
+                count += 1
+        conn.commit()
+        return count
+    finally:
+        _release_datastore_conn(conn)
 
 
 def delete_documents_by_collection(collection: str) -> int:
     """Delete all registry records for a given collection."""
     _init_documents_table()
-    conn = _get_conn()
-    cursor = conn.execute("DELETE FROM documents WHERE collection = ?", (collection,))
-    conn.commit()
-    return cursor.rowcount
+    conn = _get_datastore_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM documents WHERE collection = %s", (collection,))
+            count = cur.rowcount
+        conn.commit()
+        return count
+    finally:
+        _release_datastore_conn(conn)
 
 
 # ── Version History ────────────────────────────────────────────────────────

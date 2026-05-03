@@ -235,39 +235,19 @@
       <text x="254" y="250" text-anchor="middle" fill="#06b6d4" font-size="7">SSE</text>
 
       <!-- ====== AGENTS ROW ====== -->
-      <!-- Agent A -->
-      <rect x="295" y="80" width="175" height="95" rx="14" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#glow)"/>
-      <text x="382" y="100" text-anchor="middle" fill="#8b5cf6" font-size="10" font-weight="700">Agent: Finance Analyst</text>
-      <text x="382" y="114" text-anchor="middle" fill="var(--text-3)" font-size="7.5">llama3 (ollama) | temp: 0.3</text>
-      <rect x="305" y="122" width="65" height="20" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="337" y="136" text-anchor="middle" fill="#f59e0b" font-size="7">Research</text>
-      <rect x="376" y="122" width="65" height="20" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="408" y="136" text-anchor="middle" fill="#f59e0b" font-size="7">Summarize</text>
-      <rect x="305" y="148" width="55" height="16" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
-      <text x="332" y="159" text-anchor="middle" fill="#06b6d4" font-size="6.5">web_search</text>
-      <rect x="365" y="148" width="42" height="16" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
-      <text x="386" y="159" text-anchor="middle" fill="#06b6d4" font-size="6.5">file_read</text>
-      <rect x="412" y="148" width="42" height="16" rx="4" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.6"/>
-      <text x="433" y="159" text-anchor="middle" fill="#10b981" font-size="6.5">KB: docs</text>
-
-      <!-- Agent B -->
-      <rect x="495" y="80" width="175" height="95" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5" filter="url(#glow)"/>
-      <text x="582" y="100" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">Agent: Customer Support</text>
-      <text x="582" y="114" text-anchor="middle" fill="var(--text-3)" font-size="7.5">gpt-4.1-mini (foundry) | temp: 0.2</text>
-      <rect x="505" y="122" width="65" height="20" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="537" y="136" text-anchor="middle" fill="#f59e0b" font-size="7">FAQ Expert</text>
-      <rect x="576" y="122" width="65" height="20" rx="5" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="608" y="136" text-anchor="middle" fill="#f59e0b" font-size="7">Escalation</text>
-      <rect x="505" y="148" width="50" height="16" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
-      <text x="530" y="159" text-anchor="middle" fill="#06b6d4" font-size="6.5">http_fetch</text>
-      <rect x="560" y="148" width="42" height="16" rx="4" fill="rgba(6,182,212,0.10)" stroke="#06b6d4" stroke-width="0.6"/>
-      <text x="581" y="159" text-anchor="middle" fill="#06b6d4" font-size="6.5">notes</text>
-      <rect x="607" y="148" width="50" height="16" rx="4" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.6"/>
-      <text x="632" y="159" text-anchor="middle" fill="#10b981" font-size="6.5">KB: faq</text>
-
-      <!-- More agents row -->
-      <rect x="295" y="185" width="375" height="25" rx="8" fill="rgba(139,92,246,0.04)" stroke="var(--glass-border)" stroke-width="1" stroke-dasharray="4 3"/>
-      <text x="482" y="202" text-anchor="middle" fill="var(--text-3)" font-size="8.5" font-style="italic">+ Content Writer, QA Tester, Sales Rep ... unlimited agents</text>
+      <!-- Agent Registry -->
+      <rect x="295" y="80" width="375" height="95" rx="14" fill="rgba(139,92,246,0.06)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#glow)"/>
+      <text x="482" y="102" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="700">Agent Registry</text>
+      <text x="482" y="118" text-anchor="middle" fill="var(--text-3)" font-size="8">Each agent = LLM + Tools + Memory + Control Logic + Context</text>
+      <rect x="310" y="130" width="80" height="22" rx="6" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
+      <text x="350" y="145" text-anchor="middle" fill="#f59e0b" font-size="7.5">Custom Skills</text>
+      <rect x="400" y="130" width="80" height="22" rx="6" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="0.8"/>
+      <text x="440" y="145" text-anchor="middle" fill="#06b6d4" font-size="7.5">Tool Bindings</text>
+      <rect x="490" y="130" width="80" height="22" rx="6" fill="rgba(16,185,129,0.12)" stroke="#10b981" stroke-width="0.8"/>
+      <text x="530" y="145" text-anchor="middle" fill="#10b981" font-size="7.5">Knowledge</text>
+      <rect x="580" y="130" width="80" height="22" rx="6" fill="rgba(244,63,94,0.12)" stroke="#f43f5e" stroke-width="0.8"/>
+      <text x="620" y="145" text-anchor="middle" fill="#f43f5e" font-size="7.5">Guardrails</text>
+      <text x="482" y="168" text-anchor="middle" fill="var(--text-3)" font-size="7.5" font-style="italic">Unlimited agents — configured via UI or API</text>
 
       <!-- ====== LANGGRAPH REACT LOOP ====== -->
       <rect x="310" y="222" width="365" height="115" rx="14" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1.5"/>
@@ -286,39 +266,40 @@
       <path d="M605 295 Q625 322 490 322 Q355 322 348 288" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2" fill="none"/>
       <text x="492" y="332" text-anchor="middle" fill="#06b6d4" font-size="7" font-style="italic">iterate until done</text>
 
-      <!-- ====== DATA LAYER — 3 clean columns ====== -->
-      <!-- Column 1: MEMORY LAYER -->
-      <rect x="290" y="350" width="135" height="115" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.2"/>
-      <text x="357" y="367" text-anchor="middle" fill="#8b5cf6" font-size="8.5" font-weight="700">MEMORY</text>
-      <!-- STM sub-box -->
-      <rect x="298" y="375" width="120" height="36" rx="7" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="0.8"/>
-      <text x="358" y="389" text-anchor="middle" fill="#06b6d4" font-size="7.5" font-weight="600">Short-Term (STM)</text>
-      <text x="358" y="401" text-anchor="middle" fill="var(--text-3)" font-size="6">SQLite — last 100 msgs/session</text>
-      <!-- LTM sub-box -->
-      <rect x="298" y="418" width="120" height="36" rx="7" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-width="0.8"/>
-      <text x="358" y="432" text-anchor="middle" fill="#8b5cf6" font-size="7.5" font-weight="600">Long-Term (LTM)</text>
-      <text x="358" y="444" text-anchor="middle" fill="var(--text-3)" font-size="6">SQLite — rolling 2 KB/session</text>
+      <!-- ====== DATA LAYER — 4 columns ====== -->
+      <!-- Column 1: PLATFORM DB -->
+      <rect x="290" y="350" width="100" height="115" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.2"/>
+      <text x="340" y="367" text-anchor="middle" fill="#8b5cf6" font-size="8" font-weight="700">PLATFORM DB</text>
+      <text x="340" y="383" text-anchor="middle" fill="var(--text-3)" font-size="6.5">SQLite (embedded)</text>
+      <text x="340" y="399" text-anchor="middle" fill="var(--text-2)" font-size="6">Conversations</text>
+      <text x="340" y="412" text-anchor="middle" fill="var(--text-2)" font-size="6">Memory (STM/LTM)</text>
+      <text x="340" y="425" text-anchor="middle" fill="var(--text-2)" font-size="6">Config &amp; Agents</text>
+      <text x="340" y="438" text-anchor="middle" fill="var(--text-2)" font-size="6">Audit Log</text>
 
-      <!-- Column 2: KNOWLEDGE STORE -->
-      <rect x="435" y="350" width="130" height="115" rx="12" fill="rgba(16,185,129,0.04)" stroke="#10b981" stroke-width="1.2"/>
-      <text x="500" y="367" text-anchor="middle" fill="#10b981" font-size="8.5" font-weight="700">KNOWLEDGE</text>
-      <!-- ChromaDB sub-box -->
-      <rect x="443" y="375" width="115" height="36" rx="7" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="0.8"/>
-      <text x="500" y="389" text-anchor="middle" fill="#10b981" font-size="7.5" font-weight="600">ChromaDB</text>
-      <text x="500" y="401" text-anchor="middle" fill="var(--text-3)" font-size="6">Vectors :8200 — RAG retrieval</text>
-      <!-- Config DB sub-box -->
-      <rect x="443" y="418" width="115" height="36" rx="7" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="0.8"/>
-      <text x="500" y="432" text-anchor="middle" fill="#10b981" font-size="7.5" font-weight="600">SQLite Registry</text>
-      <text x="500" y="444" text-anchor="middle" fill="var(--text-3)" font-size="6">Agents, Skills, Prompts config</text>
+      <!-- Column 2: DATA STORE -->
+      <rect x="398" y="350" width="100" height="115" rx="12" fill="rgba(16,185,129,0.04)" stroke="#10b981" stroke-width="1.2"/>
+      <text x="448" y="367" text-anchor="middle" fill="#10b981" font-size="8" font-weight="700">DATA STORE</text>
+      <text x="448" y="383" text-anchor="middle" fill="var(--text-3)" font-size="6.5">PostgreSQL :5433</text>
+      <text x="448" y="399" text-anchor="middle" fill="var(--text-2)" font-size="6">Document Registry</text>
+      <text x="448" y="412" text-anchor="middle" fill="var(--text-2)" font-size="6">Ingestion Metadata</text>
+      <text x="448" y="425" text-anchor="middle" fill="var(--text-2)" font-size="6">JSONB columns</text>
 
-      <!-- Column 3: MODEL HUB -->
-      <rect x="575" y="350" width="115" height="115" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.2"/>
-      <text x="632" y="367" text-anchor="middle" fill="#8b5cf6" font-size="8.5" font-weight="700">MODEL HUB</text>
-      <text x="632" y="384" text-anchor="middle" fill="var(--text-3)" font-size="7">4 Providers</text>
-      <text x="632" y="400" text-anchor="middle" fill="var(--text-2)" font-size="7">Ollama (local)</text>
-      <text x="632" y="414" text-anchor="middle" fill="var(--text-2)" font-size="7">Azure OpenAI</text>
-      <text x="632" y="428" text-anchor="middle" fill="var(--text-2)" font-size="7">OpenAI</text>
-      <text x="632" y="442" text-anchor="middle" fill="var(--text-2)" font-size="7">Azure AI Foundry</text>
+      <!-- Column 3: VECTOR STORE -->
+      <rect x="506" y="350" width="100" height="115" rx="12" fill="rgba(6,182,212,0.04)" stroke="#06b6d4" stroke-width="1.2"/>
+      <text x="556" y="367" text-anchor="middle" fill="#06b6d4" font-size="8" font-weight="700">VECTOR STORE</text>
+      <text x="556" y="383" text-anchor="middle" fill="var(--text-3)" font-size="6.5">ChromaDB :8200</text>
+      <text x="556" y="399" text-anchor="middle" fill="var(--text-2)" font-size="6">Embeddings</text>
+      <text x="556" y="412" text-anchor="middle" fill="var(--text-2)" font-size="6">RAG Retrieval</text>
+      <text x="556" y="425" text-anchor="middle" fill="var(--text-2)" font-size="6">Semantic Search</text>
+
+      <!-- Column 4: MODEL HUB -->
+      <rect x="614" y="350" width="82" height="115" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.2"/>
+      <text x="655" y="367" text-anchor="middle" fill="#8b5cf6" font-size="8" font-weight="700">MODEL HUB</text>
+      <text x="655" y="384" text-anchor="middle" fill="var(--text-3)" font-size="6.5">4 Providers</text>
+      <text x="655" y="400" text-anchor="middle" fill="var(--text-2)" font-size="6">Ollama (local)</text>
+      <text x="655" y="414" text-anchor="middle" fill="var(--text-2)" font-size="6">Azure OpenAI</text>
+      <text x="655" y="428" text-anchor="middle" fill="var(--text-2)" font-size="6">OpenAI</text>
+      <text x="655" y="442" text-anchor="middle" fill="var(--text-2)" font-size="6">Azure Foundry</text>
 
       <!-- OTel Collector (bottom span) -->
       <rect x="290" y="476" width="400" height="35" rx="8" fill="rgba(16,185,129,0.04)" stroke="#10b981" stroke-width="1"/>
@@ -378,7 +359,7 @@
 
       <!-- Legend -->
       <rect x="730" y="485" width="200" height="50" rx="10" fill="var(--glass-bg)" stroke="var(--glass-border)" stroke-width="1"/>
-      <text x="830" y="505" text-anchor="middle" fill="var(--text-2)" font-size="9" font-weight="600">13 Services — Docker Compose</text>
+      <text x="830" y="505" text-anchor="middle" fill="var(--text-2)" font-size="9" font-weight="600">14 Services — Docker Compose</text>
       <text x="830" y="520" text-anchor="middle" fill="var(--text-3)" font-size="7.5">Agent = LLM + Tools + Memory + Logic + Context</text>
     </svg>
   </div>

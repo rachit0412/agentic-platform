@@ -134,7 +134,7 @@ def fresh_db(tmp_path, monkeypatch):
 
     mem._reset_conn()
     monkeypatch.setattr(mem, "MEMORY_DIR", db_dir)
-    monkeypatch.setattr(mem, "DB_PATH", os.path.join(db_dir, "memory.db"))
+    monkeypatch.setattr(mem, "DB_PATH", os.path.join(db_dir, "platform.db"))
     init_db()
     # Initialize guardrails table + defaults eagerly so tests can use get_guardrail
     list_guardrails()

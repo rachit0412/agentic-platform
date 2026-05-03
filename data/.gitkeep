@@ -1,2 +1,2 @@
 # This directory is mounted into agent-service and tools-service containers.
-# It stores SQLite memory (memory.db) and file-write tool output (notes/).
+# It stores SQLite platform state (platform.db) and file-write tool output (notes/).

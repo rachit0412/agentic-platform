@@ -340,7 +340,8 @@ graph TD
     end
 
     subgraph DATA["💾 Data Layer"]
-        SQLITE[("<b>SQLite</b><br/>memory.db<br/>12 tables")]
+        SQLITE[("<b>SQLite</b><br/>platform.db<br/>13 tables")]
+        DSDB[("<b>PostgreSQL</b><br/>datastore-db :5433")]
         LFDB[("<b>PostgreSQL</b><br/>Langfuse DB")]
     end
 
@@ -401,7 +402,7 @@ sequenceDiagram
     participant U as 👤 User
     participant UI as 🖥️ UI Console<br/>(:3000)
     participant A as ⚙️ Agent Service<br/>(:8010)
-    participant M as 💾 SQLite<br/>(memory.db)
+    participant M as 💾 SQLite<br/>(platform.db)
     participant KB as 🧠 ChromaDB<br/>(:8200)
     participant LLM as 🧠 Ollama<br/>(:11436)
     participant T as ⚙️ Tools Service<br/>(:8011)
@@ -1311,7 +1312,7 @@ docker-compose --profile gpu up -d</code></pre>
       <h3>7. Agent Configuration Store</h3>
       <table class="docs-table">
         <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
-        <tr><td>Capability</td><td>CRUD for agents, skills, prompts</td><td>SQLite <code>/data/memory.db</code></td></tr>
+        <tr><td>Capability</td><td>CRUD for agents, skills, prompts</td><td>SQLite <code>/data/platform.db</code> + PostgreSQL <code>datastore-db</code> for documents</td></tr>
         <tr><td>Tables</td><td>12 entity tables</td><td>agents, skills, prompts, guardrails, custom_tools, a2a_peers, mcp_servers, conversations, session_summaries, documents, version_history, audit_log</td></tr>
         <tr><td>Migration</td><td>Import/export portability</td><td><code>GET /export</code> → JSON, <code>POST /import</code></td></tr>
       </table>
@@ -1395,7 +1396,7 @@ docker-compose --profile gpu up -d</code></pre>
       <table class="docs-table">
         <tr><th style="width:120px">Field</th><th>Detail</th></tr>
         <tr><td>Context</td><td>The platform stores agents, skills, prompts, guardrails, custom tools, A2A peers, MCP servers, conversation history, and session summaries.</td></tr>
-        <tr><td>Decision</td><td>Use SQLite at <code>/data/memory.db</code> with thread-local connections and recovery from stale handles.</td></tr>
+        <tr><td>Decision</td><td>Use SQLite at <code>/data/platform.db</code> for config/memory/audit. Document registry in PostgreSQL (<code>datastore-db</code>, port 5433).</td></tr>
         <tr><td>Alternatives</td><td>(1) PostgreSQL — production-grade but adds complexity. (2) In-memory dicts — no persistence. (3) Redis — poor for relational queries.</td></tr>
         <tr><td>Consequences</td><td>Zero-config persistence. Single-file backup. No network latency. Limitation: single-writer, unsuitable for horizontal scaling.</td></tr>
       </table>
