@@ -18,12 +18,12 @@
 
 ### 2. LLM Abstraction Layer
 
-| Attribute      | ABB (Abstract)                               | SBB (Solution)                                         |
-| -------------- | -------------------------------------------- | ------------------------------------------------------ |
-| **Capability** | Uniform interface to multiple LLM providers  | LangChain `BaseChatModel` abstraction (`llm.py`)       |
-| **Providers**  | Local inference, cloud inference             | Ollama (local), Azure OpenAI, OpenAI, Azure AI Foundry |
-| **Selection**  | Runtime provider/model switching             | `LLM_PROVIDER` env var + `POST /models/switch` API     |
-| **Embedding**  | Vector embeddings for semantic search        | `OllamaEmbeddings` with configurable model             |
+| Attribute      | ABB (Abstract)                               | SBB (Solution)                                                                                                           |
+| -------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Capability** | Uniform interface to multiple LLM providers  | LangChain `BaseChatModel` abstraction (`llm.py`)                                                                         |
+| **Providers**  | Local inference, cloud inference             | Ollama (local), Azure OpenAI, OpenAI, Azure AI Foundry                                                                   |
+| **Selection**  | Runtime provider/model switching             | `LLM_PROVIDER` env var + `POST /models/switch` API                                                                       |
+| **Embedding**  | Vector embeddings for semantic search        | Multi-provider: Ollama, Azure OpenAI, OpenAI, Azure Foundry — auto-follows LLM provider or `EMBEDDING_PROVIDER` override |
 | **Principles** | AP-2 Local-First Cloud-Ready, AP-1 API-First |
 
 ### 3. Knowledge Management (RAG)
@@ -149,34 +149,48 @@
 
 ### 14. Data Connectors (Hybrid Ingestion)
 
-| Attribute            | ABB (Abstract)                                              | SBB (Solution)                                                                                             |
-| -------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **Capability**       | Unified data ingestion from heterogeneous external sources  | Connector framework at `services/agent/agent/connectors/`                                                  |
-| **Built-in Sources** | Database, REST API, Cloud Storage, Google Drive, SharePoint | `database.py`, `api_connector.py`, `cloud_storage.py`, `drives.py` (Google Drive + SharePoint)             |
-| **Extended Sources** | 300+ sources via Airbyte integration                        | Airbyte connector type with managed sync                                                                   |
-| **Sync Engine**      | Job-based pull with status tracking                         | `sync_engine.py` — `run_sync()` dispatches per connector type, tracks `sync_jobs` in SQLite                |
-| **Catalog**          | Self-describing connector type catalog with config schemas  | `/connectors/catalog` API returns `config_schema` per type (JSON Schema)                                   |
-| **Lifecycle**        | Full CRUD + test + sync operations                          | `POST /connectors`, `POST /connectors/:id/test`, `POST /connectors/:id/sync`, `GET /connectors/:id/jobs`  |
-| **Pipeline**         | Fetched data → chunk → embed → index into vector store      | Sync engine calls `ingest_text()` to push content through the RAG pipeline                                 |
+| Attribute            | ABB (Abstract)                                                             | SBB (Solution)                                                                                           |
+| -------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Capability**       | Unified data ingestion from heterogeneous external sources                 | Connector framework at `services/agent/agent/connectors/`                                                |
+| **Built-in Sources** | Database, REST API, Cloud Storage, Google Drive, SharePoint                | `database.py`, `api_connector.py`, `cloud_storage.py`, `drives.py` (Google Drive + SharePoint)           |
+| **Extended Sources** | 300+ sources via Airbyte integration                                       | Airbyte connector type with managed sync                                                                 |
+| **Sync Engine**      | Job-based pull with status tracking                                        | `sync_engine.py` — `run_sync()` dispatches per connector type, tracks `sync_jobs` in SQLite              |
+| **Catalog**          | Self-describing connector type catalog with config schemas                 | `/connectors/catalog` API returns `config_schema` per type (JSON Schema)                                 |
+| **Lifecycle**        | Full CRUD + test + sync operations                                         | `POST /connectors`, `POST /connectors/:id/test`, `POST /connectors/:id/sync`, `GET /connectors/:id/jobs` |
+| **Pipeline**         | Fetched data → chunk → embed → index into vector store                     | Sync engine calls `ingest_text()` to push content through the RAG pipeline                               |
 | **Principles**       | AP-6 Protocol-Driven Extensibility, AP-8 Knowledge as First-Class Resource |
+
+---
+
+### 15. LlamaIndex Integration (Advanced RAG)
+
+| Attribute               | ABB (Abstract)                                                       | SBB (Solution)                                                                                          |
+| ----------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Capability**          | Multi-format document parsing and advanced retrieval strategies      | LlamaIndex core + file readers (`llamaindex_loader.py`)                                                 |
+| **Parsing**             | Rich document extraction (PDF, DOCX, XLSX, PPTX, EPUB, etc.)         | `parse_file_bytes()` with format-specific readers, `parse_url()` for web content                        |
+| **Advanced Retrieval**  | Multiple retrieval strategies beyond basic similarity                | `advanced_retrieval.py` — sentence_window, auto_merging, hybrid (keyword+vector), reranked modes        |
+| **Structured Querying** | Natural-language queries against SQL databases and CSV files         | `structured_query.py` — `NLSQLTableQueryEngine` for SQL, `PandasQueryEngine` for CSV/DataFrames         |
+| **RAG Evaluation**      | Automated quality scoring for RAG pipelines                          | `rag_evaluation.py` — faithfulness, relevancy, correctness, and guideline evaluators with batch support |
+| **Principles**          | AP-8 Knowledge as First-Class Resource, AP-2 Local-First Cloud-Ready |
 
 ---
 
 ## ABB → SBB Traceability Matrix
 
-| ABB                       | SBB Technology                                | Service                                             | Source                                   |
-| ------------------------- | --------------------------------------------- | --------------------------------------------------- | ---------------------------------------- |
-| Agent Reasoning Engine    | LangGraph ReAct                               | agent-service                                       | `graph.py`                               |
-| LLM Abstraction           | LangChain + multi-provider                    | agent-service                                       | `llm.py`                                 |
-| Knowledge Management      | ChromaDB + SQLite registry                    | agent-service + chromadb                            | `vectorstore.py`, `memory.py`            |
-| Conversation Memory       | SQLite                                        | agent-service                                       | `memory.py`                              |
-| Tool Execution            | FastAPI sandboxed runtime + delegation        | tools-service + agent-service                       | `tools.py`, `main.py`                    |
-| Guardrails Engine         | Regex + rule-based gates                      | agent-service                                       | `graph.py`                               |
-| Configuration Store       | SQLite CRUD                                   | agent-service                                       | `memory.py`                              |
-| A2A Protocol              | HTTP peer registry                            | agent-service                                       | `memory.py`, `main.py`                   |
-| MCP Protocol              | HTTP tool registry                            | agent-service                                       | `memory.py`, `main.py`                   |
-| Observability             | OTel + Langfuse + Prometheus + Loki + Grafana | otel-collector, langfuse, prometheus, loki, grafana | `observability.py`                       |
-| Workflow Automation       | n8n                                           | n8n, n8n-proxy                                      | `n8n/workflows/`                         |
-| Platform Dashboard        | Express.js + EJS                              | ui-console                                          | `server.js`, `views/`                    |
-| Multi-Agent Orchestration | delegate_to_agent + sub_agent_ids + n8n DAGs  | agent-service + n8n                                 | `tools.py`, `graph.py`, `n8n/workflows/` |
-| Data Connectors           | Hybrid connector framework + Airbyte          | agent-service                                       | `connectors/`                            |
+| ABB                       | SBB Technology                                | Service                                             | Source                                                                                      |
+| ------------------------- | --------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Agent Reasoning Engine    | LangGraph ReAct                               | agent-service                                       | `graph.py`                                                                                  |
+| LLM Abstraction           | LangChain + multi-provider                    | agent-service                                       | `llm.py`                                                                                    |
+| Knowledge Management      | ChromaDB + SQLite registry                    | agent-service + chromadb                            | `vectorstore.py`, `memory.py`                                                               |
+| Conversation Memory       | SQLite                                        | agent-service                                       | `memory.py`                                                                                 |
+| Tool Execution            | FastAPI sandboxed runtime + delegation        | tools-service + agent-service                       | `tools.py`, `main.py`                                                                       |
+| Guardrails Engine         | Regex + rule-based gates                      | agent-service                                       | `graph.py`                                                                                  |
+| Configuration Store       | SQLite CRUD                                   | agent-service                                       | `memory.py`                                                                                 |
+| A2A Protocol              | HTTP peer registry                            | agent-service                                       | `memory.py`, `main.py`                                                                      |
+| MCP Protocol              | HTTP tool registry                            | agent-service                                       | `memory.py`, `main.py`                                                                      |
+| Observability             | OTel + Langfuse + Prometheus + Loki + Grafana | otel-collector, langfuse, prometheus, loki, grafana | `observability.py`                                                                          |
+| Workflow Automation       | n8n                                           | n8n, n8n-proxy                                      | `n8n/workflows/`                                                                            |
+| Platform Dashboard        | Express.js + EJS                              | ui-console                                          | `server.js`, `views/`                                                                       |
+| Multi-Agent Orchestration | delegate_to_agent + sub_agent_ids + n8n DAGs  | agent-service + n8n                                 | `tools.py`, `graph.py`, `n8n/workflows/`                                                    |
+| Data Connectors           | Hybrid connector framework + Airbyte          | agent-service                                       | `connectors/`                                                                               |
+| LlamaIndex Integration    | Multi-format parsing + advanced retrieval     | agent-service                                       | `llamaindex_loader.py`, `advanced_retrieval.py`, `structured_query.py`, `rag_evaluation.py` |

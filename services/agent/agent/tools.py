@@ -151,6 +151,57 @@ async def vector_store(text: str, source: str) -> str:
         return json.dumps({"error": str(e)})
 
 
+# ── LlamaIndex-powered tools ───────────────────────────────────────────────
+
+
+@tool
+async def advanced_search(query: str, mode: str = "hybrid", k: int = 5) -> str:
+    """Advanced knowledge base search with multiple retrieval strategies.
+    Modes: 'hybrid' (vector+keyword), 'sentence_window' (with context),
+    'auto_merging' (merge related chunks), 'reranked' (LLM reranking).
+    Use this for more precise or context-rich retrieval than basic vector_search."""
+    try:
+        from agent.advanced_retrieval import advanced_search as _advanced_search
+
+        results = _advanced_search(query=query, mode=mode, k=k)
+        return json.dumps({"results": results, "count": len(results), "mode": mode})
+    except Exception as e:
+        return json.dumps({"error": str(e), "results": []})
+
+
+@tool
+async def query_database(
+    question: str, connection_string: str, tables: Optional[str] = None
+) -> str:
+    """Ask a natural language question about data in a SQL database.
+    Translates your question to SQL, runs it, and returns the answer.
+    Provide a SQLAlchemy connection string and optionally comma-separated table names.
+    """
+    try:
+        from agent.structured_query import query_sql
+
+        table_list = [t.strip() for t in tables.split(",")] if tables else None
+        result = query_sql(
+            question=question, connection_string=connection_string, tables=table_list
+        )
+        return json.dumps(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@tool
+async def query_csv_data(question: str, csv_path: str) -> str:
+    """Ask a natural language question about data in a CSV file.
+    Uses Pandas under the hood to analyze the data and answer your question."""
+    try:
+        from agent.structured_query import query_csv
+
+        result = query_csv(question=question, csv_path=csv_path)
+        return json.dumps(result)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
 # ── Tool registry ───────────────────────────────────────────────────────────
 
 
@@ -167,6 +218,9 @@ def get_all_tools() -> list:
         delegate_to_agent,
         vector_search,
         vector_store,
+        advanced_search,
+        query_database,
+        query_csv_data,
     ]
     try:
         from agent.memory import list_custom_tools

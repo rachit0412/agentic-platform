@@ -666,14 +666,40 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
 
     collection = body.collection or doc["collection"]
     try:
-        result = ingest_document(
-            text=text,
-            source=doc["source"],
-            metadata=doc.get("metadata", {}),
-            chunk_size=body.chunk_size,
-            chunk_overlap=body.chunk_overlap,
-            collection_name=collection,
+        # Use LlamaIndex parser for rich file types (PDF, DOCX, XLSX, etc.)
+        file_ext = (
+            os.path.splitext(doc["name"])[1].lower() if "." in doc["name"] else ""
         )
+        from agent.llamaindex_loader import SUPPORTED_EXTENSIONS, parse_file_bytes
+
+        if file_ext in SUPPORTED_EXTENSIONS and file_ext not in (".txt", ".md", ""):
+            parsed_docs = parse_file_bytes(
+                content=text.encode("utf-8") if isinstance(text, str) else text,
+                filename=doc["name"],
+                metadata=doc.get("metadata", {}),
+            )
+            total_chunks = 0
+            for pdoc in parsed_docs:
+                if pdoc.get("text"):
+                    r = ingest_document(
+                        text=pdoc["text"],
+                        source=doc["source"],
+                        metadata=pdoc.get("metadata", {}),
+                        chunk_size=body.chunk_size,
+                        chunk_overlap=body.chunk_overlap,
+                        collection_name=collection,
+                    )
+                    total_chunks += r.get("chunks", 0)
+            result = {"chunks": total_chunks}
+        else:
+            result = ingest_document(
+                text=text,
+                source=doc["source"],
+                metadata=doc.get("metadata", {}),
+                chunk_size=body.chunk_size,
+                chunk_overlap=body.chunk_overlap,
+                collection_name=collection,
+            )
         update_document_registry(
             doc_id,
             status="indexed",
@@ -1550,6 +1576,203 @@ async def mcp_delete_server(server_id: str):
         from fastapi.responses import JSONResponse
 
         return JSONResponse(status_code=404, content={"error": "MCP server not found"})
+
+
+# ── LlamaIndex: Advanced Retrieval ─────────────────────────────────────────
+
+
+class AdvancedSearchRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=4096)
+    mode: str = Field(
+        default="hybrid",
+        description="Retrieval mode: hybrid, sentence_window, auto_merging, reranked",
+    )
+    k: int = Field(default=5, ge=1, le=50)
+    collection: str | None = Field(default=None)
+    alpha: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Hybrid alpha (1.0=vector, 0.0=keyword)",
+    )
+
+
+@app.post("/documents/advanced-search")
+async def documents_advanced_search(body: AdvancedSearchRequest):
+    """Advanced retrieval with multiple strategies (LlamaIndex-powered)."""
+    from agent.advanced_retrieval import advanced_search
+
+    kwargs = {}
+    if body.alpha is not None:
+        kwargs["alpha"] = body.alpha
+
+    results = advanced_search(
+        query=body.query,
+        mode=body.mode,
+        k=body.k,
+        collection_name=body.collection,
+        **kwargs,
+    )
+    return {
+        "query": body.query,
+        "mode": body.mode,
+        "results": results,
+        "count": len(results),
+    }
+
+
+@app.get("/documents/retrieval-modes")
+async def documents_retrieval_modes():
+    """List available advanced retrieval modes."""
+    from agent.advanced_retrieval import list_retrieval_modes
+
+    return {"modes": list_retrieval_modes()}
+
+
+# ── LlamaIndex: Document Parsing ───────────────────────────────────────────
+
+
+@app.get("/documents/supported-types")
+async def documents_supported_types():
+    """List file types supported by LlamaIndex document parser."""
+    from agent.llamaindex_loader import get_supported_types
+
+    return {"supported_types": get_supported_types()}
+
+
+class ParseURLRequest(BaseModel):
+    url: str = Field(..., min_length=1)
+    metadata: dict | None = None
+    collection: str | None = None
+    ingest: bool = Field(
+        default=True, description="Immediately ingest parsed content into KB"
+    )
+
+
+@app.post("/documents/parse-url")
+async def documents_parse_url(body: ParseURLRequest):
+    """Parse a web URL using LlamaIndex and optionally ingest into knowledge base."""
+    from agent.llamaindex_loader import parse_url
+    from agent.vectorstore import ingest_document
+
+    docs = parse_url(body.url, metadata=body.metadata)
+    if not docs or not docs[0].get("text"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=400, content={"error": "Failed to parse URL"})
+
+    result = {"url": body.url, "sections_parsed": len(docs)}
+
+    if body.ingest:
+        total_chunks = 0
+        for doc in docs:
+            if doc.get("text"):
+                r = ingest_document(
+                    text=doc["text"],
+                    source=body.url,
+                    metadata=doc.get("metadata"),
+                    collection_name=body.collection,
+                )
+                total_chunks += r.get("chunks", 0)
+        result["ingested"] = True
+        result["total_chunks"] = total_chunks
+    else:
+        result["ingested"] = False
+        result["documents"] = docs
+
+    return result
+
+
+# ── LlamaIndex: Structured Data Querying ───────────────────────────────────
+
+
+class SQLQueryRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=4096)
+    connection_string: str = Field(..., min_length=1)
+    tables: list[str] | None = None
+
+
+@app.post("/query/sql")
+async def query_sql_endpoint(body: SQLQueryRequest):
+    """Natural language → SQL query. Translates question to SQL and executes it."""
+    from agent.structured_query import query_sql
+
+    result = query_sql(
+        question=body.question,
+        connection_string=body.connection_string,
+        tables=body.tables,
+    )
+    return result
+
+
+class CSVQueryRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=4096)
+    csv_path: str = Field(..., min_length=1)
+
+
+@app.post("/query/csv")
+async def query_csv_endpoint(body: CSVQueryRequest):
+    """Natural language query over a CSV file."""
+    from agent.structured_query import query_csv
+
+    result = query_csv(question=body.question, csv_path=body.csv_path)
+    return result
+
+
+class SchemaRequest(BaseModel):
+    connection_string: str = Field(..., min_length=1)
+    tables: list[str] | None = None
+
+
+@app.post("/query/schema")
+async def query_schema_endpoint(body: SchemaRequest):
+    """Inspect database schema — returns tables, columns, and types."""
+    from agent.structured_query import get_table_schema
+
+    result = get_table_schema(
+        connection_string=body.connection_string, tables=body.tables
+    )
+    return result
+
+
+# ── LlamaIndex: RAG Evaluation ─────────────────────────────────────────────
+
+
+class RAGEvalRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    response: str = Field(..., min_length=1)
+    contexts: list[str] = Field(default_factory=list)
+    reference: str | None = None
+    guidelines: list[str] | None = None
+
+
+@app.post("/evaluation/rag")
+async def evaluation_rag(body: RAGEvalRequest):
+    """Evaluate a RAG response for faithfulness, relevancy, and correctness."""
+    from agent.rag_evaluation import evaluate_rag_pipeline
+
+    result = evaluate_rag_pipeline(
+        query=body.query,
+        response=body.response,
+        contexts=body.contexts,
+        reference=body.reference,
+        guidelines=body.guidelines,
+    )
+    return result
+
+
+class BatchEvalRequest(BaseModel):
+    test_cases: list[RAGEvalRequest]
+
+
+@app.post("/evaluation/rag/batch")
+async def evaluation_rag_batch(body: BatchEvalRequest):
+    """Batch-evaluate multiple RAG responses."""
+    from agent.rag_evaluation import batch_evaluate
+
+    cases = [tc.model_dump() for tc in body.test_cases]
+    result = batch_evaluate(test_cases=cases)
+    return result
     return {"deleted": True}
 
 
