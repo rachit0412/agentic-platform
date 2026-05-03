@@ -5,13 +5,11 @@
 ## System Overview
 
 The Agentic Platform is a containerised agent factory built with:
-
 - **Frontend**: Express.js + EJS (ui-console)
 - **Agent Runtime**: FastAPI + LangGraph (agent-service)
 - **Tool Runtime**: FastAPI (tools-service)
 - **LLM Providers**: Ollama (local), Azure OpenAI, OpenAI, Azure AI Foundry
-- **Embeddings**: Multi-provider (Ollama, Azure OpenAI, OpenAI, Azure Foundry) — auto-follows LLM provider
-- **Knowledge Base**: ChromaDB (vector store, RAG) + LlamaIndex (advanced parsing, retrieval, evaluation)
+- **Knowledge Base**: ChromaDB (vector store, RAG)
 - **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers)
 - **Workflows**: n8n (automation, webhooks)
 - **Observability**: Prometheus + Grafana + Loki + OpenTelemetry + Langfuse
@@ -28,11 +26,15 @@ The Agentic Platform is a containerised agent factory built with:
 
 ## Docker Compose Services (21 containers)
 
-`agent-service` `chroma-data` `chromadb` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `n8n-proxy` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console`
+`agent-service` `chroma-data` `chromadb` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `n8n-proxy` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
 
 ## UI Pages (23 pages)
 
+
+
 ## Test Suites
+
+
 
 ## Telemetry Pipeline
 
