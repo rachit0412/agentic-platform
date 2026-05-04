@@ -200,175 +200,317 @@
 <div class="card animate-fade-up delay-300" style="margin-top:1.5rem">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
     <h3 style="margin:0">Services Topology</h3>
-    <a href="/docs/architecture-diagram" target="_blank" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.85rem;border-radius:8px;background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(6,182,212,0.08));border:1px solid rgba(139,92,246,0.2);color:#8b5cf6;font-size:0.75rem;font-weight:600;text-decoration:none;transition:all 0.2s">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Interactive Diagram
-    </a>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <button onclick="topoAnimate=!topoAnimate;this.textContent=topoAnimate?'Pause':'Animate';topoToggleAnim()" style="padding:0.3rem 0.7rem;border-radius:7px;background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-2);font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.15s">Pause</button>
+      <a href="/docs/architecture-diagram" target="_blank" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.85rem;border-radius:8px;background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(6,182,212,0.08));border:1px solid rgba(139,92,246,0.2);color:#8b5cf6;font-size:0.75rem;font-weight:600;text-decoration:none;transition:all 0.2s">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Full Diagram
+      </a>
+    </div>
   </div>
-  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">14 containerized services — how data flows from user prompt to agent response.</p>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">14 containerized services on <code style="font-size:0.75rem">platform-net</code> — hover any node for details, watch the data flow animate.</p>
 
-  <div style="overflow-x:auto">
-    <svg viewBox="0 0 960 580" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:960px;margin:0 auto;display:block;font-family:var(--sans)">
+  <style>
+    .topo-canvas { position:relative; min-height:520px; overflow:hidden; border-radius:14px; background:linear-gradient(145deg, rgba(139,92,246,0.02), rgba(6,182,212,0.02)); border:1px solid var(--glass-border); padding:1.5rem; }
+    .topo-node { position:absolute; border-radius:12px; padding:0.6rem 0.8rem; cursor:pointer; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); z-index:2; min-width:110px; text-align:center; backdrop-filter:blur(8px); }
+    .topo-node:hover { transform:translateY(-3px) scale(1.04); z-index:10; box-shadow:0 8px 32px rgba(0,0,0,0.15); }
+    .topo-node .tn-name { font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.15rem; }
+    .topo-node .tn-tech { font-size:0.62rem; color:var(--text-3); display:block; }
+    .topo-node .tn-port { font-size:0.58rem; font-weight:600; opacity:0.7; display:block; margin-top:0.15rem; }
+    .topo-node .tn-pulse { position:absolute; top:0.45rem; right:0.45rem; width:7px; height:7px; border-radius:50%; }
+    .topo-node .tn-pulse::after { content:''; position:absolute; inset:-3px; border-radius:50%; animation:topoPulse 2s ease-in-out infinite; }
+    .topo-node .tn-pulse.live { background:#10b981; }
+    .topo-node .tn-pulse.live::after { border:1.5px solid rgba(16,185,129,0.4); }
+    @keyframes topoPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.8);opacity:0} }
+
+    .topo-tooltip { position:fixed; z-index:9999; background:var(--bg); border:1px solid var(--glass-border); border-radius:12px; padding:0.85rem 1rem; max-width:260px; box-shadow:0 12px 40px rgba(0,0,0,0.25); backdrop-filter:blur(16px); pointer-events:none; opacity:0; transform:translateY(6px); transition:all 0.2s ease; }
+    .topo-tooltip.active { opacity:1; transform:translateY(0); }
+    .topo-tooltip .tt-title { font-size:0.82rem; font-weight:700; color:var(--text-1); margin-bottom:0.2rem; }
+    .topo-tooltip .tt-desc { font-size:0.72rem; color:var(--text-2); line-height:1.5; margin-bottom:0.25rem; }
+    .topo-tooltip .tt-meta { font-size:0.65rem; color:var(--text-3); }
+
+    .topo-layer-label { position:absolute; font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; z-index:1; writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); }
+
+    /* Connection lines via SVG overlay */
+    .topo-svg { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+    .topo-line { stroke-width:1.5; fill:none; }
+    .topo-line-bg { stroke:var(--glass-border); stroke-width:2; fill:none; }
+
+    @keyframes topoFlowDash { to { stroke-dashoffset:-40; } }
+    .topo-flow { stroke-dasharray:8 6; animation:topoFlowDash 1.5s linear infinite; }
+    .topo-flow-slow { stroke-dasharray:4 8; animation:topoFlowDash 3s linear infinite; }
+    .topo-flow.paused, .topo-flow-slow.paused { animation-play-state:paused; }
+
+    /* Layer backgrounds */
+    .topo-layer { position:absolute; border-radius:14px; z-index:0; border:1.5px dashed; }
+  </style>
+
+  <div class="topo-canvas" id="topoCanvas">
+    <!-- Layer backgrounds -->
+    <div class="topo-layer" style="left:1rem;top:0.75rem;width:130px;height:calc(100% - 1.5rem);border-color:rgba(139,92,246,0.2);background:rgba(139,92,246,0.02)"></div>
+    <div class="topo-layer" style="left:155px;top:0.75rem;width:calc(100% - 330px);height:calc(100% - 1.5rem);border-color:rgba(6,182,212,0.2);background:rgba(6,182,212,0.02)"></div>
+    <div class="topo-layer" style="right:1rem;top:0.75rem;width:160px;height:calc(100% - 1.5rem);border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.02)"></div>
+
+    <!-- Layer labels -->
+    <span class="topo-layer-label" style="left:1.3rem;top:50%;color:rgba(139,92,246,0.5)">INTERFACE</span>
+    <span class="topo-layer-label" style="left:158px;top:50%;color:rgba(6,182,212,0.5)">CORE RUNTIME</span>
+    <span class="topo-layer-label" style="right:1.3rem;top:50%;color:rgba(16,185,129,0.5)">OBSERVE</span>
+
+    <!-- ═══ NODES ═══ -->
+    <!-- Interface Layer -->
+    <div class="topo-node" style="left:30px;top:60px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3)" data-tip="user">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#8b5cf6">User</span>
+      <span class="tn-tech">Browser / API</span>
+    </div>
+
+    <div class="topo-node" style="left:22px;top:170px;min-width:120px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="ui">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#06b6d4">UI Console</span>
+      <span class="tn-tech">Express + EJS</span>
+      <span class="tn-port">:3000</span>
+    </div>
+
+    <div class="topo-node" style="left:30px;top:310px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8nproxy">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f59e0b">n8n Proxy</span>
+      <span class="tn-tech">Nginx</span>
+      <span class="tn-port">:5679</span>
+    </div>
+
+    <!-- Core Runtime Layer -->
+    <div class="topo-node" style="left:190px;top:30px;min-width:200px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.4);padding:0.7rem 1rem" data-tip="agent">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#8b5cf6;font-size:0.85rem">Agent Service</span>
+      <span class="tn-tech">FastAPI + LangGraph ReAct</span>
+      <span class="tn-port">:8010</span>
+    </div>
+
+    <div class="topo-node" style="left:430px;top:30px;min-width:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="tools">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#06b6d4">Tools Service</span>
+      <span class="tn-tech">FastAPI Sandbox</span>
+      <span class="tn-port">:8011</span>
+    </div>
+
+    <div class="topo-node" style="left:180px;top:130px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="ollama">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f59e0b">Ollama</span>
+      <span class="tn-tech">Local LLM</span>
+      <span class="tn-port">:11436</span>
+    </div>
+
+    <div class="topo-node" style="left:320px;top:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="chroma">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#06b6d4">ChromaDB</span>
+      <span class="tn-tech">Vector Store</span>
+      <span class="tn-port">:8200</span>
+    </div>
+
+    <div class="topo-node" style="left:460px;top:130px;min-width:100px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3)" data-tip="sqlite">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#8b5cf6">SQLite</span>
+      <span class="tn-tech">Platform DB</span>
+      <span class="tn-port">embedded</span>
+    </div>
+
+    <div class="topo-node" style="left:180px;top:230px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="postgres">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">PostgreSQL</span>
+      <span class="tn-tech">Datastore DB</span>
+      <span class="tn-port">:5433</span>
+    </div>
+
+    <div class="topo-node" style="left:340px;top:230px;min-width:120px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8n">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f59e0b">n8n</span>
+      <span class="tn-tech">Workflow Engine</span>
+      <span class="tn-port">:5678</span>
+    </div>
+
+    <div class="topo-node" style="left:210px;top:340px;min-width:140px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)" data-tip="otel">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">OTel Collector</span>
+      <span class="tn-tech">Traces + Metrics + Logs</span>
+      <span class="tn-port">:4317</span>
+    </div>
+
+    <div class="topo-node" style="left:400px;top:340px;min-width:115px;background:rgba(244,63,94,0.08);border:1.5px solid rgba(244,63,94,0.3)" data-tip="langfuse">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f43f5e">Langfuse</span>
+      <span class="tn-tech">LLM Tracing</span>
+      <span class="tn-port">:3014</span>
+    </div>
+
+    <div class="topo-node" style="left:230px;top:430px;min-width:100px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)" data-tip="langfusedb">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">Langfuse DB</span>
+      <span class="tn-tech">PostgreSQL</span>
+      <span class="tn-port">internal</span>
+    </div>
+
+    <!-- Observe Layer -->
+    <div class="topo-node" style="right:18px;top:60px;min-width:125px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="prometheus">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">Prometheus</span>
+      <span class="tn-tech">Metrics Store</span>
+      <span class="tn-port">:9090</span>
+    </div>
+
+    <div class="topo-node" style="right:18px;top:170px;min-width:125px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="grafana">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">Grafana</span>
+      <span class="tn-tech">Dashboards</span>
+      <span class="tn-port">:3003</span>
+    </div>
+
+    <div class="topo-node" style="right:18px;top:280px;min-width:125px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="loki">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f59e0b">Loki</span>
+      <span class="tn-tech">Log Aggregation</span>
+      <span class="tn-port">:3100</span>
+    </div>
+
+    <!-- SVG overlay for connection lines -->
+    <svg class="topo-svg" id="topoSvg" preserveAspectRatio="none">
       <defs>
-        <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--text-3)"/></marker>
-        <marker id="ah-cyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#06b6d4"/></marker>
-        <marker id="ah-violet" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#8b5cf6"/></marker>
-        <marker id="ah-amber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/></marker>
-        <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feComposite in="SourceGraphic" in2="blur"/></filter>
+        <marker id="ta-cyan" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#06b6d4" opacity="0.7"/></marker>
+        <marker id="ta-violet" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#8b5cf6" opacity="0.7"/></marker>
+        <marker id="ta-amber" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#f59e0b" opacity="0.7"/></marker>
+        <marker id="ta-green" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#10b981" opacity="0.7"/></marker>
+        <marker id="ta-rose" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#f43f5e" opacity="0.7"/></marker>
       </defs>
-
-      <!-- ====== USER ====== -->
-      <rect x="20" y="230" width="90" height="55" rx="14" fill="rgba(139,92,246,0.12)" stroke="#8b5cf6" stroke-width="1.5"/>
-      <text x="65" y="254" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="600">User /</text>
-      <text x="65" y="267" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="600">Webhook</text>
-
-      <!-- ====== UI CONSOLE ====== -->
-      <rect x="140" y="220" width="100" height="75" rx="14" fill="rgba(6,182,212,0.08)" stroke="#06b6d4" stroke-width="1.5"/>
-      <text x="190" y="248" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="600">UI Console</text>
-      <text x="190" y="262" text-anchor="middle" fill="var(--text-3)" font-size="8">Express + EJS</text>
-      <text x="190" y="274" text-anchor="middle" fill="var(--text-3)" font-size="8">:3000</text>
-
-      <!-- User → UI -->
-      <line x1="110" y1="257" x2="138" y2="257" stroke="var(--text-3)" stroke-width="1.2" marker-end="url(#ah)"/>
-
-      <!-- ====== AGENT RUNTIME (large container) ====== -->
-      <rect x="270" y="20" width="430" height="540" rx="20" fill="rgba(139,92,246,0.03)" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="6 3"/>
-      <text x="485" y="48" text-anchor="middle" fill="#8b5cf6" font-size="12" font-weight="700">AGENT REGISTRY &amp; RUNTIME</text>
-      <text x="485" y="63" text-anchor="middle" fill="var(--text-3)" font-size="8.5">FastAPI :8010 — Each agent = LLM + Tools + Memory + Control Logic + Context</text>
-
-      <!-- UI → Agent Runtime -->
-      <line x1="240" y1="257" x2="268" y2="257" stroke="#06b6d4" stroke-width="1.2" marker-end="url(#ah-cyan)"/>
-      <text x="254" y="250" text-anchor="middle" fill="#06b6d4" font-size="7">SSE</text>
-
-      <!-- ====== AGENTS ROW ====== -->
-      <!-- Agent Registry -->
-      <rect x="295" y="80" width="375" height="95" rx="14" fill="rgba(139,92,246,0.06)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#glow)"/>
-      <text x="482" y="102" text-anchor="middle" fill="#8b5cf6" font-size="11" font-weight="700">Agent Registry</text>
-      <text x="482" y="118" text-anchor="middle" fill="var(--text-3)" font-size="8">Each agent = LLM + Tools + Memory + Control Logic + Context</text>
-      <rect x="310" y="130" width="80" height="22" rx="6" fill="rgba(245,158,11,0.12)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="350" y="145" text-anchor="middle" fill="#f59e0b" font-size="7.5">Custom Skills</text>
-      <rect x="400" y="130" width="80" height="22" rx="6" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="0.8"/>
-      <text x="440" y="145" text-anchor="middle" fill="#06b6d4" font-size="7.5">Tool Bindings</text>
-      <rect x="490" y="130" width="80" height="22" rx="6" fill="rgba(16,185,129,0.12)" stroke="#10b981" stroke-width="0.8"/>
-      <text x="530" y="145" text-anchor="middle" fill="#10b981" font-size="7.5">Knowledge</text>
-      <rect x="580" y="130" width="80" height="22" rx="6" fill="rgba(244,63,94,0.12)" stroke="#f43f5e" stroke-width="0.8"/>
-      <text x="620" y="145" text-anchor="middle" fill="#f43f5e" font-size="7.5">Guardrails</text>
-      <text x="482" y="168" text-anchor="middle" fill="var(--text-3)" font-size="7.5" font-style="italic">Unlimited agents — configured via UI or API</text>
-
-      <!-- ====== LANGGRAPH REACT LOOP ====== -->
-      <rect x="310" y="222" width="365" height="115" rx="14" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1.5"/>
-      <text x="492" y="242" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700">LangGraph — ReAct Reasoning Loop</text>
-      <text x="492" y="256" text-anchor="middle" fill="var(--text-3)" font-size="8">Guardrails ▸ Retrieve KB ▸ Reason ▸ Act ▸ Check ▸ Reply</text>
-      <rect x="325" y="266" width="62" height="26" rx="7" fill="rgba(16,185,129,0.12)" stroke="#10b981" stroke-width="1"/>
-      <text x="356" y="283" text-anchor="middle" fill="#10b981" font-size="7.5">Guardrails</text>
-      <rect x="395" y="266" width="68" height="26" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="429" y="283" text-anchor="middle" fill="var(--text-2)" font-size="7.5">Retrieve KB</text>
-      <rect x="471" y="266" width="56" height="26" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="499" y="283" text-anchor="middle" fill="var(--text-2)" font-size="7.5">Reason</text>
-      <rect x="535" y="266" width="62" height="26" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="566" y="283" text-anchor="middle" fill="var(--text-2)" font-size="7.5">Act (tools)</text>
-      <rect x="605" y="266" width="42" height="26" rx="7" fill="rgba(6,182,212,0.12)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="626" y="283" text-anchor="middle" fill="var(--text-2)" font-size="7.5">Reply</text>
-      <path d="M605 295 Q625 322 490 322 Q355 322 348 288" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3 2" fill="none"/>
-      <text x="492" y="332" text-anchor="middle" fill="#06b6d4" font-size="7" font-style="italic">iterate until done</text>
-
-      <!-- ====== DATA LAYER — 4 columns ====== -->
-      <!-- Column 1: PLATFORM DB -->
-      <rect x="290" y="350" width="100" height="115" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.2"/>
-      <text x="340" y="367" text-anchor="middle" fill="#8b5cf6" font-size="8" font-weight="700">PLATFORM DB</text>
-      <text x="340" y="383" text-anchor="middle" fill="var(--text-3)" font-size="6.5">SQLite (embedded)</text>
-      <text x="340" y="399" text-anchor="middle" fill="var(--text-2)" font-size="6">Conversations</text>
-      <text x="340" y="412" text-anchor="middle" fill="var(--text-2)" font-size="6">Memory (STM/LTM)</text>
-      <text x="340" y="425" text-anchor="middle" fill="var(--text-2)" font-size="6">Config &amp; Agents</text>
-      <text x="340" y="438" text-anchor="middle" fill="var(--text-2)" font-size="6">Audit Log</text>
-
-      <!-- Column 2: DATA STORE -->
-      <rect x="398" y="350" width="100" height="115" rx="12" fill="rgba(16,185,129,0.04)" stroke="#10b981" stroke-width="1.2"/>
-      <text x="448" y="367" text-anchor="middle" fill="#10b981" font-size="8" font-weight="700">DATA STORE</text>
-      <text x="448" y="383" text-anchor="middle" fill="var(--text-3)" font-size="6.5">PostgreSQL :5433</text>
-      <text x="448" y="399" text-anchor="middle" fill="var(--text-2)" font-size="6">Document Registry</text>
-      <text x="448" y="412" text-anchor="middle" fill="var(--text-2)" font-size="6">Ingestion Metadata</text>
-      <text x="448" y="425" text-anchor="middle" fill="var(--text-2)" font-size="6">JSONB columns</text>
-
-      <!-- Column 3: VECTOR STORE -->
-      <rect x="506" y="350" width="100" height="115" rx="12" fill="rgba(6,182,212,0.04)" stroke="#06b6d4" stroke-width="1.2"/>
-      <text x="556" y="367" text-anchor="middle" fill="#06b6d4" font-size="8" font-weight="700">VECTOR STORE</text>
-      <text x="556" y="383" text-anchor="middle" fill="var(--text-3)" font-size="6.5">ChromaDB :8200</text>
-      <text x="556" y="399" text-anchor="middle" fill="var(--text-2)" font-size="6">Embeddings</text>
-      <text x="556" y="412" text-anchor="middle" fill="var(--text-2)" font-size="6">RAG Retrieval</text>
-      <text x="556" y="425" text-anchor="middle" fill="var(--text-2)" font-size="6">Semantic Search</text>
-
-      <!-- Column 4: MODEL HUB -->
-      <rect x="614" y="350" width="82" height="115" rx="12" fill="rgba(139,92,246,0.04)" stroke="#8b5cf6" stroke-width="1.2"/>
-      <text x="655" y="367" text-anchor="middle" fill="#8b5cf6" font-size="8" font-weight="700">MODEL HUB</text>
-      <text x="655" y="384" text-anchor="middle" fill="var(--text-3)" font-size="6.5">4 Providers</text>
-      <text x="655" y="400" text-anchor="middle" fill="var(--text-2)" font-size="6">Ollama (local)</text>
-      <text x="655" y="414" text-anchor="middle" fill="var(--text-2)" font-size="6">Azure OpenAI</text>
-      <text x="655" y="428" text-anchor="middle" fill="var(--text-2)" font-size="6">OpenAI</text>
-      <text x="655" y="442" text-anchor="middle" fill="var(--text-2)" font-size="6">Azure Foundry</text>
-
-      <!-- OTel Collector (bottom span) -->
-      <rect x="290" y="476" width="400" height="35" rx="8" fill="rgba(16,185,129,0.04)" stroke="#10b981" stroke-width="1"/>
-      <text x="490" y="498" text-anchor="middle" fill="#10b981" font-size="9" font-weight="600">OpenTelemetry Collector :4317 — traces, metrics, logs</text>
-
-      <!-- ====== RIGHT COLUMN ====== -->
-      <!-- n8n Workflows -->
-      <rect x="730" y="80" width="200" height="175" rx="18" fill="rgba(245,158,11,0.05)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 3"/>
-      <text x="830" y="105" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700">n8n Workflows</text>
-      <text x="830" y="120" text-anchor="middle" fill="var(--text-3)" font-size="9">Automation :5678</text>
-      <rect x="748" y="132" width="164" height="22" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="148" text-anchor="middle" fill="var(--text-2)" font-size="8">Scheduled Agent Runs</text>
-      <rect x="748" y="160" width="164" height="22" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="176" text-anchor="middle" fill="var(--text-2)" font-size="8">Webhook Triggers</text>
-      <rect x="748" y="188" width="164" height="22" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="204" text-anchor="middle" fill="var(--text-2)" font-size="8">Multi-Step Pipelines</text>
-      <rect x="748" y="216" width="164" height="22" rx="6" fill="rgba(245,158,11,0.10)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="830" y="232" text-anchor="middle" fill="var(--text-2)" font-size="8">RAG Ingest Workflows</text>
-
-      <!-- Tools Service -->
-      <rect x="730" y="280" width="200" height="48" rx="10" fill="rgba(6,182,212,0.06)" stroke="#06b6d4" stroke-width="1"/>
-      <text x="830" y="300" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="600">Tools Service :8011</text>
-      <text x="830" y="314" text-anchor="middle" fill="var(--text-3)" font-size="8">web_search, code_exec, http_fetch</text>
-
-      <!-- Observability Stack -->
-      <rect x="730" y="345" width="200" height="120" rx="14" fill="rgba(244,63,94,0.04)" stroke="#f43f5e" stroke-width="1.5"/>
-      <text x="830" y="365" text-anchor="middle" fill="#f43f5e" font-size="10" font-weight="700">OBSERVABILITY STACK</text>
-      <!-- Langfuse -->
-      <rect x="742" y="375" width="55" height="36" rx="6" fill="rgba(244,63,94,0.10)" stroke="#f43f5e" stroke-width="0.8"/>
-      <text x="769" y="390" text-anchor="middle" fill="#f43f5e" font-size="7.5" font-weight="600">Langfuse</text>
-      <text x="769" y="402" text-anchor="middle" fill="var(--text-3)" font-size="6">LLM Traces</text>
-      <!-- Grafana -->
-      <rect x="802" y="375" width="55" height="36" rx="6" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.8"/>
-      <text x="829" y="390" text-anchor="middle" fill="#10b981" font-size="7.5" font-weight="600">Grafana</text>
-      <text x="829" y="402" text-anchor="middle" fill="var(--text-3)" font-size="6">Dashboards</text>
-      <!-- Prometheus -->
-      <rect x="862" y="375" width="60" height="36" rx="6" fill="rgba(16,185,129,0.10)" stroke="#10b981" stroke-width="0.8"/>
-      <text x="892" y="390" text-anchor="middle" fill="#10b981" font-size="7.5" font-weight="600">Prometheus</text>
-      <text x="892" y="402" text-anchor="middle" fill="var(--text-3)" font-size="6">Metrics</text>
-      <!-- Loki -->
-      <rect x="742" y="418" width="80" height="36" rx="6" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-width="0.8"/>
-      <text x="782" y="433" text-anchor="middle" fill="#f59e0b" font-size="7.5" font-weight="600">Loki</text>
-      <text x="782" y="445" text-anchor="middle" fill="var(--text-3)" font-size="6">Log Aggregation</text>
-      <!-- OTel label -->
-      <rect x="830" y="418" width="92" height="36" rx="6" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="0.8"/>
-      <text x="876" y="433" text-anchor="middle" fill="#10b981" font-size="7.5" font-weight="600">OTel Collector</text>
-      <text x="876" y="445" text-anchor="middle" fill="var(--text-3)" font-size="6">:4317 Pipeline</text>
-
-      <!-- ====== ARROWS ====== -->
-      <!-- UI → n8n -->
-      <path d="M240 235 Q260 110 728 115" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#ah-amber)"/>
-      <text x="460" y="105" fill="#f59e0b" font-size="7">iframe / API</text>
-      <!-- n8n → Agent Runtime -->
-      <line x1="730" y1="220" x2="702" y2="240" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#ah-amber)"/>
-      <!-- Agent Runtime → Tools Service -->
-      <line x1="700" y1="290" x2="728" y2="296" stroke="#06b6d4" stroke-width="1" marker-end="url(#ah-cyan)"/>
-
-      <!-- Legend -->
-      <rect x="730" y="485" width="200" height="50" rx="10" fill="var(--glass-bg)" stroke="var(--glass-border)" stroke-width="1"/>
-      <text x="830" y="505" text-anchor="middle" fill="var(--text-2)" font-size="9" font-weight="600">14 Services — Docker Compose</text>
-      <text x="830" y="520" text-anchor="middle" fill="var(--text-3)" font-size="7.5">Agent = LLM + Tools + Memory + Logic + Context</text>
     </svg>
+
+    <!-- Legend -->
+    <div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);display:flex;gap:1.25rem;padding:0.4rem 1rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:0.65rem;color:var(--text-3);z-index:3;backdrop-filter:blur(8px)">
+      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span> Live</div>
+      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:16px;height:2px;background:#06b6d4;display:inline-block;border-radius:1px"></span> Data flow</div>
+      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:16px;height:2px;background:#f59e0b;display:inline-block;border-radius:1px;border:none;background-image:repeating-linear-gradient(90deg,#f59e0b 0 4px,transparent 4px 8px)"></span> Async</div>
+      <span>14 containers &bull; Docker Compose</span>
+    </div>
   </div>
+
+  <script>
+  var topoAnimate = true;
+  var TOPO_TIPS = {
+    user:      { t:'User / Webhook', d:'Entry point — browser UI, REST API, or n8n webhook trigger.', m:'HTTP / SSE' },
+    ui:        { t:'UI Console', d:'Express.js + EJS platform dashboard. 24 pages, 70+ API proxy routes to agent-service.', m:'Port 3000' },
+    n8nproxy:  { t:'n8n Proxy', d:'Nginx reverse proxy for embedding n8n inside the platform dashboard via iframe.', m:'Port 5679' },
+    agent:     { t:'Agent Service', d:'Core runtime — FastAPI + LangGraph ReAct loop. 69+ REST endpoints, agent/skill/A2A/MCP registry, RAG pipeline, guardrails.', m:'Port 8010' },
+    tools:     { t:'Tools Service', d:'Sandboxed tool execution — web_search, code_execute, http_fetch, file I/O, datetime.', m:'Port 8011' },
+    ollama:    { t:'Ollama', d:'Local LLM inference server. Runs Llama 3, Mistral, and other open models. Runtime-switchable.', m:'Port 11436' },
+    chroma:    { t:'ChromaDB', d:'Vector store for embeddings and RAG retrieval. Stores document chunks for semantic search.', m:'Port 8200' },
+    sqlite:    { t:'SQLite', d:'Embedded platform database — conversations, memory (STM/LTM), agent configs, skills, audit log. 13 tables.', m:'Embedded file' },
+    postgres:  { t:'PostgreSQL (Datastore)', d:'Document registry with JSONB columns. Stores ingestion metadata, connector configs, structured data.', m:'Port 5433' },
+    n8n:       { t:'n8n Workflow Engine', d:'Visual workflow automation — scheduled agent runs, webhook triggers, multi-step pipelines, RAG ingest.', m:'Port 5678' },
+    otel:      { t:'OTel Collector', d:'OpenTelemetry Collector — receives OTLP traces from agent-service, routes metrics to Prometheus and logs to Loki.', m:'Port 4317/4318' },
+    langfuse:  { t:'Langfuse', d:'LLM observability — trace viewer, cost tracking, latency analysis. Captures every LLM call with full context.', m:'Port 3014' },
+    langfusedb:{ t:'Langfuse DB', d:'PostgreSQL backend for Langfuse. Stores LLM traces, sessions, and evaluation data.', m:'Internal' },
+    prometheus:{ t:'Prometheus', d:'Time-series metrics store. Scrapes agent-service and OTel Collector for request counts, latencies, errors.', m:'Port 9090' },
+    grafana:   { t:'Grafana', d:'Dashboards and visualization. Pre-configured with platform health dashboard, Prometheus and Loki datasources.', m:'Port 3003' },
+    loki:      { t:'Loki', d:'Log aggregation system. Receives structured logs from OTel Collector. Queryable from Grafana.', m:'Port 3100' }
+  };
+
+  // Draw connections
+  function topoDrawLines() {
+    var svg = document.getElementById('topoSvg');
+    var canvas = document.getElementById('topoCanvas');
+    if (!svg || !canvas) return;
+    var cr = canvas.getBoundingClientRect();
+    svg.setAttribute('viewBox', '0 0 ' + cr.width + ' ' + cr.height);
+
+    var nodes = {};
+    canvas.querySelectorAll('.topo-node[data-tip]').forEach(function(n) {
+      var r = n.getBoundingClientRect();
+      nodes[n.dataset.tip] = {
+        cx: r.left - cr.left + r.width/2,
+        cy: r.top - cr.top + r.height/2,
+        l: r.left - cr.left,
+        r: r.left - cr.left + r.width,
+        t: r.top - cr.top,
+        b: r.top - cr.top + r.height
+      };
+    });
+
+    var lines = [
+      { from:'user', to:'ui', color:'#8b5cf6', marker:'ta-violet', cls:'topo-flow' },
+      { from:'ui', to:'agent', color:'#06b6d4', marker:'ta-cyan', cls:'topo-flow', label:'SSE' },
+      { from:'agent', to:'tools', color:'#06b6d4', marker:'ta-cyan', cls:'topo-flow' },
+      { from:'agent', to:'ollama', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow' },
+      { from:'agent', to:'chroma', color:'#06b6d4', marker:'ta-cyan', cls:'topo-flow' },
+      { from:'agent', to:'sqlite', color:'#8b5cf6', marker:'ta-violet', cls:'topo-flow-slow' },
+      { from:'agent', to:'postgres', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
+      { from:'agent', to:'otel', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
+      { from:'agent', to:'langfuse', color:'#f43f5e', marker:'ta-rose', cls:'topo-flow-slow' },
+      { from:'ui', to:'n8nproxy', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
+      { from:'n8nproxy', to:'n8n', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
+      { from:'n8n', to:'agent', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
+      { from:'otel', to:'prometheus', color:'#10b981', marker:'ta-green', cls:'topo-flow' },
+      { from:'otel', to:'loki', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow' },
+      { from:'prometheus', to:'grafana', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
+      { from:'loki', to:'grafana', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
+      { from:'langfuse', to:'langfusedb', color:'#f43f5e', marker:'ta-rose', cls:'topo-flow-slow' }
+    ];
+
+    var html = '';
+    lines.forEach(function(l) {
+      var a = nodes[l.from], b = nodes[l.to];
+      if (!a || !b) return;
+      var x1 = a.cx, y1 = a.cy, x2 = b.cx, y2 = b.cy;
+      // Adjust endpoints to node edges
+      var dx = x2-x1, dy = y2-y1, dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 1) return;
+      var nx = dx/dist, ny = dy/dist;
+      x1 += nx*Math.min(50, dist*0.3); y1 += ny*Math.min(25, dist*0.3);
+      x2 -= nx*Math.min(50, dist*0.3); y2 -= ny*Math.min(25, dist*0.3);
+      var pauseClass = topoAnimate ? '' : ' paused';
+      html += '<line class="topo-line-bg" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
+      html += '<line class="topo-line '+l.cls+pauseClass+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+l.color+'" marker-end="url(#'+l.marker+')"/>';
+    });
+    // Keep existing defs
+    var defs = svg.querySelector('defs');
+    svg.innerHTML = '';
+    svg.appendChild(defs);
+    svg.insertAdjacentHTML('beforeend', html);
+  }
+
+  function topoToggleAnim() {
+    document.querySelectorAll('.topo-flow, .topo-flow-slow').forEach(function(el) {
+      el.classList.toggle('paused', !topoAnimate);
+    });
+  }
+
+  // Tooltip
+  var _topoTip = null;
+  document.getElementById('topoCanvas').addEventListener('mouseover', function(e) {
+    var node = e.target.closest('.topo-node[data-tip]');
+    if (!node) return;
+    var info = TOPO_TIPS[node.dataset.tip];
+    if (!info) return;
+    if (_topoTip) _topoTip.remove();
+    var tip = document.createElement('div');
+    tip.className = 'topo-tooltip';
+    tip.innerHTML = '<div class="tt-title">'+info.t+'<\/div><div class="tt-desc">'+info.d+'<\/div><div class="tt-meta">'+info.m+'<\/div>';
+    document.body.appendChild(tip);
+    var r = node.getBoundingClientRect();
+    var x = Math.min(r.right + 10, window.innerWidth - 280);
+    var y = r.top;
+    if (y + 120 > window.innerHeight) y = window.innerHeight - 130;
+    if (x < 10) x = r.left - 270;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    _topoTip = tip;
+    requestAnimationFrame(function(){ tip.classList.add('active'); });
+  });
+  document.getElementById('topoCanvas').addEventListener('mouseout', function(e) {
+    var node = e.target.closest('.topo-node[data-tip]');
+    if (node && _topoTip) { _topoTip.classList.remove('active'); setTimeout(function(){ if(_topoTip){_topoTip.remove();_topoTip=null;} },200); }
+  });
+
+  // Draw on load + resize
+  window.addEventListener('load', function(){ setTimeout(topoDrawLines, 100); });
+  window.addEventListener('resize', topoDrawLines);
+  <\/script>
 </div>
 
 

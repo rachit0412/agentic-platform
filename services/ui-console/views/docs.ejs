@@ -69,11 +69,43 @@
   .node-info-popup-link:hover { text-decoration:underline; }
 
   /* Diagram zoom lightbox — HD */
-  .docs-diagram { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:2rem; margin:1.5rem 0; text-align:center; position:relative; cursor:zoom-in; }
-  .docs-diagram .mermaid svg { min-height:350px; width:100% !important; }
+  .docs-diagram { background:linear-gradient(145deg, rgba(6,182,212,0.03), rgba(139,92,246,0.03)); border:1px solid var(--glass-border); border-radius:16px; padding:2rem; margin:1.5rem 0; text-align:center; position:relative; cursor:zoom-in; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.06); transition:box-shadow 0.25s; }
+  .docs-diagram:hover { box-shadow:0 4px 24px rgba(6,182,212,0.12); }
+  .docs-diagram .mermaid svg { min-height:300px; width:100% !important; }
   .docs-diagram-full { max-width:none; width:calc(100% + 2rem); margin-left:-1rem; padding:2rem 2.5rem; }
-  .docs-diagram::after { content:'🔍 Click to zoom'; position:absolute; top:0.5rem; right:0.75rem; font-size:0.65rem; color:var(--text-3); background:var(--glass-bg); padding:0.15rem 0.5rem; border-radius:6px; border:1px solid var(--glass-border); opacity:0; transition:opacity 0.15s; pointer-events:none; }
+  .docs-diagram::after { content:'Click to zoom'; position:absolute; top:0.6rem; right:0.85rem; font-size:0.62rem; color:var(--text-3); background:var(--glass-bg); padding:0.2rem 0.6rem; border-radius:8px; border:1px solid var(--glass-border); opacity:0; transition:opacity 0.15s; pointer-events:none; backdrop-filter:blur(8px); letter-spacing:0.02em; }
   .docs-diagram:hover::after { opacity:1; }
+
+  /* ═══ Mermaid SVG Overrides ═══ */
+  .docs-diagram .mermaid .node rect,
+  .docs-diagram .mermaid .node circle,
+  .docs-diagram .mermaid .node polygon,
+  .docs-diagram .mermaid .node ellipse { rx:10; ry:10; stroke-width:1.5 !important; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.08)); transition:filter 0.2s; }
+  .docs-diagram .mermaid .node:hover rect,
+  .docs-diagram .mermaid .node:hover circle,
+  .docs-diagram .mermaid .node:hover polygon { filter:drop-shadow(0 4px 12px rgba(6,182,212,0.2)) !important; }
+  .docs-diagram .mermaid .nodeLabel,
+  .docs-diagram .mermaid .label { font-family:'Inter',var(--sans),sans-serif !important; font-size:0.78rem !important; font-weight:600 !important; letter-spacing:-0.01em; }
+  .docs-diagram .mermaid .edgeLabel { font-family:'Inter',var(--sans),sans-serif !important; font-size:0.68rem !important; font-weight:500 !important; background:var(--bg) !important; padding:0.15rem 0.4rem !important; border-radius:6px !important; border:1px solid var(--glass-border) !important; }
+  .docs-diagram .mermaid .edgePath .path { stroke-width:1.8 !important; }
+  .docs-diagram .mermaid marker polygon { stroke:none !important; }
+  .docs-diagram .mermaid .cluster rect { rx:16 !important; ry:16 !important; stroke-width:1.5 !important; stroke-dasharray:6 4 !important; }
+  .docs-diagram .mermaid .cluster .nodeLabel,
+  .docs-diagram .mermaid .cluster-label .nodeLabel { font-size:0.82rem !important; font-weight:700 !important; letter-spacing:0.02em; text-transform:uppercase; }
+  .docs-diagram .mermaid .actor { rx:12; ry:12; stroke-width:1.5 !important; }
+  .docs-diagram .mermaid .actor-line { stroke-dasharray:4 3 !important; stroke-width:1 !important; }
+  .docs-diagram .mermaid text.actor { font-size:0.8rem !important; font-weight:700 !important; font-family:'Inter',var(--sans),sans-serif !important; }
+  .docs-diagram .mermaid .messageLine0,
+  .docs-diagram .mermaid .messageLine1 { stroke-width:1.5 !important; }
+  .docs-diagram .mermaid .messageText { font-size:0.72rem !important; font-weight:500 !important; font-family:'Inter',var(--sans),sans-serif !important; }
+  .docs-diagram .mermaid .note { rx:10 !important; ry:10 !important; }
+  .docs-diagram .mermaid .noteText { font-size:0.72rem !important; }
+  /* State diagrams */
+  .docs-diagram .mermaid .statediagram-state rect { rx:12 !important; ry:12 !important; }
+  .docs-diagram .mermaid .state-note rect { rx:10 !important; }
+  .docs-diagram .mermaid .transition { stroke-width:1.5 !important; }
+  /* Subgraph titles */
+  .docs-diagram .mermaid .subgraph-label { font-size:0.78rem !important; }
   .diagram-lightbox { position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.88); backdrop-filter:blur(12px); display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; }
   .diagram-lightbox.active { opacity:1; }
   .diagram-lightbox-inner { background:var(--bg); border:1px solid var(--glass-border); border-radius:16px; padding:2.5rem; width:92vw; height:85vh; display:flex; align-items:center; justify-content:center; overflow:auto; transform:scale(0.92); transition:transform 0.25s ease; box-shadow:0 25px 60px rgba(0,0,0,0.5); cursor:default; }
@@ -1489,35 +1521,116 @@ docker-compose --profile gpu up -d</code></pre>
 
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
 <script>
-  // Theme-aware Mermaid init
+  // Theme-aware Mermaid init — polished styling
   var isDark = document.documentElement.classList.contains('dark');
   mermaid.initialize({
     startOnLoad: false,
-    theme: isDark ? 'dark' : 'default',
+    theme: 'base',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontSize: 13,
     themeVariables: isDark ? {
-      primaryColor: '#0e7490',
+      primaryColor: 'rgba(6,182,212,0.15)',
       primaryTextColor: '#e2e8f0',
       primaryBorderColor: '#06b6d4',
-      lineColor: '#64748b',
-      sectionBkgColor: 'transparent',
-      noteBkgColor: '#1e293b',
-      noteTextColor: '#e2e8f0'
-    } : {
-      primaryColor: '#0e7490',
-      primaryTextColor: '#1e293b',
-      primaryBorderColor: '#0e7490',
+      secondaryColor: 'rgba(139,92,246,0.12)',
+      secondaryTextColor: '#c4b5fd',
+      secondaryBorderColor: '#8b5cf6',
+      tertiaryColor: 'rgba(16,185,129,0.10)',
+      tertiaryTextColor: '#6ee7b7',
+      tertiaryBorderColor: '#10b981',
       lineColor: '#475569',
-      secondaryColor: '#f0f9ff',
-      tertiaryColor: '#ecfeff',
+      textColor: '#cbd5e1',
+      mainBkg: 'rgba(6,182,212,0.1)',
+      nodeBorder: '#06b6d4',
+      clusterBkg: 'rgba(139,92,246,0.06)',
+      clusterBorder: 'rgba(139,92,246,0.25)',
+      titleColor: '#a78bfa',
+      edgeLabelBackground: '#1e293b',
+      nodeTextColor: '#e2e8f0',
+      actorBkg: 'rgba(6,182,212,0.12)',
+      actorBorder: '#06b6d4',
+      actorTextColor: '#e2e8f0',
+      actorLineColor: '#475569',
+      signalColor: '#64748b',
+      signalTextColor: '#e2e8f0',
+      labelBoxBkgColor: '#1e293b',
+      labelBoxBorderColor: '#334155',
+      labelTextColor: '#cbd5e1',
+      loopTextColor: '#a78bfa',
+      noteBkgColor: 'rgba(245,158,11,0.1)',
+      noteTextColor: '#fcd34d',
+      noteBorderColor: '#f59e0b',
+      activationBkgColor: 'rgba(6,182,212,0.15)',
+      activationBorderColor: '#06b6d4',
+      sequenceNumberColor: '#0f172a',
       sectionBkgColor: 'transparent',
-      noteBkgColor: '#f0f9ff',
-      noteTextColor: '#1e293b',
-      actorTextColor: '#1e293b',
-      actorBorder: '#0e7490',
-      signalColor: '#334155',
+      altSectionBkgColor: 'rgba(139,92,246,0.04)',
+      gridColor: '#334155',
+      taskBkgColor: 'rgba(6,182,212,0.12)',
+      taskTextColor: '#e2e8f0',
+      activeTaskBkgColor: 'rgba(139,92,246,0.2)',
+      doneTaskBkgColor: 'rgba(16,185,129,0.15)',
+      critBkgColor: 'rgba(239,68,68,0.12)',
+      crit0: '#f87171',
+      taskBorderColor: '#06b6d4',
+      compositeBackground: 'rgba(15,23,42,0.5)',
+      compositeBorder: '#334155',
+      compositeTitleBackground: 'rgba(139,92,246,0.15)',
+      innerEndBackground: '#06b6d4',
+      specialStateColor: '#8b5cf6'
+    } : {
+      primaryColor: 'rgba(6,182,212,0.08)',
+      primaryTextColor: '#0f172a',
+      primaryBorderColor: '#0891b2',
+      secondaryColor: 'rgba(139,92,246,0.06)',
+      secondaryTextColor: '#6d28d9',
+      secondaryBorderColor: '#8b5cf6',
+      tertiaryColor: 'rgba(16,185,129,0.06)',
+      tertiaryTextColor: '#065f46',
+      tertiaryBorderColor: '#10b981',
+      lineColor: '#64748b',
+      textColor: '#1e293b',
+      mainBkg: 'rgba(6,182,212,0.06)',
+      nodeBorder: '#0891b2',
+      clusterBkg: 'rgba(139,92,246,0.04)',
+      clusterBorder: 'rgba(139,92,246,0.2)',
+      titleColor: '#7c3aed',
+      edgeLabelBackground: '#ffffff',
+      nodeTextColor: '#1e293b',
+      actorBkg: 'rgba(6,182,212,0.08)',
+      actorBorder: '#0891b2',
+      actorTextColor: '#0f172a',
+      actorLineColor: '#94a3b8',
+      signalColor: '#64748b',
       signalTextColor: '#1e293b',
-      labelTextColor: '#1e293b'
-    }
+      labelBoxBkgColor: '#f8fafc',
+      labelBoxBorderColor: '#e2e8f0',
+      labelTextColor: '#1e293b',
+      loopTextColor: '#7c3aed',
+      noteBkgColor: 'rgba(245,158,11,0.08)',
+      noteTextColor: '#92400e',
+      noteBorderColor: '#f59e0b',
+      activationBkgColor: 'rgba(6,182,212,0.1)',
+      activationBorderColor: '#0891b2',
+      sequenceNumberColor: '#ffffff',
+      sectionBkgColor: 'transparent',
+      altSectionBkgColor: 'rgba(139,92,246,0.03)',
+      gridColor: '#e2e8f0',
+      taskBkgColor: 'rgba(6,182,212,0.08)',
+      taskTextColor: '#0f172a',
+      activeTaskBkgColor: 'rgba(139,92,246,0.12)',
+      doneTaskBkgColor: 'rgba(16,185,129,0.1)',
+      critBkgColor: 'rgba(239,68,68,0.08)',
+      taskBorderColor: '#0891b2',
+      compositeBackground: 'rgba(248,250,252,0.8)',
+      compositeBorder: '#e2e8f0',
+      compositeTitleBackground: 'rgba(139,92,246,0.08)',
+      innerEndBackground: '#0891b2',
+      specialStateColor: '#7c3aed'
+    },
+    flowchart: { curve:'basis', padding:16, nodeSpacing:40, rankSpacing:50, htmlLabels:true, useMaxWidth:true },
+    sequence: { mirrorActors:false, messageMargin:35, boxMargin:8, noteMargin:10, actorMargin:50, useMaxWidth:true, rightAngles:false, showSequenceNumbers:false },
+    state: { padding:8, dividerMargin:10, sizeUnit:5 }
   });
 
   /* ── Capability Pop-out Modal ── */
