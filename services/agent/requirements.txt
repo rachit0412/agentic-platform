@@ -1,13 +1,13 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.0
 langgraph==0.2.60
-langchain-core==0.3.29
-langchain-community>=0.3.0
-langchain-ollama>=0.2.0
-langchain-openai>=0.2.0
-langchain-chroma>=0.2.0
-langchain-text-splitters>=0.3.0
-chromadb>=0.5.0
+langchain-core==0.3.33
+langchain-community==0.3.14
+langchain-ollama==0.2.3
+langchain-openai==0.2.14
+langchain-chroma==0.2.2
+langchain-text-splitters==0.3.4
+chromadb==0.5.23
 httpx==0.27.0
 pydantic==2.10.0
 python-dotenv==1.0.1
@@ -21,13 +21,13 @@ opentelemetry-instrumentation-httpx==0.46b0
 prometheus-client==0.21.0
 prometheus-fastapi-instrumentator==7.0.0
 # ── LlamaIndex (advanced RAG, document parsing, evaluation) ─────────────
-llama-index-core>=0.12.0
-llama-index-readers-file>=0.4.0
-llama-index-readers-web>=0.3.0
-llama-index-embeddings-langchain>=0.3.0
-llama-index-llms-langchain>=0.5.0
-llama-index-vector-stores-chroma>=0.4.0
-llama-index-postprocessor-cohere-rerank>=0.3.0
-llama-index-readers-database>=0.3.0
+llama-index-core==0.12.10
+llama-index-readers-file==0.4.3
+llama-index-readers-web==0.3.1
+llama-index-embeddings-langchain==0.3.0
+llama-index-llms-langchain==0.5.0
+llama-index-vector-stores-chroma==0.4.1
+llama-index-postprocessor-cohere-rerank==0.3.0
+llama-index-readers-database==0.3.0
 # ── PostgreSQL (datastore) ──────────────────────────────────────────────
 psycopg2-binary>=2.9.0

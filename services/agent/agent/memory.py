@@ -67,6 +67,7 @@ def _reset_conn():
 
 # ── Datastore (PostgreSQL) connection pool ──────────────────────────────────
 
+
 def _get_ds_pool():
     """Lazy-init a connection pool for the document datastore."""
     global _ds_pool
@@ -157,7 +158,9 @@ def init_db():
         pass  # column already exists
     # ── Migration: add retrieval_mode column if missing ──
     try:
-        conn.execute("ALTER TABLE agents ADD COLUMN retrieval_mode TEXT DEFAULT 'basic'")
+        conn.execute(
+            "ALTER TABLE agents ADD COLUMN retrieval_mode TEXT DEFAULT 'basic'"
+        )
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
@@ -1406,11 +1409,19 @@ def _row_to_doc(row: dict) -> dict:
         "source": row["source"],
         "collection": row["collection"],
         "folder": row["folder"],
-        "agent_tags": row["agent_tags"] if isinstance(row["agent_tags"], list) else json.loads(row["agent_tags"] or "[]"),
+        "agent_tags": (
+            row["agent_tags"]
+            if isinstance(row["agent_tags"], list)
+            else json.loads(row["agent_tags"] or "[]")
+        ),
         "file_type": row["file_type"],
         "file_size": row["file_size"],
         "chunk_count": row["chunk_count"],
-        "metadata": row["metadata"] if isinstance(row["metadata"], dict) else json.loads(row["metadata"] or "{}"),
+        "metadata": (
+            row["metadata"]
+            if isinstance(row["metadata"], dict)
+            else json.loads(row["metadata"] or "{}")
+        ),
         "status": row.get("status", "uploaded"),
         "storage_path": row.get("storage_path", ""),
         "source_type": row.get("source_type", "upload"),
@@ -1500,10 +1511,22 @@ def create_document_registry(
                     source_type, shortcut_ref, created_at, updated_at)
                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (
-                    doc_id, name, source, collection, folder,
-                    json.dumps(agent_tags or []), file_type, file_size,
-                    chunk_count, json.dumps(metadata or {}), status,
-                    storage_path, source_type, shortcut_ref, now, now,
+                    doc_id,
+                    name,
+                    source,
+                    collection,
+                    folder,
+                    json.dumps(agent_tags or []),
+                    file_type,
+                    file_size,
+                    chunk_count,
+                    json.dumps(metadata or {}),
+                    status,
+                    storage_path,
+                    source_type,
+                    shortcut_ref,
+                    now,
+                    now,
                 ),
             )
         conn.commit()
@@ -1517,9 +1540,17 @@ def update_document_registry(doc_id: str, **kwargs) -> dict | None:
     conn = _get_datastore_conn()
     try:
         allowed = {
-            "name", "source", "folder", "agent_tags", "file_type",
-            "chunk_count", "metadata", "status", "storage_path",
-            "source_type", "shortcut_ref",
+            "name",
+            "source",
+            "folder",
+            "agent_tags",
+            "file_type",
+            "chunk_count",
+            "metadata",
+            "status",
+            "storage_path",
+            "source_type",
+            "shortcut_ref",
         }
         fields, values = [], []
         for k, v in kwargs.items():
@@ -1636,7 +1667,11 @@ def untag_all_for_agent(agent_id: str) -> int:
             count = 0
             now = datetime.now(timezone.utc).isoformat()
             for row in rows:
-                tags = row["agent_tags"] if isinstance(row["agent_tags"], list) else json.loads(row["agent_tags"] or "[]")
+                tags = (
+                    row["agent_tags"]
+                    if isinstance(row["agent_tags"], list)
+                    else json.loads(row["agent_tags"] or "[]")
+                )
                 tags = [t for t in tags if t != agent_id]
                 cur.execute(
                     "UPDATE documents SET agent_tags = %s, updated_at = %s WHERE id = %s",

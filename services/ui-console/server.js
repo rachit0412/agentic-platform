@@ -1048,6 +1048,9 @@ app.get("/observability", (req, res) => res.render("observability", { urls: exte
 app.get("/marketplace", (req, res) => res.render("marketplace", { urls: externalUrls }));
 app.get("/admin", (req, res) => res.render("admin", { urls: externalUrls }));
 app.get("/docs", (req, res) => res.render("docs", { urls: externalUrls }));
+app.get("/docs/architecture-diagram", (req, res) => {
+  res.sendFile(path.join(__dirname, "docs-static", "architecture-diagram.html"));
+});
 
 app.listen(PORT, () => {
   console.log(`UI Console listening on :${PORT}`);

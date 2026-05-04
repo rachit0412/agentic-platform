@@ -94,7 +94,7 @@
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Date**         | 2024-11                                                                                                                                                                                                                                                                   |
 | **Status**       | Accepted                                                                                                                                                                                                                                                                  |
-| **Context**      | The UI console needs 22 pages with light/dark theme support, fast server-side rendering, and zero build step.                                                                                                                                                             |
+| **Context**      | The UI console needs 24 pages with light/dark theme support, fast server-side rendering, and zero build step.                                                                                                                                                             |
 | **Decision**     | Use Express.js + EJS templates with a CSS custom property design system (`style.css`). Theme switching toggles a `.dark` class on `<html>`.                                                                                                                               |
 | **Alternatives** | (1) React/Next.js SPA — better DX for complex UIs but adds a build pipeline, node_modules in production image, and client-side hydration overhead. (2) HTMX — lighter but less ecosystem support for complex interactions. (3) Svelte — good DX but requires compilation. |
 | **Consequences** | Zero build step. Pages render in <50ms server-side. Theme tokens are enforced via the `theme-tokens` Copilot skill. Trade-off: no component model — each EJS file is self-contained with inline `<style>` and `<script>`.                                                 |
@@ -172,6 +172,48 @@
 
 ---
 
+## ADR-013 · LlamaIndex Advanced Retrieval
+
+| Field            | Detail                                                                                                                                                                                                                                                                                             |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                                                            |
+| **Status**       | Accepted                                                                                                                                                                                                                                                                                           |
+| **Context**      | Basic cosine-similarity retrieval (ChromaDB direct) is insufficient for complex queries — it misses cross-chunk context, struggles with keyword-heavy queries, and has no relevance ranking beyond vector distance.                                                                                |
+| **Decision**     | Integrate LlamaIndex as an advanced retrieval layer. Each agent can set `retrieval_mode` to `basic` (direct ChromaDB), `advanced` (LlamaIndex pipeline), or `none`. Advanced mode supports 5 strategies: `hybrid`, `reranked`, `sentence_window`, `auto_merging`, and `basic` (LlamaIndex simple). |
+| **Alternatives** | (1) LangChain retrievers — tightly coupled to LangChain; we use LangGraph independently. (2) Custom retrieval pipeline — maintenance burden. (3) Haystack — good but smaller ecosystem for document parsing.                                                                                       |
+| **Consequences** | LlamaIndex also provides `SimpleDirectoryReader` for 20+ file formats (PDF, DOCX, XLSX, PPTX, EPUB, etc.) via `llamaindex_loader.py`. Dependencies add ~50MB to image. `retrieval_mode` is a per-agent config field defaulting to `basic`.                                                         |
+| **Principles**   | AP-8 Knowledge as First-Class Resource, AP-2 Cloud- and Model-Agnostic                                                                                                                                                                                                                             |
+
+---
+
+## ADR-014 · Data Connectors Framework
+
+| Field            | Detail                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                                                                                                                                       |
+| **Status**       | Accepted                                                                                                                                                                                                                                                                                                                                                                      |
+| **Context**      | Agents need to ingest knowledge from external systems — databases, REST APIs, cloud storage, collaboration tools — not just uploaded files. A pluggable connector framework is needed.                                                                                                                                                                                        |
+| **Decision**     | Six connector types in `services/agent/agent/connectors/`: `database.py` (PostgreSQL, MySQL, MSSQL via SQLAlchemy), `api_connector.py` (REST with OAuth2/API-key auth), `cloud_storage.py` (S3, Azure Blob, GCS), `drives.py` (Google Drive, SharePoint), `sync_engine.py` (Airbyte protocol, 300+ sources). Each connector implements `test_connection()` and `sync_data()`. |
+| **Alternatives** | (1) Airbyte-only — covers 300+ sources but heavy (Java runtime). (2) Direct SDK integrations — no unified interface. (3) Apache NiFi — overkill for document ingestion.                                                                                                                                                                                                       |
+| **Consequences** | Connectors are registered via `POST /connectors` and synced via `POST /connectors/{id}/sync`. Airbyte connector is optional (requires separate Airbyte instance). All connectors feed into the same ChromaDB + PostgreSQL pipeline.                                                                                                                                           |
+| **Principles**   | AP-8 Knowledge as First-Class Resource, AP-3 Container-Native Composability                                                                                                                                                                                                                                                                                                   |
+
+---
+
+## ADR-015 · Hybrid SQLite + PostgreSQL Storage
+
+| Field            | Detail                                                                                                                                                                                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                               |
+| **Status**       | Accepted (amends ADR-002)                                                                                                                                                                                                                                             |
+| **Context**      | The document registry needs richer queries (JSONB metadata, full-text search, folder hierarchy) and multi-writer support that SQLite cannot provide. Agent config, memory, and skills remain lightweight and single-writer.                                           |
+| **Decision**     | Add PostgreSQL (`datastore-db`, port 5433) for the document registry. SQLite remains for agent configs, conversations, skills, prompts, A2A peers, MCP servers, guardrails, and evaluation results. `psycopg2-binary` connects agent-service to PostgreSQL.           |
+| **Alternatives** | (1) Migrate everything to PostgreSQL — adds operational complexity for tables that don't need it. (2) Use ChromaDB metadata — limited query capabilities for non-vector data. (3) Embedded DuckDB — no multi-writer.                                                  |
+| **Consequences** | Two data stores to manage. SQLite remains zero-config. PostgreSQL is auto-initialized via `docker-compose` with a dedicated volume (`datastore-db-data`). Migration path: if horizontal scaling is needed, SQLite tables can be migrated to PostgreSQL incrementally. |
+| **Principles**   | AP-10 Minimal-Config Local-First, AP-13 Production-Ready by Default                                                                                                                                                                                                   |
+
+---
+
 ## ADR Index
 
 | ID      | Title                               | Principles       |
@@ -188,3 +230,6 @@
 | ADR-010 | Thin UI Proxy Pattern               | AP-1, AP-7       |
 | ADR-011 | Dual-Mode Multi-Agent Orchestration | AP-7, AP-9, AP-6 |
 | ADR-012 | Per-Agent KB Isolation              | AP-8, AP-4       |
+| ADR-013 | LlamaIndex Advanced Retrieval       | AP-8, AP-2       |
+| ADR-014 | Data Connectors Framework           | AP-8, AP-3       |
+| ADR-015 | Hybrid SQLite + PostgreSQL Storage  | AP-10, AP-13     |

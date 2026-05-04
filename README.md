@@ -78,7 +78,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  🖥️  UI Console (Express.js + EJS)                :3000        │
-│  22 pages — build, run, evaluate, trace agents from the browser│
+│  24 pages — build, run, evaluate, trace agents from the browser│
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
 │  ReAct agent loop, skill/agent registry, auto-RAG, memory      │
@@ -111,7 +111,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 | **Tracing**       | Langfuse                        | See every LLM call: prompt, response, cost, latency. Non-negotiable for production        |
 | **Observability** | Prometheus + Grafana + Loki     | Industry-standard monitoring. Not a toy dashboard — real SRE tooling                      |
 | **Workflows**     | n8n                             | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks                |
-| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 22 pages for full platform control                  |
+| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 24 pages for full platform control                  |
 
 ---
 
@@ -153,7 +153,7 @@ curl -X POST http://localhost:8010/run \
 
 | Service            | Port    | Purpose                                                                           |
 | ------------------ | ------- | --------------------------------------------------------------------------------- |
-| **ui-console**     | `3000`  | Platform dashboard — 22 pages for building, running, monitoring agents            |
+| **ui-console**     | `3000`  | Platform dashboard — 24 pages for building, running, monitoring agents            |
 | **agent-service**  | `8010`  | FastAPI + LangGraph — the brain: ReAct agent, registry, auto-RAG, memory          |
 | **tools-service**  | `8011`  | Math, HTTP, file I/O, datetime, web search, code exec, vector ops                 |
 | **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more                    |
@@ -263,6 +263,7 @@ k6 run tests/load/load-test.js
 ```
 
 **Test coverage includes:**
+
 - Data ingestion (connectors, sync jobs, document lifecycle)
 - Agent CRUD and multi-agent orchestration
 - Skills, prompts, custom tools management
@@ -287,7 +288,7 @@ agentic-platform/
 │   ├── agent/                   # 🧠 FastAPI + LangGraph agent (69 API endpoints)
 │   │   └── agent/connectors/    # 🔌 Data connectors (DB, API, Cloud, Drives, Airbyte)
 │   ├── tools/                   # 🔧 FastAPI tool endpoints (9 tools)
-│   ├── ui-console/              # 🖥️  Express.js dashboard (22 pages)
+│   ├── ui-console/              # 🖥️  Express.js dashboard (24 pages)
 │   └── otel/                    # 📡 OpenTelemetry collector config
 ├── n8n/workflows/               # ⚡ Pre-built n8n workflow templates (incl. multi-agent orchestration)
 ├── observability/               # 📊 Grafana dashboards, Prometheus, Loki config

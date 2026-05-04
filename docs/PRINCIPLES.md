@@ -193,8 +193,11 @@
 
 | Validation                          | Status                                                                                                                                                              |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Full CRUD on documents              | **YES** — 13 document endpoints covering ingest, search, list, delete, copy, fetch-url                                                                              |
-| Document registry with folders/tags | **YES** — SQLite `documents` table with folder, agent_tags, metadata fields                                                                                         |
+| Full CRUD on documents              | **YES** — 24 document endpoints covering upload, ingest, index, search, list, delete, copy, parse-url, advanced-search, supported-types                             |
+| Document registry with folders/tags | **YES** — PostgreSQL `documents` table (datastore-db) with folder, agent_tags, metadata JSONB fields                                                                |
+| LlamaIndex advanced retrieval       | **YES** — 5 retrieval modes (basic, hybrid, reranked, sentence_window, auto_merging) via `advanced_retrieval.py`                                                    |
+| Multi-format document parsing       | **YES** — LlamaIndex readers for PDF, DOCX, XLSX, CSV, PPTX, EPUB, HTML, Markdown (20+ formats) via `llamaindex_loader.py`                                          |
+| Data connectors                     | **YES** — 6 connector types (database, API, cloud storage, Google Drive, SharePoint, Airbyte) with test + sync lifecycle                                            |
 | Agent-scoped collections            | **YES** — `agents` table has `kb_collection` column (auto-named `agent_{name}_kb`). `graph.py` passes `kb_coll` to `search_similar()` per agent run. Full isolation |
 | Cross-collection copying            | **YES** — `POST /documents/copy` endpoint implemented in `vectorstore.py`                                                                                           |
 | Per-agent KB isolation              | **YES** — Each agent gets a unique ChromaDB collection; documents uploaded for one agent are invisible to other agents' retrieval                                   |
@@ -362,12 +365,12 @@
 | **Rationale**    | Single-writer SQLite and Docker Compose are sufficient for development and demos. Enterprise deployments serve multiple teams with concurrent agent runs, requiring multi-writer databases, container orchestration, and stateless service design.                             |
 | **Implications** | The data layer migrates from SQLite to PostgreSQL (or equivalent multi-writer database). Services are deployed on Kubernetes with horizontal pod autoscaling. Agent-service is stateless — all state lives in the database. Load balancers distribute traffic across replicas. |
 
-| Validation            | Status                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Multi-writer database | **NO** — SQLite is single-writer. ADR-002 explicitly notes "unsuitable for horizontal scaling"                                 |
-| Kubernetes manifests  | **NO** — No K8s, Helm, or Terraform files exist. `CONTRIBUTING.md` lists K8s manifests as a TODO                               |
-| Stateless services    | **PARTIAL** — Agent-service is functionally stateless (all state in SQLite). But SQLite is file-based, requiring a single node |
-| Connection pooling    | **YES** — Thread-local connections in `memory.py`, but this is SQLite-specific                                                 |
+| Validation            | Status                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Multi-writer database | **PARTIAL** — SQLite for config/memory (single-writer). PostgreSQL `datastore-db` for document registry (multi-writer ready) |
+| Kubernetes manifests  | **NO** — No K8s, Helm, or Terraform files exist. `CONTRIBUTING.md` lists K8s manifests as a TODO                             |
+| Stateless services    | **PARTIAL** — Agent-service is functionally stateless (all state in SQLite/PostgreSQL). SQLite portion is file-based         |
+| Connection pooling    | **YES** — Thread-local connections for SQLite in `memory.py`. `psycopg2` connection pool for PostgreSQL datastore            |
 
 ### How to Achieve
 

@@ -37,6 +37,7 @@ services:
       - ./services/ui-console/public:/app/public
       - ./services/ui-console/server.js:/app/server.js
       - ./services/ui-console/marketplace.js:/app/marketplace.js
+      - ./docs:/app/docs-static
     networks:
       - platform-net
     healthcheck:
@@ -157,7 +158,7 @@ services:
       - AZURE_FOUNDRY_MODELS=${AZURE_FOUNDRY_MODELS:-}
       - AZURE_FOUNDRY_API_VERSION=${AZURE_FOUNDRY_API_VERSION:-2024-10-21}
       - AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT=${AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT:-}
-      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-ollama}
       - TOOLS_SERVICE_URL=http://tools-service:8001
       - MEMORY_DIR=/data
       - CHROMA_URL=${CHROMA_URL:-http://chromadb:8000}

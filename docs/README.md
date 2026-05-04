@@ -2,15 +2,16 @@
 
 ## Guides
 
-| Document                              | Description                                              |
-| ------------------------------------- | -------------------------------------------------------- |
-| [README](../README.md)                | Project overview, quick start, configuration             |
-| [Architecture](ARCHITECTURE.md)       | System overview, data flows, services, orchestration     |
-| [Principles](PRINCIPLES.md)           | 10 architecture principles guiding all design choices    |
-| [Building Blocks](BUILDING-BLOCKS.md) | 13 ABBs (abstract) and SBBs (solution) with traceability |
-| [Decisions](DECISIONS.md)             | 12 Architecture Decision Records (ADRs)                  |
-| [Installation Guide](../INSTALL.md)   | Prerequisites, per-platform setup, GPU configuration     |
-| [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions               |
+| Document                                          | Description                                              |
+| ------------------------------------------------- | -------------------------------------------------------- |
+| [README](../README.md)                            | Project overview, quick start, configuration             |
+| [Architecture](ARCHITECTURE.md)                   | System overview, data flows, services, orchestration     |
+| [Architecture Diagram](architecture-diagram.html) | Interactive visual system architecture (open in browser) |
+| [Principles](PRINCIPLES.md)                       | 18 architecture principles guiding all design choices    |
+| [Building Blocks](BUILDING-BLOCKS.md)             | 15 ABBs (abstract) and SBBs (solution) with traceability |
+| [Decisions](DECISIONS.md)                         | 15 Architecture Decision Records (ADRs)                  |
+| [Installation Guide](../INSTALL.md)               | Prerequisites, per-platform setup, GPU configuration     |
+| [Contributing](../CONTRIBUTING.md)                | Code style, PR process, commit conventions               |
 
 ## Interactive API Console
 

@@ -28,13 +28,13 @@
 
 ### 3. Knowledge Management (RAG)
 
-| Attribute        | ABB (Abstract)                                        | SBB (Solution)                                                                                 |
-| ---------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Capability**   | Ingest, chunk, embed, search, and manage documents    | ChromaDB vector store + SQLite document registry                                               |
-| **Ingestion**    | Chunked document embedding pipeline                   | `RecursiveCharacterTextSplitter` (1000 chars / 200 overlap) → ChromaDB                         |
-| **Retrieval**    | Semantic similarity search with score threshold       | `search_similar()` with cosine distance, k=5 default (called with k=3 in graph), threshold 0.8 |
-| **Organisation** | Collections, folders, agent-scoped knowledge          | `kb_collection` per agent, folder management, agent tagging                                    |
-| **Lifecycle**    | Full CRUD on documents, collections, registry entries | 13 document endpoints + `vectorstore.py` functions                                             |
+| Attribute        | ABB (Abstract)                                        | SBB (Solution)                                                                                                                |
+| ---------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Capability**   | Ingest, chunk, embed, search, and manage documents    | ChromaDB vector store + PostgreSQL document registry (datastore-db) + LlamaIndex advanced retrieval                           |
+| **Ingestion**    | Chunked document embedding pipeline                   | `RecursiveCharacterTextSplitter` (1000 chars / 200 overlap) → ChromaDB; LlamaIndex multi-format parsing                       |
+| **Retrieval**    | Semantic similarity + advanced retrieval strategies   | `search_similar()` (basic) + `advanced_search()` (hybrid, reranked, sentence_window, auto_merging) per-agent `retrieval_mode` |
+| **Organisation** | Collections, folders, agent-scoped knowledge          | `kb_collection` per agent, folder management, agent tagging                                                                   |
+| **Lifecycle**    | Full CRUD on documents, collections, registry entries | 24 document endpoints + `vectorstore.py` + `advanced_retrieval.py`                                                            |
 | **Principles**   | AP-8 Knowledge as First-Class Resource                |
 
 ### 4. Conversation Memory
@@ -70,14 +70,14 @@
 
 ### 7. Agent Configuration Store
 
-| Attribute        | ABB (Abstract)                                                                                                           | SBB (Solution)                                                                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Capability**   | CRUD management of agents, skills, prompts, guardrails, tools                                                            | SQLite database at `/data/platform.db` via `memory.py` + PostgreSQL `datastore-db` for documents                                                                                      |
-| **Entities**     | Agent definitions, skill templates, prompt library, guardrail rules, custom tools, conversations, documents, audit trail | 12 tables: `agents`, `skills`, `prompts`, `guardrails`, `custom_tools`, `a2a_peers`, `mcp_servers`, `conversations`, `session_summaries`, `documents`, `version_history`, `audit_log` |
-| **Agent Schema** | Agent config with orchestration support                                                                                  | `agents` table includes `sub_agent_ids` (JSON array), `skill_ids`, `tool_ids`, `kb_collection` for full agent composition                                                             |
-| **Versioning**   | Audit trail of every configuration change                                                                                | Audit log API + version history with rollback                                                                                                                                         |
-| **Migration**    | Import/export for environment portability                                                                                | `GET /export` → JSON, `POST /import` with merge mode                                                                                                                                  |
-| **Principles**   | AP-9 Configuration over Code, AP-1 API-First                                                                             |
+| Attribute        | ABB (Abstract)                                                                                                                       | SBB (Solution)                                                                                                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Capability**   | CRUD management of agents, skills, prompts, guardrails, tools                                                                        | SQLite database at `/data/platform.db` via `memory.py` + PostgreSQL `datastore-db` for documents                                                                                                                 |
+| **Entities**     | Agent definitions, skill templates, prompt library, guardrail rules, custom tools, conversations, documents, connectors, audit trail | 14 tables: `agents`, `skills`, `prompts`, `guardrails`, `custom_tools`, `a2a_peers`, `mcp_servers`, `conversations`, `session_summaries`, `documents`, `connectors`, `sync_jobs`, `version_history`, `audit_log` |
+| **Agent Schema** | Agent config with orchestration support                                                                                              | `agents` table includes `sub_agent_ids` (JSON array), `skill_ids`, `tool_ids`, `kb_collection` for full agent composition                                                                                        |
+| **Versioning**   | Audit trail of every configuration change                                                                                            | Audit log API + version history with rollback                                                                                                                                                                    |
+| **Migration**    | Import/export for environment portability                                                                                            | `GET /export` → JSON, `POST /import` with merge mode                                                                                                                                                             |
+| **Principles**   | AP-9 Configuration over Code, AP-1 API-First                                                                                         |
 
 ### 8. Agent-to-Agent Protocol (A2A)
 
@@ -122,12 +122,12 @@
 
 ### 12. Platform Dashboard
 
-| Attribute      | ABB (Abstract)                                      | SBB (Solution)                                                                                                                                                                                                                          |
-| -------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Capability** | Unified management UI for all platform capabilities | Express.js + EJS (`ui-console`, port 3000)                                                                                                                                                                                              |
-| **Pages**      | 23 views (22 purpose-built + 1 layout template)     | Overview, Run Agent, Agent Builder, AI Studio, Agent Hub, Intelligence Hub, Documents, Docs, Workflows, A2A, MCP, Guardrails, REST Console, Admin, Evaluation, Observability, Traceability, Prompts, Skills, Tools, Marketplace, Agents |
-| **API Layer**  | Thin proxy to backend services                      | All `/api/*` routes proxy to `agent-service`, `tools-service`, n8n, Langfuse                                                                                                                                                            |
-| **Theming**    | Light/dark mode with design token system            | CSS custom properties in `style.css`, `.dark` class toggle                                                                                                                                                                              |
+| Attribute      | ABB (Abstract)                                      | SBB (Solution)                                                                                                                                                                                                                                          |
+| -------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Capability** | Unified management UI for all platform capabilities | Express.js + EJS (`ui-console`, port 3000)                                                                                                                                                                                                              |
+| **Pages**      | 24 views (23 purpose-built + 1 layout template)     | Overview, Run Agent, Agent Builder, AI Studio, Agent Hub, Intelligence Hub, Documents, Data Ingestion, Docs, Workflows, A2A, MCP, Guardrails, REST Console, Admin, Evaluation, Observability, Traceability, Prompts, Skills, Tools, Marketplace, Agents |
+| **API Layer**  | Thin proxy to backend services                      | All `/api/*` routes proxy to `agent-service`, `tools-service`, n8n, Langfuse                                                                                                                                                                            |
+| **Theming**    | Light/dark mode with design token system            | CSS custom properties in `style.css`, `.dark` class toggle                                                                                                                                                                                              |
 | **Principles** | AP-1 API-First, AP-7 Separation of Concerns         |
 
 ---
@@ -181,7 +181,7 @@
 | ------------------------- | --------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Agent Reasoning Engine    | LangGraph ReAct                               | agent-service                                       | `graph.py`                                                                                  |
 | LLM Abstraction           | LangChain + multi-provider                    | agent-service                                       | `llm.py`                                                                                    |
-| Knowledge Management      | ChromaDB + SQLite registry                    | agent-service + chromadb                            | `vectorstore.py`, `memory.py`                                                               |
+| Knowledge Management      | ChromaDB + PostgreSQL registry                | agent-service + chromadb + datastore-db             | `vectorstore.py`, `memory.py`, `advanced_retrieval.py`                                      |
 | Conversation Memory       | SQLite                                        | agent-service                                       | `memory.py`                                                                                 |
 | Tool Execution            | FastAPI sandboxed runtime + delegation        | tools-service + agent-service                       | `tools.py`, `main.py`                                                                       |
 | Guardrails Engine         | Regex + rule-based gates                      | agent-service                                       | `graph.py`                                                                                  |
