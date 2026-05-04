@@ -221,32 +221,71 @@
       </div>
 
       <h2>Platform Architecture</h2>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 graph TB
-    UI[UI Console :3000] --> Agent[Agent Service :8010]
-    UI --> Tools[Tools Service :8011]
-    Agent --> Ollama[Ollama :11436]
-    Agent --> AzureOAI[Azure OpenAI]
-    Agent --> OpenAI[OpenAI]
-    Agent --> AzureFoundry[Azure AI Foundry]
-    Agent --> ChromaDB[ChromaDB :8200]
-    Agent --> Memory[(SQLite Memory)]
-    UI --> N8N[n8n :5678]
-    Agent --> OTel[OTel Collector :4317]
-    OTel --> Prometheus[Prometheus :9090]
-    OTel --> Loki[Loki :3100]
-    Prometheus --> Grafana[Grafana :3003]
-    Loki --> Grafana
-    Agent --> Langfuse[Langfuse :3014]
+    subgraph FRONTEND["🖥️ Presentation"]
+        UI["<b>UI Console</b><br/>Express + EJS :3000"]
+        N8P["<b>n8n Proxy</b><br/>Nginx :5679"]
+    end
 
-    classDef service fill:#0e7490,stroke:#06b6d4,color:#fff
-    classDef storage fill:#7c3aed,stroke:#8b5cf6,color:#fff
-    classDef external fill:#b45309,stroke:#f59e0b,color:#fff
+    subgraph RUNTIME["⚙️ Application Runtime"]
+        AGENT["<b>Agent Service</b><br/>FastAPI + LangGraph :8010"]
+        TOOLS["<b>Tools Service</b><br/>Sandbox :8011"]
+        N8N["<b>n8n</b><br/>Workflows :5678"]
+    end
 
-    class UI,Agent,Tools,N8N service
-    class ChromaDB,Memory storage
-    class Ollama,AzureOAI,OpenAI,AzureFoundry,Langfuse external
+    subgraph LLM_LAYER["🧠 LLM Providers"]
+        OLLAMA["<b>Ollama</b><br/>Local :11436"]
+        AZURE["<b>Azure OpenAI</b><br/>Cloud"]
+        OAI["<b>OpenAI</b><br/>Cloud"]
+        FOUNDRY["<b>Azure Foundry</b><br/>Cloud"]
+    end
+
+    subgraph DATA["💾 Data & Knowledge"]
+        CHROMA["<b>ChromaDB</b><br/>Vectors :8200"]
+        SQLITE[("<b>SQLite</b><br/>Config + Memory")]
+        PG[("<b>PostgreSQL</b><br/>Datastore :5433")]
+    end
+
+    subgraph OBSERVE["📊 Observability"]
+        OTEL["<b>OTel Collector</b><br/>:4317"]
+        PROM["<b>Prometheus</b><br/>:9090"]
+        GRAF["<b>Grafana</b><br/>:3003"]
+        LOKI["<b>Loki</b><br/>:3100"]
+        LF["<b>Langfuse</b><br/>:3014"]
+    end
+
+    UI -->|"SSE / API"| AGENT
+    UI -.->|"iframe"| N8P
+    N8P --> N8N
+    AGENT -->|"tool calls"| TOOLS
+    AGENT -->|"completions"| OLLAMA
+    AGENT -.->|"fallback"| AZURE
+    AGENT -.->|"fallback"| OAI
+    AGENT -.->|"fallback"| FOUNDRY
+    AGENT -->|"embed + search"| CHROMA
+    AGENT -->|"read/write"| SQLITE
+    AGENT -->|"documents"| PG
+    N8N -->|"webhooks"| AGENT
+    AGENT -->|"OTLP"| OTEL
+    AGENT -->|"traces"| LF
+    OTEL -->|"metrics"| PROM
+    OTEL -->|"logs"| LOKI
+    PROM --> GRAF
+    LOKI --> GRAF
+
+    classDef pres fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef app fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef llm fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef data fill:#059669,stroke:#10b981,color:#fff,rx:8
+    classDef obs fill:#6366f1,stroke:#818cf8,color:#fff,rx:8
+
+    class UI,N8P pres
+    class AGENT,TOOLS,N8N app
+    class OLLAMA,AZURE,OAI,FOUNDRY llm
+    class CHROMA,SQLITE,PG data
+    class OTEL,PROM,GRAF,LOKI,LF obs
         </div>
       </div>
 
@@ -520,37 +559,53 @@ sequenceDiagram
       <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 graph LR
-    subgraph HOST["🖥️ Host Machine"]
+    subgraph HOST["🖥️ Host Machine (localhost)"]
         direction TB
-        P3000["Port 3000"]
-        P5678["Port 5678"]
-        P5679["Port 5679"]
-        P8010["Port 8010"]
-        P8011["Port 8011"]
-        P8200["Port 8200"]
-        P9090["Port 9090"]
-        P3012["Port 3012"]
-        P3013["Port 3013"]
-        P3100["Port 3100"]
-        P4317["Port 4317"]
-        P11436["Port 11436"]
+        subgraph HPRES["Presentation"]
+            P3000["Port 3000"]
+            P5678["Port 5678"]
+            P5679["Port 5679"]
+        end
+        subgraph HAPP["Application"]
+            P8010["Port 8010"]
+            P8011["Port 8011"]
+            P11436["Port 11436"]
+        end
+        subgraph HDATA["Data"]
+            P8200["Port 8200"]
+        end
+        subgraph HOBS["Observability"]
+            P9090["Port 9090"]
+            P3012["Port 3012"]
+            P3013["Port 3013"]
+            P3100["Port 3100"]
+            P4317["Port 4317"]
+        end
     end
 
     subgraph NET["🌐 platform-net  (Docker Bridge Network)"]
         direction TB
-        UI["ui-console<br/>:3001"]
-        AGENT["agent-service<br/>:8000"]
-        TOOLS["tools-service<br/>:8001"]
-        N8N["n8n<br/>:5678"]
-        N8P["n8n-proxy<br/>:8080"]
-        OLLAMA["ollama<br/>:11434"]
-        CHROMA["chromadb<br/>:8000"]
-        LF["langfuse<br/>:3000"]
-        LFDB["langfuse-db<br/>:5432"]
-        OTEL["otel-collector<br/>:4317"]
-        PROM["prometheus<br/>:9090"]
-        GRAF["grafana<br/>:3000"]
-        LOKI["loki<br/>:3100"]
+        subgraph NPRES["🖥️ Presentation"]
+            UI["ui-console<br/>:3001"]
+            N8N["n8n<br/>:5678"]
+            N8P["n8n-proxy<br/>:8080"]
+        end
+        subgraph NAPP["⚙️ Application + LLM"]
+            AGENT["agent-service<br/>:8000"]
+            TOOLS["tools-service<br/>:8001"]
+            OLLAMA["ollama<br/>:11434"]
+        end
+        subgraph NDATA["💾 Data"]
+            CHROMA["chromadb<br/>:8000"]
+        end
+        subgraph NOBS["📊 Observability"]
+            LF["langfuse<br/>:3000"]
+            LFDB["langfuse-db<br/>:5432"]
+            OTEL["otel-collector<br/>:4317"]
+            PROM["prometheus<br/>:9090"]
+            GRAF["grafana<br/>:3000"]
+            LOKI["loki<br/>:3100"]
+        end
     end
 
     P3000 ---|"→ :3001"| UI
@@ -567,9 +622,16 @@ graph LR
     P11436 ---|"→ :11434"| OLLAMA
 
     classDef host fill:#1e293b,stroke:#475569,color:#e2e8f0,rx:6
-    classDef net fill:#0f172a,stroke:#334155,color:#94a3b8,rx:8
+    classDef pres fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef app fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef data fill:#059669,stroke:#10b981,color:#fff,rx:8
+    classDef obs fill:#6366f1,stroke:#818cf8,color:#fff,rx:8
 
     class P3000,P5678,P5679,P8010,P8011,P8200,P9090,P3012,P3013,P3100,P4317,P11436 host
+    class UI,N8N,N8P pres
+    class AGENT,TOOLS,OLLAMA app
+    class CHROMA data
+    class LF,LFDB,OTEL,PROM,GRAF,LOKI obs
         </div>
       </div>
 
@@ -833,21 +895,28 @@ flowchart LR
 
       <h2>Memory Lifecycle</h2>
       <p>The dual-layer memory system manages conversation context across turns and sessions:</p>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 stateDiagram-v2
     [*] --> NewMessage: User sends message
-    NewMessage --> STMWrite: Save to conversations table
-    STMWrite --> STMCheck: Check message count
-    STMCheck --> UnderLimit: count lte 100
-    STMCheck --> OverLimit: count gt 100
-    OverLimit --> Truncate: Remove oldest messages
-    Truncate --> UnderLimit
-    UnderLimit --> SummaryCheck: Check summary threshold
-    SummaryCheck --> NoUpdate: Below threshold
-    SummaryCheck --> LTMUpdate: Above threshold
-    LTMUpdate --> Summarize: LLM summarizes recent msgs
-    Summarize --> WriteLTM: Update session_summaries
+
+    state "💬 Short-Term Memory" as STMPhase {
+        NewMessage --> STMWrite: Save to conversations table
+        STMWrite --> STMCheck: Check message count
+        STMCheck --> UnderLimit: count &lt;= 100
+        STMCheck --> OverLimit: count &gt; 100
+        OverLimit --> Truncate: Remove oldest messages
+        Truncate --> UnderLimit
+    }
+
+    state "🧠 Long-Term Memory" as LTMPhase {
+        UnderLimit --> SummaryCheck: Check summary threshold
+        SummaryCheck --> NoUpdate: Below threshold
+        SummaryCheck --> LTMUpdate: Above threshold
+        LTMUpdate --> Summarize: LLM summarizes recent msgs
+        Summarize --> WriteLTM: Update session_summaries
+    }
+
     WriteLTM --> [*]
     NoUpdate --> [*]
         </div>
@@ -867,21 +936,40 @@ stateDiagram-v2
       <p>The agent system uses the ReAct (Reasoning + Acting) pattern via LangGraph.</p>
 
       <h2>Agent Lifecycle</h2>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 stateDiagram-v2
     [*] --> Receive: User prompt
-    Receive --> InputGuardrails: Check safety
-    InputGuardrails --> LoadContext: Pass
-    InputGuardrails --> Blocked: Block
-    LoadContext --> Reason: Memory + RAG
-    Reason --> Act: Tool needed
-    Act --> Observe: Tool result
-    Observe --> Reason: Continue
-    Reason --> OutputGuardrails: Final answer
-    OutputGuardrails --> Respond: Pass/Flag
-    Respond --> SaveMemory
-    SaveMemory --> [*]
+
+    state "🛡️ Input Safety" as InputPhase {
+        Receive --> InputGuardrails: Validate
+        InputGuardrails --> Blocked: ❌ Block
+        InputGuardrails --> LoadContext: ✅ Pass
+    }
+
+    state "🧠 Context Loading" as ContextPhase {
+        LoadContext --> LoadSTM: Short-term memory
+        LoadSTM --> LoadLTM: Long-term summary
+        LoadLTM --> QueryRAG: Knowledge retrieval
+    }
+
+    state "🔄 ReAct Loop" as ReactPhase {
+        QueryRAG --> Reason: Build prompt
+        Reason --> Act: 🔧 Tool needed
+        Act --> Observe: Tool result
+        Observe --> Reason: Continue loop
+        Reason --> OutputGuardrails: 💬 Final answer
+    }
+
+    state "📤 Response" as OutputPhase {
+        OutputGuardrails --> Respond: ✅ Pass / ⚠️ Flag
+        Respond --> SaveSTM: Save messages
+        SaveSTM --> UpdateLTM: Summary threshold?
+        UpdateLTM --> EmitTrace: OTLP + Langfuse
+    }
+
+    EmitTrace --> [*]
+    Blocked --> [*]
         </div>
       </div>
 
@@ -915,15 +1003,49 @@ stateDiagram-v2
       </table>
 
       <h2>Provider Selection &amp; Fallback</h2>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 flowchart LR
-    A["Agent run request<br/>(provider + model)"] --> B{"Selected provider<br/>available?"}
-    B -->|"✅ Yes"| C["Use selected provider"]
-    B -->|"❌ No"| D{"Try next provider<br/>in fallback chain"}
-    D -->|"Available"| C
-    D -->|"None available"| E["⛔ Return error"]
-    C --> F["LangChain ChatModel<br/>(streaming)"]
+    subgraph REQUEST["📥 Agent Request"]
+        A["Run request<br/>(provider + model)"]
+    end
+
+    subgraph SELECTION["🔀 Provider Resolution"]
+        B{"Selected provider<br/>available?"}
+        D{"Try next in<br/>fallback chain"}
+    end
+
+    subgraph PROVIDERS["🧠 LLM Providers"]
+        P1["<b>Ollama</b><br/>Local · Always available"]
+        P2["<b>Azure OpenAI</b><br/>Cloud · API key required"]
+        P3["<b>OpenAI</b><br/>Cloud · API key required"]
+        P4["<b>Azure Foundry</b><br/>Cloud · Endpoint required"]
+    end
+
+    subgraph OUTPUT["📡 Inference"]
+        F["LangChain ChatModel<br/>(streaming response)"]
+        E["⛔ All providers failed"]
+    end
+
+    A --> B
+    B -->|"✅ Reachable"| F
+    B -->|"❌ Unreachable"| D
+    D -->|"Found"| F
+    D -->|"Exhausted"| E
+    P1 -.-> B
+    P2 -.-> B
+    P3 -.-> B
+    P4 -.-> B
+
+    classDef req fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef sel fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef prov fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef out fill:#059669,stroke:#10b981,color:#fff,rx:8
+
+    class A req
+    class B,D sel
+    class P1,P2,P3,P4 prov
+    class F,E out
         </div>
       </div>
       <p>Users select the provider/model from the Run Agent page dropdown. If the selected provider is unreachable (network error, invalid key), the factory tries the next configured provider. Ollama is always available as a fallback since it runs locally.</p>
@@ -948,18 +1070,34 @@ flowchart LR
       </table>
 
       <h3>Memory Lifecycle</h3>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 flowchart LR
-    A["New message"] --> B["Write to STM<br/>(conversations table)"]
-    B --> C{"STM count<br/>&gt; 100?"}
-    C -->|"No"| D{"Summary<br/>threshold?"}
-    C -->|"Yes"| E["Drop oldest<br/>messages (FIFO)"]
-    E --> D
-    D -->|"No"| F["✅ Done"]
-    D -->|"Yes"| G["LLM summarizes<br/>recent messages"]
-    G --> H["Update LTM<br/>(session_summaries)"]
-    H --> F
+    subgraph STM["💬 Short-Term Memory"]
+        A["New message"] --> B["Write to STM<br/>(conversations table)"]
+        B --> C{"STM count<br/>&gt; 100?"}
+        C -->|"Yes"| E["Drop oldest<br/>messages (FIFO)"]
+        E --> D
+        C -->|"No"| D{"Summary<br/>threshold?"}
+    end
+
+    subgraph LTM["🧠 Long-Term Memory"]
+        D -->|"Yes"| G["LLM summarizes<br/>recent messages"]
+        G --> H["Update LTM<br/>(session_summaries)"]
+    end
+
+    subgraph DONE["✅ Complete"]
+        D -->|"No"| F["✅ Ready for<br/>next turn"]
+        H --> F
+    end
+
+    classDef stm fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef ltm fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef done fill:#059669,stroke:#10b981,color:#fff,rx:8
+
+    class A,B,C,E stm
+    class D,G,H ltm
+    class F done
         </div>
       </div>
 
@@ -1023,19 +1161,50 @@ flowchart LR
       <p>Agents extend their capabilities through tools — functions they can invoke during the ReAct reasoning loop. The platform supports both built-in tools (hosted in the Tools Service) and external tools via the Model Context Protocol (MCP).</p>
 
       <h2>Tool Execution Flow</h2>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 flowchart LR
-    A["🤖 LLM Response"] --> B{"🔧 Tool call<br/>in output?"}
-    B -->|"No"| C["📡 Stream to user"]
-    B -->|"Yes"| D["⚙️ Agent Service<br/>parses tool call"]
-    D --> E{"Built-in<br/>or MCP?"}
-    E -->|"Built-in"| F["⚙️ Tools Service<br/>(sandboxed container)"]
-    E -->|"MCP"| G["🌐 MCP Server<br/>(external)"]
-    F --> H["📋 Tool result JSON"]
-    G --> H
-    H --> I["🤖 Re-inject into<br/>LLM context"]
-    I --> A
+    subgraph DETECT["🤖 LLM Output Analysis"]
+        A["LLM Response"] --> B{"Tool call<br/>in output?"}
+        B -->|"No"| C["📡 Stream to user"]
+    end
+
+    subgraph ROUTE["🔀 Tool Router"]
+        B -->|"Yes"| D["Parse tool name + args"]
+        D --> E{"Tool source?"}
+    end
+
+    subgraph BUILTIN["⚙️ Built-in Tools (Sandboxed)"]
+        E -->|"Built-in"| F1["web_search"]
+        E -->|"Built-in"| F2["calculator"]
+        E -->|"Built-in"| F3["http_request"]
+        E -->|"Built-in"| F4["code_execute"]
+        E -->|"Built-in"| F5["doc_lookup"]
+    end
+
+    subgraph EXTERNAL["🌐 External Protocols"]
+        E -->|"MCP"| G1["MCP Server<br/>(JSON-RPC 2.0)"]
+        E -->|"A2A"| G2["Peer Agent<br/>(task delegation)"]
+    end
+
+    subgraph RESULT["📋 Result Handling"]
+        F1 & F2 & F3 & F4 & F5 --> H["Tool result JSON"]
+        G1 & G2 --> H
+        H --> I["Re-inject into<br/>LLM context"]
+        I --> A
+    end
+
+    classDef detect fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef route fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef builtin fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+    classDef ext fill:#059669,stroke:#10b981,color:#fff,rx:8
+    classDef result fill:#6366f1,stroke:#818cf8,color:#fff,rx:8
+
+    class A,B,C detect
+    class D,E route
+    class F1,F2,F3,F4,F5 builtin
+    class G1,G2 ext
+    class H,I result
         </div>
       </div>
 
@@ -1072,19 +1241,55 @@ flowchart LR
       <p>Full-stack observability with metrics, logs, traces, and LLM-specific monitoring.</p>
 
       <h2>Stack Overview</h2>
-      <div class="docs-diagram">
+      <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 flowchart TB
-    Agent[Agent Service] -->|metrics| OTel[OTel Collector]
-    Agent -->|traces| Langfuse
-    Agent -->|logs| Loki
-    OTel --> Prometheus
-    Prometheus --> Grafana
-    Loki --> Grafana
-    Langfuse -->|eval| IH[Intelligence Hub]
+    subgraph SOURCES["📡 Telemetry Sources"]
+        AGENT["⚙️ Agent Service"]
+        TOOLS["⚙️ Tools Service"]
+    end
 
-    classDef tool fill:#0e7490,stroke:#06b6d4,color:#fff
-    class Prometheus,Grafana,Loki,OTel,Langfuse tool
+    subgraph METRICS_PIPE["📈 Metrics Pipeline"]
+        OTEL["OTel Collector<br/>:4317"]
+        PROM["Prometheus<br/>TSDB :9090"]
+    end
+
+    subgraph LOG_PIPE["📋 Logs Pipeline"]
+        LOKI["Loki<br/>Log store :3100"]
+    end
+
+    subgraph TRACE_PIPE["🔍 LLM Trace Pipeline"]
+        LF["Langfuse<br/>Trace explorer :3014"]
+        LFDB[("Langfuse DB<br/>PostgreSQL")]
+    end
+
+    subgraph DASHBOARDS["📊 Visualization"]
+        GRAF["Grafana<br/>Dashboards :3003"]
+        IH["Intelligence Hub<br/>Unified view"]
+    end
+
+    AGENT -->|"OTLP spans + metrics"| OTEL
+    TOOLS -->|"OTLP spans"| OTEL
+    AGENT -->|"LLM traces + scores"| LF
+    OTEL -->|"remote write"| PROM
+    OTEL -->|"log push"| LOKI
+    LF -->|"persist"| LFDB
+    PROM --> GRAF
+    LOKI --> GRAF
+    LF -.->|"embedded"| IH
+    GRAF -.->|"embedded"| IH
+
+    classDef src fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
+    classDef metrics fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
+    classDef logs fill:#059669,stroke:#10b981,color:#fff,rx:8
+    classDef trace fill:#dc2626,stroke:#f87171,color:#fff,rx:8
+    classDef viz fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
+
+    class AGENT,TOOLS src
+    class OTEL,PROM metrics
+    class LOKI logs
+    class LF,LFDB trace
+    class GRAF,IH viz
         </div>
       </div>
 

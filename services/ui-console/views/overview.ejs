@@ -208,16 +208,16 @@
       </a>
     </div>
   </div>
-  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">14 containerized services on <code style="font-size:0.75rem">platform-net</code> — hover any node for details, watch the data flow animate.</p>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">14 containerized services across 5 layers on <code style="font-size:0.75rem">platform-net</code> — hover any node for details, watch the data flow animate.</p>
 
   <style>
-    .topo-canvas { position:relative; min-height:520px; overflow:hidden; border-radius:14px; background:linear-gradient(145deg, rgba(139,92,246,0.02), rgba(6,182,212,0.02)); border:1px solid var(--glass-border); padding:1.5rem; }
-    .topo-node { position:absolute; border-radius:12px; padding:0.6rem 0.8rem; cursor:pointer; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); z-index:2; min-width:110px; text-align:center; backdrop-filter:blur(8px); }
+    .topo-canvas { position:relative; min-height:540px; overflow:hidden; border-radius:14px; background:linear-gradient(180deg, rgba(139,92,246,0.02), rgba(6,182,212,0.02), rgba(16,185,129,0.02)); border:1px solid var(--glass-border); padding:1rem 1.5rem; }
+    .topo-node { position:absolute; border-radius:12px; padding:0.5rem 0.7rem; cursor:pointer; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); z-index:2; min-width:105px; text-align:center; backdrop-filter:blur(8px); }
     .topo-node:hover { transform:translateY(-3px) scale(1.04); z-index:10; box-shadow:0 8px 32px rgba(0,0,0,0.15); }
-    .topo-node .tn-name { font-size:0.78rem; font-weight:700; display:block; margin-bottom:0.15rem; }
-    .topo-node .tn-tech { font-size:0.62rem; color:var(--text-3); display:block; }
-    .topo-node .tn-port { font-size:0.58rem; font-weight:600; opacity:0.7; display:block; margin-top:0.15rem; }
-    .topo-node .tn-pulse { position:absolute; top:0.45rem; right:0.45rem; width:7px; height:7px; border-radius:50%; }
+    .topo-node .tn-name { font-size:0.75rem; font-weight:700; display:block; margin-bottom:0.1rem; }
+    .topo-node .tn-tech { font-size:0.6rem; color:var(--text-3); display:block; }
+    .topo-node .tn-port { font-size:0.56rem; font-weight:600; opacity:0.7; display:block; margin-top:0.1rem; }
+    .topo-node .tn-pulse { position:absolute; top:0.4rem; right:0.4rem; width:6px; height:6px; border-radius:50%; }
     .topo-node .tn-pulse::after { content:''; position:absolute; inset:-3px; border-radius:50%; animation:topoPulse 2s ease-in-out infinite; }
     .topo-node .tn-pulse.live { background:#10b981; }
     .topo-node .tn-pulse.live::after { border:1.5px solid rgba(16,185,129,0.4); }
@@ -229,146 +229,141 @@
     .topo-tooltip .tt-desc { font-size:0.72rem; color:var(--text-2); line-height:1.5; margin-bottom:0.25rem; }
     .topo-tooltip .tt-meta { font-size:0.65rem; color:var(--text-3); }
 
-    .topo-layer-label { position:absolute; font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; z-index:1; writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); }
-
     /* Connection lines via SVG overlay */
     .topo-svg { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
     .topo-line { stroke-width:1.5; fill:none; }
     .topo-line-bg { stroke:var(--glass-border); stroke-width:2; fill:none; }
-
     @keyframes topoFlowDash { to { stroke-dashoffset:-40; } }
     .topo-flow { stroke-dasharray:8 6; animation:topoFlowDash 1.5s linear infinite; }
     .topo-flow-slow { stroke-dasharray:4 8; animation:topoFlowDash 3s linear infinite; }
     .topo-flow.paused, .topo-flow-slow.paused { animation-play-state:paused; }
 
-    /* Layer backgrounds */
-    .topo-layer { position:absolute; border-radius:14px; z-index:0; border:1.5px dashed; }
+    /* Horizontal layer bands */
+    .topo-band { position:absolute; left:0; right:0; z-index:0; border-bottom:1px dashed; display:flex; align-items:flex-start; }
+    .topo-band-label { position:absolute; left:0.75rem; font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; z-index:1; }
   </style>
 
   <div class="topo-canvas" id="topoCanvas">
-    <!-- Layer backgrounds -->
-    <div class="topo-layer" style="left:1rem;top:0.75rem;width:130px;height:calc(100% - 1.5rem);border-color:rgba(139,92,246,0.2);background:rgba(139,92,246,0.02)"></div>
-    <div class="topo-layer" style="left:155px;top:0.75rem;width:calc(100% - 330px);height:calc(100% - 1.5rem);border-color:rgba(6,182,212,0.2);background:rgba(6,182,212,0.02)"></div>
-    <div class="topo-layer" style="right:1rem;top:0.75rem;width:160px;height:calc(100% - 1.5rem);border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.02)"></div>
+    <!-- ═══ 5 HORIZONTAL LAYER BANDS ═══ -->
+    <div class="topo-band" style="top:0;height:90px;background:rgba(139,92,246,0.03);border-color:rgba(139,92,246,0.12);border-radius:14px 14px 0 0">
+      <span class="topo-band-label" style="top:4px;color:rgba(139,92,246,0.5)">PRESENTATION</span>
+    </div>
+    <div class="topo-band" style="top:90px;height:100px;background:rgba(6,182,212,0.03);border-color:rgba(6,182,212,0.12)">
+      <span class="topo-band-label" style="top:4px;color:rgba(6,182,212,0.5)">APPLICATION</span>
+    </div>
+    <div class="topo-band" style="top:190px;height:90px;background:rgba(245,158,11,0.03);border-color:rgba(245,158,11,0.12)">
+      <span class="topo-band-label" style="top:4px;color:rgba(245,158,11,0.5)">INTELLIGENCE</span>
+    </div>
+    <div class="topo-band" style="top:280px;height:90px;background:rgba(16,185,129,0.03);border-color:rgba(16,185,129,0.12)">
+      <span class="topo-band-label" style="top:4px;color:rgba(16,185,129,0.5)">DATA</span>
+    </div>
+    <div class="topo-band" style="top:370px;height:calc(100% - 370px);background:rgba(99,102,241,0.03);border-color:transparent;border-radius:0 0 14px 14px">
+      <span class="topo-band-label" style="top:4px;color:rgba(99,102,241,0.5)">OBSERVABILITY</span>
+    </div>
 
-    <!-- Layer labels -->
-    <span class="topo-layer-label" style="left:1.3rem;top:50%;color:rgba(139,92,246,0.5)">INTERFACE</span>
-    <span class="topo-layer-label" style="left:158px;top:50%;color:rgba(6,182,212,0.5)">CORE RUNTIME</span>
-    <span class="topo-layer-label" style="right:1.3rem;top:50%;color:rgba(16,185,129,0.5)">OBSERVE</span>
-
-    <!-- ═══ NODES ═══ -->
-    <!-- Interface Layer -->
-    <div class="topo-node" style="left:30px;top:60px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3)" data-tip="user">
+    <!-- ═══ LAYER 1: PRESENTATION ═══ -->
+    <div class="topo-node" style="left:100px;top:20px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3)" data-tip="user">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#8b5cf6">User</span>
       <span class="tn-tech">Browser / API</span>
     </div>
-
-    <div class="topo-node" style="left:22px;top:170px;min-width:120px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="ui">
+    <div class="topo-node" style="left:280px;top:18px;min-width:130px;background:rgba(6,182,212,0.08);border:2px solid rgba(6,182,212,0.35)" data-tip="ui">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#06b6d4">UI Console</span>
       <span class="tn-tech">Express + EJS</span>
       <span class="tn-port">:3000</span>
     </div>
-
-    <div class="topo-node" style="left:30px;top:310px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8nproxy">
+    <div class="topo-node" style="right:80px;top:20px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8nproxy">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f59e0b">n8n Proxy</span>
       <span class="tn-tech">Nginx</span>
       <span class="tn-port">:5679</span>
     </div>
 
-    <!-- Core Runtime Layer -->
-    <div class="topo-node" style="left:190px;top:30px;min-width:200px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.4);padding:0.7rem 1rem" data-tip="agent">
+    <!-- ═══ LAYER 2: APPLICATION ═══ -->
+    <div class="topo-node" style="left:100px;top:108px;min-width:210px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.4);padding:0.6rem 1rem" data-tip="agent">
       <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#8b5cf6;font-size:0.85rem">Agent Service</span>
+      <span class="tn-name" style="color:#8b5cf6;font-size:0.82rem">Agent Service</span>
       <span class="tn-tech">FastAPI + LangGraph ReAct</span>
       <span class="tn-port">:8010</span>
     </div>
-
-    <div class="topo-node" style="left:430px;top:30px;min-width:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="tools">
+    <div class="topo-node" style="left:370px;top:110px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="tools">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#06b6d4">Tools Service</span>
       <span class="tn-tech">FastAPI Sandbox</span>
       <span class="tn-port">:8011</span>
     </div>
-
-    <div class="topo-node" style="left:180px;top:130px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="ollama">
-      <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#f59e0b">Ollama</span>
-      <span class="tn-tech">Local LLM</span>
-      <span class="tn-port">:11436</span>
-    </div>
-
-    <div class="topo-node" style="left:320px;top:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="chroma">
-      <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#06b6d4">ChromaDB</span>
-      <span class="tn-tech">Vector Store</span>
-      <span class="tn-port">:8200</span>
-    </div>
-
-    <div class="topo-node" style="left:460px;top:130px;min-width:100px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3)" data-tip="sqlite">
-      <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#8b5cf6">SQLite</span>
-      <span class="tn-tech">Platform DB</span>
-      <span class="tn-port">embedded</span>
-    </div>
-
-    <div class="topo-node" style="left:180px;top:230px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="postgres">
-      <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#10b981">PostgreSQL</span>
-      <span class="tn-tech">Datastore DB</span>
-      <span class="tn-port">:5433</span>
-    </div>
-
-    <div class="topo-node" style="left:340px;top:230px;min-width:120px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8n">
+    <div class="topo-node" style="right:80px;top:110px;min-width:120px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8n">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f59e0b">n8n</span>
       <span class="tn-tech">Workflow Engine</span>
       <span class="tn-port">:5678</span>
     </div>
 
-    <div class="topo-node" style="left:210px;top:340px;min-width:140px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)" data-tip="otel">
+    <!-- ═══ LAYER 3: INTELLIGENCE ═══ -->
+    <div class="topo-node" style="left:120px;top:208px;min-width:130px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="ollama">
       <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#10b981">OTel Collector</span>
-      <span class="tn-tech">Traces + Metrics + Logs</span>
-      <span class="tn-port">:4317</span>
+      <span class="tn-name" style="color:#f59e0b">Ollama</span>
+      <span class="tn-tech">Local LLM Runtime</span>
+      <span class="tn-port">:11436</span>
+    </div>
+    <div class="topo-node" style="left:330px;top:208px;min-width:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="chroma">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#06b6d4">ChromaDB</span>
+      <span class="tn-tech">Vector Store (RAG)</span>
+      <span class="tn-port">:8200</span>
     </div>
 
-    <div class="topo-node" style="left:400px;top:340px;min-width:115px;background:rgba(244,63,94,0.08);border:1.5px solid rgba(244,63,94,0.3)" data-tip="langfuse">
+    <!-- ═══ LAYER 4: DATA ═══ -->
+    <div class="topo-node" style="left:80px;top:298px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="sqlite">
       <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#f43f5e">Langfuse</span>
-      <span class="tn-tech">LLM Tracing</span>
-      <span class="tn-port">:3014</span>
+      <span class="tn-name" style="color:#10b981">SQLite</span>
+      <span class="tn-tech">Platform DB</span>
+      <span class="tn-port">embedded</span>
     </div>
-
-    <div class="topo-node" style="left:230px;top:430px;min-width:100px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)" data-tip="langfusedb">
+    <div class="topo-node" style="left:250px;top:298px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="postgres">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">PostgreSQL</span>
+      <span class="tn-tech">Datastore DB</span>
+      <span class="tn-port">:5433</span>
+    </div>
+    <div class="topo-node" style="left:420px;top:298px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)" data-tip="langfusedb">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#10b981">Langfuse DB</span>
       <span class="tn-tech">PostgreSQL</span>
       <span class="tn-port">internal</span>
     </div>
 
-    <!-- Observe Layer -->
-    <div class="topo-node" style="right:18px;top:60px;min-width:125px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="prometheus">
+    <!-- ═══ LAYER 5: OBSERVABILITY ═══ -->
+    <div class="topo-node" style="left:50px;top:395px;min-width:120px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)" data-tip="otel">
       <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#10b981">Prometheus</span>
+      <span class="tn-name" style="color:#6366f1">OTel Collector</span>
+      <span class="tn-tech">Traces + Metrics</span>
+      <span class="tn-port">:4317</span>
+    </div>
+    <div class="topo-node" style="left:220px;top:395px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)" data-tip="prometheus">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#6366f1">Prometheus</span>
       <span class="tn-tech">Metrics Store</span>
       <span class="tn-port">:9090</span>
     </div>
-
-    <div class="topo-node" style="right:18px;top:170px;min-width:125px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="grafana">
+    <div class="topo-node" style="left:370px;top:395px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)" data-tip="loki">
       <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#10b981">Grafana</span>
-      <span class="tn-tech">Dashboards</span>
-      <span class="tn-port">:3003</span>
-    </div>
-
-    <div class="topo-node" style="right:18px;top:280px;min-width:125px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="loki">
-      <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#f59e0b">Loki</span>
+      <span class="tn-name" style="color:#6366f1">Loki</span>
       <span class="tn-tech">Log Aggregation</span>
       <span class="tn-port">:3100</span>
+    </div>
+    <div class="topo-node" style="right:40px;top:385px;min-width:110px;background:rgba(244,63,94,0.08);border:1.5px solid rgba(244,63,94,0.3)" data-tip="langfuse">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f43f5e">Langfuse</span>
+      <span class="tn-tech">LLM Tracing</span>
+      <span class="tn-port">:3014</span>
+    </div>
+    <div class="topo-node" style="left:220px;top:465px;min-width:130px;background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.35)" data-tip="grafana">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#6366f1">Grafana</span>
+      <span class="tn-tech">Unified Dashboards</span>
+      <span class="tn-port">:3003</span>
     </div>
 
     <!-- SVG overlay for connection lines -->
@@ -379,15 +374,16 @@
         <marker id="ta-amber" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#f59e0b" opacity="0.7"/></marker>
         <marker id="ta-green" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#10b981" opacity="0.7"/></marker>
         <marker id="ta-rose" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#f43f5e" opacity="0.7"/></marker>
+        <marker id="ta-indigo" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#6366f1" opacity="0.7"/></marker>
       </defs>
     </svg>
 
     <!-- Legend -->
-    <div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);display:flex;gap:1.25rem;padding:0.4rem 1rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:0.65rem;color:var(--text-3);z-index:3;backdrop-filter:blur(8px)">
-      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span> Live</div>
-      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:16px;height:2px;background:#06b6d4;display:inline-block;border-radius:1px"></span> Data flow</div>
-      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:16px;height:2px;background:#f59e0b;display:inline-block;border-radius:1px;border:none;background-image:repeating-linear-gradient(90deg,#f59e0b 0 4px,transparent 4px 8px)"></span> Async</div>
-      <span>14 containers &bull; Docker Compose</span>
+    <div style="position:absolute;bottom:0.6rem;left:50%;transform:translateX(-50%);display:flex;gap:1rem;padding:0.35rem 0.85rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:0.62rem;color:var(--text-3);z-index:3;backdrop-filter:blur(8px)">
+      <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span> Live</div>
+      <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;background:#06b6d4;display:inline-block;border-radius:1px"></span> Data flow</div>
+      <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;display:inline-block;border-radius:1px;background-image:repeating-linear-gradient(90deg,#f59e0b 0 3px,transparent 3px 6px)"></span> Async</div>
+      <span>14 containers &middot; 5 layers</span>
     </div>
   </div>
 
@@ -441,15 +437,15 @@
       { from:'agent', to:'chroma', color:'#06b6d4', marker:'ta-cyan', cls:'topo-flow' },
       { from:'agent', to:'sqlite', color:'#8b5cf6', marker:'ta-violet', cls:'topo-flow-slow' },
       { from:'agent', to:'postgres', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
-      { from:'agent', to:'otel', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
+      { from:'agent', to:'otel', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow-slow' },
       { from:'agent', to:'langfuse', color:'#f43f5e', marker:'ta-rose', cls:'topo-flow-slow' },
       { from:'ui', to:'n8nproxy', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
       { from:'n8nproxy', to:'n8n', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
       { from:'n8n', to:'agent', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
-      { from:'otel', to:'prometheus', color:'#10b981', marker:'ta-green', cls:'topo-flow' },
-      { from:'otel', to:'loki', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow' },
-      { from:'prometheus', to:'grafana', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
-      { from:'loki', to:'grafana', color:'#10b981', marker:'ta-green', cls:'topo-flow-slow' },
+      { from:'otel', to:'prometheus', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow' },
+      { from:'otel', to:'loki', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow' },
+      { from:'prometheus', to:'grafana', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow-slow' },
+      { from:'loki', to:'grafana', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow-slow' },
       { from:'langfuse', to:'langfusedb', color:'#f43f5e', marker:'ta-rose', cls:'topo-flow-slow' }
     ];
 
