@@ -52,7 +52,7 @@
 </div>
 
 <!-- Quick Access Cards -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;margin-bottom:1.25rem">
 
   <!-- Traceability Card -->
   <div class="card animate-fade-up">
@@ -82,8 +82,22 @@
     <div id="ih-eval-summary" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
   </div>
 
-  <!-- Observability Card -->
+  <!-- Guardrails Card -->
   <div class="card animate-fade-up delay-200">
+    <div class="section-header mb-1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.08));display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3 style="margin:0;font-size:0.95rem">Guardrails</h3>
+      </div>
+      <a href="/guardrails" class="btn btn-primary btn-sm">View</a>
+    </div>
+    <div id="ih-guardrails-summary" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+  </div>
+
+  <!-- Observability Card -->
+  <div class="card animate-fade-up delay-300">
     <div class="section-header mb-1">
       <div style="display:flex;align-items:center;gap:0.75rem">
         <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08));display:flex;align-items:center;justify-content:center">
@@ -265,11 +279,13 @@ function ihLoad() {
   Promise.all([
     fetch('/api/traces').then(function(r) { return r.json(); }).catch(function() { return { traces: [] }; }),
     fetch('/api/agents').then(function(r) { return r.json(); }).catch(function() { return []; }),
-    fetch('/api/observability/health').then(function(r) { return r.json(); }).catch(function() { return {}; })
+    fetch('/api/observability/health').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+    fetch('/api/guardrails').then(function(r) { return r.json(); }).catch(function() { return { guardrails: [] }; })
   ]).then(function(results) {
     var traces = results[0].traces || [];
     var agents = (results[1].agents || results[1] || []);
     var healthData = results[2];
+    var guardrailsData = results[3].guardrails || [];
 
     /* Stats */
     document.getElementById('ih-traces').textContent = traces.length;
@@ -351,6 +367,26 @@ function ihLoad() {
         '<a href="/observability" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#10b981">Full observability</a>';
     }
 
+    /* Guardrails summary */
+    if (guardrailsData.length === 0) {
+      document.getElementById('ih-guardrails-summary').innerHTML = '<p>No guardrails configured. <a href="/guardrails">Set up guardrails</a></p>';
+    } else {
+      var grActive = guardrailsData.filter(function(g) { return g.enabled; }).length;
+      var grDisabled = guardrailsData.length - grActive;
+      var catCounts = {};
+      guardrailsData.forEach(function(g) { catCounts[g.category] = (catCounts[g.category] || 0) + 1; });
+      var catLabels = { content_safety:'Content Safety', quality:'Quality', fairness:'Fairness', compliance:'Compliance', operational:'Operational' };
+      document.getElementById('ih-guardrails-summary').innerHTML =
+        '<div style="display:flex;flex-direction:column;gap:0.4rem">' +
+        '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)"><span>Active</span><span style="font-weight:600;color:#10b981">' + grActive + ' / ' + guardrailsData.length + '</span></div>' +
+        (grDisabled > 0 ? '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)"><span>Disabled</span><span style="font-weight:600;color:#f43f5e">' + grDisabled + '</span></div>' : '') +
+        Object.keys(catCounts).slice(0, 3).map(function(cat) {
+          return '<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--glass-border)"><span>' + (catLabels[cat] || cat) + '</span><span class="mono" style="font-weight:600">' + catCounts[cat] + '</span></div>';
+        }).join('') +
+        '</div>' +
+        '<a href="/guardrails" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#f59e0b">Manage guardrails</a>';
+    }
+
     /* Agent table */
     if (agents.length === 0) {
       document.getElementById('ih-agent-table').innerHTML = '<p>No agents registered yet. <a href="/agents">Create one</a></p>';
@@ -385,7 +421,7 @@ function ihLoad() {
   }).catch(function(e) {
     console.error('Intelligence Hub load failed:', e);
     var errMsg = '<p style="color:var(--text-3)">Unable to load data. <button class="btn btn-sm" onclick="ihLoad()">Retry</button></p>';
-    ['ih-traces-list','ih-eval-summary','ih-obs-summary','ih-agent-table'].forEach(function(id) {
+    ['ih-traces-list','ih-eval-summary','ih-guardrails-summary','ih-obs-summary','ih-agent-table'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el && el.textContent.trim() === 'Loading...') el.innerHTML = errMsg;
     });

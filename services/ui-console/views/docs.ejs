@@ -395,71 +395,304 @@ node server.js</code></pre>
       <div style="margin-bottom:1rem">
         <a href="/docs/architecture-diagram" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.25rem;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#06b6d4;font-size:0.82rem;font-weight:600;text-decoration:none;transition:all 0.15s"
           onmouseover="this.style.background='rgba(6,182,212,0.2)';this.style.transform='translateY(-1px)'"
-          onmouseout="this.style.background='rgba(6,182,212,0.1)';this.style.transform='none'">🗺️ Open Interactive Architecture Diagram <span style="font-size:0.7rem">↗</span></a>
+          onmouseout="this.style.background='rgba(6,182,212,0.1)';this.style.transform='none'">🗺️ Open Full-Page Architecture Diagram <span style="font-size:0.7rem">↗</span></a>
       </div>
-      <div class="docs-diagram docs-diagram-full">
-        <div class="mermaid">
-graph TD
-    subgraph PRESENTATION["🖥️ Presentation Layer"]
-        UI["<b>UI Console</b><br/>Express.js + EJS<br/>:3001 → :3000"]
-        N8P["<b>n8n Proxy</b><br/>Nginx reverse proxy<br/>:8080 → :5679"]
-    end
 
-    subgraph APPLICATION["⚙️ Application Layer"]
-        AGENT["<b>Agent Service</b><br/>FastAPI + LangGraph<br/>:8000 → :8010"]
-        TOOLS["<b>Tools Service</b><br/>FastAPI sandbox<br/>:8001 → :8011"]
-        N8N["<b>n8n</b><br/>Workflow engine<br/>:5678"]
-    end
+      <!-- ═══ Interactive Architecture Diagram ═══ -->
+      <style>
+        .arch-canvas { position:relative; min-height:560px; border-radius:14px; background:linear-gradient(180deg, rgba(139,92,246,0.02), rgba(6,182,212,0.02), rgba(16,185,129,0.02)); border:1px solid var(--glass-border); padding:1rem 1.5rem; overflow:hidden; }
+        .arch-band { position:absolute; left:0; right:0; z-index:0; display:flex; align-items:flex-start; border-bottom:1px dashed; }
+        .arch-band-label { position:absolute; left:0.6rem; font-size:0.56rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; z-index:1; }
+        .arch-svc { position:absolute; border-radius:11px; padding:0.45rem 0.65rem; cursor:pointer; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); z-index:2; min-width:100px; text-align:center; backdrop-filter:blur(8px); }
+        .arch-svc:hover { transform:translateY(-3px) scale(1.05); z-index:10; box-shadow:0 8px 28px rgba(0,0,0,0.18); }
+        .arch-svc.arch-highlight { box-shadow:0 0 0 2px rgba(6,182,212,0.6),0 8px 28px rgba(0,0,0,0.18); transform:translateY(-3px) scale(1.05); z-index:10; }
+        .arch-svc .as-name { font-size:0.74rem; font-weight:700; display:block; margin-bottom:0.08rem; }
+        .arch-svc .as-tech { font-size:0.58rem; color:var(--text-3); display:block; }
+        .arch-svc .as-port { font-size:0.54rem; font-weight:600; opacity:0.65; display:block; margin-top:0.08rem; }
+        .arch-svc .as-dot { position:absolute; top:0.35rem; right:0.35rem; width:6px; height:6px; border-radius:50%; background:#10b981; }
+        .arch-svc .as-dot::after { content:''; position:absolute; inset:-3px; border-radius:50%; border:1.5px solid rgba(16,185,129,0.4); animation:archPulse 2s ease-in-out infinite; }
+        @keyframes archPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.8);opacity:0} }
+        .arch-svg { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+        .arch-conn { stroke-width:1.5; fill:none; }
+        .arch-conn-bg { stroke:var(--glass-border); stroke-width:2; fill:none; }
+        @keyframes archFlow { to { stroke-dashoffset:-40; } }
+        .arch-anim { stroke-dasharray:8 6; animation:archFlow 1.5s linear infinite; }
+        .arch-anim-slow { stroke-dasharray:4 8; animation:archFlow 3s linear infinite; }
+        .arch-anim.paused,.arch-anim-slow.paused { animation-play-state:paused; }
+        .arch-tip { position:fixed; z-index:9999; background:var(--bg); border:1px solid var(--glass-border); border-radius:12px; padding:0.75rem 0.9rem; max-width:250px; box-shadow:0 12px 40px rgba(0,0,0,0.25); backdrop-filter:blur(16px); pointer-events:none; opacity:0; transform:translateY(6px); transition:all 0.2s ease; }
+        .arch-tip.active { opacity:1; transform:translateY(0); }
+        .arch-label-tag { position:absolute; z-index:3; font-size:0.52rem; font-weight:600; padding:1px 5px; border-radius:4px; background:rgba(0,0,0,0.3); color:var(--text-3); pointer-events:none; }
+      </style>
 
-    subgraph INTELLIGENCE["🧠 Intelligence Layer"]
-        OLLAMA["<b>Ollama</b><br/>Local LLM runtime<br/>:11434 → :11436"]
-        CHROMA["<b>ChromaDB</b><br/>Vector store (RAG)<br/>:8000 → :8200"]
-    end
+      <div class="arch-canvas" id="archCanvas">
+        <!-- 5 horizontal layer bands -->
+        <div class="arch-band" style="top:0;height:90px;background:rgba(6,182,212,0.03);border-color:rgba(6,182,212,0.12);border-radius:14px 14px 0 0">
+          <span class="arch-band-label" style="top:4px;color:rgba(6,182,212,0.5)">PRESENTATION</span>
+        </div>
+        <div class="arch-band" style="top:90px;height:110px;background:rgba(139,92,246,0.03);border-color:rgba(139,92,246,0.12)">
+          <span class="arch-band-label" style="top:4px;color:rgba(139,92,246,0.5)">APPLICATION</span>
+        </div>
+        <div class="arch-band" style="top:200px;height:100px;background:rgba(245,158,11,0.03);border-color:rgba(245,158,11,0.12)">
+          <span class="arch-band-label" style="top:4px;color:rgba(245,158,11,0.5)">INTELLIGENCE</span>
+        </div>
+        <div class="arch-band" style="top:300px;height:95px;background:rgba(16,185,129,0.03);border-color:rgba(16,185,129,0.12)">
+          <span class="arch-band-label" style="top:4px;color:rgba(16,185,129,0.5)">DATA</span>
+        </div>
+        <div class="arch-band" style="top:395px;height:calc(100% - 395px);background:rgba(99,102,241,0.03);border-color:transparent;border-radius:0 0 14px 14px">
+          <span class="arch-band-label" style="top:4px;color:rgba(99,102,241,0.5)">OBSERVABILITY</span>
+        </div>
 
-    subgraph DATA["💾 Data Layer"]
-        SQLITE[("<b>SQLite</b><br/>platform.db<br/>13 tables")]
-        DSDB[("<b>PostgreSQL</b><br/>datastore-db :5433")]
-        LFDB[("<b>PostgreSQL</b><br/>Langfuse DB")]
-    end
+        <!-- ═══ PRESENTATION ═══ -->
+        <div class="arch-svc" data-arch="user" style="left:60px;top:22px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#6366f1">User</span>
+          <span class="as-tech">Browser / API</span>
+        </div>
+        <div class="arch-svc" data-arch="ui" style="left:230px;top:18px;min-width:140px;background:rgba(6,182,212,0.08);border:2px solid rgba(6,182,212,0.35)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#06b6d4">UI Console</span>
+          <span class="as-tech">Express + EJS</span>
+          <span class="as-port">:3001 &rarr; :3000</span>
+        </div>
+        <div class="arch-svc" data-arch="n8p" style="right:70px;top:22px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#f59e0b">n8n Proxy</span>
+          <span class="as-tech">Nginx</span>
+          <span class="as-port">:8080 &rarr; :5679</span>
+        </div>
 
-    subgraph OBSERVABILITY["📊 Observability Layer"]
-        OTEL["<b>OTel Collector</b><br/>:4317 / :4318"]
-        PROM["<b>Prometheus</b><br/>:9090"]
-        GRAF["<b>Grafana</b><br/>:3000 → :3013"]
-        LOKI["<b>Loki</b><br/>:3100"]
-        LF["<b>Langfuse</b><br/>:3000 → :3012"]
-    end
+        <!-- ═══ APPLICATION ═══ -->
+        <div class="arch-svc" data-arch="agent" style="left:80px;top:108px;min-width:210px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.4);padding:0.55rem 0.9rem" >
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#8b5cf6;font-size:0.8rem">Agent Service</span>
+          <span class="as-tech">FastAPI + LangGraph ReAct</span>
+          <span class="as-port">:8000 &rarr; :8010</span>
+        </div>
+        <div class="arch-svc" data-arch="tools" style="left:350px;top:110px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#06b6d4">Tools Service</span>
+          <span class="as-tech">FastAPI Sandbox</span>
+          <span class="as-port">:8001 &rarr; :8011</span>
+        </div>
+        <div class="arch-svc" data-arch="n8n" style="right:70px;top:110px;min-width:110px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#f59e0b">n8n</span>
+          <span class="as-tech">Workflow Engine</span>
+          <span class="as-port">:5678</span>
+        </div>
 
-    UI -->|"POST /agent/run (SSE)"| AGENT
-    UI -->|"API proxy /api/*"| AGENT
-    UI -.->|"iframe embed"| N8P
-    N8P -->|"proxy pass"| N8N
-    AGENT -->|"HTTP tool calls"| TOOLS
-    AGENT -->|"chat completions"| OLLAMA
-    AGENT -->|"vector search/store"| CHROMA
-    AGENT -->|"read/write"| SQLITE
-    AGENT -->|"OTLP traces"| OTEL
-    AGENT -->|"LLM traces"| LF
-    TOOLS -->|"code sandbox"| TOOLS
-    LF -->|"persist"| LFDB
-    OTEL -->|"metrics"| PROM
-    OTEL -->|"logs"| LOKI
-    PROM --> GRAF
-    LOKI --> GRAF
+        <!-- ═══ INTELLIGENCE ═══ -->
+        <div class="arch-svc" data-arch="ollama" style="left:100px;top:220px;min-width:140px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#f59e0b">Ollama</span>
+          <span class="as-tech">Local LLM Runtime</span>
+          <span class="as-port">:11434 &rarr; :11436</span>
+        </div>
+        <div class="arch-svc" data-arch="chroma" style="left:320px;top:220px;min-width:140px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#06b6d4">ChromaDB</span>
+          <span class="as-tech">Vector Store (RAG)</span>
+          <span class="as-port">:8000 &rarr; :8200</span>
+        </div>
 
-    classDef pres fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
-    classDef app fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
-    classDef intel fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
-    classDef data fill:#059669,stroke:#10b981,color:#fff,rx:8
-    classDef obs fill:#6366f1,stroke:#818cf8,color:#fff,rx:8
+        <!-- ═══ DATA ═══ -->
+        <div class="arch-svc" data-arch="sqlite" style="left:60px;top:318px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#10b981">SQLite</span>
+          <span class="as-tech">Platform DB (13 tables)</span>
+          <span class="as-port">embedded</span>
+        </div>
+        <div class="arch-svc" data-arch="dsdb" style="left:230px;top:318px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#10b981">PostgreSQL</span>
+          <span class="as-tech">Datastore DB</span>
+          <span class="as-port">:5433</span>
+        </div>
+        <div class="arch-svc" data-arch="lfdb" style="left:400px;top:318px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#10b981">Langfuse DB</span>
+          <span class="as-tech">PostgreSQL</span>
+          <span class="as-port">internal</span>
+        </div>
 
-    class UI,N8P pres
-    class AGENT,TOOLS,N8N app
-    class OLLAMA,CHROMA intel
-    class SQLITE,LFDB data
-    class OTEL,PROM,GRAF,LOKI,LF obs
+        <!-- ═══ OBSERVABILITY ═══ -->
+        <div class="arch-svc" data-arch="otel" style="left:40px;top:415px;min-width:115px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#6366f1">OTel Collector</span>
+          <span class="as-tech">Traces + Metrics</span>
+          <span class="as-port">:4317 / :4318</span>
+        </div>
+        <div class="arch-svc" data-arch="prom" style="left:200px;top:415px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#6366f1">Prometheus</span>
+          <span class="as-tech">Metrics Store</span>
+          <span class="as-port">:9090</span>
+        </div>
+        <div class="arch-svc" data-arch="loki" style="left:350px;top:415px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#6366f1">Loki</span>
+          <span class="as-tech">Log Aggregation</span>
+          <span class="as-port">:3100</span>
+        </div>
+        <div class="arch-svc" data-arch="lf" style="right:30px;top:405px;min-width:105px;background:rgba(244,63,94,0.08);border:1.5px solid rgba(244,63,94,0.3)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#f43f5e">Langfuse</span>
+          <span class="as-tech">LLM Tracing</span>
+          <span class="as-port">:3000 &rarr; :3012</span>
+        </div>
+        <div class="arch-svc" data-arch="graf" style="left:200px;top:488px;min-width:120px;background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.35)">
+          <span class="as-dot"></span>
+          <span class="as-name" style="color:#6366f1">Grafana</span>
+          <span class="as-tech">Unified Dashboards</span>
+          <span class="as-port">:3000 &rarr; :3013</span>
+        </div>
+
+        <!-- SVG connections -->
+        <svg class="arch-svg" id="archSvg" preserveAspectRatio="none">
+          <defs>
+            <marker id="ac-cyan" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#06b6d4" opacity="0.7"/></marker>
+            <marker id="ac-violet" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#8b5cf6" opacity="0.7"/></marker>
+            <marker id="ac-amber" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#f59e0b" opacity="0.7"/></marker>
+            <marker id="ac-green" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#10b981" opacity="0.7"/></marker>
+            <marker id="ac-rose" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#f43f5e" opacity="0.7"/></marker>
+            <marker id="ac-indigo" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#6366f1" opacity="0.7"/></marker>
+          </defs>
+        </svg>
+
+        <!-- Legend -->
+        <div style="position:absolute;bottom:0.6rem;left:50%;transform:translateX(-50%);display:flex;gap:1rem;padding:0.35rem 0.8rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:0.6rem;color:var(--text-3);z-index:3;backdrop-filter:blur(8px)">
+          <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span> Live</div>
+          <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;background:#8b5cf6;display:inline-block;border-radius:1px"></span> Request</div>
+          <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;display:inline-block;border-radius:1px;background-image:repeating-linear-gradient(90deg,#f59e0b 0 3px,transparent 3px 6px)"></span> Async</div>
+          <span>Click a node to highlight connections</span>
         </div>
       </div>
+
+      <script>
+      (function() {
+        var ARCH_TIPS = {
+          user:   { t:'User / Webhook', d:'Entry point for browser, REST API, or n8n webhook triggers.' },
+          ui:     { t:'UI Console', d:'Express.js + EJS dashboard. 24 pages, 70+ API proxy routes to agent-service.', m:':3001 \\u2192 :3000' },
+          n8p:    { t:'n8n Proxy', d:'Nginx reverse proxy embedding n8n inside the dashboard via iframe.', m:':8080 \\u2192 :5679' },
+          agent:  { t:'Agent Service', d:'Core runtime \\u2014 FastAPI + LangGraph ReAct. 69+ endpoints, agent/skill/A2A/MCP registry, RAG pipeline, guardrails.', m:':8000 \\u2192 :8010' },
+          tools:  { t:'Tools Service', d:'Sandboxed tool execution: web_search, code_execute, http_fetch, file I/O.', m:':8001 \\u2192 :8011' },
+          n8n:    { t:'n8n Workflow Engine', d:'Visual workflow automation \\u2014 scheduled agent runs, webhook triggers, multi-step pipelines.', m:':5678' },
+          ollama: { t:'Ollama', d:'Local LLM inference server. Runs Llama 3, Mistral, and other open models. Runtime-switchable.', m:':11434 \\u2192 :11436' },
+          chroma: { t:'ChromaDB', d:'Vector store for embeddings and RAG retrieval. Stores document chunks for semantic search.', m:':8000 \\u2192 :8200' },
+          sqlite: { t:'SQLite', d:'Embedded platform database \\u2014 conversations, memory, agent configs, skills, audit log. 13 tables.', m:'Embedded file' },
+          dsdb:   { t:'PostgreSQL (Datastore)', d:'Document registry with JSONB columns. Stores ingestion metadata, connector configs.', m:':5433' },
+          lfdb:   { t:'Langfuse DB', d:'PostgreSQL backend for Langfuse. Stores LLM traces, sessions, evaluation data.', m:'Internal' },
+          otel:   { t:'OTel Collector', d:'OpenTelemetry Collector \\u2014 receives OTLP traces, routes metrics to Prometheus and logs to Loki.', m:':4317 / :4318' },
+          prom:   { t:'Prometheus', d:'Time-series metrics store. Scrapes agent-service and OTel for request counts, latencies.', m:':9090' },
+          loki:   { t:'Loki', d:'Log aggregation backend. Receives structured logs from OTel Collector.', m:':3100' },
+          graf:   { t:'Grafana', d:'Unified dashboards: Prometheus metrics + Loki logs + custom panels.', m:':3000 \\u2192 :3013' },
+          lf:     { t:'Langfuse', d:'LLM observability \\u2014 trace viewer, cost tracking, latency analysis. Captures every LLM call.', m:':3000 \\u2192 :3012' }
+        };
+
+        var archLines = [
+          { from:'user', to:'ui', color:'#8b5cf6', marker:'ac-violet', cls:'arch-anim' },
+          { from:'ui', to:'agent', color:'#06b6d4', marker:'ac-cyan', cls:'arch-anim' },
+          { from:'ui', to:'n8p', color:'#f59e0b', marker:'ac-amber', cls:'arch-anim-slow' },
+          { from:'n8p', to:'n8n', color:'#f59e0b', marker:'ac-amber', cls:'arch-anim-slow' },
+          { from:'agent', to:'tools', color:'#06b6d4', marker:'ac-cyan', cls:'arch-anim' },
+          { from:'agent', to:'ollama', color:'#f59e0b', marker:'ac-amber', cls:'arch-anim' },
+          { from:'agent', to:'chroma', color:'#06b6d4', marker:'ac-cyan', cls:'arch-anim' },
+          { from:'agent', to:'sqlite', color:'#8b5cf6', marker:'ac-violet', cls:'arch-anim-slow' },
+          { from:'agent', to:'otel', color:'#6366f1', marker:'ac-indigo', cls:'arch-anim-slow' },
+          { from:'agent', to:'lf', color:'#f43f5e', marker:'ac-rose', cls:'arch-anim-slow' },
+          { from:'n8n', to:'agent', color:'#f59e0b', marker:'ac-amber', cls:'arch-anim-slow' },
+          { from:'lf', to:'lfdb', color:'#f43f5e', marker:'ac-rose', cls:'arch-anim-slow' },
+          { from:'otel', to:'prom', color:'#6366f1', marker:'ac-indigo', cls:'arch-anim' },
+          { from:'otel', to:'loki', color:'#6366f1', marker:'ac-indigo', cls:'arch-anim' },
+          { from:'prom', to:'graf', color:'#6366f1', marker:'ac-indigo', cls:'arch-anim-slow' },
+          { from:'loki', to:'graf', color:'#6366f1', marker:'ac-indigo', cls:'arch-anim-slow' }
+        ];
+
+        function archDrawLines() {
+          var svg = document.getElementById('archSvg');
+          var canvas = document.getElementById('archCanvas');
+          if (!svg || !canvas) return;
+          var cr = canvas.getBoundingClientRect();
+          svg.setAttribute('viewBox', '0 0 ' + cr.width + ' ' + cr.height);
+          var nodes = {};
+          canvas.querySelectorAll('.arch-svc[data-arch]').forEach(function(n) {
+            var r = n.getBoundingClientRect();
+            nodes[n.dataset.arch] = { cx:r.left-cr.left+r.width/2, cy:r.top-cr.top+r.height/2 };
+          });
+          var html = '';
+          archLines.forEach(function(l) {
+            var a = nodes[l.from], b = nodes[l.to];
+            if (!a || !b) return;
+            var dx=b.cx-a.cx, dy=b.cy-a.cy, dist=Math.sqrt(dx*dx+dy*dy);
+            if (dist<1) return;
+            var nx=dx/dist, ny=dy/dist;
+            var x1=a.cx+nx*Math.min(45,dist*0.3), y1=a.cy+ny*Math.min(22,dist*0.3);
+            var x2=b.cx-nx*Math.min(45,dist*0.3), y2=b.cy-ny*Math.min(22,dist*0.3);
+            html += '<line class="arch-conn-bg" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
+            html += '<line class="arch-conn '+l.cls+'" data-from="'+l.from+'" data-to="'+l.to+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+l.color+'" marker-end="url(#'+l.marker+')"/>';
+          });
+          var defs = svg.querySelector('defs');
+          svg.innerHTML = '';
+          svg.appendChild(defs);
+          svg.insertAdjacentHTML('beforeend', html);
+        }
+
+        /* Click-to-highlight */
+        var archSelected = null;
+        document.getElementById('archCanvas').addEventListener('click', function(e) {
+          var node = e.target.closest('.arch-svc[data-arch]');
+          var id = node ? node.dataset.arch : null;
+          /* Clear previous */
+          document.querySelectorAll('.arch-svc.arch-highlight').forEach(function(n) { n.classList.remove('arch-highlight'); });
+          document.querySelectorAll('.arch-conn').forEach(function(l) { l.style.opacity=''; l.style.strokeWidth=''; });
+          document.querySelectorAll('.arch-conn-bg').forEach(function(l) { l.style.opacity=''; });
+          if (!id || id === archSelected) { archSelected = null; return; }
+          archSelected = id;
+          node.classList.add('arch-highlight');
+          /* Dim unrelated connections, bold related ones */
+          document.querySelectorAll('.arch-conn').forEach(function(l) {
+            if (l.dataset.from === id || l.dataset.to === id) { l.style.opacity='1'; l.style.strokeWidth='2.5'; }
+            else { l.style.opacity='0.15'; }
+          });
+          document.querySelectorAll('.arch-conn-bg').forEach(function(l) { l.style.opacity='0.15'; });
+          /* Highlight connected nodes */
+          archLines.forEach(function(ln) {
+            if (ln.from === id || ln.to === id) {
+              var peerId = ln.from === id ? ln.to : ln.from;
+              var peerEl = document.querySelector('.arch-svc[data-arch="'+peerId+'"]');
+              if (peerEl) peerEl.classList.add('arch-highlight');
+            }
+          });
+        });
+
+        /* Tooltip */
+        var _archTip = null;
+        document.getElementById('archCanvas').addEventListener('mouseover', function(e) {
+          var node = e.target.closest('.arch-svc[data-arch]');
+          if (!node) return;
+          var info = ARCH_TIPS[node.dataset.arch];
+          if (!info) return;
+          if (_archTip) _archTip.remove();
+          var tip = document.createElement('div');
+          tip.className = 'arch-tip';
+          tip.innerHTML = '<div style="font-size:0.82rem;font-weight:700;color:var(--text-1);margin-bottom:0.15rem">'+info.t+'<\\/div><div style="font-size:0.72rem;color:var(--text-2);line-height:1.5;margin-bottom:0.2rem">'+info.d+'<\\/div>'+(info.m?'<div style="font-size:0.65rem;color:var(--text-3)">'+info.m+'<\\/div>':'');
+          document.body.appendChild(tip);
+          var r = node.getBoundingClientRect();
+          tip.style.left = Math.min(r.right+10, window.innerWidth-260)+'px';
+          tip.style.top = r.top+'px';
+          if (parseInt(tip.style.top)+120 > window.innerHeight) tip.style.top = (window.innerHeight-130)+'px';
+          _archTip = tip;
+          requestAnimationFrame(function(){ tip.classList.add('active'); });
+        });
+        document.getElementById('archCanvas').addEventListener('mouseout', function(e) {
+          var node = e.target.closest('.arch-svc[data-arch]');
+          if (node && _archTip) { _archTip.classList.remove('active'); setTimeout(function(){ if(_archTip){_archTip.remove();_archTip=null;} },200); }
+        });
+
+        window.addEventListener('load', function(){ setTimeout(archDrawLines, 150); });
+        window.addEventListener('resize', archDrawLines);
+      })();
+      <\/script>
 
       <h2>Layer Responsibilities</h2>
       <table class="docs-table">

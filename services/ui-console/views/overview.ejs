@@ -149,20 +149,85 @@
     <div style="border:2px solid rgba(16,185,129,0.35);border-radius:16px;padding:1.25rem;margin-bottom:1rem;background:linear-gradient(135deg, rgba(16,185,129,0.04), rgba(16,185,129,0.01))">
       <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
         <div style="font-size:1.1rem;font-weight:700;color:#10b981;letter-spacing:0.5px">Govern</div>
-        <span style="font-size:0.72rem;color:var(--text-3)">Guardrails, Security, Policy & Compliance</span>
+        <span style="font-size:0.72rem;color:var(--text-3)">Guardrails, Observability, Traceability &amp; Evaluation</span>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
-        <span class="arch-pill arch-pill-active">10 Guardrails (runtime)</span>
-        <span class="arch-pill arch-pill-active">PII Detection</span>
-        <span class="arch-pill arch-pill-active">Prompt Injection Guard</span>
-        <span class="arch-pill arch-pill-active">Toxicity Filter</span>
-        <span class="arch-pill arch-pill-active">Output Length Control</span>
-        <span class="arch-pill arch-pill-active">Topic Restriction</span>
-        <span class="arch-pill arch-pill-active">Data Leak Prevention</span>
-        <span class="arch-pill arch-pill-warn">Agent Identity (RBAC)</span>
-        <span class="arch-pill arch-pill-warn">Agent Gateway</span>
-        <span class="arch-pill arch-pill-warn">Anomaly Detection</span>
-        <span class="arch-pill arch-pill-warn">Compliance Audit</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <!-- Left column -->
+        <div>
+          <!-- Guardrails -->
+          <div style="border:1.5px solid rgba(245,158,11,0.25);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem;background:rgba(245,158,11,0.03)">
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span style="font-size:0.78rem;font-weight:700;color:#f59e0b">Guardrails</span>
+              <span style="font-size:0.62rem;color:var(--text-3);margin-left:auto">Runtime Safety</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
+              <span class="arch-pill arch-pill-active">PII Detection</span>
+              <span class="arch-pill arch-pill-active">Prompt Injection Guard</span>
+              <span class="arch-pill arch-pill-active">Toxicity Filter</span>
+              <span class="arch-pill arch-pill-active">Output Length Control</span>
+              <span class="arch-pill arch-pill-active">Topic Restriction</span>
+              <span class="arch-pill arch-pill-active">Data Leak Prevention</span>
+              <span class="arch-pill arch-pill-active">10 Guardrails (runtime)</span>
+            </div>
+          </div>
+          <!-- Traceability -->
+          <div style="border:1.5px solid rgba(6,182,212,0.25);border-radius:12px;padding:0.85rem;background:rgba(6,182,212,0.03)">
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#06b6d4" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style="font-size:0.78rem;font-weight:700;color:#06b6d4">Traceability</span>
+              <span style="font-size:0.62rem;color:var(--text-3);margin-left:auto">Distributed Traces</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
+              <span class="arch-pill arch-pill-active">OpenTelemetry</span>
+              <span class="arch-pill arch-pill-active">LLM Tracing (Langfuse)</span>
+              <span class="arch-pill arch-pill-active">Traceability Dashboard</span>
+            </div>
+          </div>
+        </div>
+        <!-- Right column -->
+        <div>
+          <!-- Observability -->
+          <div style="border:1.5px solid rgba(99,102,241,0.25);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem;background:rgba(99,102,241,0.03)">
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#6366f1" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <span style="font-size:0.78rem;font-weight:700;color:#6366f1">Observability</span>
+              <span style="font-size:0.62rem;color:var(--text-3);margin-left:auto">Metrics &amp; Dashboards</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
+              <span class="arch-pill arch-pill-active">Prometheus Metrics</span>
+              <span class="arch-pill arch-pill-active">Grafana Dashboards</span>
+              <span class="arch-pill arch-pill-active">Loki Log Aggregation</span>
+              <span class="arch-pill arch-pill-active">Intelligence Hub</span>
+              <span class="arch-pill arch-pill-active">Control Matrix</span>
+            </div>
+          </div>
+          <!-- Evaluation -->
+          <div style="border:1.5px solid rgba(139,92,246,0.25);border-radius:12px;padding:0.85rem;background:rgba(139,92,246,0.03)">
+            <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              <span style="font-size:0.78rem;font-weight:700;color:#8b5cf6">Evaluation</span>
+              <span style="font-size:0.62rem;color:var(--text-3);margin-left:auto">Quality &amp; Scoring</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
+              <span class="arch-pill arch-pill-active">Agent Evaluation</span>
+              <span class="arch-pill arch-pill-active">RAG Evaluation</span>
+              <span class="arch-pill arch-pill-warn">Agent Simulation</span>
+              <span class="arch-pill arch-pill-warn">A/B Testing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Planned / Roadmap items -->
+      <div style="margin-top:0.75rem;padding-top:0.6rem;border-top:1px solid rgba(16,185,129,0.12)">
+        <span style="font-size:0.68rem;font-weight:600;color:var(--text-3);letter-spacing:0.3px">ROADMAP</span>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem">
+          <span class="arch-pill arch-pill-warn">Agent Identity (RBAC)</span>
+          <span class="arch-pill arch-pill-warn">Agent Gateway</span>
+          <span class="arch-pill arch-pill-warn">Anomaly Detection</span>
+          <span class="arch-pill arch-pill-warn">Compliance Audit</span>
+          <span class="arch-pill arch-pill-warn">Auto-Optimizer</span>
+        </div>
       </div>
     </div>
 
@@ -170,17 +235,14 @@
     <div style="border:2px solid rgba(245,158,11,0.35);border-radius:16px;padding:1.25rem;background:linear-gradient(135deg, rgba(245,158,11,0.04), rgba(245,158,11,0.01))">
       <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
         <div style="font-size:1.1rem;font-weight:700;color:#f59e0b;letter-spacing:0.5px">Optimize</div>
-        <span style="font-size:0.72rem;color:var(--text-3)">Evaluation, Observability, Simulation & Continuous Improvement</span>
+        <span style="font-size:0.72rem;color:var(--text-3)">Continuous Improvement &amp; Feedback Loops</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
-        <span class="arch-pill arch-pill-active">Agent Evaluation</span>
-        <span class="arch-pill arch-pill-active">Observability (Grafana)</span>
-        <span class="arch-pill arch-pill-active">Prometheus Metrics</span>
-        <span class="arch-pill arch-pill-active">LLM Tracing (Langfuse)</span>
-        <span class="arch-pill arch-pill-active">OpenTelemetry</span>
-        <span class="arch-pill arch-pill-active">Traceability Dashboard</span>
-        <span class="arch-pill arch-pill-active">Intelligence Hub</span>
-        <span class="arch-pill arch-pill-active">Control Matrix</span>
+        <span class="arch-pill arch-pill-active">Prompt Versioning</span>
+        <span class="arch-pill arch-pill-active">Skill Iteration</span>
+        <span class="arch-pill arch-pill-active">Model Comparison</span>
+        <span class="arch-pill arch-pill-active">Cost Tracking</span>
+        <span class="arch-pill arch-pill-active">Latency Profiling</span>
         <span class="arch-pill arch-pill-warn">Agent Simulation</span>
         <span class="arch-pill arch-pill-warn">A/B Testing</span>
         <span class="arch-pill arch-pill-warn">Auto-Optimizer</span>
