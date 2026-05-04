@@ -110,6 +110,7 @@
       <a class="ds-link" data-section="building-blocks" onclick="showDoc('building-blocks')">Building Blocks</a>
       <a class="ds-link" data-section="decisions" onclick="showDoc('decisions')">Decisions (ADRs)</a>
       <a class="ds-link" data-section="architecture" onclick="showDoc('architecture')">System Architecture</a>
+      <a class="ds-link" href="/docs/architecture-diagram" target="_blank" style="display:flex;align-items:center;gap:0.35rem">Interactive Diagram <span style="font-size:0.65rem">↗</span></a>
       <a class="ds-link" data-section="dataflow" onclick="showDoc('dataflow')">Data Flow</a>
       <a class="ds-link" data-section="network" onclick="showDoc('network')">Network Architecture</a>
       <a class="ds-link" data-section="services" onclick="showDoc('services')">Service Reference</a>
@@ -320,6 +321,11 @@ node server.js</code></pre>
       </div>
 
       <h2>Platform Architecture</h2>
+      <div style="margin-bottom:1rem">
+        <a href="/docs/architecture-diagram" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1.25rem;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:8px;color:#06b6d4;font-size:0.82rem;font-weight:600;text-decoration:none;transition:all 0.15s"
+          onmouseover="this.style.background='rgba(6,182,212,0.2)';this.style.transform='translateY(-1px)'"
+          onmouseout="this.style.background='rgba(6,182,212,0.1)';this.style.transform='none'">🗺️ Open Interactive Architecture Diagram <span style="font-size:0.7rem">↗</span></a>
+      </div>
       <div class="docs-diagram docs-diagram-full">
         <div class="mermaid">
 graph TD
