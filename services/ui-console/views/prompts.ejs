@@ -89,6 +89,7 @@
       <div><span class="field-label">Name:</span> <span id="ai-gen-name" style="color:var(--text-1)"></span></div>
       <div><span class="field-label">Tags:</span> <span id="ai-gen-tags" style="color:var(--text-2)"></span></div>
     </div>
+    <div id="ai-gen-refs-badge" style="display:none;margin-bottom:0.75rem"></div>
     <div><span class="field-label">Description:</span> <span id="ai-gen-description" style="color:var(--text-2);font-size:0.85rem"></span></div>
     <div style="background:var(--input-bg);border-radius:8px;padding:0.75rem;font-family:var(--mono);font-size:0.8rem;color:var(--text-2);margin-top:0.75rem;max-height:200px;overflow-y:auto;white-space:pre-wrap" id="ai-gen-content"></div>
     <div style="display:flex;gap:0.75rem;margin-top:1rem">
@@ -228,6 +229,18 @@
       scoreEl.textContent = score + '/10';
       scoreEl.style.background = score >= 7 ? '#10b98122' : score >= 4 ? '#f59e0b22' : '#ef444422';
       scoreEl.style.color = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
+      var refsBadge = document.getElementById('ai-gen-refs-badge');
+      if (d.references_used && d.references_used.length) {
+        var refsHtml = '<div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.6rem 0.85rem;background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.08));border:1px solid #0ea5e944;border-radius:8px">';
+        refsHtml += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0ea5e9" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>';
+        refsHtml += '<div style="font-size:0.78rem"><span style="font-weight:600;color:#0ea5e9">Org References Applied</span><ul style="margin:0.25rem 0 0 1rem;color:var(--text-2);list-style:disc">';
+        d.references_used.forEach(function(ref) { refsHtml += '<li>' + escapeHtml(ref) + '</li>'; });
+        refsHtml += '</ul></div></div>';
+        refsBadge.innerHTML = refsHtml;
+        refsBadge.style.display = 'block';
+      } else {
+        refsBadge.style.display = 'none';
+      }
       document.getElementById('ai-gen-preview').style.display = 'block';
     } catch(e) { showToast('Error: ' + e.message, 'error'); }
     finally { btn.disabled = false; btn.textContent = 'Generate with AI'; }
@@ -314,6 +327,13 @@
         html += '<div><span style="font-size:0.75rem;font-weight:600;color:#0ea5e9">Suggestions:</span><ul style="margin:0.25rem 0 0 1rem;font-size:0.78rem;color:var(--text-2)">';
         (d.suggestions || []).forEach(function(s) { html += '<li>' + escapeHtml(s) + '</li>'; });
         html += '</ul></div>';
+      }
+      if (d.references_used && d.references_used.length) {
+        html += '<div style="margin-top:0.75rem;padding:0.6rem 0.85rem;background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.08));border:1px solid #0ea5e944;border-radius:8px;display:flex;align-items:flex-start;gap:0.5rem">';
+        html += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0ea5e9" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>';
+        html += '<div style="font-size:0.78rem"><span style="font-weight:600;color:#0ea5e9">Validated Against Org References</span><ul style="margin:0.25rem 0 0 1rem;color:var(--text-2);list-style:disc">';
+        d.references_used.forEach(function(ref) { html += '<li>' + escapeHtml(ref) + '</li>'; });
+        html += '</ul></div></div>';
       }
       html += '</div>';
       vr.innerHTML = html;

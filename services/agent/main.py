@@ -1341,6 +1341,8 @@ Respond ONLY with valid JSON."""
                 result = await llm.ainvoke(msgs)
                 parsed = _extract_json(result.content)
                 if parsed is not None:
+                    if references:
+                        parsed["references_used"] = references
                     return parsed
                 return {
                     "score": 0,
@@ -1436,6 +1438,8 @@ Respond ONLY with the JSON object."""
                 result = await llm.ainvoke(msgs)
                 parsed = _extract_json(result.content or "")
                 if parsed is not None:
+                    if references:
+                        parsed["references_used"] = references
                     return parsed
                 return {"error": "LLM returned invalid JSON", "content": "", "name": ""}
             except Exception as e2:
