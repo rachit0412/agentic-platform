@@ -1383,7 +1383,8 @@ async def skills_decompose_endpoint(request: Request):
     data = await request.json()
     concept = data.get("concept", "").strip()
     base_prompt = data.get("base_prompt", "").strip()
-    count = min(int(data.get("count", 5)), 10)
+    raw_count = data.get("count")
+    count = min(int(raw_count), 10) if raw_count is not None else None
     available_tools = data.get("available_tools", [])
     best_practices = data.get("best_practices", "")
 
@@ -1407,8 +1408,9 @@ You are an expert skill architect for an AI agent platform.
 A skill is a packaged capability: code + prompt(s) + tools + contracts, exposed as a callable function.
 Skills follow the Agent Skills open standard (agentskills.io).
 
-Your task: given a concept or base prompt, decompose it into a FAMILY of {count} complementary skills.
+Your task: given a concept or base prompt, decompose it into a FAMILY of {(str(count) + ' ') if count else ''}complementary skills.
 Each skill should be a distinct, focused capability that together cover the full lifecycle.
+{'Choose the right number of skills to fully cover the domain.' if not count else ''}
 
 Think about it this way:
 - A prompt defines HOW to do something
@@ -1444,9 +1446,7 @@ Rules:
 """
 
     if best_practices:
-        system += (
-            "\n\nOrganizational Best Practices to align with:\n" + best_practices
-        )
+        system += "\n\nOrganizational Best Practices to align with:\n" + best_practices
 
     user_parts = []
     if concept:
@@ -1457,7 +1457,7 @@ Rules:
         user_parts.append(f"Available Tools: {', '.join(available_tools)}")
 
     user_msg = (
-        f"Decompose this into a family of {count} skills:\n\n"
+        f"Decompose this into a family of {(str(count) + ' ') if count else ''}skills:\n\n"
         + "\n".join(user_parts)
     )
 

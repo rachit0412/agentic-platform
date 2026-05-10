@@ -84,19 +84,24 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr auto;gap:0.5rem">
       <div>
-        <label class="field-label">Number of Skills</label>
-        <input type="number" id="decompose-count" class="input" min="2" max="10" value="5" style="width:100%">
+        <label class="field-label">Number of Skills <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">(blank = AI decides)</span></label>
+        <input type="number" id="decompose-count" class="input" min="2" max="10" placeholder="auto" style="width:100%">
       </div>
       <div>
         <label class="field-label">Model</label>
-        <select id="decompose-model" class="input" style="height:38px;font-size:0.82rem;min-width:160px">
+        <select id="decompose-model" class="input" style="min-height:38px;font-size:0.82rem;min-width:160px">
           <option value="">Active Model</option>
         </select>
       </div>
     </div>
   </div>
   <div style="margin-top:0.75rem">
-    <label class="field-label">Base Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; optional: paste an existing prompt to build skills around it</span></label>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
+      <label class="field-label" style="margin-bottom:0">Base Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; optional: paste an existing prompt or pick from your library</span></label>
+      <select id="decompose-prompt-picker" class="input" style="width:260px;min-height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPromptToDecompose()">
+        <option value="">&mdash; Select from Prompt Library &mdash;</option>
+      </select>
+    </div>
     <textarea id="decompose-prompt" class="input" rows="4" placeholder="e.g. You are a technical documentation writer. Write clear, accurate docs for engineers..." style="resize:vertical;font-family:var(--mono)"></textarea>
   </div>
   <div style="display:flex;gap:0.75rem;margin-top:1rem;align-items:center">
@@ -156,7 +161,7 @@
   <div style="margin-top:1rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
       <label class="field-label" style="margin-bottom:0">Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the instructional context: what the model should do, how it should behave, what output is expected</span></label>
-      <select id="prompt-library-picker" class="input" style="width:260px;height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPrompt()">
+      <select id="prompt-library-picker" class="input" style="width:260px;min-height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPrompt()">
         <option value="">&mdash; Select from Prompt Library &mdash;</option>
       </select>
     </div>
@@ -200,7 +205,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
       <div>
         <label class="field-label">AI Model <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; used for AI Enrich</span></label>
-        <select id="enrich-model" class="input" style="height:36px;font-size:0.82rem">
+        <select id="enrich-model" class="input" style="min-height:36px;font-size:0.82rem">
           <option value="">Active Model</option>
         </select>
       </div>
@@ -243,7 +248,7 @@
       '<div><label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:2px">Name *</label>' +
       '<input type="text" class="input param-name" placeholder="e.g. topic" value="' + escapeHtml(d.name || '') + '" style="height:32px;font-size:0.8rem"></div>' +
       '<div><label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:2px">Type</label>' +
-      '<select class="input param-type" style="height:32px;font-size:0.8rem">' +
+      '<select class="input param-type" style="min-height:32px;font-size:0.8rem">' +
         '<option value="string"' + (d.type === 'string' || !d.type ? ' selected' : '') + '>string</option>' +
         '<option value="number"' + (d.type === 'number' ? ' selected' : '') + '>number</option>' +
         '<option value="boolean"' + (d.type === 'boolean' ? ' selected' : '') + '>boolean</option>' +
@@ -767,9 +772,29 @@
           dst.appendChild(opt);
         }
       }
+      // Populate prompt library picker for decompose
+      var picker = document.getElementById('decompose-prompt-picker');
+      if (picker.options.length <= 1 && libraryPrompts.length) {
+        picker.innerHTML = '<option value="">\u2014 Select from Prompt Library \u2014</option>' +
+          libraryPrompts.map(function(p) {
+            return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.name) + ' (' + escapeHtml(p.category) + ')' + '</option>';
+          }).join('');
+      }
     } else {
       panel.style.display = 'none';
     }
+  }
+
+  function applyLibraryPromptToDecompose() {
+    var picker = document.getElementById('decompose-prompt-picker');
+    var selected = libraryPrompts.find(function(p) { return p.id === picker.value; });
+    if (selected) {
+      document.getElementById('decompose-prompt').value = selected.content;
+      if (!document.getElementById('decompose-concept').value.trim()) {
+        document.getElementById('decompose-concept').value = selected.name;
+      }
+    }
+    picker.value = '';
   }
 
   async function decomposeSkills() {
@@ -786,7 +811,7 @@
     var payload = {
       concept: concept,
       base_prompt: basePrompt,
-      count: parseInt(document.getElementById('decompose-count').value) || 5,
+      count: document.getElementById('decompose-count').value.trim() ? parseInt(document.getElementById('decompose-count').value) : null,
       available_tools: allTools,
       best_practices: getBP().join('. ')
     };
@@ -875,9 +900,13 @@
       }
       showToast(s.name + ' saved', 'success');
       var el = document.getElementById('decompose-skill-' + idx);
-      if (el) { el.style.opacity = '0.4'; el.style.pointerEvents = 'none'; }
+      if (el) el.remove();
       _decomposeResult.skills[idx]._saved = true;
       loadSkills();
+      // Auto-dismiss if all skills saved
+      if (_decomposeResult.skills.every(function(sk){ return sk._saved; })) {
+        setTimeout(function(){ dismissDecompose(); }, 600);
+      }
     } catch(e) { showToast('Error: ' + e.message, 'error'); }
   }
 

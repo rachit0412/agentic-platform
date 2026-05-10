@@ -94,7 +94,7 @@ app.post("/api/skills/enrich", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills/decompose", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/decompose`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(60000) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/decompose`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(120000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
