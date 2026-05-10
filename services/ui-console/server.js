@@ -111,6 +111,14 @@ app.delete("/api/prompts/:id", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
+app.post("/api/prompts/validate", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts/validate`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/prompts/generate", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/prompts/generate`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
 
 // ── API: Agents CRUD proxy ─────────────────────────────
 app.get("/api/agents", async (req, res) => {
@@ -423,6 +431,28 @@ app.get("/api/audit-log", async (req, res) => {
     if (req.query.action) params.set("action", req.query.action);
     const qs = params.toString() ? `?${params.toString()}` : '';
     const resp = await fetch(`${AGENT_URL}/audit-log${qs}`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── LLM Activity API proxy ───────────────────────────────────────────────
+app.get("/api/llm-activity", async (req, res) => {
+  try {
+    const params = new URLSearchParams();
+    if (req.query.limit) params.set("limit", req.query.limit);
+    if (req.query.session_id) params.set("session_id", req.query.session_id);
+    if (req.query.model) params.set("model", req.query.model);
+    if (req.query.provider) params.set("provider", req.query.provider);
+    if (req.query.since) params.set("since", req.query.since);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const resp = await fetch(`${AGENT_URL}/llm-activity${qs}`, { signal: AbortSignal.timeout(10000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+app.get("/api/llm-activity/summary", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/llm-activity/summary`, { signal: AbortSignal.timeout(10000) });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
@@ -1041,7 +1071,7 @@ app.get("/rest", (req, res) => res.render("rest", { urls: externalUrls }));
 app.get("/intelligence-hub", (req, res) => res.render("intelligence-hub", { urls: externalUrls }));
 app.get("/agent-hub", (req, res) => res.render("agent-hub", { urls: externalUrls }));
 app.get("/data-ingestion", (req, res) => res.render("data-ingestion", { urls: externalUrls }));
-app.get("/llm-activity", (req, res) => res.redirect("/intelligence-hub"));
+app.get("/llm-activity", (req, res) => res.render("llm-activity", { urls: externalUrls }));
 app.get("/traceability", (req, res) => res.render("traceability", { urls: externalUrls }));
 app.get("/evaluation", (req, res) => res.render("evaluation", { urls: externalUrls }));
 app.get("/observability", (req, res) => res.render("observability", { urls: externalUrls }));

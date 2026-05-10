@@ -20,10 +20,67 @@
       <option value="custom">Custom</option>
     </select>
   </div>
-  <button class="btn btn-primary" onclick="showCreateForm()">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    New Prompt
-  </button>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn" onclick="showAIGenerate()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+      AI Generate
+    </button>
+    <button class="btn btn-primary" onclick="showCreateForm()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Prompt
+    </button>
+  </div>
+</div>
+
+<!-- AI Generate Panel -->
+<div class="card animate-fade-up" id="ai-generate-panel" style="display:none;border:1px solid #6366f144;background:linear-gradient(135deg,rgba(99,102,241,0.05),rgba(139,92,246,0.05))">
+  <h3 style="display:flex;align-items:center;gap:0.5rem;margin:0">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+    AI Prompt Generator
+  </h3>
+  <p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0 1rem">Describe what you want your prompt to do and the AI will generate a production-ready prompt for you.</p>
+  <div style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:end">
+    <div>
+      <label class="field-label">Describe your prompt</label>
+      <textarea id="ai-gen-desc" class="input" rows="3" placeholder="e.g. A prompt that instructs the model to act as a code reviewer, checking for bugs, security issues, and performance problems, and outputting results in markdown" style="resize:vertical;font-family:var(--mono)"></textarea>
+    </div>
+    <div>
+      <label class="field-label">Category</label>
+      <select id="ai-gen-category" class="input" style="height:34px">
+        <option value="general">General</option>
+        <option value="research">Research</option>
+        <option value="coding">Coding</option>
+        <option value="analysis">Analysis</option>
+        <option value="writing">Writing</option>
+        <option value="summarization">Summarization</option>
+        <option value="qa">QA / Testing</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:0.75rem;margin-top:1rem">
+    <button class="btn btn-primary" id="ai-gen-btn" onclick="generatePrompt()">Generate with AI</button>
+    <button class="btn" onclick="hideAIGenerate()">Cancel</button>
+  </div>
+  <!-- AI Generated Preview -->
+  <div id="ai-gen-preview" style="display:none;margin-top:1.25rem;border-top:1px solid var(--glass-border);padding-top:1rem">
+    <h4 style="margin:0 0 0.5rem;display:flex;align-items:center;gap:0.5rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Generated Prompt
+      <span id="ai-gen-score" class="badge" style="margin-left:auto"></span>
+    </h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+      <div><span class="field-label">Name:</span> <span id="ai-gen-name" style="color:var(--text-1)"></span></div>
+      <div><span class="field-label">Tags:</span> <span id="ai-gen-tags" style="color:var(--text-2)"></span></div>
+    </div>
+    <div><span class="field-label">Description:</span> <span id="ai-gen-description" style="color:var(--text-2);font-size:0.85rem"></span></div>
+    <div style="background:var(--input-bg);border-radius:8px;padding:0.75rem;font-family:var(--mono);font-size:0.8rem;color:var(--text-2);margin-top:0.75rem;max-height:200px;overflow-y:auto;white-space:pre-wrap" id="ai-gen-content"></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button class="btn btn-primary" onclick="acceptGenerated()">Accept &amp; Edit</button>
+      <button class="btn" onclick="saveGeneratedDirectly()">Save Directly</button>
+      <button class="btn" onclick="generatePrompt()">Regenerate</button>
+    </div>
+  </div>
 </div>
 
 <!-- Create / Edit Form -->
@@ -54,9 +111,17 @@
     <input type="text" id="prompt-desc" class="input" placeholder="e.g. Instructs the model to perform deep research with citations" maxlength="500">
   </div>
   <div style="margin-top:1rem">
-    <label class="field-label">Prompt Content <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the full instructional text</span></label>
+    <label class="field-label" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Prompt Content <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the full instructional text</span></span>
+      <button class="btn btn-sm" id="validate-btn" onclick="validatePrompt()" style="font-size:0.72rem;padding:0.2rem 0.6rem">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        Validate Quality
+      </button>
+    </label>
     <textarea id="prompt-content" class="input" rows="8" placeholder="e.g. You are a deep research analyst. Break complex topics into sub-questions, search for evidence, cite sources, and synthesize a structured report..." style="resize:vertical;font-family:var(--mono)"></textarea>
   </div>
+  <!-- Validation Results -->
+  <div id="validation-results" style="display:none;margin-top:0.75rem"></div>
   <div style="margin-top:1rem">
     <label class="field-label">Tags <span style="color:var(--text-3);font-weight:400">(comma-separated)</span></label>
     <input type="text" id="prompt-tags" class="input" placeholder="e.g. research, citations, structured-output">
@@ -77,27 +142,153 @@
     qa: '#ef4444', custom: '#64748b'
   };
 
+  /* ── AI Generate ──────────────────────────────────────── */
+  let _generatedPrompt = null;
+
+  function showAIGenerate() {
+    document.getElementById('ai-generate-panel').style.display = 'block';
+    document.getElementById('ai-gen-desc').focus();
+  }
+  function hideAIGenerate() {
+    document.getElementById('ai-generate-panel').style.display = 'none';
+    document.getElementById('ai-gen-preview').style.display = 'none';
+    _generatedPrompt = null;
+  }
+  async function generatePrompt() {
+    const desc = document.getElementById('ai-gen-desc').value.trim();
+    if (!desc) { showToast('Describe what your prompt should do', 'error'); return; }
+    const btn = document.getElementById('ai-gen-btn');
+    btn.disabled = true; btn.textContent = 'Generating...';
+    try {
+      const r = await fetch('/api/prompts/generate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ description: desc, category: document.getElementById('ai-gen-category').value })
+      });
+      const d = await r.json();
+      if (d.error && !d.content) { showToast('Generation failed: ' + d.error, 'error'); return; }
+      _generatedPrompt = d;
+      document.getElementById('ai-gen-name').textContent = d.name || 'Untitled';
+      document.getElementById('ai-gen-description').textContent = d.description || '';
+      document.getElementById('ai-gen-content').textContent = d.content || '';
+      document.getElementById('ai-gen-tags').textContent = (d.tags || []).join(', ');
+      const score = d.score || 0;
+      const scoreEl = document.getElementById('ai-gen-score');
+      scoreEl.textContent = score + '/10';
+      scoreEl.style.background = score >= 7 ? '#10b98122' : score >= 4 ? '#f59e0b22' : '#ef444422';
+      scoreEl.style.color = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
+      document.getElementById('ai-gen-preview').style.display = 'block';
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Generate with AI'; }
+  }
+  function acceptGenerated() {
+    if (!_generatedPrompt) return;
+    document.getElementById('ai-generate-panel').style.display = 'none';
+    document.getElementById('ai-gen-preview').style.display = 'none';
+    showCreateForm();
+    document.getElementById('prompt-name').value = _generatedPrompt.name || '';
+    document.getElementById('prompt-desc').value = _generatedPrompt.description || '';
+    document.getElementById('prompt-content').value = _generatedPrompt.content || '';
+    document.getElementById('prompt-tags').value = (_generatedPrompt.tags || []).join(', ');
+    if (_generatedPrompt.category) {
+      document.getElementById('prompt-category').value = _generatedPrompt.category || document.getElementById('ai-gen-category').value;
+    }
+    _generatedPrompt = null;
+  }
+  async function saveGeneratedDirectly() {
+    if (!_generatedPrompt || !_generatedPrompt.content) { showToast('No generated prompt', 'error'); return; }
+    try {
+      const payload = {
+        name: _generatedPrompt.name || 'AI Generated Prompt',
+        content: _generatedPrompt.content,
+        category: _generatedPrompt.category || document.getElementById('ai-gen-category').value,
+        description: _generatedPrompt.description || '',
+        tags: _generatedPrompt.tags || [],
+      };
+      const r = await fetch('/api/prompts', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (!r.ok) { showToast('Save failed', 'error'); return; }
+      showToast('Prompt saved', 'success');
+      hideAIGenerate();
+      loadPrompts();
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  /* ── Validation ───────────────────────────────────────── */
+  async function validatePrompt() {
+    const content = document.getElementById('prompt-content').value.trim();
+    if (!content) { showToast('Write some prompt content first', 'error'); return; }
+    const btn = document.getElementById('validate-btn');
+    btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Validating...';
+    const vr = document.getElementById('validation-results');
+    vr.style.display = 'none';
+    try {
+      const r = await fetch('/api/prompts/validate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ content, category: document.getElementById('prompt-category').value })
+      });
+      const d = await r.json();
+      if (d.error && !d.score) { vr.innerHTML = '<div style="color:var(--danger);padding:0.5rem">Validation failed: ' + escapeHtml(d.error) + '</div>'; vr.style.display='block'; return; }
+      const sc = d.score || 0;
+      const barColor = sc >= 7 ? '#10b981' : sc >= 4 ? '#f59e0b' : '#ef4444';
+      const dims = [
+        { label: 'Clarity', val: d.clarity || 0 },
+        { label: 'Specificity', val: d.specificity || 0 },
+        { label: 'Completeness', val: d.completeness || 0 },
+        { label: 'Effectiveness', val: d.effectiveness || 0 },
+      ];
+      let html = '<div style="border:1px solid ' + barColor + '44;border-radius:10px;padding:1rem;background:' + barColor + '08">';
+      html += '<div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.75rem">';
+      html += '<div style="font-size:1.8rem;font-weight:700;color:' + barColor + '">' + sc + '<span style="font-size:0.9rem;color:var(--text-3)">/10</span></div>';
+      html += '<div style="flex:1"><div style="font-size:0.85rem;font-weight:600;color:var(--text-1)">' + (sc >= 7 ? 'Good prompt' : sc >= 4 ? 'Needs improvement' : 'Weak prompt') + '</div>';
+      html += '<div style="font-size:0.78rem;color:var(--text-3)">' + escapeHtml(d.summary || '') + '</div></div></div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:0.75rem">';
+      dims.forEach(function(dim) {
+        const c2 = dim.val >= 7 ? '#10b981' : dim.val >= 4 ? '#f59e0b' : '#ef4444';
+        html += '<div style="text-align:center"><div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;margin-bottom:0.25rem">' + dim.label + '</div>';
+        html += '<div style="background:var(--card-bg);border-radius:6px;height:6px;overflow:hidden"><div style="height:100%;width:' + (dim.val*10) + '%;background:' + c2 + ';border-radius:6px"></div></div>';
+        html += '<div style="font-size:0.75rem;font-weight:600;color:' + c2 + ';margin-top:0.2rem">' + dim.val + '/10</div></div>';
+      });
+      html += '</div>';
+      if ((d.issues || []).length) {
+        html += '<div style="margin-bottom:0.5rem"><span style="font-size:0.75rem;font-weight:600;color:#ef4444">Issues:</span><ul style="margin:0.25rem 0 0 1rem;font-size:0.78rem;color:var(--text-2)">';
+        (d.issues || []).forEach(function(i) { html += '<li>' + escapeHtml(i) + '</li>'; });
+        html += '</ul></div>';
+      }
+      if ((d.suggestions || []).length) {
+        html += '<div><span style="font-size:0.75rem;font-weight:600;color:#0ea5e9">Suggestions:</span><ul style="margin:0.25rem 0 0 1rem;font-size:0.78rem;color:var(--text-2)">';
+        (d.suggestions || []).forEach(function(s) { html += '<li>' + escapeHtml(s) + '</li>'; });
+        html += '</ul></div>';
+      }
+      html += '</div>';
+      vr.innerHTML = html;
+      vr.style.display = 'block';
+    } catch(e) { vr.innerHTML = '<div style="color:var(--danger)">Error: ' + escapeHtml(e.message) + '</div>'; vr.style.display='block'; }
+    finally { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> Validate Quality'; }
+  }
+
+  /* ── CRUD ──────────────────────────────────────────────── */
   async function loadPrompts() {
     try {
       const r = await fetch('/api/prompts');
       const d = await r.json();
       let prompts = d.prompts || [];
       const catFilter = document.getElementById('category-filter').value;
-      if (catFilter) prompts = prompts.filter(p => p.category === catFilter);
+      if (catFilter) prompts = prompts.filter(function(p) { return p.category === catFilter; });
       document.getElementById('prompt-count').textContent = prompts.length + ' prompt' + (prompts.length !== 1 ? 's' : '');
       const grid = document.getElementById('prompts-grid');
       if (prompts.length === 0) {
-        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3)"><p style="font-size:1.1rem">No prompts yet</p><p style="margin-top:0.5rem">Create your first prompt to build a reusable library</p></div>';
+        grid.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3)"><p style="font-size:1.1rem">No prompts yet</p><p style="margin-top:0.5rem">Create your first prompt or use AI Generate</p></div>';
         return;
       }
-      grid.innerHTML = prompts.map(p => {
+      grid.innerHTML = prompts.map(function(p) {
         const color = categoryColors[p.category] || '#64748b';
-        const tagBadges = (p.tags || []).slice(0,4).map(t => '<span class="badge">' + escapeHtml(t) + '</span>').join(' ');
+        const tagBadges = (p.tags || []).slice(0,4).map(function(t) { return '<span class="badge">' + escapeHtml(t) + '</span>'; }).join(' ');
         const extra = (p.tags || []).length > 4 ? ' <span class="badge">+' + ((p.tags||[]).length - 4) + '</span>' : '';
         return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
           '<div>' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
-              '<h3 style="margin:0;font-size:1rem">📝 ' + escapeHtml(p.name) + '</h3>' +
+              '<h3 style="margin:0;font-size:1rem">' + escapeHtml(p.name) + '</h3>' +
               '<span class="badge" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + escapeHtml(p.category) + '</span>' +
             '</div>' +
             '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + escapeHtml(p.description || 'No description') + '</p>' +
@@ -149,7 +340,7 @@
     } catch(e) { clearDraft(); }
   }
   // Auto-save on input
-  ['prompt-name','prompt-category','prompt-desc','prompt-content','prompt-tags'].forEach(id => {
+  ['prompt-name','prompt-category','prompt-desc','prompt-content','prompt-tags'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', saveDraft);
     document.getElementById(id).addEventListener('change', saveDraft);
   });
@@ -165,6 +356,7 @@
     document.getElementById('prompt-desc').value = '';
     document.getElementById('prompt-content').value = '';
     document.getElementById('prompt-tags').value = '';
+    document.getElementById('validation-results').style.display = 'none';
     document.getElementById('prompt-form').style.display = 'block';
     document.getElementById('prompt-name').focus();
   }
@@ -172,6 +364,7 @@
   function hideForm() {
     clearDraft();
     document.getElementById('prompt-form').style.display = 'none';
+    document.getElementById('validation-results').style.display = 'none';
   }
 
   async function editPrompt(id) {
@@ -185,6 +378,7 @@
       document.getElementById('prompt-desc').value = p.description || '';
       document.getElementById('prompt-content').value = p.content || '';
       document.getElementById('prompt-tags').value = (p.tags || []).join(', ');
+      document.getElementById('validation-results').style.display = 'none';
       document.getElementById('prompt-form').style.display = 'block';
       document.getElementById('prompt-name').focus();
     } catch(e) { showToast('Error loading prompt: ' + e.message, 'error'); }
@@ -197,7 +391,7 @@
       category: document.getElementById('prompt-category').value,
       description: document.getElementById('prompt-desc').value.trim(),
       content: document.getElementById('prompt-content').value.trim(),
-      tags: document.getElementById('prompt-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      tags: document.getElementById('prompt-tags').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean),
     };
     if (!payload.name) { alert('Name is required'); return; }
     if (!payload.content) { alert('Prompt content is required'); return; }
@@ -206,7 +400,7 @@
     try {
       const url = id ? '/api/prompts/' + id : '/api/prompts';
       const method = id ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const res = await fetch(url, { method: method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       if (!res.ok) {
         const err = await res.text();
         showToast('Save failed: ' + (err || res.statusText), 'error');
@@ -238,7 +432,7 @@
       const btn = event.target;
       const orig = btn.textContent;
       btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = orig, 1500);
+      setTimeout(function() { btn.textContent = orig; }, 1500);
     } catch(e) { showToast('Copy failed: ' + e.message, 'error'); }
   }
 

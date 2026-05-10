@@ -74,6 +74,8 @@ from agent.memory import (
     save_version,
     list_audit_log,
     log_audit,
+    list_llm_usage,
+    get_llm_usage_summary,
     list_connectors,
     get_connector,
     create_connector,
@@ -157,6 +159,7 @@ class RunResponse(BaseModel):
     tools_used: list[str] = []
     request_id: str
     trace_id: str | None = None
+    guardrails: dict | None = None
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────────
@@ -265,6 +268,7 @@ async def run(body: RunRequest, request: Request):
         tools_used=result["tools_used"],
         request_id=request_id,
         trace_id=result.get("trace_id"),
+        guardrails=result.get("guardrails"),
     )
 
 
@@ -1238,6 +1242,187 @@ async def prompts_delete_endpoint(prompt_id: str):
     return {"deleted": True}
 
 
+def _extract_json(raw: str):
+    """Extract a JSON object from LLM output that may contain extra text."""
+    import json as _json, re as _re
+
+    s = raw.strip()
+    if s.startswith("```"):
+        s = _re.sub(r"^```\w*\n?", "", s)
+        s = _re.sub(r"\n?```$", "", s)
+    try:
+        return _json.loads(s)
+    except _json.JSONDecodeError:
+        pass
+    m = _re.search(r"\{[\s\S]*\}", s)
+    if m:
+        try:
+            return _json.loads(m.group())
+        except _json.JSONDecodeError:
+            pass
+    return None
+
+
+@app.post("/prompts/validate")
+async def prompts_validate_endpoint(request: Request):
+    """Validate a prompt using LLM — returns quality score, issues, suggestions."""
+    import json as _json, re as _re
+
+    data = await request.json()
+    content = data.get("content", "").strip()
+    category = data.get("category", "general")
+    if not content:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=400, content={"error": "content is required"})
+
+    from agent.llm import get_llm
+    from langchain_core.messages import SystemMessage, HumanMessage
+    import json as _json, re as _re
+
+    system = (
+        """\
+You are a prompt engineering expert. Evaluate the prompt below and return a JSON object:
+{
+  "score": <integer 1-10>,
+  "clarity": <integer 1-10>,
+  "specificity": <integer 1-10>,
+  "completeness": <integer 1-10>,
+  "effectiveness": <integer 1-10>,
+  "issues": ["list of problems found"],
+  "suggestions": ["list of actionable improvements"],
+  "summary": "one-sentence overall assessment"
+}
+
+Scoring guide:
+- clarity: Is the instruction unambiguous? Does it tell the model exactly what to do?
+- specificity: Does it include format, constraints, examples, or persona?
+- completeness: Does it cover edge cases, output format, and context?
+- effectiveness: Would this prompt reliably produce high-quality output?
+- score: overall weighted average
+
+Category context: """
+        + category
+        + """
+Respond ONLY with valid JSON."""
+    )
+
+    try:
+        from agent.llm import get_active_model as _gam
+
+        active = _gam()
+        provider = active.get("provider", "ollama")
+        model = active.get("model", "llama3")
+        msgs = [SystemMessage(content=system), HumanMessage(content=content)]
+        for temp in (0, 1, None):
+            try:
+                kwargs = {
+                    "provider": provider,
+                    "model": model,
+                    "max_completion_tokens": 4096,
+                }
+                if temp is not None:
+                    kwargs["temperature"] = temp
+                llm = get_llm(**kwargs)
+                result = await llm.ainvoke(msgs)
+                parsed = _extract_json(result.content)
+                if parsed is not None:
+                    return parsed
+                return {
+                    "score": 0,
+                    "error": "LLM returned invalid JSON",
+                    "summary": "Validation failed",
+                }
+            except Exception as e2:
+                if "temperature" in str(e2).lower():
+                    continue
+                raise
+        return {
+            "score": 0,
+            "error": "Model rejects all temperature values",
+            "summary": "Validation failed",
+        }
+    except Exception as e:
+        return {
+            "score": 0,
+            "error": str(e),
+            "summary": "Validation failed — LLM unavailable",
+        }
+
+
+@app.post("/prompts/generate")
+async def prompts_generate_endpoint(request: Request):
+    """Use LLM to generate a prompt from a natural-language description."""
+    data = await request.json()
+    description = data.get("description", "").strip()
+    category = data.get("category", "general")
+    if not description:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400, content={"error": "description is required"}
+        )
+
+    from agent.llm import get_llm
+    from langchain_core.messages import SystemMessage, HumanMessage
+    import json as _json, re as _re
+
+    system = (
+        """\
+You are a prompt engineering expert. Given a user's description, generate a production-ready prompt.
+
+Return ONLY a JSON object (no other text):
+{
+  "name": "short name (max 8 words)",
+  "content": "the prompt text (max 300 words) — include persona, constraints, output format",
+  "description": "one-sentence summary",
+  "tags": ["max", "5", "tags"],
+  "score": <integer 1-10>
+}
+
+Category: """
+        + category
+        + """
+
+Keep the content field concise but complete. Do NOT include examples or lengthy templates.
+Respond ONLY with the JSON object."""
+    )
+
+    try:
+        from agent.llm import get_active_model as _gam
+
+        active = _gam()
+        provider = active.get("provider", "ollama")
+        model = active.get("model", "llama3")
+        msgs = [SystemMessage(content=system), HumanMessage(content=description)]
+        for temp in (0.7, 1, None):
+            try:
+                kwargs = {
+                    "provider": provider,
+                    "model": model,
+                    "max_completion_tokens": 4096,
+                }
+                if temp is not None:
+                    kwargs["temperature"] = temp
+                llm = get_llm(**kwargs)
+                result = await llm.ainvoke(msgs)
+                parsed = _extract_json(result.content or "")
+                if parsed is not None:
+                    return parsed
+                return {"error": "LLM returned invalid JSON", "content": "", "name": ""}
+            except Exception as e2:
+                if "temperature" in str(e2).lower():
+                    continue
+                raise
+        return {
+            "error": "Model rejects all temperature values",
+            "content": "",
+            "name": "",
+        }
+    except Exception as e:
+        return {"error": str(e), "content": "", "name": ""}
+
+
 # ── Agents CRUD endpoints ─────────────────────────────────────────────────
 
 
@@ -1983,6 +2168,34 @@ async def audit_log_endpoint(
         limit=min(limit, 500), entity_type=entity_type, action=action
     )
     return {"entries": entries, "count": len(entries)}
+
+
+# ── LLM Usage / Activity endpoints ────────────────────────────────────────
+
+
+@app.get("/llm-activity")
+async def llm_activity_list(
+    limit: int = 200,
+    session_id: str | None = None,
+    model: str | None = None,
+    provider: str | None = None,
+    since: str | None = None,
+):
+    """List LLM usage logs with optional filters."""
+    entries = list_llm_usage(
+        limit=min(limit, 1000),
+        session_id=session_id,
+        model=model,
+        provider=provider,
+        since=since,
+    )
+    return {"entries": entries, "count": len(entries)}
+
+
+@app.get("/llm-activity/summary")
+async def llm_activity_summary():
+    """Return aggregated LLM usage statistics."""
+    return get_llm_usage_summary()
 
 
 # ── Data Connectors endpoints ──────────────────────────────────────────────

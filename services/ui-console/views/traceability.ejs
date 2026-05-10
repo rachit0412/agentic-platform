@@ -339,5 +339,14 @@ function viewTrace(traceId) {
 }
 
 fetchAllData();
+
+// Auto-open trace detail if traceId is in URL query
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var tid = params.get('traceId');
+  if (tid) {
+    setTimeout(function() { viewTrace(tid); }, 600);
+  }
+})();
 <\/script>
 ` }) %>

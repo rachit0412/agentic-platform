@@ -104,15 +104,15 @@
 
 ## ADR-008 · Guardrails as Graph Gates, Not Middleware
 
-| Field            | Detail                                                                                                                                                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Date**         | 2024-12                                                                                                                                                                                                                                             |
-| **Status**       | Accepted                                                                                                                                                                                                                                            |
-| **Context**      | Safety checks (PII detection, prompt injection, toxicity) need to run at specific points in the reasoning pipeline — before LLM calls and after response generation.                                                                                |
-| **Decision**     | Implement guardrails as functions called within graph nodes, not as FastAPI middleware. Input guardrails run in `reason()` before the LLM call. Output guardrails run in `generate_response()` before returning.                                    |
-| **Alternatives** | (1) FastAPI middleware — runs on every request, not just agent runs; can't access agent state. (2) Separate guardrails service — adds latency and another container. (3) LLM-based guardrails — expensive, slow, and recursive.                     |
-| **Consequences** | Guardrails have full access to `AgentState`. They can short-circuit the graph. Configuration is stored in SQLite with per-guardrail enable/disable and severity. Regex-based detection is fast (<1ms) but less nuanced than LLM-based alternatives. |
-| **Principles**   | AP-4 Defence in Depth, AP-9 Configuration over Code                                                                                                                                                                                                 |
+| Field            | Detail                                                                                                                                                                                                                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2024-12                                                                                                                                                                                                                                                                                      |
+| **Status**       | Accepted (amended by ADR-016: LLM-based detection added)                                                                                                                                                                                                                                     |
+| **Context**      | Safety checks (PII detection, prompt injection, toxicity) need to run at specific points in the reasoning pipeline — before LLM calls and after response generation.                                                                                                                         |
+| **Decision**     | Implement guardrails as functions called within graph nodes, not as FastAPI middleware. Input guardrails run in `reason()` before the LLM call. Output guardrails run in `generate_response()` before returning. LLM-based classification is now the primary detection method (see ADR-016). |
+| **Alternatives** | (1) FastAPI middleware — runs on every request, not just agent runs; can't access agent state. (2) Separate guardrails service — adds latency and another container.                                                                                                                         |
+| **Consequences** | Guardrails have full access to `AgentState`. They can short-circuit the graph. Configuration is stored in SQLite with per-guardrail enable/disable and severity. LLM-based detection provides comprehensive coverage; regex fallback ensures availability.                                   |
+| **Principles**   | AP-4 Defence in Depth, AP-9 Configuration over Code                                                                                                                                                                                                                                          |
 
 ---
 
@@ -214,6 +214,62 @@
 
 ---
 
+## ADR-016 · LLM-Based Guardrail Detection
+
+| Field            | Detail                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Status**       | Accepted (amends ADR-008)                                                                                                                                                                                                                                                                                                                                                                       |
+| **Context**      | Regex-based PII detection misses many real-world formats (natural-language dates of birth, international IDs like BSN, obfuscated credit cards, conversational PII). Pattern matching can never achieve comprehensive coverage.                                                                                                                                                                 |
+| **Decision**     | Use LLM as the primary safety classifier: send user text to the active LLM with a dynamic system prompt that evaluates ALL enabled guardrails in a single call, returning per-guardrail JSON verdicts. Azure content filter rejections auto-trigger toxicity/bias guardrails while regex fallback handles remaining checks. Guardrails run on both streaming and non-streaming execution paths. |
+| **Alternatives** | (1) Regex-only — fast but incomplete; misses natural-language PII. (2) Dedicated NER model (spaCy/Presidio) — adds a heavyweight dependency. (3) External PII API — adds latency and external dependency.                                                                                                                                                                                       |
+| **Consequences** | Near-complete PII detection coverage including passwords, API keys, IBAN. Small additional LLM call latency (~200-500ms). Structured JSON response enables fine-grained per-guardrail control. Multiple violations captured simultaneously. Azure content filter integration provides additional safety layer. Regex fallback ensures degradation rather than failure.                          |
+| **Principles**   | AP-4 Defence in Depth, AP-10 Graceful Degradation                                                                                                                                                                                                                                                                                                                                               |
+
+---
+
+## ADR-017 · LLM Activity Tracking and Analytics Dashboard
+
+| Field            | Detail                                                                                                                                                                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                                                                   |
+| **Status**       | Accepted                                                                                                                                                                                                                                                                                                  |
+| **Context**      | The platform lacked visibility into LLM usage patterns, token consumption, cost estimation, and performance metrics. Operators need to track spending, identify model performance issues, and optimize usage.                                                                                             |
+| **Decision**     | Add `llm_usage_log` table to SQLite with per-request metrics (model, provider, tokens, cost, latency, tools, guardrail status). Log automatically after each agent stream run. Expose via API and a dedicated `/llm-activity` dashboard with timeseries charts, filters, model breakdown, and CSV export. |
+| **Alternatives** | (1) External analytics (Grafana) — adds complexity and another data pipeline. (2) Langfuse-only — already used for traces but lacks cost/usage analytics views. (3) Log files — no structured querying or visualization.                                                                                  |
+| **Consequences** | Full usage visibility without external dependencies. Backend cost estimation for all supported models (including free for local Ollama). Dashboard auto-refreshes every 30s. CSV export for offline analysis.                                                                                             |
+| **Principles**   | AP-5 Observable by Default, AP-1 API-First                                                                                                                                                                                                                                                                |
+
+---
+
+## ADR-018 · Dynamic Model Capabilities and Settings
+
+| Field            | Detail                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                                                                                                                   |
+| **Status**       | Accepted (extends ADR-004)                                                                                                                                                                                                                                                                                                                                |
+| **Context**      | Different models have different capabilities: gpt-5-nano only supports temperature=1 (rejects 0 and 0.7), models have varying max token limits. The UI showed static settings controls regardless of model, causing API errors when unsupported parameters were sent.                                                                                     |
+| **Decision**     | Add per-model `capabilities` metadata to `GET /models` response (temperature support, top_p, max_tokens limits, streaming). UI dynamically disables unsupported controls when model is selected. Temperature retry loop in all LLM calls: try requested → try temp=1 → try without. Azure content filter errors return safe messages instead of crashing. |
+| **Alternatives** | (1) Strip parameters server-side — hides capability info from UI. (2) Hardcode model-specific logic in frontend — fragile and not extensible. (3) Probe model capabilities via API — adds latency for every model switch.                                                                                                                                 |
+| **Consequences** | Users see disabled controls with explanatory text. No API errors from unsupported parameters. Temperature retry ensures graceful handling of model-specific restrictions. New models need only a capabilities entry in the `_MODEL_CAPS` dict.                                                                                                            |
+| **Principles**   | AP-10 Graceful Degradation, AP-9 Configuration over Code                                                                                                                                                                                                                                                                                                  |
+
+---
+
+## ADR-019 · Clickable Execution Details for Cross-Navigation
+
+| Field            | Detail                                                                                                                                                                                                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Date**         | 2025-06                                                                                                                                                                                                                                                                            |
+| **Status**       | Accepted                                                                                                                                                                                                                                                                           |
+| **Context**      | The Run Agent page showed execution details (Trace ID, Request ID) as static text. Users had to manually copy IDs and navigate to Traceability or LLM Activity pages to find related records. This broke the discovery workflow.                                                   |
+| **Decision**     | Make Trace ID a clickable link to `/traceability?traceId=X` and Request ID a link to `/llm-activity?requestId=X`. Target pages auto-open/filter by the query parameter. Traceability page calls `viewTrace(id)` on load; LLM Activity page filters entries to matching request ID. |
+| **Alternatives** | (1) Copy-to-clipboard only — still requires manual navigation. (2) Inline detail expansion — adds complexity to Run Agent page. (3) Side panel — requires significant UI refactoring.                                                                                              |
+| **Consequences** | Single-click navigation from execution results to detailed traces and usage logs. Deep-link URLs are shareable. Minimal code change (URL query params + auto-open logic on target pages).                                                                                          |
+| **Principles**   | AP-5 Observable by Default, AP-1 API-First                                                                                                                                                                                                                                         |
+
+---
+
 ## ADR Index
 
 | ID      | Title                               | Principles       |
@@ -233,3 +289,7 @@
 | ADR-013 | LlamaIndex Advanced Retrieval       | AP-8, AP-2       |
 | ADR-014 | Data Connectors Framework           | AP-8, AP-3       |
 | ADR-015 | Hybrid SQLite + PostgreSQL Storage  | AP-10, AP-13     |
+| ADR-016 | LLM-Based Guardrail Detection       | AP-4, AP-10      |
+| ADR-017 | LLM Activity Tracking & Dashboard   | AP-5, AP-1       |
+| ADR-018 | Dynamic Model Capabilities          | AP-10, AP-9      |
+| ADR-019 | Clickable Execution Details         | AP-5, AP-1       |

@@ -182,7 +182,7 @@
       <!-- ── Monitoring ── -->
       <li><div class="rail-divider"></div></li>
       <li class="rail-group">
-        <a href="/intelligence-hub" class="rail-item <%= ['intelligence-hub','traceability','evaluation','observability'].includes(page) ? 'active' : '' %>">
+        <a href="/intelligence-hub" class="rail-item <%= ['intelligence-hub','traceability','evaluation','observability','llm-activity'].includes(page) ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </a>
         <div class="rail-submenu">
@@ -190,6 +190,10 @@
           <a href="/intelligence-hub" class="<%= page === 'intelligence-hub' ? 'sub-active' : '' %>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             Overview
+          </a>
+          <a href="/llm-activity" class="<%= page === 'llm-activity' ? 'sub-active' : '' %>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            LLM Activity
           </a>
           <a href="/traceability" class="<%= page === 'traceability' ? 'sub-active' : '' %>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M22 12h-4"/><path d="M6 12H2"/></svg>

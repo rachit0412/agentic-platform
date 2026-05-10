@@ -1051,12 +1051,22 @@ def _ensure_default_guardrails():
             "gr-pii",
             "PII Detection",
             "content_safety",
-            "Detects and redacts personally identifiable information (emails, phone numbers, SSNs, credit cards) from inputs and outputs",
+            "Detects and redacts personally identifiable information (emails, phone numbers, SSNs, credit cards, DOB, BSN, IBAN, passport numbers, IP addresses) from inputs and outputs",
             1,
             "high",
             json.dumps(
                 {
-                    "patterns": ["email", "phone", "ssn", "credit_card"],
+                    "patterns": [
+                        "email",
+                        "phone",
+                        "ssn",
+                        "credit_card",
+                        "date_of_birth",
+                        "bsn",
+                        "iban",
+                        "passport",
+                        "ip_address",
+                    ],
                     "action": "redact",
                 }
             ),
@@ -1875,6 +1885,190 @@ def list_audit_log(
 
 
 # ── Connectors CRUD ────────────────────────────────────────────────────────
+
+
+# ── LLM Usage Log ──────────────────────────────────────────────────────────
+
+
+def _init_llm_usage_table():
+    conn = _get_conn()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS llm_usage_log (
+            id              TEXT PRIMARY KEY,
+            request_id      TEXT NOT NULL,
+            session_id      TEXT NOT NULL,
+            agent_id        TEXT DEFAULT '',
+            provider        TEXT NOT NULL,
+            model           TEXT NOT NULL,
+            prompt_tokens   INTEGER DEFAULT 0,
+            completion_tokens INTEGER DEFAULT 0,
+            total_tokens    INTEGER DEFAULT 0,
+            estimated_cost  REAL DEFAULT 0.0,
+            latency_ms      INTEGER DEFAULT 0,
+            tools_used      TEXT DEFAULT '[]',
+            guardrail_status TEXT DEFAULT 'passed',
+            created_at      TEXT NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_time ON llm_usage_log(created_at)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_session ON llm_usage_log(session_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_model ON llm_usage_log(model)")
+    conn.commit()
+
+
+# Pricing table: [input_per_1M_tokens, output_per_1M_tokens]
+_LLM_PRICING = {
+    "gpt-4o": [2.50, 10.00],
+    "gpt-4o-mini": [0.15, 0.60],
+    "gpt-4.1": [2.00, 8.00],
+    "gpt-4.1-mini": [0.40, 1.60],
+    "gpt-4.1-nano": [0.10, 0.40],
+    "gpt-5-nano": [0.10, 0.40],
+    "gpt-5.4-mini": [0.40, 1.60],
+    "gpt-3.5-turbo": [0.50, 1.50],
+    "llama3": [0.0, 0.0],
+    "mistral": [0.0, 0.0],
+    "deepseek-r1": [0.0, 0.0],
+}
+
+
+def estimate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
+    """Estimate cost in USD for a given model and token counts."""
+    m = model.lower()
+    for key, rates in _LLM_PRICING.items():
+        if key in m:
+            return (prompt_tokens * rates[0] / 1e6) + (completion_tokens * rates[1] / 1e6)
+    return 0.0
+
+
+def log_llm_usage(
+    request_id: str,
+    session_id: str,
+    provider: str,
+    model: str,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    total_tokens: int = 0,
+    latency_ms: int = 0,
+    tools_used: list | None = None,
+    guardrail_status: str = "passed",
+    agent_id: str = "",
+) -> dict:
+    """Record an LLM usage entry and return it."""
+    _init_llm_usage_table()
+    conn = _get_conn()
+    uid = str(uuid.uuid4())[:12]
+    now = datetime.now(timezone.utc).isoformat()
+    cost = estimate_cost(model, prompt_tokens, completion_tokens)
+    conn.execute(
+        "INSERT INTO llm_usage_log (id, request_id, session_id, agent_id, provider, model, prompt_tokens, completion_tokens, total_tokens, estimated_cost, latency_ms, tools_used, guardrail_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (uid, request_id, session_id, agent_id, provider, model,
+         prompt_tokens, completion_tokens, total_tokens, cost, latency_ms,
+         json.dumps(tools_used or []), guardrail_status, now),
+    )
+    conn.commit()
+    return {
+        "id": uid, "request_id": request_id, "session_id": session_id,
+        "agent_id": agent_id, "provider": provider, "model": model,
+        "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens, "estimated_cost": cost,
+        "latency_ms": latency_ms, "tools_used": tools_used or [],
+        "guardrail_status": guardrail_status, "created_at": now,
+    }
+
+
+def list_llm_usage(
+    limit: int = 200,
+    session_id: str | None = None,
+    model: str | None = None,
+    provider: str | None = None,
+    since: str | None = None,
+) -> list[dict]:
+    """Query LLM usage logs with optional filters."""
+    _init_llm_usage_table()
+    conn = _get_conn()
+    query = "SELECT * FROM llm_usage_log WHERE 1=1"
+    params: list = []
+    if session_id:
+        query += " AND session_id = ?"
+        params.append(session_id)
+    if model:
+        query += " AND model LIKE ?"
+        params.append(f"%{model}%")
+    if provider:
+        query += " AND provider = ?"
+        params.append(provider)
+    if since:
+        query += " AND created_at >= ?"
+        params.append(since)
+    query += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    rows = conn.execute(query, params).fetchall()
+    return [
+        {
+            "id": r["id"], "request_id": r["request_id"],
+            "session_id": r["session_id"], "agent_id": r["agent_id"],
+            "provider": r["provider"], "model": r["model"],
+            "prompt_tokens": r["prompt_tokens"],
+            "completion_tokens": r["completion_tokens"],
+            "total_tokens": r["total_tokens"],
+            "estimated_cost": r["estimated_cost"],
+            "latency_ms": r["latency_ms"],
+            "tools_used": json.loads(r["tools_used"]),
+            "guardrail_status": r["guardrail_status"],
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
+def get_llm_usage_summary() -> dict:
+    """Return aggregated LLM usage statistics."""
+    _init_llm_usage_table()
+    conn = _get_conn()
+    row = conn.execute("""
+        SELECT
+            COUNT(*) as total_requests,
+            COALESCE(SUM(prompt_tokens), 0) as total_prompt_tokens,
+            COALESCE(SUM(completion_tokens), 0) as total_completion_tokens,
+            COALESCE(SUM(total_tokens), 0) as total_tokens,
+            COALESCE(SUM(estimated_cost), 0) as total_cost,
+            COALESCE(AVG(latency_ms), 0) as avg_latency_ms,
+            COALESCE(AVG(total_tokens), 0) as avg_tokens_per_request
+        FROM llm_usage_log
+    """).fetchone()
+    # Per-model breakdown
+    model_rows = conn.execute("""
+        SELECT model, provider,
+            COUNT(*) as requests,
+            SUM(total_tokens) as tokens,
+            SUM(estimated_cost) as cost,
+            AVG(latency_ms) as avg_latency
+        FROM llm_usage_log
+        GROUP BY model, provider
+        ORDER BY requests DESC
+    """).fetchall()
+    return {
+        "total_requests": row["total_requests"],
+        "total_prompt_tokens": row["total_prompt_tokens"],
+        "total_completion_tokens": row["total_completion_tokens"],
+        "total_tokens": row["total_tokens"],
+        "total_cost": round(row["total_cost"], 6),
+        "avg_latency_ms": round(row["avg_latency_ms"]),
+        "avg_tokens_per_request": round(row["avg_tokens_per_request"]),
+        "by_model": [
+            {
+                "model": r["model"], "provider": r["provider"],
+                "requests": r["requests"], "tokens": r["tokens"],
+                "cost": round(r["cost"], 6),
+                "avg_latency": round(r["avg_latency"]),
+            }
+            for r in model_rows
+        ],
+    }
+
+
+# ── Connectors CRUD (continued) ───────────────────────────────────────────
 
 
 def _row_to_connector(row) -> dict:

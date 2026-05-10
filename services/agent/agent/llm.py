@@ -323,6 +323,74 @@ def list_available_models() -> list[dict]:
     """List all available models across all configured providers."""
     models = []
 
+    # Model capability metadata: which features each model/provider supports
+    # temperature_supported=False means the API only allows default (1.0)
+    _MODEL_CAPS = {
+        "gpt-5-nano": {
+            "temperature": False,
+            "top_p": True,
+            "max_tokens": 16384,
+            "streaming": True,
+        },
+        "gpt-4o": {
+            "temperature": True,
+            "top_p": True,
+            "max_tokens": 128000,
+            "streaming": True,
+        },
+        "gpt-4o-mini": {
+            "temperature": True,
+            "top_p": True,
+            "max_tokens": 128000,
+            "streaming": True,
+        },
+        "gpt-4.1": {
+            "temperature": True,
+            "top_p": True,
+            "max_tokens": 32768,
+            "streaming": True,
+        },
+        "gpt-4.1-mini": {
+            "temperature": True,
+            "top_p": True,
+            "max_tokens": 32768,
+            "streaming": True,
+        },
+        "gpt-4.1-nano": {
+            "temperature": True,
+            "top_p": True,
+            "max_tokens": 32768,
+            "streaming": True,
+        },
+        "gpt-3.5-turbo": {
+            "temperature": True,
+            "top_p": True,
+            "max_tokens": 16384,
+            "streaming": True,
+        },
+    }
+    _OLLAMA_CAPS = {
+        "temperature": True,
+        "top_p": True,
+        "max_tokens": 32768,
+        "streaming": True,
+    }
+    _DEFAULT_CAPS = {
+        "temperature": True,
+        "top_p": True,
+        "max_tokens": 4096,
+        "streaming": True,
+    }
+
+    def _caps(model_name: str, provider: str) -> dict:
+        m = model_name.lower()
+        for key, caps in _MODEL_CAPS.items():
+            if key in m:
+                return caps
+        if provider == "ollama":
+            return _OLLAMA_CAPS
+        return _DEFAULT_CAPS
+
     # ── Ollama models ───────────────────────────────────────────────────
     try:
         import httpx
@@ -340,6 +408,9 @@ def list_available_models() -> list[dict]:
                         "size": m.get("size", 0),
                         "active": _active_provider == "ollama"
                         and _active_model == name,
+                        "capabilities": _caps(name, "ollama"),
+                        "cost_per_1k_input": 0.0,
+                        "cost_per_1k_output": 0.0,
                     }
                 )
     except Exception as e:
@@ -359,6 +430,9 @@ def list_available_models() -> list[dict]:
                     "size": 0,
                     "active": _active_provider == "azure-openai"
                     and _active_model == am["model"],
+                    "capabilities": _caps(am["model"], "azure-openai"),
+                    "cost_per_1k_input": 0.0,
+                    "cost_per_1k_output": 0.0,
                 }
             )
 
@@ -372,6 +446,9 @@ def list_available_models() -> list[dict]:
                 "size": 0,
                 "active": _active_provider == "openai"
                 and _active_model == OPENAI_MODEL,
+                "capabilities": _caps(OPENAI_MODEL, "openai"),
+                "cost_per_1k_input": 0.0,
+                "cost_per_1k_output": 0.0,
             }
         )
 
@@ -394,6 +471,9 @@ def list_available_models() -> list[dict]:
                         "size": 0,
                         "active": _active_provider == "azure-foundry"
                         and _active_model == fm,
+                        "capabilities": _caps(fm, "azure-foundry"),
+                        "cost_per_1k_input": 0.0,
+                        "cost_per_1k_output": 0.0,
                     }
                 )
 

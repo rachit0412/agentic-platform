@@ -305,6 +305,7 @@ services:
   grafana:
     image: grafana/grafana:11.0.0
     container_name: grafana
+    restart: unless-stopped
     ports:
       - "${GRAFANA_PORT:-3013}:3000"
     environment:

@@ -1,0 +1,520 @@
+<%- include('layout', { title: 'LLM Activity', page: 'llm-activity', body: `
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+  <div>
+    <h1 class="text-glow-cyan" style="margin:0">LLM Activity Dashboard</h1>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0.25rem 0 0">Token usage, cost analytics, model performance &amp; request history</p>
+  </div>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn btn-sm" onclick="refreshDashboard()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+    <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </button>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="grid-4 mb-2" style="margin-bottom:1.25rem">
+  <div class="stat-card animate-fade-up">
+    <div class="stat-icon stat-icon-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+    <div class="stat-label">Total Requests</div>
+    <div class="stat-number" id="stat-requests">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100">
+    <div class="stat-icon stat-icon-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    <div class="stat-label">Total Tokens</div>
+    <div class="stat-number" id="stat-tokens">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div class="stat-label">Total Cost</div>
+    <div class="stat-number" id="stat-cost">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon stat-icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+    <div class="stat-label">Avg Latency</div>
+    <div class="stat-number" id="stat-latency">-</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card animate-fade-up" style="margin-bottom:1.25rem">
+  <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end">
+    <div style="flex:1;min-width:140px">
+      <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Time Range</label>
+      <select id="filter-range" class="input" style="padding:0.4rem 0.5rem;font-size:0.82rem" onchange="refreshDashboard()">
+        <option value="1h">Last 1 Hour</option>
+        <option value="6h">Last 6 Hours</option>
+        <option value="24h" selected>Last 24 Hours</option>
+        <option value="7d">Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+        <option value="all">All Time</option>
+      </select>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Provider</label>
+      <select id="filter-provider" class="input" style="padding:0.4rem 0.5rem;font-size:0.82rem" onchange="refreshDashboard()">
+        <option value="">All Providers</option>
+      </select>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Model</label>
+      <select id="filter-model" class="input" style="padding:0.4rem 0.5rem;font-size:0.82rem" onchange="refreshDashboard()">
+        <option value="">All Models</option>
+      </select>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <label style="font-size:0.72rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Session</label>
+      <input id="filter-session" class="input" placeholder="Session ID..." style="padding:0.4rem 0.5rem;font-size:0.82rem" oninput="debouncedRefresh()">
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+  <!-- Token Usage Timeseries -->
+  <div class="card animate-fade-up">
+    <h3 style="font-size:0.95rem;margin-bottom:0.75rem">Token Usage Over Time</h3>
+    <div id="chart-tokens" style="height:260px;position:relative;overflow:hidden">
+      <canvas id="canvas-tokens"></canvas>
+    </div>
+  </div>
+  <!-- Cost Timeseries -->
+  <div class="card animate-fade-up delay-100">
+    <h3 style="font-size:0.95rem;margin-bottom:0.75rem">Cost Over Time</h3>
+    <div id="chart-cost" style="height:260px;position:relative;overflow:hidden">
+      <canvas id="canvas-cost"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Model Breakdown + Latency Chart -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+  <div class="card animate-fade-up">
+    <h3 style="font-size:0.95rem;margin-bottom:0.75rem">Model Usage Breakdown</h3>
+    <div id="model-breakdown" style="min-height:200px"></div>
+  </div>
+  <div class="card animate-fade-up delay-100">
+    <h3 style="font-size:0.95rem;margin-bottom:0.75rem">Latency Distribution</h3>
+    <div id="chart-latency" style="height:260px;position:relative;overflow:hidden">
+      <canvas id="canvas-latency"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Request Log Table -->
+<div class="card animate-fade-up" style="margin-bottom:1.25rem">
+  <div class="section-header mb-1">
+    <h3 style="font-size:0.95rem">Request Log</h3>
+    <span class="badge" id="log-count" style="font-size:0.72rem">0 requests</span>
+  </div>
+  <div style="overflow-x:auto;margin-top:0.75rem">
+    <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+      <thead>
+        <tr style="border-bottom:1px solid var(--divider);text-align:left">
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer" onclick="sortTable('created_at')">Time <span id="sort-created_at"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer" onclick="sortTable('provider')">Provider <span id="sort-provider"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer" onclick="sortTable('model')">Model <span id="sort-model"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer;text-align:right" onclick="sortTable('prompt_tokens')">Prompt <span id="sort-prompt_tokens"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer;text-align:right" onclick="sortTable('completion_tokens')">Completion <span id="sort-completion_tokens"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer;text-align:right" onclick="sortTable('total_tokens')">Total <span id="sort-total_tokens"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer;text-align:right" onclick="sortTable('estimated_cost')">Cost <span id="sort-estimated_cost"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem;cursor:pointer;text-align:right" onclick="sortTable('latency_ms')">Latency <span id="sort-latency_ms"></span></th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem">Status</th>
+          <th style="padding:0.5rem;color:var(--text-3);font-weight:600;font-size:0.72rem">Session</th>
+        </tr>
+      </thead>
+      <tbody id="request-log-body">
+        <tr><td colspan="10" style="padding:2rem;text-align:center;color:var(--text-3)">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  var _allEntries = [];
+  var _sortField = 'created_at';
+  var _sortDir = -1;
+  var _refreshTimer = null;
+
+  function escapeHtml(s) {
+    var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML;
+  }
+
+  function debouncedRefresh() {
+    clearTimeout(_refreshTimer);
+    _refreshTimer = setTimeout(refreshDashboard, 400);
+  }
+
+  // ── Filters ──
+  function _getSinceISO() {
+    var val = document.getElementById('filter-range').value;
+    if (val === 'all') return '';
+    var now = Date.now();
+    var ms = { '1h': 36e5, '6h': 216e5, '24h': 864e5, '7d': 6048e5, '30d': 2592e6 };
+    return new Date(now - (ms[val] || 864e5)).toISOString();
+  }
+
+  // ── Data Fetch ──
+  async function refreshDashboard() {
+    try {
+      var since = _getSinceISO();
+      var provider = document.getElementById('filter-provider').value;
+      var model = document.getElementById('filter-model').value;
+      var session = document.getElementById('filter-session').value.trim();
+
+      var params = new URLSearchParams();
+      params.set('limit', '500');
+      if (since) params.set('since', since);
+      if (provider) params.set('provider', provider);
+      if (model) params.set('model', model);
+      if (session) params.set('session_id', session);
+
+      var [listRes, summaryRes] = await Promise.all([
+        fetch('/api/llm-activity?' + params.toString(), { signal: AbortSignal.timeout(10000) }),
+        fetch('/api/llm-activity/summary', { signal: AbortSignal.timeout(10000) }),
+      ]);
+
+      var listData = await listRes.json();
+      var summaryData = await summaryRes.json();
+
+      _allEntries = listData.entries || [];
+
+      // Update summary stats
+      document.getElementById('stat-requests').textContent = _fmtNum(summaryData.total_requests || 0);
+      document.getElementById('stat-tokens').textContent = _fmtNum(summaryData.total_tokens || 0);
+      document.getElementById('stat-cost').textContent = '$' + (summaryData.total_cost || 0).toFixed(4);
+      document.getElementById('stat-latency').textContent = (summaryData.avg_latency_ms || 0) + 'ms';
+
+      // Populate filter dropdowns (unique providers/models)
+      _populateFilters(_allEntries, summaryData.by_model || []);
+
+      // Render charts
+      _renderTokenChart(_allEntries);
+      _renderCostChart(_allEntries);
+      _renderModelBreakdown(summaryData.by_model || []);
+      _renderLatencyChart(_allEntries);
+
+      // Render table
+      _renderTable(_allEntries);
+
+    } catch(e) {
+      console.error('Dashboard refresh error:', e);
+    }
+  }
+
+  function _fmtNum(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return String(n);
+  }
+
+  function _populateFilters(entries, byModel) {
+    var provSel = document.getElementById('filter-provider');
+    var modSel = document.getElementById('filter-model');
+    var curProv = provSel.value;
+    var curMod = modSel.value;
+
+    var providers = [];
+    var models = [];
+    byModel.forEach(function(m) {
+      if (providers.indexOf(m.provider) === -1) providers.push(m.provider);
+      if (models.indexOf(m.model) === -1) models.push(m.model);
+    });
+
+    provSel.innerHTML = '<option value="">All Providers</option>';
+    providers.forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p;
+      var icon = p === 'azure-openai' ? '\\u2601\\uFE0F' : p === 'openai' ? '\\uD83D\\uDD11' : p === 'azure-foundry' ? '\\uD83C\\uDFED' : '\\uD83E\\uDD99';
+      opt.textContent = icon + ' ' + p;
+      if (p === curProv) opt.selected = true;
+      provSel.appendChild(opt);
+    });
+
+    modSel.innerHTML = '<option value="">All Models</option>';
+    models.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      if (m === curMod) opt.selected = true;
+      modSel.appendChild(opt);
+    });
+  }
+
+  // ── Canvas Chart Helpers ──
+  function _drawBarChart(canvasId, labels, datasets, yLabel) {
+    var canvas = document.getElementById(canvasId);
+    var ctx = canvas.getContext('2d');
+    var parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+    var W = canvas.width, H = canvas.height;
+    var padL = 60, padR = 20, padT = 20, padB = 50;
+    var chartW = W - padL - padR;
+    var chartH = H - padT - padB;
+
+    ctx.clearRect(0, 0, W, H);
+
+    if (!labels.length) {
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-3').trim() || '#888';
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data for selected period', W/2, H/2);
+      return;
+    }
+
+    // Find max
+    var maxVal = 0;
+    datasets.forEach(function(ds) {
+      ds.data.forEach(function(v) { if (v > maxVal) maxVal = v; });
+    });
+    if (maxVal === 0) maxVal = 1;
+
+    // Grid lines
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--divider').trim() || 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 0.5;
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-3').trim() || '#888';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + chartH - (g / 4) * chartH;
+      ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL + chartW, gy); ctx.stroke();
+      var gv = (maxVal * g / 4);
+      ctx.fillText(gv >= 1000 ? (gv/1000).toFixed(1) + 'K' : gv.toFixed(gv < 1 ? 4 : 0), padL - 6, gy + 3);
+    }
+
+    // Bars
+    var barGroupW = chartW / labels.length;
+    var barW = Math.max(4, Math.min(30, barGroupW * 0.6 / datasets.length));
+    var totalBarsW = barW * datasets.length;
+
+    datasets.forEach(function(ds, di) {
+      ctx.fillStyle = ds.color;
+      ds.data.forEach(function(v, i) {
+        var x = padL + i * barGroupW + (barGroupW - totalBarsW) / 2 + di * barW;
+        var barH = (v / maxVal) * chartH;
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(x, padT + chartH - barH, barW - 1, barH);
+        ctx.globalAlpha = 1;
+      });
+    });
+
+    // X labels
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-3').trim() || '#888';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    var step = Math.max(1, Math.floor(labels.length / 12));
+    labels.forEach(function(l, i) {
+      if (i % step !== 0) return;
+      ctx.fillText(l, padL + i * barGroupW + barGroupW / 2, padT + chartH + 18);
+    });
+
+    // Legend
+    var legendX = padL;
+    ctx.font = '10px sans-serif';
+    datasets.forEach(function(ds) {
+      ctx.fillStyle = ds.color;
+      ctx.fillRect(legendX, padT + chartH + 32, 10, 10);
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-2').trim() || '#aaa';
+      ctx.fillText(ds.label, legendX + 14, padT + chartH + 41);
+      legendX += ctx.measureText(ds.label).width + 30;
+    });
+  }
+
+  // ── Token Chart ──
+  function _renderTokenChart(entries) {
+    var buckets = _bucketize(entries);
+    _drawBarChart('canvas-tokens', buckets.labels, [
+      { label: 'Prompt Tokens', data: buckets.keys.map(function(k) { return buckets.map[k].prompt; }), color: '#8b5cf6' },
+      { label: 'Completion Tokens', data: buckets.keys.map(function(k) { return buckets.map[k].completion; }), color: '#06b6d4' },
+    ], 'Tokens');
+  }
+
+  // ── Cost Chart ──
+  function _renderCostChart(entries) {
+    var buckets = _bucketize(entries);
+    _drawBarChart('canvas-cost', buckets.labels, [
+      { label: 'Cost ($)', data: buckets.keys.map(function(k) { return buckets.map[k].cost; }), color: '#10b981' },
+    ], 'Cost ($)');
+  }
+
+  // ── Latency Chart ──
+  function _renderLatencyChart(entries) {
+    var buckets = _bucketize(entries);
+    _drawBarChart('canvas-latency', buckets.labels, [
+      { label: 'Avg Latency (ms)', data: buckets.keys.map(function(k) {
+        var b = buckets.map[k];
+        return b.count ? Math.round(b.latency / b.count) : 0;
+      }), color: '#f59e0b' },
+    ], 'ms');
+  }
+
+  function _bucketize(entries) {
+    var sorted = entries.slice().sort(function(a, b) { return a.created_at < b.created_at ? -1 : 1; });
+    var range = document.getElementById('filter-range').value;
+    var fmt;
+    if (range === '1h' || range === '6h') {
+      fmt = function(d) { return d.getHours().toString().padStart(2,'0') + ':' + (Math.floor(d.getMinutes()/10)*10).toString().padStart(2,'0'); };
+    } else if (range === '24h') {
+      fmt = function(d) { return d.getHours().toString().padStart(2,'0') + ':00'; };
+    } else {
+      fmt = function(d) { return (d.getMonth()+1) + '/' + d.getDate(); };
+    }
+    var map = {};
+    var keys = [];
+    sorted.forEach(function(e) {
+      var key = fmt(new Date(e.created_at));
+      if (!map[key]) { map[key] = { prompt: 0, completion: 0, total: 0, cost: 0, latency: 0, count: 0 }; keys.push(key); }
+      map[key].prompt += e.prompt_tokens || 0;
+      map[key].completion += e.completion_tokens || 0;
+      map[key].total += e.total_tokens || 0;
+      map[key].cost += e.estimated_cost || 0;
+      map[key].latency += e.latency_ms || 0;
+      map[key].count += 1;
+    });
+    return { map: map, keys: keys, labels: keys };
+  }
+
+  // ── Model Breakdown ──
+  function _renderModelBreakdown(byModel) {
+    var el = document.getElementById('model-breakdown');
+    if (!byModel.length) {
+      el.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:2rem">No data yet</p>';
+      return;
+    }
+    var totalReq = 0;
+    byModel.forEach(function(m) { totalReq += m.requests; });
+
+    var colors = ['#06b6d4', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e', '#ec4899', '#6366f1'];
+    var html = '';
+    byModel.forEach(function(m, i) {
+      var pct = totalReq ? (m.requests / totalReq * 100).toFixed(1) : 0;
+      var color = colors[i % colors.length];
+      var icon = m.provider === 'azure-openai' ? '\\u2601\\uFE0F' : m.provider === 'openai' ? '\\uD83D\\uDD11' : m.provider === 'azure-foundry' ? '\\uD83C\\uDFED' : '\\uD83E\\uDD99';
+      html += '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--divider)">' +
+        '<div style="width:12px;height:12px;border-radius:3px;background:' + color + ';flex-shrink:0"></div>' +
+        '<div style="flex:1">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">' +
+            '<span style="font-size:0.82rem;color:var(--text-1);font-weight:500">' + icon + ' ' + escapeHtml(m.model) + '</span>' +
+            '<span style="font-size:0.72rem;color:var(--text-3)">' + m.requests + ' req (' + pct + '%)</span>' +
+          '</div>' +
+          '<div style="width:100%;height:6px;background:var(--input-bg);border-radius:3px;overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px;transition:width 0.5s ease"></div>' +
+          '</div>' +
+          '<div style="display:flex;gap:1rem;margin-top:0.3rem;font-size:0.68rem;color:var(--text-3)">' +
+            '<span>' + _fmtNum(m.tokens || 0) + ' tokens</span>' +
+            '<span>$' + (m.cost || 0).toFixed(4) + '</span>' +
+            '<span>' + (m.avg_latency || 0) + 'ms avg</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  // ── Table ──
+  function sortTable(field) {
+    if (_sortField === field) _sortDir *= -1;
+    else { _sortField = field; _sortDir = -1; }
+    _renderTable(_allEntries);
+  }
+
+  function _renderTable(entries) {
+    var tbody = document.getElementById('request-log-body');
+    document.getElementById('log-count').textContent = entries.length + ' requests';
+
+    // Clear sort indicators
+    ['created_at','provider','model','prompt_tokens','completion_tokens','total_tokens','estimated_cost','latency_ms'].forEach(function(f) {
+      var el = document.getElementById('sort-' + f);
+      if (el) el.textContent = _sortField === f ? (_sortDir === 1 ? '\\u25B2' : '\\u25BC') : '';
+    });
+
+    var sorted = entries.slice().sort(function(a, b) {
+      var va = a[_sortField], vb = b[_sortField];
+      if (typeof va === 'string') return _sortDir * va.localeCompare(vb);
+      return _sortDir * ((va || 0) - (vb || 0));
+    });
+
+    if (!sorted.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="padding:2rem;text-align:center;color:var(--text-3)">No LLM activity recorded yet. Run an agent to see data here.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = sorted.map(function(e) {
+      var dt = new Date(e.created_at);
+      var timeStr = dt.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+      var statusColor = e.guardrail_status === 'blocked' ? '#f43f5e' : e.guardrail_status === 'flagged' ? '#f59e0b' : '#10b981';
+      var statusIcon = e.guardrail_status === 'blocked' ? '\\u2717' : e.guardrail_status === 'flagged' ? '\\u26A0' : '\\u2713';
+      var costStr = e.estimated_cost > 0 ? '$' + e.estimated_cost.toFixed(6) : 'Free';
+      var provIcon = e.provider === 'azure-openai' ? '\\u2601\\uFE0F' : e.provider === 'openai' ? '\\uD83D\\uDD11' : e.provider === 'azure-foundry' ? '\\uD83C\\uDFED' : '\\uD83E\\uDD99';
+
+      return '<tr style="border-bottom:1px solid var(--divider)">' +
+        '<td style="padding:0.45rem 0.5rem;color:var(--text-2);white-space:nowrap">' + timeStr + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;color:var(--text-2)">' + provIcon + ' ' + escapeHtml(e.provider) + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;color:var(--text-1);font-weight:500">' + escapeHtml(e.model) + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;text-align:right;color:#8b5cf6">' + _fmtNum(e.prompt_tokens) + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;text-align:right;color:#06b6d4">' + _fmtNum(e.completion_tokens) + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;text-align:right;color:var(--text-1);font-weight:500">' + _fmtNum(e.total_tokens) + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;text-align:right;color:#10b981">' + costStr + '</td>' +
+        '<td style="padding:0.45rem 0.5rem;text-align:right;color:#f59e0b">' + (e.latency_ms || 0) + 'ms</td>' +
+        '<td style="padding:0.45rem 0.5rem"><span style="color:' + statusColor + ';font-weight:600">' + statusIcon + ' ' + escapeHtml(e.guardrail_status) + '</span></td>' +
+        '<td style="padding:0.45rem 0.5rem;font-size:0.68rem;color:var(--text-3);font-family:monospace">' + escapeHtml((e.session_id || '').substring(0, 12)) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Export CSV ──
+  function exportCSV() {
+    if (!_allEntries.length) return;
+    var headers = ['Time','Provider','Model','Prompt Tokens','Completion Tokens','Total Tokens','Cost','Latency (ms)','Status','Session','Request ID'];
+    var rows = _allEntries.map(function(e) {
+      return [e.created_at, e.provider, e.model, e.prompt_tokens, e.completion_tokens, e.total_tokens, e.estimated_cost, e.latency_ms, e.guardrail_status, e.session_id, e.request_id].join(',');
+    });
+    var csv = headers.join(',') + '\\n' + rows.join('\\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'llm-activity-' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ── Init ──
+  refreshDashboard();
+  // Auto-refresh every 30 seconds
+  setInterval(refreshDashboard, 30000);
+
+  // Auto-filter if requestId in URL query
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var rid = params.get('requestId');
+    if (rid) {
+      // Wait for initial data load then filter
+      setTimeout(function() {
+        var filterEl = document.getElementById('filter-model');
+        if (filterEl) {
+          filterEl.value = '';
+          _allEntries = _allEntries.filter(function(e) { return e.request_id === rid; });
+          _renderTable(_allEntries);
+          _renderSummaryCards(_allEntries);
+        }
+      }, 1200);
+    }
+  })();
+
+  // Handle window resize for canvases
+  window.addEventListener('resize', function() {
+    clearTimeout(window._resizeTimer);
+    window._resizeTimer = setTimeout(function() {
+      _renderTokenChart(_allEntries);
+      _renderCostChart(_allEntries);
+      _renderLatencyChart(_allEntries);
+    }, 200);
+  });
+<\/script>
+` }) %>
