@@ -94,6 +94,211 @@ async def code_execute(code: str, language: str = "python") -> str:
     return json.dumps(result)
 
 
+# ── New proxy tools ─────────────────────────────────────────────────────────
+
+
+@tool
+async def file_list(directory: str = "", pattern: str = "*") -> str:
+    """List files in the notes directory with optional glob pattern filter. Returns file names, sizes, and modification dates."""
+    result = await _proxy_call(
+        "/tools/file-list", {"directory": directory, "pattern": pattern}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def file_search_content(
+    query: str, pattern: str = "*", max_results: int = 10
+) -> str:
+    """Search for text content across all saved files. Returns matching files and line numbers."""
+    result = await _proxy_call(
+        "/tools/file-search-content",
+        {"query": query, "pattern": pattern, "max_results": max_results},
+    )
+    return json.dumps(result)
+
+
+@tool
+async def text_summarize(text: str, max_sentences: int = 3) -> str:
+    """Extract the most important sentences from text using extractive summarization. Good for quick summaries of long content."""
+    result = await _proxy_call(
+        "/tools/text-summarize", {"text": text, "max_sentences": max_sentences}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def text_transform(text: str, operation: str) -> str:
+    """Transform text with string operations. Operations: uppercase, lowercase, title, capitalize, reverse, snake_case, camel_case, kebab_case, count_words, count_chars, count_lines, trim, deduplicate_lines, sort_lines, number_lines, remove_blank_lines."""
+    result = await _proxy_call(
+        "/tools/text-transform", {"text": text, "operation": operation}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def text_diff(text_a: str, text_b: str, context_lines: int = 3) -> str:
+    """Generate a unified diff between two text strings. Shows additions, deletions, and unchanged context."""
+    result = await _proxy_call(
+        "/tools/text-diff",
+        {"text_a": text_a, "text_b": text_b, "context_lines": context_lines},
+    )
+    return json.dumps(result)
+
+
+@tool
+async def text_extract(text: str, extract_type: str) -> str:
+    """Extract structured data from text. Types: emails, urls, phone_numbers, ip_addresses, dates, numbers, hashtags, mentions."""
+    result = await _proxy_call(
+        "/tools/text-extract", {"text": text, "extract_type": extract_type}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def json_transform(data: str, operation: str, jq_path: str = "") -> str:
+    """Transform JSON data. Operations: prettify, minify, flatten, keys, values, sort_keys, validate, paths, filter_nulls, to_csv."""
+    result = await _proxy_call(
+        "/tools/json-transform",
+        {"data": data, "operation": operation, "jq_path": jq_path},
+    )
+    return json.dumps(result)
+
+
+@tool
+async def csv_parse(
+    csv_text: str,
+    operation: str = "to_json",
+    filter_column: str = "",
+    filter_value: str = "",
+    max_rows: int = 100,
+) -> str:
+    """Parse CSV text: to_json (convert), stats (column statistics), headers (list columns), preview (first 10 rows), filter (by column value)."""
+    result = await _proxy_call(
+        "/tools/csv-parse",
+        {
+            "csv_text": csv_text,
+            "operation": operation,
+            "filter_column": filter_column,
+            "filter_value": filter_value,
+            "max_rows": max_rows,
+        },
+    )
+    return json.dumps(result)
+
+
+@tool
+async def yaml_convert(content: str, direction: str = "yaml_to_json") -> str:
+    """Convert between YAML and JSON formats. Directions: yaml_to_json, json_to_yaml."""
+    result = await _proxy_call(
+        "/tools/yaml-convert", {"content": content, "direction": direction}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def base64_codec(text: str, operation: str = "encode") -> str:
+    """Encode or decode Base64 text. Operations: encode, decode."""
+    result = await _proxy_call(
+        "/tools/base64-codec", {"text": text, "operation": operation}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def hash_generate(text: str, algorithm: str = "sha256") -> str:
+    """Generate a cryptographic hash. Algorithms: md5, sha1, sha256, sha512."""
+    result = await _proxy_call(
+        "/tools/hash-generate", {"text": text, "algorithm": algorithm}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def uuid_generate(count: int = 1) -> str:
+    """Generate one or more UUID v4 values."""
+    result = await _proxy_call("/tools/uuid-generate", {"count": count})
+    return json.dumps(result)
+
+
+@tool
+async def regex_match(text: str, pattern: str, flags: str = "") -> str:
+    """Test a regex pattern against text. Returns all matches with positions and captured groups. Flags: i (ignore case), m (multiline), s (dotall)."""
+    result = await _proxy_call(
+        "/tools/regex-match", {"text": text, "pattern": pattern, "flags": flags}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def url_parse(url: str) -> str:
+    """Parse a URL into components: scheme, host, port, path, query parameters, fragment."""
+    result = await _proxy_call("/tools/url-parse", {"url": url})
+    return json.dumps(result)
+
+
+@tool
+async def html_strip(html: str, keep_links: bool = False) -> str:
+    """Strip HTML tags and return clean plain text. Optionally preserves link URLs inline."""
+    result = await _proxy_call(
+        "/tools/html-strip", {"html": html, "keep_links": keep_links}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def markdown_to_html(markdown: str) -> str:
+    """Convert Markdown text to HTML."""
+    result = await _proxy_call("/tools/markdown-to-html", {"markdown": markdown})
+    return json.dumps(result)
+
+
+@tool
+async def webpage_extract(url: str, max_length: int = 5000) -> str:
+    """Fetch a webpage and extract its main text content. Strips HTML tags. Good for reading articles or documentation."""
+    result = await _proxy_call(
+        "/tools/webpage-extract", {"url": url, "max_length": max_length}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def dns_lookup(hostname: str) -> str:
+    """Resolve a hostname to its IP addresses (IPv4 and IPv6)."""
+    result = await _proxy_call("/tools/dns-lookup", {"hostname": hostname})
+    return json.dumps(result)
+
+
+@tool
+async def json_schema_validate(data: str, schema_def: str) -> str:
+    """Validate JSON data against a JSON Schema definition. Returns whether data is valid and any validation errors."""
+    result = await _proxy_call(
+        "/tools/json-schema-validate", {"data": data, "schema_def": schema_def}
+    )
+    return json.dumps(result)
+
+
+@tool
+async def cron_parse(expression: str) -> str:
+    """Parse a cron expression and return a human-readable description of the schedule."""
+    result = await _proxy_call("/tools/cron-parse", {"expression": expression})
+    return json.dumps(result)
+
+
+@tool
+async def jwt_decode(token: str) -> str:
+    """Decode a JWT token (without verification) to inspect its header and payload. Shows expiration status."""
+    result = await _proxy_call("/tools/jwt-decode", {"token": token})
+    return json.dumps(result)
+
+
+@tool
+async def environment_info() -> str:
+    """Get information about the tools-service runtime: Python version, platform, file counts."""
+    result = await _proxy_call("/tools/environment-info", {})
+    return json.dumps(result)
+
+
 # ── Local tools (vector operations) ─────────────────────────────────────────
 
 
@@ -212,6 +417,8 @@ def get_all_tools() -> list:
         http_fetch,
         file_write,
         file_read,
+        file_list,
+        file_search_content,
         datetime_tool,
         web_search,
         code_execute,
@@ -221,6 +428,26 @@ def get_all_tools() -> list:
         advanced_search,
         query_database,
         query_csv_data,
+        text_summarize,
+        text_transform,
+        text_diff,
+        text_extract,
+        json_transform,
+        csv_parse,
+        yaml_convert,
+        base64_codec,
+        hash_generate,
+        uuid_generate,
+        regex_match,
+        url_parse,
+        html_strip,
+        markdown_to_html,
+        webpage_extract,
+        dns_lookup,
+        json_schema_validate,
+        cron_parse,
+        jwt_decode,
+        environment_info,
     ]
     try:
         from agent.memory import list_custom_tools

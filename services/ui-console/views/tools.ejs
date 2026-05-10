@@ -86,27 +86,134 @@
   </div>
 </div>
 
+<!-- Developer Guide: How to Add a New Tool -->
+<details class="card animate-fade-up" style="margin-top:1rem;cursor:pointer">
+  <summary style="font-weight:600;font-size:0.95rem;color:var(--text-1);list-style:none;display:flex;align-items:center;gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    How to Add a New Tool
+    <span style="font-size:0.7rem;color:var(--text-3);font-weight:400;margin-left:auto">Click to expand</span>
+  </summary>
+  <div style="margin-top:1rem;font-size:0.82rem;line-height:1.7;color:var(--text-2)">
+    <p style="margin-bottom:0.75rem;color:var(--text-3)">Adding a new tool takes <strong style="color:var(--text-1)">3 steps</strong>. Each tool is an HTTP endpoint in the tools-service that agents can call.</p>
+
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <!-- Step 1 -->
+      <div style="flex:1;min-width:280px;padding:1rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(6,182,212,0.2);color:#06b6d4;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem">1</span>
+          <strong style="color:var(--text-1)">Add endpoint in tools-service</strong>
+        </div>
+        <div style="font-family:monospace;font-size:0.72rem;background:var(--bg-2);padding:0.75rem;border-radius:8px;line-height:1.8;overflow-x:auto">
+          <span style="color:#06b6d4"># services/tools/main.py</span><br>
+          <span style="color:#c084fc">class</span> <span style="color:#f59e0b">MyToolRequest</span>(BaseModel):<br>
+          &nbsp;&nbsp;input_text: str = Field(...)<br><br>
+          <span style="color:#c084fc">@app.post</span>(<span style="color:#10b981">"/tools/my-tool"</span>)<br>
+          <span style="color:#c084fc">async def</span> <span style="color:#f59e0b">tool_my_tool</span>(body: MyToolRequest):<br>
+          &nbsp;&nbsp;result = do_something(body.input_text)<br>
+          &nbsp;&nbsp;<span style="color:#c084fc">return</span> {"result": result}
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="flex:1;min-width:280px;padding:1rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(139,92,246,0.2);color:#8b5cf6;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem">2</span>
+          <strong style="color:var(--text-1)">Register proxy in agent</strong>
+        </div>
+        <div style="font-family:monospace;font-size:0.72rem;background:var(--bg-2);padding:0.75rem;border-radius:8px;line-height:1.8;overflow-x:auto">
+          <span style="color:#06b6d4"># services/agent/agent/tools.py</span><br>
+          <span style="color:#c084fc">@tool</span><br>
+          <span style="color:#c084fc">async def</span> <span style="color:#f59e0b">my_tool</span>(input_text: str) -> str:<br>
+          &nbsp;&nbsp;<span style="color:#10b981">"""Describe what this tool does."""</span><br>
+          &nbsp;&nbsp;r = <span style="color:#c084fc">await</span> _proxy_call(<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#10b981">"/tools/my-tool"</span>,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;{"input_text": input_text})<br>
+          &nbsp;&nbsp;<span style="color:#c084fc">return</span> json.dumps(r)<br><br>
+          <span style="color:#06b6d4"># Add to get_all_tools() list:</span><br>
+          builtin = [..., my_tool]
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="flex:1;min-width:280px;padding:1rem;border-radius:10px;background:var(--input-bg);border:1px solid var(--glass-border)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+          <span style="background:rgba(16,185,129,0.2);color:#10b981;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem">3</span>
+          <strong style="color:var(--text-1)">Rebuild &amp; test</strong>
+        </div>
+        <div style="font-family:monospace;font-size:0.72rem;background:var(--bg-2);padding:0.75rem;border-radius:8px;line-height:1.8;overflow-x:auto">
+          <span style="color:#06b6d4"># Rebuild containers</span><br>
+          docker-compose up -d --build \<br>
+          &nbsp;&nbsp;tools-service agent-service<br><br>
+          <span style="color:#06b6d4"># Test the endpoint</span><br>
+          curl -X POST localhost:8011\<br>
+          &nbsp;&nbsp;/tools/my-tool \<br>
+          &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+          &nbsp;&nbsp;-d '{"input_text": "hello"}'
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:0.75rem;padding:0.75rem;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);font-size:0.75rem;color:var(--text-3)">
+      <strong style="color:#f59e0b">Tips:</strong>&nbsp;
+      Use Pydantic <code style="color:var(--text-2)">Field(...)</code> for validation. Keep param names identical between the endpoint model and the <code style="color:var(--text-2)">@tool</code> function. Add any new pip deps to <code style="color:var(--text-2)">services/tools/requirements.txt</code>. Or skip coding entirely — click <strong style="color:var(--text-1)">New Tool</strong> above to create a custom HTTP tool via the UI.
+    </div>
+  </div>
+</details>
+
 <script>
 let allToolsData = [];
 
 const TOOL_ICONS = {
   'math': '🧮', 'http_fetch': '🌐', 'file_write': '💾', 'file_read': '📄',
+  'file_list': '📁', 'file_search_content': '🔎',
   'datetime_tool': '🕐', 'web_search': '🔍', 'code_execute': '💻',
-  'vector_search': '🔎', 'vector_store': '📦'
+  'vector_search': '🔎', 'vector_store': '📦',
+  'delegate_to_agent': '🤖', 'advanced_search': '🧠',
+  'query_database': '🗄️', 'query_csv_data': '📊',
+  'text_summarize': '📝', 'text_transform': '🔤', 'text_diff': '📐',
+  'text_extract': '🔬', 'json_transform': '🔧', 'csv_parse': '📋',
+  'yaml_convert': '🔄', 'base64_codec': '🔐', 'hash_generate': '#️⃣',
+  'uuid_generate': '🆔', 'regex_match': '🎯', 'url_parse': '🔗',
+  'html_strip': '🧹', 'markdown_to_html': '📰', 'webpage_extract': '🕸️',
+  'dns_lookup': '🌍', 'json_schema_validate': '✅', 'cron_parse': '⏰',
+  'jwt_decode': '🔓', 'environment_info': 'ℹ️'
 };
 
 const BUILTIN_CATEGORIES = {
   'math': 'proxy', 'http_fetch': 'proxy', 'file_write': 'proxy', 'file_read': 'proxy',
+  'file_list': 'proxy', 'file_search_content': 'proxy',
   'datetime_tool': 'proxy', 'web_search': 'proxy', 'code_execute': 'proxy',
-  'vector_search': 'local', 'vector_store': 'local'
+  'vector_search': 'local', 'vector_store': 'local',
+  'delegate_to_agent': 'local', 'advanced_search': 'local',
+  'query_database': 'local', 'query_csv_data': 'local',
+  'text_summarize': 'proxy', 'text_transform': 'proxy', 'text_diff': 'proxy',
+  'text_extract': 'proxy', 'json_transform': 'proxy', 'csv_parse': 'proxy',
+  'yaml_convert': 'proxy', 'base64_codec': 'proxy', 'hash_generate': 'proxy',
+  'uuid_generate': 'proxy', 'regex_match': 'proxy', 'url_parse': 'proxy',
+  'html_strip': 'proxy', 'markdown_to_html': 'proxy', 'webpage_extract': 'proxy',
+  'dns_lookup': 'proxy', 'json_schema_validate': 'proxy', 'cron_parse': 'proxy',
+  'jwt_decode': 'proxy', 'environment_info': 'proxy'
 };
 
 const BUILTIN_ENDPOINTS = {
   'math': 'POST /tools/math', 'http_fetch': 'POST /tools/http-fetch',
   'file_write': 'POST /tools/file-write', 'file_read': 'POST /tools/file-read',
+  'file_list': 'POST /tools/file-list', 'file_search_content': 'POST /tools/file-search-content',
   'datetime_tool': 'POST /tools/datetime', 'web_search': 'POST /tools/web-search',
   'code_execute': 'POST /tools/code-execute',
-  'vector_search': 'In-process (ChromaDB)', 'vector_store': 'In-process (ChromaDB)'
+  'vector_search': 'In-process (ChromaDB)', 'vector_store': 'In-process (ChromaDB)',
+  'delegate_to_agent': 'In-process (agent)', 'advanced_search': 'In-process (LlamaIndex)',
+  'query_database': 'In-process (SQL)', 'query_csv_data': 'In-process (Pandas)',
+  'text_summarize': 'POST /tools/text-summarize', 'text_transform': 'POST /tools/text-transform',
+  'text_diff': 'POST /tools/text-diff', 'text_extract': 'POST /tools/text-extract',
+  'json_transform': 'POST /tools/json-transform', 'csv_parse': 'POST /tools/csv-parse',
+  'yaml_convert': 'POST /tools/yaml-convert', 'base64_codec': 'POST /tools/base64-codec',
+  'hash_generate': 'POST /tools/hash-generate', 'uuid_generate': 'POST /tools/uuid-generate',
+  'regex_match': 'POST /tools/regex-match', 'url_parse': 'POST /tools/url-parse',
+  'html_strip': 'POST /tools/html-strip', 'markdown_to_html': 'POST /tools/markdown-to-html',
+  'webpage_extract': 'POST /tools/webpage-extract', 'dns_lookup': 'POST /tools/dns-lookup',
+  'json_schema_validate': 'POST /tools/json-schema-validate', 'cron_parse': 'POST /tools/cron-parse',
+  'jwt_decode': 'POST /tools/jwt-decode', 'environment_info': 'POST /tools/environment-info'
 };
 
 const BUILTIN_PARAMS = {
@@ -114,11 +221,37 @@ const BUILTIN_PARAMS = {
   'http_fetch': [{ name: 'url', type: 'string', desc: 'URL to fetch' }],
   'file_write': [{ name: 'filename', type: 'string', desc: 'Filename' }, { name: 'content', type: 'string', desc: 'Text content' }],
   'file_read': [{ name: 'filename', type: 'string', desc: 'Filename to read' }],
+  'file_list': [{ name: 'directory', type: 'string', desc: 'Subdirectory (default: root)' }, { name: 'pattern', type: 'string', desc: 'Glob pattern (default: *)' }],
+  'file_search_content': [{ name: 'query', type: 'string', desc: 'Text to search for' }, { name: 'pattern', type: 'string', desc: 'File glob (default: *)' }, { name: 'max_results', type: 'int', desc: 'Max files (default: 10)' }],
   'datetime_tool': [],
   'web_search': [{ name: 'query', type: 'string', desc: 'Search query' }, { name: 'max_results', type: 'int', desc: 'Max results (default: 5)' }],
   'code_execute': [{ name: 'code', type: 'string', desc: 'Code to execute' }, { name: 'language', type: 'string', desc: 'Language (default: python)' }],
   'vector_search': [{ name: 'query', type: 'string', desc: 'Semantic search query' }, { name: 'k', type: 'int', desc: 'Number of results' }],
-  'vector_store': [{ name: 'text', type: 'string', desc: 'Document text' }, { name: 'source', type: 'string', desc: 'Source label' }]
+  'vector_store': [{ name: 'text', type: 'string', desc: 'Document text' }, { name: 'source', type: 'string', desc: 'Source label' }],
+  'delegate_to_agent': [{ name: 'agent_id', type: 'string', desc: 'Agent ID to delegate to' }, { name: 'task', type: 'string', desc: 'Task description' }],
+  'advanced_search': [{ name: 'query', type: 'string', desc: 'Search query' }, { name: 'mode', type: 'string', desc: 'hybrid|sentence_window|auto_merging|reranked' }, { name: 'k', type: 'int', desc: 'Results count' }],
+  'query_database': [{ name: 'question', type: 'string', desc: 'Natural language question' }, { name: 'connection_string', type: 'string', desc: 'SQLAlchemy connection string' }, { name: 'tables', type: 'string', desc: 'Comma-separated table names (optional)' }],
+  'query_csv_data': [{ name: 'question', type: 'string', desc: 'Question about the CSV data' }, { name: 'csv_path', type: 'string', desc: 'Path to CSV file' }],
+  'text_summarize': [{ name: 'text', type: 'string', desc: 'Text to summarize' }, { name: 'max_sentences', type: 'int', desc: 'Max sentences (default: 3)' }],
+  'text_transform': [{ name: 'text', type: 'string', desc: 'Input text' }, { name: 'operation', type: 'string', desc: 'uppercase|lowercase|title|reverse|snake_case|camel_case|kebab_case|count_words|sort_lines|...' }],
+  'text_diff': [{ name: 'text_a', type: 'string', desc: 'First text' }, { name: 'text_b', type: 'string', desc: 'Second text' }, { name: 'context_lines', type: 'int', desc: 'Context lines (default: 3)' }],
+  'text_extract': [{ name: 'text', type: 'string', desc: 'Text to extract from' }, { name: 'extract_type', type: 'string', desc: 'emails|urls|phones|ip_addresses|dates|numbers|hashtags|mentions' }],
+  'json_transform': [{ name: 'data', type: 'string', desc: 'JSON string' }, { name: 'operation', type: 'string', desc: 'prettify|minify|flatten|keys|values|sort_keys|paths|filter_nulls|to_csv' }],
+  'csv_parse': [{ name: 'csv_text', type: 'string', desc: 'CSV content' }, { name: 'operation', type: 'string', desc: 'to_json|stats|filter|head|tail|columns|unique|count' }],
+  'yaml_convert': [{ name: 'content', type: 'string', desc: 'YAML or JSON string' }, { name: 'direction', type: 'string', desc: 'yaml_to_json|json_to_yaml' }],
+  'base64_codec': [{ name: 'text', type: 'string', desc: 'Text to encode/decode' }, { name: 'operation', type: 'string', desc: 'encode|decode' }],
+  'hash_generate': [{ name: 'text', type: 'string', desc: 'Text to hash' }, { name: 'algorithm', type: 'string', desc: 'md5|sha1|sha256|sha512' }],
+  'uuid_generate': [{ name: 'count', type: 'int', desc: 'Number of UUIDs (default: 1)' }],
+  'regex_match': [{ name: 'text', type: 'string', desc: 'Text to search' }, { name: 'pattern', type: 'string', desc: 'Regex pattern' }, { name: 'flags', type: 'string', desc: 'Flags: i m s' }],
+  'url_parse': [{ name: 'url', type: 'string', desc: 'URL to parse' }],
+  'html_strip': [{ name: 'html', type: 'string', desc: 'HTML content' }, { name: 'keep_links', type: 'bool', desc: 'Preserve link URLs (default: false)' }],
+  'markdown_to_html': [{ name: 'markdown', type: 'string', desc: 'Markdown text' }],
+  'webpage_extract': [{ name: 'url', type: 'string', desc: 'URL to extract text from' }, { name: 'max_length', type: 'int', desc: 'Max chars (default: 5000)' }],
+  'dns_lookup': [{ name: 'hostname', type: 'string', desc: 'Hostname to resolve' }],
+  'json_schema_validate': [{ name: 'data', type: 'string', desc: 'JSON data string' }, { name: 'schema_def', type: 'string', desc: 'JSON Schema string' }],
+  'cron_parse': [{ name: 'expression', type: 'string', desc: 'Cron expression (5 or 6 fields)' }],
+  'jwt_decode': [{ name: 'token', type: 'string', desc: 'JWT token string' }],
+  'environment_info': []
 };
 
 async function loadTools() {
