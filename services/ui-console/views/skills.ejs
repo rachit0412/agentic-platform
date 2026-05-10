@@ -1,18 +1,142 @@
 <%- include('layout', { title: 'Skills', page: 'skills', body: `
 
 <h1 class="text-glow-cyan">Skills</h1>
-<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">A skill is a <strong style="color:var(--text-1)">packaged capability</strong> that performs a specific task — logic + tools + optional data access, invoked by an agent or workflow.</p>
-<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Think: <strong style="color:#f59e0b">reusable function with intelligence</strong>. Each skill contains a <em>prompt</em> (what the model should do), <em>tools</em> (what actions it can take), and <em>constraints</em> (behavioral guardrails).</p>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">A <strong style="color:var(--text-1)">skill</strong> is a packaged capability: code + prompt(s) + tools + contracts, exposed as a callable function.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Think: <strong style="color:#f59e0b">reusable function with intelligence</strong>. Each skill contains a <em>prompt</em> (what the model should do), <em>tools</em> (what actions it can take), <em>input parameters</em> (what data it receives), and <em>constraints</em> (behavioral guardrails).</p>
+
+<!-- Security & Best Practices Toggle -->
+<details style="margin-bottom:1.25rem;border:1px solid var(--glass-border);border-radius:10px;padding:0;background:var(--glass-bg)">
+  <summary style="cursor:pointer;padding:0.75rem 1rem;font-weight:600;font-size:0.85rem;color:var(--text-1);display:flex;align-items:center;gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Security Considerations &amp; Best Practices
+  </summary>
+  <div style="padding:0 1rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <!-- Security -->
+    <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:0.75rem 1rem">
+      <h4 style="margin:0 0 0.5rem;font-size:0.82rem;color:#ef4444;display:flex;align-items:center;gap:0.35rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Security
+      </h4>
+      <ul style="margin:0;padding-left:1.1rem;font-size:0.78rem;color:var(--text-3);line-height:1.7">
+        <li>Exercise caution when adding scripts to your skill</li>
+        <li><strong style="color:var(--text-2)">Never hardcode</strong> API keys, passwords, or secrets in prompts or constraints</li>
+        <li>Review any skills you download before enabling them</li>
+        <li>Use appropriate <strong style="color:var(--text-2)">MCP connections</strong> for external service access</li>
+        <li>Validate input parameters to prevent injection attacks</li>
+      </ul>
+    </div>
+    <!-- Best Practices (editable) -->
+    <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:0.75rem 1rem">
+      <h4 style="margin:0 0 0.5rem;font-size:0.82rem;color:#22c55e;display:flex;align-items:center;justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:0.35rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Best Practices
+        </span>
+        <button class="btn btn-sm" onclick="toggleBPEdit()" id="bp-edit-btn" style="font-size:0.68rem;padding:0.15rem 0.5rem;color:#22c55e;border-color:#22c55e44">Edit</button>
+      </h4>
+      <div id="bp-view">
+        <ul id="bp-list" style="margin:0;padding-left:1.1rem;font-size:0.78rem;color:var(--text-3);line-height:1.7"></ul>
+      </div>
+      <div id="bp-editor" style="display:none">
+        <textarea id="bp-textarea" class="input" rows="8" style="font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--mono)"></textarea>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+          <button class="btn btn-sm btn-primary" onclick="saveBP()" style="font-size:0.72rem;padding:0.2rem 0.6rem">Save</button>
+          <button class="btn btn-sm" onclick="toggleBPEdit()" style="font-size:0.72rem;padding:0.2rem 0.6rem">Cancel</button>
+          <button class="btn btn-sm" onclick="resetBP()" style="font-size:0.72rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef444444">Reset to Defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
 
 <!-- Action Bar -->
 <div class="flex-between mb-2">
   <div style="display:flex;gap:0.5rem;align-items:center">
     <span id="skill-count" class="badge" style="font-size:0.78rem">0 skills</span>
   </div>
-  <button class="btn btn-primary" onclick="showCreateForm()">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    New Skill
-  </button>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn" onclick="toggleDecomposePanel()" style="background:linear-gradient(135deg,#f59e0b22,#f9731622);border-color:#f59e0b44;color:#f59e0b;font-weight:600">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      Skill Family
+    </button>
+    <button class="btn btn-primary" onclick="showCreateForm()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Skill
+    </button>
+  </div>
+</div>
+
+<!-- Skill Family / Decompose Panel -->
+<div class="card animate-fade-up" id="decompose-panel" style="display:none;border:1px solid #f59e0b44;background:linear-gradient(135deg,rgba(245,158,11,0.04),rgba(249,115,22,0.04))">
+  <h3 style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.75rem">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+    Create Skill Family
+    <span style="font-size:0.75rem;font-weight:400;color:var(--text-3);margin-left:0.5rem">&mdash; decompose a concept or prompt into multiple complementary skills</span>
+  </h3>
+  <p style="font-size:0.78rem;color:var(--text-3);margin:0 0 1rem;line-height:1.6">
+    A <strong style="color:var(--text-2)">prompt</strong> defines <em>how</em> to do something. A <strong style="color:var(--text-2)">skill family</strong> defines how that capability <em>works in the organization</em> &mdash; covering the full lifecycle: create, update, validate, convert, compare, extract.
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div>
+      <label class="field-label">Concept / Domain <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; what capability area?</span></label>
+      <input type="text" id="decompose-concept" class="input" placeholder="e.g. Technical Documentation, Code Review, Data Analysis Pipeline">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:0.5rem">
+      <div>
+        <label class="field-label">Number of Skills</label>
+        <input type="number" id="decompose-count" class="input" min="2" max="10" value="5" style="width:100%">
+      </div>
+      <div>
+        <label class="field-label">Model</label>
+        <select id="decompose-model" class="input" style="height:38px;font-size:0.82rem;min-width:160px">
+          <option value="">Active Model</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:0.75rem">
+    <label class="field-label">Base Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; optional: paste an existing prompt to build skills around it</span></label>
+    <textarea id="decompose-prompt" class="input" rows="4" placeholder="e.g. You are a technical documentation writer. Write clear, accurate docs for engineers..." style="resize:vertical;font-family:var(--mono)"></textarea>
+  </div>
+  <div style="display:flex;gap:0.75rem;margin-top:1rem;align-items:center">
+    <button class="btn btn-primary" id="decompose-btn" onclick="decomposeSkills()" style="background:linear-gradient(135deg,#f59e0b,#f97316);border:none;font-weight:600">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      Generate Skill Family
+    </button>
+    <button class="btn" onclick="toggleDecomposePanel()">Cancel</button>
+    <span style="font-size:0.72rem;color:var(--text-3);margin-left:auto">AI will generate complementary skills. You review &amp; save each one individually.</span>
+  </div>
+</div>
+
+<!-- Decompose Results -->
+<div class="card animate-fade-up" id="decompose-results" style="display:none;border:1px solid #f59e0b44;background:linear-gradient(135deg,rgba(245,158,11,0.03),rgba(249,115,22,0.03))">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+    <h3 style="margin:0;display:flex;align-items:center;gap:0.5rem">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      <span id="decompose-family-name">Skill Family</span>
+    </h3>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-primary btn-sm" onclick="saveAllDecomposed()">Save All</button>
+      <button class="btn btn-sm" onclick="dismissDecompose()">Dismiss</button>
+    </div>
+  </div>
+  <p id="decompose-family-desc" style="font-size:0.78rem;color:var(--text-3);margin:0 0 1rem"></p>
+  <div id="decompose-skills-grid" class="grid-3" style="gap:0.75rem"></div>
+</div>
+
+<!-- AI Enrich Preview -->
+<div class="card animate-fade-up" id="ai-enrich-preview" style="display:none;border:1px solid #6366f144;background:linear-gradient(135deg,rgba(99,102,241,0.05),rgba(139,92,246,0.05))">
+  <h3 style="display:flex;align-items:center;gap:0.5rem;margin:0">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+    AI Enrichment Result
+    <span id="enrich-score" class="badge" style="margin-left:auto"></span>
+  </h3>
+  <div id="enrich-improvements" style="margin:0.75rem 0;font-size:0.78rem;color:var(--text-3)"></div>
+  <div style="display:flex;gap:0.75rem">
+    <button class="btn btn-primary" onclick="acceptEnrichment()">Accept &amp; Apply</button>
+    <button class="btn" onclick="dismissEnrichment()">Dismiss</button>
+  </div>
 </div>
 
 <!-- Create / Edit Form -->
@@ -32,11 +156,17 @@
   <div style="margin-top:1rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
       <label class="field-label" style="margin-bottom:0">Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the instructional context: what the model should do, how it should behave, what output is expected</span></label>
-      <select id="prompt-library-picker" class="input" style="width:220px;height:30px;font-size:0.75rem" onchange="applyLibraryPrompt()">
-        <option value="">— Select from Prompt Library —</option>
+      <select id="prompt-library-picker" class="input" style="width:260px;height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPrompt()">
+        <option value="">&mdash; Select from Prompt Library &mdash;</option>
       </select>
     </div>
     <textarea id="skill-prompt" class="input" rows="5" placeholder="e.g. You are a deep research analyst. Break complex topics into sub-questions, search for evidence, cite sources, and synthesize a structured report..." style="resize:vertical;font-family:var(--mono)"></textarea>
+    <div style="display:flex;justify-content:flex-end;margin-top:0.35rem">
+      <button type="button" class="btn btn-sm" id="suggest-from-prompt-btn" onclick="suggestSkillsFromPrompt()" style="font-size:0.72rem;padding:0.2rem 0.6rem;color:#f59e0b;border-color:#f59e0b44;gap:0.3rem">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+        AI: Suggest skills from this prompt
+      </button>
+    </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
     <div>
@@ -48,9 +178,46 @@
       <input type="text" id="skill-constraints" class="input" placeholder="e.g. Always cite sources, Max 500 words">
     </div>
   </div>
-  <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+
+  <!-- Input Parameters -->
+  <div style="margin-top:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+      <label class="field-label" style="margin-bottom:0">Input Parameters <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">&mdash; define the data this skill receives when invoked (like function arguments)</span></label>
+      <button type="button" class="btn btn-sm" onclick="addParameter()" style="font-size:0.75rem;padding:0.25rem 0.6rem">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Parameter
+      </button>
+    </div>
+    <div id="params-container"></div>
+    <div id="params-empty" style="text-align:center;padding:1rem;color:var(--text-3);font-size:0.78rem;border:1px dashed var(--glass-border);border-radius:8px;display:block">
+      No input parameters defined. Click <strong>Add Parameter</strong> to define arguments this skill accepts.
+    </div>
+  </div>
+
+  <!-- AI Enrich Options -->
+  <details style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Model &amp; Org Best Practices</summary>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+      <div>
+        <label class="field-label">AI Model <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; used for AI Enrich</span></label>
+        <select id="enrich-model" class="input" style="height:36px;font-size:0.82rem">
+          <option value="">Active Model</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Org Best Practices <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; fed to AI during enrichment</span></label>
+        <textarea id="enrich-bp-override" class="input" rows="3" placeholder="Loaded automatically from your best practices. Override here if needed." style="font-size:0.78rem;font-family:var(--mono);resize:vertical"></textarea>
+      </div>
+    </div>
+  </details>
+
+  <div style="display:flex;gap:0.75rem;margin-top:1.25rem;align-items:center">
     <button class="btn btn-primary" onclick="saveSkill()">Save</button>
     <button class="btn" onclick="hideForm()">Cancel</button>
+    <button class="btn" id="enrich-btn" onclick="enrichWithAI()" style="margin-left:auto;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600;box-shadow:0 2px 8px rgba(99,102,241,0.25)">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+      AI Enrich
+    </button>
   </div>
 </div>
 
@@ -60,6 +227,77 @@
 <script>
   let allTools = [];
   let libraryPrompts = [];
+  let paramCounter = 0;
+
+  // ── Input Parameters helpers ──
+  function addParameter(data) {
+    const c = document.getElementById('params-container');
+    document.getElementById('params-empty').style.display = 'none';
+    const idx = paramCounter++;
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    row.dataset.idx = idx;
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 110px 60px 1fr auto;gap:0.5rem;align-items:start;margin-bottom:0.5rem;padding:0.6rem 0.75rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--glass-border)';
+    const d = data || {};
+    row.innerHTML =
+      '<div><label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:2px">Name *</label>' +
+      '<input type="text" class="input param-name" placeholder="e.g. topic" value="' + escapeHtml(d.name || '') + '" style="height:32px;font-size:0.8rem"></div>' +
+      '<div><label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:2px">Type</label>' +
+      '<select class="input param-type" style="height:32px;font-size:0.8rem">' +
+        '<option value="string"' + (d.type === 'string' || !d.type ? ' selected' : '') + '>string</option>' +
+        '<option value="number"' + (d.type === 'number' ? ' selected' : '') + '>number</option>' +
+        '<option value="boolean"' + (d.type === 'boolean' ? ' selected' : '') + '>boolean</option>' +
+        '<option value="array"' + (d.type === 'array' ? ' selected' : '') + '>array</option>' +
+        '<option value="object"' + (d.type === 'object' ? ' selected' : '') + '>object</option>' +
+      '</select></div>' +
+      '<div style="text-align:center"><label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:2px">Req?</label>' +
+      '<input type="checkbox" class="param-required"' + (d.required ? ' checked' : '') + ' style="margin-top:6px;width:16px;height:16px;accent-color:var(--accent-cyan)"></div>' +
+      '<div><label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:2px">Default / Description</label>' +
+      '<input type="text" class="input param-default" placeholder="default value or description" value="' + escapeHtml(d.default_value || d.description || '') + '" style="height:32px;font-size:0.8rem"></div>' +
+      '<button type="button" class="btn btn-sm btn-danger" onclick="removeParameter(this)" style="margin-top:16px;padding:0.2rem 0.5rem;font-size:0.72rem">' +
+        '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+      '</button>';
+    c.appendChild(row);
+    // Auto-save draft on param changes
+    row.querySelectorAll('input,select').forEach(el => {
+      el.addEventListener('input', saveDraft);
+      el.addEventListener('change', saveDraft);
+    });
+  }
+
+  function removeParameter(btn) {
+    btn.closest('.param-row').remove();
+    const c = document.getElementById('params-container');
+    if (!c.children.length) document.getElementById('params-empty').style.display = 'block';
+    saveDraft();
+  }
+
+  function getParameters() {
+    const rows = document.querySelectorAll('.param-row');
+    const params = [];
+    rows.forEach(row => {
+      const name = row.querySelector('.param-name').value.trim();
+      if (!name) return;
+      params.push({
+        name: name,
+        type: row.querySelector('.param-type').value,
+        required: row.querySelector('.param-required').checked,
+        default_value: row.querySelector('.param-default').value.trim()
+      });
+    });
+    return params;
+  }
+
+  function clearParameters() {
+    document.getElementById('params-container').innerHTML = '';
+    document.getElementById('params-empty').style.display = 'block';
+    paramCounter = 0;
+  }
+
+  function loadParametersIntoForm(params) {
+    clearParameters();
+    (params || []).forEach(p => addParameter(p));
+  }
 
   async function loadTools() {
     try {
@@ -115,15 +353,24 @@
       grid.innerHTML = skills.map(s => {
         const toolBadges = (s.tool_ids || []).slice(0,4).map(t => '<span class="badge">' + escapeHtml(t) + '</span>').join(' ');
         const extra = (s.tool_ids || []).length > 4 ? ' <span class="badge">+' + ((s.tool_ids||[]).length - 4) + '</span>' : '';
+        const paramCount = (s.input_parameters || []).length;
+        const paramBadge = paramCount > 0
+          ? ' <span class="badge" style="background:rgba(99,102,241,0.15);color:#818cf8;font-size:0.7rem">' + paramCount + ' param' + (paramCount > 1 ? 's' : '') + '</span>'
+          : '';
+        const paramSig = paramCount > 0
+          ? '<div style="margin:0.4rem 0;font-size:0.72rem;color:var(--text-3);font-family:var(--mono);background:var(--input-bg);padding:0.4rem 0.6rem;border-radius:6px;overflow:hidden;max-height:48px">' +
+              (s.input_parameters||[]).map(function(p){return '<span style="color:#818cf8">' + escapeHtml(p.name) + '</span><span style="color:var(--text-3)">:</span><span style="color:#f59e0b">' + escapeHtml(p.type||'string') + '</span>' + (p.required ? '<span style="color:#ef4444">*</span>' : '')}).join('<span style="color:var(--text-3)">, </span>') +
+            '</div>' : '';
         return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
           '<div>' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
-              '<h3 style="margin:0;font-size:1rem">⚡ ' + escapeHtml(s.name) + '</h3>' +
+              '<h3 style="margin:0;font-size:1rem">' + String.fromCharCode(9889) + ' ' + escapeHtml(s.name) + '</h3>' +
               '<span class="mono" style="font-size:0.68rem;color:var(--text-3)">' + escapeHtml(s.id) + '</span>' +
             '</div>' +
             '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + escapeHtml(s.description || 'No description') + '</p>' +
             (s.system_prompt ? '<div style="background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);max-height:60px;overflow:hidden;margin-bottom:0.5rem">' + escapeHtml(s.system_prompt.slice(0,150)) + (s.system_prompt.length > 150 ? '...' : '') + '</div>' : '') +
-            '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.5rem">' + toolBadges + extra + '</div>' +
+            paramSig +
+            '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.5rem">' + toolBadges + extra + paramBadge + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
             '<button class="btn btn-sm" onclick="editSkill(\\'' + escapeHtml(s.id) + '\\')">Edit</button>' +
@@ -146,9 +393,10 @@
       prompt: document.getElementById('skill-prompt').value,
       tools: Array.from(document.getElementById('skill-tools').selectedOptions).map(o => o.value),
       constraints: document.getElementById('skill-constraints').value,
+      input_parameters: getParameters(),
       formTitle: document.getElementById('form-title').textContent,
     };
-    if (draft.name || draft.prompt || draft.desc || draft.constraints) {
+    if (draft.name || draft.prompt || draft.desc || draft.constraints || draft.input_parameters.length) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     }
   }
@@ -164,6 +412,7 @@
       document.getElementById('skill-prompt').value = d.prompt || '';
       if (d.tools && d.tools.length) renderToolsDropdown(d.tools);
       document.getElementById('skill-constraints').value = d.constraints || '';
+      if (d.input_parameters && d.input_parameters.length) loadParametersIntoForm(d.input_parameters);
       document.getElementById('form-title').textContent = d.formTitle || 'Create Skill';
       document.getElementById('skill-form').style.display = 'block';
     } catch(e) { clearDraft(); }
@@ -184,6 +433,9 @@
     document.getElementById('skill-prompt').value = '';
     renderToolsDropdown([]);
     document.getElementById('skill-constraints').value = '';
+    clearParameters();
+    document.getElementById('enrich-bp-override').value = '';
+    dismissEnrichment();
     document.getElementById('skill-form').style.display = 'block';
     document.getElementById('skill-name').focus();
   }
@@ -204,9 +456,74 @@
       document.getElementById('skill-prompt').value = s.system_prompt || '';
       renderToolsDropdown(s.tool_ids || []);
       document.getElementById('skill-constraints').value = (s.constraints || []).join(', ');
+      loadParametersIntoForm(s.input_parameters || []);
       document.getElementById('skill-form').style.display = 'block';
       document.getElementById('skill-name').focus();
     } catch(e) { showToast('Error loading skill: ' + e.message, 'error'); }
+  }
+
+  // ── Best-practice validation ──
+  var SECRET_PATTERNS = ['sk-','api_key','apikey','secret','password','token','aws_access','aws_secret','bearer ','ghp_','gho_','-----begin','akia'];
+  var VALID_PARAM_TYPES = ['string','number','boolean','array','object'];
+
+  function validateSkill(payload) {
+    var warnings = [];
+    var errors = [];
+
+    // Required fields
+    if (!payload.name) errors.push('Name is required');
+    if (!payload.description) warnings.push('Missing description \u2014 agents won\\x27t know when to activate this skill');
+    if (!payload.system_prompt) warnings.push('Missing prompt \u2014 skill has no instructions for the model');
+
+    // Security: secrets in prompt or constraints
+    var lower = (payload.system_prompt || '').toLowerCase();
+    SECRET_PATTERNS.forEach(function(pat) {
+      if (lower.indexOf(pat.toLowerCase()) !== -1) {
+        errors.push('Prompt contains a possible secret/credential ("' + pat + '"). Use env vars or MCP connections instead.');
+      }
+    });
+    (payload.constraints || []).forEach(function(c, i) {
+      SECRET_PATTERNS.forEach(function(pat) {
+        if (c.toLowerCase().indexOf(pat.toLowerCase()) !== -1) {
+          errors.push('Constraint ' + (i+1) + ' contains a possible secret ("' + pat + '").');
+        }
+      });
+    });
+
+    // Prompt length (~5k tokens = ~20k chars)
+    if ((payload.system_prompt || '').length > 20000) {
+      warnings.push('Prompt exceeds ~5,000 tokens. Consider moving reference docs to external files.');
+    }
+
+    // Input parameters validation
+    var seenNames = {};
+    (payload.input_parameters || []).forEach(function(p, i) {
+      if (!p.name || !p.name.trim()) {
+        errors.push('Input parameter ' + (i+1) + ': name is required');
+      } else {
+        if (seenNames[p.name]) errors.push('Duplicate parameter name: "' + p.name + '"');
+        seenNames[p.name] = true;
+        if (!/^[a-zA-Z0-9_-]+$/.test(p.name)) {
+          errors.push('Parameter "' + p.name + '": name must be alphanumeric (underscores/hyphens allowed)');
+        }
+      }
+      if (p.type && VALID_PARAM_TYPES.indexOf(p.type) === -1) {
+        errors.push('Parameter "' + (p.name||i) + '": invalid type "' + p.type + '"');
+      }
+    });
+
+    // Best-practice warnings (non-blocking)
+    if ((payload.tool_ids || []).length === 0 && allTools.length > 0) {
+      warnings.push('No tools selected \u2014 skill will have access to ALL tools (consider least privilege)');
+    }
+    if ((payload.constraints || []).length === 0) {
+      warnings.push('No constraints defined \u2014 consider adding behavioral guardrails');
+    }
+    if ((payload.input_parameters || []).length === 0) {
+      warnings.push('No input parameters \u2014 consider defining arguments for reusability');
+    }
+
+    return { errors: errors, warnings: warnings };
   }
 
   async function saveSkill() {
@@ -217,15 +534,29 @@
       system_prompt: document.getElementById('skill-prompt').value.trim(),
       tool_ids: getSelectedTools(),
       constraints: document.getElementById('skill-constraints').value.split(',').map(s=>s.trim()).filter(Boolean),
+      input_parameters: getParameters(),
     };
-    if (!payload.name) { alert('Name is required'); return; }
+
+    // Run client-side validation
+    var v = validateSkill(payload);
+    if (v.errors.length) {
+      showToast(v.errors[0], 'error');
+      return;
+    }
+    if (v.warnings.length) {
+      var msg = 'Validation warnings:\\n\\n' + v.warnings.map(function(w,i){return (i+1) + '. ' + w}).join('\\n') + '\\n\\nSave anyway?';
+      if (!confirm(msg)) return;
+    }
+
     try {
       const url = id ? '/api/skills/' + id : '/api/skills';
       const method = id ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       if (!res.ok) {
-        const err = await res.text();
-        showToast('Save failed: ' + (err || res.statusText), 'error');
+        var errBody;
+        try { errBody = await res.json(); } catch(e2) { errBody = null; }
+        var errMsg = (errBody && errBody.detail) ? (Array.isArray(errBody.detail) ? errBody.detail.map(function(d){return d.msg || d}).join('; ') : errBody.detail) : res.statusText;
+        showToast('Save failed: ' + errMsg, 'error');
         return;
       }
       showToast(id ? 'Skill updated' : 'Skill created', 'success');
@@ -245,9 +576,403 @@
     } catch(e) { showToast('Error: ' + e.message, 'error'); }
   }
 
-  loadSkills();
-  loadTools().then(() => restoreDraft());
-  loadLibraryPrompts();
+  // ── Best Practices management (editable, stored in localStorage) ──
+  const BP_KEY = 'skillBestPractices';
+  const DEFAULT_BP = [
+    'Write a clear, specific description so agents know WHEN to activate this skill (progressive disclosure)',
+    'Keep prompts under 5,000 tokens \u2014 move reference docs, templates, and assets to external files',
+    'Define input parameters with types and defaults for reusable, composable skills (like function arguments)',
+    'Limit allowed tools to only what the skill needs (principle of least privilege)',
+    'Add constraints as behavioral guardrails (e.g. "Max 500 words", "Always cite sources", "Never output PII")',
+    'Include examples of expected inputs & outputs in the prompt for consistency and auditability',
+    'Bundle scripts, reference materials, and templates alongside the skill for self-contained execution',
+    'Capture domain expertise and org-specific workflows as repeatable, version-controlled procedures',
+    'Design skills to be portable and cross-product \u2014 follow the Agent Skills open standard (agentskills.io)',
+    'Use MCP connections for external services instead of hardcoding credentials or secrets',
+    'Test your skill with edge cases and adversarial inputs before deploying to production'
+  ];
+
+  function getBP() {
+    try {
+      const stored = localStorage.getItem(BP_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch(e) {}
+    return DEFAULT_BP.slice();
+  }
+
+  function renderBP() {
+    var items = getBP();
+    document.getElementById('bp-list').innerHTML = items.map(function(item) {
+      return '<li>' + escapeHtml(item) + '</li>';
+    }).join('');
+  }
+
+  function toggleBPEdit() {
+    var editor = document.getElementById('bp-editor');
+    var view = document.getElementById('bp-view');
+    var btn = document.getElementById('bp-edit-btn');
+    if (editor.style.display === 'none') {
+      document.getElementById('bp-textarea').value = getBP().join('\\n');
+      editor.style.display = 'block';
+      view.style.display = 'none';
+      btn.textContent = 'Cancel';
+    } else {
+      editor.style.display = 'none';
+      view.style.display = 'block';
+      btn.textContent = 'Edit';
+    }
+  }
+
+  function saveBP() {
+    var lines = document.getElementById('bp-textarea').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean);
+    if (lines.length === 0) lines = DEFAULT_BP.slice();
+    localStorage.setItem(BP_KEY, JSON.stringify(lines));
+    renderBP();
+    toggleBPEdit();
+    showToast('Best practices updated', 'success');
+  }
+
+  function resetBP() {
+    localStorage.removeItem(BP_KEY);
+    renderBP();
+    document.getElementById('bp-textarea').value = DEFAULT_BP.join('\\n');
+    toggleBPEdit();
+    showToast('Best practices reset to defaults', 'success');
+  }
+
+  // ── AI Enrich ──
+  let _enrichResult = null;
+
+  async function _loadEnrichModels() {
+    var sel = document.getElementById('enrich-model');
+    if (sel.options.length > 1) return;
+    try {
+      var r = await fetch('/api/models', { signal: AbortSignal.timeout(5000) });
+      var d = await r.json();
+      if (!d.models) return;
+      d.models.forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m.provider + ':' + m.model;
+        var provLabel = m.provider === 'azure-openai' ? 'Azure' : m.provider === 'openai' ? 'OpenAI' : m.provider === 'azure-foundry' ? 'Foundry' : 'Ollama';
+        opt.textContent = provLabel + ' \u2014 ' + m.model;
+        if (m.active) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch(e) {}
+  }
+
+  async function enrichWithAI() {
+    var name = document.getElementById('skill-name').value.trim();
+    var desc = document.getElementById('skill-desc').value.trim();
+    if (!name && !desc) {
+      showToast('Enter at least a name or description before enriching', 'error');
+      return;
+    }
+    var btn = document.getElementById('enrich-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;animation:spin 1s linear infinite"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg> Enriching...';
+
+    var payload = {
+      name: name,
+      description: desc,
+      system_prompt: document.getElementById('skill-prompt').value.trim(),
+      constraints: document.getElementById('skill-constraints').value.split(',').map(function(s){return s.trim()}).filter(Boolean),
+      input_parameters: getParameters(),
+      available_tools: allTools,
+      best_practices: document.getElementById('enrich-bp-override').value.trim() || getBP().join('. ')
+    };
+
+    var modelVal = document.getElementById('enrich-model').value;
+    if (modelVal) {
+      var parts = modelVal.split(':');
+      payload.provider = parts[0];
+      payload.model = parts.slice(1).join(':');
+    }
+
+    try {
+      var r = await fetch('/api/skills/enrich', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      var d = await r.json();
+      if (d.error && !d.system_prompt) {
+        showToast('Enrichment failed: ' + d.error, 'error');
+        return;
+      }
+      _enrichResult = d;
+
+      // Show preview
+      var score = d.score || 0;
+      var scoreEl = document.getElementById('enrich-score');
+      scoreEl.textContent = score + '/10';
+      scoreEl.style.background = score >= 7 ? '#10b98122' : score >= 4 ? '#f59e0b22' : '#ef444422';
+      scoreEl.style.color = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
+
+      var improvements = d.improvements || [];
+      document.getElementById('enrich-improvements').innerHTML = improvements.length
+        ? '<strong style="color:var(--text-2)">Improvements:</strong> ' + improvements.map(function(i){return '<span class="badge" style="margin:0.15rem">' + escapeHtml(i) + '</span>'}).join(' ')
+        : '<span style="color:var(--text-2)">AI enrichment complete</span>';
+
+      document.getElementById('ai-enrich-preview').style.display = 'block';
+      document.getElementById('ai-enrich-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      showToast('AI enrichment ready \u2014 review and accept', 'success');
+    } catch(e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg> AI Enrich';
+    }
+  }
+
+  function acceptEnrichment() {
+    if (!_enrichResult) return;
+    var d = _enrichResult;
+    if (d.name) document.getElementById('skill-name').value = d.name;
+    if (d.description) document.getElementById('skill-desc').value = d.description;
+    if (d.system_prompt) document.getElementById('skill-prompt').value = d.system_prompt;
+    if (d.constraints && d.constraints.length) document.getElementById('skill-constraints').value = d.constraints.join(', ');
+    if (d.input_parameters && d.input_parameters.length) loadParametersIntoForm(d.input_parameters);
+    if (d.suggested_tools && d.suggested_tools.length) {
+      var validTools = d.suggested_tools.filter(function(t){return allTools.includes(t)});
+      if (validTools.length) renderToolsDropdown(validTools);
+    }
+    dismissEnrichment();
+    saveDraft();
+    showToast('AI enrichment applied to form', 'success');
+  }
+
+  function dismissEnrichment() {
+    document.getElementById('ai-enrich-preview').style.display = 'none';
+    _enrichResult = null;
+  }
+
+  // ── Skill Family / Decompose ──
+  let _decomposeResult = null;
+
+  function toggleDecomposePanel() {
+    var panel = document.getElementById('decompose-panel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block';
+      document.getElementById('decompose-concept').focus();
+      // Load models into decompose selector
+      var src = document.getElementById('enrich-model');
+      var dst = document.getElementById('decompose-model');
+      if (dst.options.length <= 1 && src.options.length > 1) {
+        for (var i = 1; i < src.options.length; i++) {
+          var opt = document.createElement('option');
+          opt.value = src.options[i].value;
+          opt.textContent = src.options[i].textContent;
+          if (src.options[i].selected) opt.selected = true;
+          dst.appendChild(opt);
+        }
+      }
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+
+  async function decomposeSkills() {
+    var concept = document.getElementById('decompose-concept').value.trim();
+    var basePrompt = document.getElementById('decompose-prompt').value.trim();
+    if (!concept && !basePrompt) {
+      showToast('Enter a concept or paste a base prompt', 'error');
+      return;
+    }
+    var btn = document.getElementById('decompose-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;animation:spin 1s linear infinite"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg> Generating...';
+
+    var payload = {
+      concept: concept,
+      base_prompt: basePrompt,
+      count: parseInt(document.getElementById('decompose-count').value) || 5,
+      available_tools: allTools,
+      best_practices: getBP().join('. ')
+    };
+    var modelVal = document.getElementById('decompose-model').value;
+    if (modelVal) {
+      var parts = modelVal.split(':');
+      payload.provider = parts[0];
+      payload.model = parts.slice(1).join(':');
+    }
+
+    try {
+      var r = await fetch('/api/skills/decompose', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      var d = await r.json();
+      if (d.error && !d.skills) {
+        showToast('Decompose failed: ' + d.error, 'error');
+        return;
+      }
+      _decomposeResult = d;
+      renderDecomposeResults(d);
+      document.getElementById('decompose-panel').style.display = 'none';
+      showToast('Skill family generated \u2014 review and save', 'success');
+    } catch(e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg> Generate Skill Family';
+    }
+  }
+
+  function renderDecomposeResults(d) {
+    document.getElementById('decompose-family-name').textContent = d.family_name || 'Skill Family';
+    document.getElementById('decompose-family-desc').textContent = d.family_description || '';
+    var grid = document.getElementById('decompose-skills-grid');
+    var skills = d.skills || [];
+    grid.innerHTML = skills.map(function(s, idx) {
+      var paramCount = (s.input_parameters || []).length;
+      var constraintCount = (s.constraints || []).length;
+      return '<div class="card animate-fade-up" id="decompose-skill-' + idx + '" style="position:relative;border:1px solid var(--glass-border)">' +
+        '<div style="position:absolute;top:0.5rem;right:0.5rem;display:flex;gap:0.35rem">' +
+          '<button class="btn btn-sm btn-primary" onclick="saveDecomposedSkill(' + idx + ')" style="font-size:0.7rem;padding:0.2rem 0.5rem" title="Save this skill">Save</button>' +
+          '<button class="btn btn-sm" onclick="editDecomposedSkill(' + idx + ')" style="font-size:0.7rem;padding:0.2rem 0.5rem" title="Edit in form">Edit</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="removeDecomposedSkill(' + idx + ')" style="font-size:0.7rem;padding:0.2rem 0.35rem" title="Remove">' +
+            '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<div style="margin-right:6rem">' +
+          '<h4 style="margin:0;font-size:0.92rem;color:var(--text-1)">' + escapeHtml(s.name) + '</h4>' +
+          '<span class="badge" style="font-size:0.65rem;margin-top:0.25rem;background:#f59e0b22;color:#f59e0b">' + escapeHtml(s.role_in_family || 'Skill') + '</span>' +
+        '</div>' +
+        '<p style="font-size:0.78rem;color:var(--text-3);margin:0.5rem 0;line-height:1.5">' + escapeHtml(s.description || '') + '</p>' +
+        (s.system_prompt ? '<div style="background:var(--input-bg);border-radius:6px;padding:0.4rem 0.6rem;font-size:0.72rem;font-family:var(--mono);color:var(--text-2);max-height:50px;overflow:hidden;margin-bottom:0.4rem">' + escapeHtml((s.system_prompt||'').slice(0,120)) + (s.system_prompt.length > 120 ? '...' : '') + '</div>' : '') +
+        '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">' +
+          (paramCount ? '<span class="badge" style="font-size:0.65rem;background:#6366f122;color:#818cf8">' + paramCount + ' param' + (paramCount > 1 ? 's' : '') + '</span>' : '') +
+          (constraintCount ? '<span class="badge" style="font-size:0.65rem;background:#ef444422;color:#ef4444">' + constraintCount + ' constraint' + (constraintCount > 1 ? 's' : '') + '</span>' : '') +
+          ((s.suggested_tools||[]).length ? '<span class="badge" style="font-size:0.65rem">' + (s.suggested_tools||[]).length + ' tool' + ((s.suggested_tools||[]).length > 1 ? 's' : '') + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('decompose-results').style.display = 'block';
+    document.getElementById('decompose-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function saveDecomposedSkill(idx) {
+    if (!_decomposeResult || !_decomposeResult.skills[idx]) return;
+    var s = _decomposeResult.skills[idx];
+    var payload = {
+      name: s.name,
+      description: s.description || '',
+      system_prompt: s.system_prompt || '',
+      tool_ids: (s.suggested_tools || []).filter(function(t){return allTools.includes(t)}),
+      constraints: s.constraints || [],
+      input_parameters: s.input_parameters || []
+    };
+    try {
+      var res = await fetch('/api/skills', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (!res.ok) {
+        var errBody;
+        try { errBody = await res.json(); } catch(e2) { errBody = null; }
+        var errMsg = (errBody && errBody.detail) ? (Array.isArray(errBody.detail) ? errBody.detail.map(function(d){return d.msg || d}).join('; ') : errBody.detail) : res.statusText;
+        showToast('Save failed: ' + errMsg, 'error');
+        return;
+      }
+      showToast(s.name + ' saved', 'success');
+      var el = document.getElementById('decompose-skill-' + idx);
+      if (el) { el.style.opacity = '0.4'; el.style.pointerEvents = 'none'; }
+      _decomposeResult.skills[idx]._saved = true;
+      loadSkills();
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  function editDecomposedSkill(idx) {
+    if (!_decomposeResult || !_decomposeResult.skills[idx]) return;
+    var s = _decomposeResult.skills[idx];
+    showCreateForm();
+    document.getElementById('skill-name').value = s.name || '';
+    document.getElementById('skill-desc').value = s.description || '';
+    document.getElementById('skill-prompt').value = s.system_prompt || '';
+    document.getElementById('skill-constraints').value = (s.constraints || []).join(', ');
+    var validTools = (s.suggested_tools || []).filter(function(t){return allTools.includes(t)});
+    if (validTools.length) renderToolsDropdown(validTools);
+    if (s.input_parameters && s.input_parameters.length) loadParametersIntoForm(s.input_parameters);
+    document.getElementById('skill-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function removeDecomposedSkill(idx) {
+    var el = document.getElementById('decompose-skill-' + idx);
+    if (el) el.remove();
+  }
+
+  async function saveAllDecomposed() {
+    if (!_decomposeResult || !_decomposeResult.skills) return;
+    var count = 0;
+    for (var i = 0; i < _decomposeResult.skills.length; i++) {
+      if (_decomposeResult.skills[i]._saved) continue;
+      var el = document.getElementById('decompose-skill-' + i);
+      if (!el) continue;
+      await saveDecomposedSkill(i);
+      count++;
+    }
+    if (count > 0) showToast(count + ' skill' + (count > 1 ? 's' : '') + ' saved', 'success');
+    dismissDecompose();
+  }
+
+  function dismissDecompose() {
+    document.getElementById('decompose-results').style.display = 'none';
+    _decomposeResult = null;
+  }
+
+  async function suggestSkillsFromPrompt() {
+    var prompt = document.getElementById('skill-prompt').value.trim();
+    if (!prompt) {
+      showToast('Write or paste a prompt first, then let AI suggest skills', 'error');
+      return;
+    }
+    var btn = document.getElementById('suggest-from-prompt-btn');
+    btn.disabled = true;
+    var origHTML = btn.innerHTML;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83"/></svg> Analyzing prompt...';
+
+    var payload = {
+      base_prompt: prompt,
+      concept: '',
+      count: 5,
+      available_tools: allTools,
+      best_practices: getBP().join('. ')
+    };
+    var modelVal = document.getElementById('enrich-model').value;
+    if (modelVal) {
+      var parts = modelVal.split(':');
+      payload.provider = parts[0];
+      payload.model = parts.slice(1).join(':');
+    }
+
+    try {
+      var r = await fetch('/api/skills/decompose', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      var d = await r.json();
+      if (d.error && !d.skills) {
+        showToast('Failed: ' + d.error, 'error');
+        return;
+      }
+      _decomposeResult = d;
+      renderDecomposeResults(d);
+      showToast('AI suggested ' + (d.skills||[]).length + ' skills from your prompt \u2014 review below', 'success');
+    } catch(e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    renderBP();
+    loadSkills();
+    loadTools().then(() => restoreDraft());
+    loadLibraryPrompts();
+    _loadEnrichModels();
+  });
 <\/script>
 
 ` }) %>

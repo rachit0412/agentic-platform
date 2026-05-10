@@ -118,6 +118,7 @@ def init_db():
             system_prompt TEXT DEFAULT '',
             tool_ids    TEXT DEFAULT '[]',
             constraints TEXT DEFAULT '[]',
+            input_parameters TEXT DEFAULT '[]',
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
@@ -144,6 +145,12 @@ def init_db():
             updated_at      TEXT NOT NULL
         )
         """)
+    # ── Migration: add input_parameters column to skills if missing ──
+    try:
+        conn.execute("ALTER TABLE skills ADD COLUMN input_parameters TEXT DEFAULT '[]'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ── Migration: add top_p column if missing (existing DBs) ──
     try:
         conn.execute("ALTER TABLE agents ADD COLUMN top_p REAL DEFAULT 1.0")
@@ -503,6 +510,7 @@ def _row_to_skill(row) -> dict:
         "system_prompt": row["system_prompt"],
         "tool_ids": json.loads(row["tool_ids"]),
         "constraints": json.loads(row["constraints"]),
+        "input_parameters": json.loads(row["input_parameters"] or "[]"),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
@@ -526,12 +534,13 @@ def create_skill(
     system_prompt: str = "",
     tool_ids: list[str] | None = None,
     constraints: list[str] | None = None,
+    input_parameters: list[dict] | None = None,
 ) -> dict:
     conn = _get_conn()
     skill_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO skills (id, name, description, system_prompt, tool_ids, constraints, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO skills (id, name, description, system_prompt, tool_ids, constraints, input_parameters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             skill_id,
             name,
@@ -539,6 +548,7 @@ def create_skill(
             system_prompt,
             json.dumps(tool_ids or []),
             json.dumps(constraints or []),
+            json.dumps(input_parameters or []),
             now,
             now,
         ),
@@ -567,7 +577,7 @@ def update_skill(skill_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
-    for key in ("tool_ids", "constraints"):
+    for key in ("tool_ids", "constraints", "input_parameters"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))
@@ -1910,9 +1920,15 @@ def _init_llm_usage_table():
             created_at      TEXT NOT NULL
         )
     """)
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_time ON llm_usage_log(created_at)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_session ON llm_usage_log(session_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_usage_model ON llm_usage_log(model)")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_llm_usage_time ON llm_usage_log(created_at)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_llm_usage_session ON llm_usage_log(session_id)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_llm_usage_model ON llm_usage_log(model)"
+    )
     conn.commit()
 
 
@@ -1937,7 +1953,9 @@ def estimate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> flo
     m = model.lower()
     for key, rates in _LLM_PRICING.items():
         if key in m:
-            return (prompt_tokens * rates[0] / 1e6) + (completion_tokens * rates[1] / 1e6)
+            return (prompt_tokens * rates[0] / 1e6) + (
+                completion_tokens * rates[1] / 1e6
+            )
     return 0.0
 
 
@@ -1962,18 +1980,39 @@ def log_llm_usage(
     cost = estimate_cost(model, prompt_tokens, completion_tokens)
     conn.execute(
         "INSERT INTO llm_usage_log (id, request_id, session_id, agent_id, provider, model, prompt_tokens, completion_tokens, total_tokens, estimated_cost, latency_ms, tools_used, guardrail_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (uid, request_id, session_id, agent_id, provider, model,
-         prompt_tokens, completion_tokens, total_tokens, cost, latency_ms,
-         json.dumps(tools_used or []), guardrail_status, now),
+        (
+            uid,
+            request_id,
+            session_id,
+            agent_id,
+            provider,
+            model,
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+            cost,
+            latency_ms,
+            json.dumps(tools_used or []),
+            guardrail_status,
+            now,
+        ),
     )
     conn.commit()
     return {
-        "id": uid, "request_id": request_id, "session_id": session_id,
-        "agent_id": agent_id, "provider": provider, "model": model,
-        "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens,
-        "total_tokens": total_tokens, "estimated_cost": cost,
-        "latency_ms": latency_ms, "tools_used": tools_used or [],
-        "guardrail_status": guardrail_status, "created_at": now,
+        "id": uid,
+        "request_id": request_id,
+        "session_id": session_id,
+        "agent_id": agent_id,
+        "provider": provider,
+        "model": model,
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+        "estimated_cost": cost,
+        "latency_ms": latency_ms,
+        "tools_used": tools_used or [],
+        "guardrail_status": guardrail_status,
+        "created_at": now,
     }
 
 
@@ -2006,9 +2045,12 @@ def list_llm_usage(
     rows = conn.execute(query, params).fetchall()
     return [
         {
-            "id": r["id"], "request_id": r["request_id"],
-            "session_id": r["session_id"], "agent_id": r["agent_id"],
-            "provider": r["provider"], "model": r["model"],
+            "id": r["id"],
+            "request_id": r["request_id"],
+            "session_id": r["session_id"],
+            "agent_id": r["agent_id"],
+            "provider": r["provider"],
+            "model": r["model"],
             "prompt_tokens": r["prompt_tokens"],
             "completion_tokens": r["completion_tokens"],
             "total_tokens": r["total_tokens"],
@@ -2058,8 +2100,10 @@ def get_llm_usage_summary() -> dict:
         "avg_tokens_per_request": round(row["avg_tokens_per_request"]),
         "by_model": [
             {
-                "model": r["model"], "provider": r["provider"],
-                "requests": r["requests"], "tokens": r["tokens"],
+                "model": r["model"],
+                "provider": r["provider"],
+                "requests": r["requests"],
+                "tokens": r["tokens"],
                 "cost": round(r["cost"], 6),
                 "avg_latency": round(r["avg_latency"]),
             }

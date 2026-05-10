@@ -1,7 +1,7 @@
 <%- include('layout', { title: 'Prompt Library', page: 'prompts', body: `
 
 <h1 class="text-glow-cyan">Prompt Library</h1>
-<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">A library of <strong style="color:var(--text-1)">reusable prompts</strong> that can be attached to Skills and Agents.</p>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">A <strong style="color:var(--text-1)">prompt</strong> is an instruction you give at runtime to guide the model's behavior right now.</p>
 <p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Think: <strong style="color:#f59e0b">instruction templates</strong>. Each prompt defines <em>what the model should do</em> — categorized, tagged, and ready to be plugged into any skill.</p>
 
 <!-- Action Bar -->
@@ -237,8 +237,16 @@
       if (d.references_used && d.references_used.length) {
         var refsHtml = '<div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.6rem 0.85rem;background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.08));border:1px solid #0ea5e944;border-radius:8px">';
         refsHtml += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0ea5e9" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>';
-        refsHtml += '<div style="font-size:0.78rem"><span style="font-weight:600;color:#0ea5e9">Org References Applied</span><ul style="margin:0.25rem 0 0 1rem;color:var(--text-2);list-style:disc">';
-        d.references_used.forEach(function(ref) { refsHtml += '<li>' + escapeHtml(ref) + '</li>'; });
+        refsHtml += '<div style="font-size:0.78rem"><span style="font-weight:600;color:#0ea5e9">Org References Applied</span><ul style="margin:0.25rem 0 0 1rem;color:var(--text-2);list-style:none;padding:0">';
+        d.references_used.forEach(function(r) {
+          var label = typeof r === 'string' ? r : r.ref;
+          var ok = typeof r === 'string' || r.status === 'ok';
+          if (ok) {
+            refsHtml += '<li style="margin-bottom:0.2rem"><span style="color:#10b981;margin-right:4px">&#10003;</span>' + escapeHtml(label) + '</li>';
+          } else {
+            refsHtml += '<li style="margin-bottom:0.2rem"><span style="color:#ef4444;margin-right:4px">&#10007;</span>' + escapeHtml(label) + ' <span style="color:#ef4444;font-size:0.72rem">(' + escapeHtml(r.reason || 'unreachable') + ')</span></li>';
+          }
+        });
         refsHtml += '</ul></div></div>';
         refsBadge.innerHTML = refsHtml;
         refsBadge.style.display = 'block';
@@ -335,8 +343,16 @@
       if (d.references_used && d.references_used.length) {
         html += '<div style="margin-top:0.75rem;padding:0.6rem 0.85rem;background:linear-gradient(135deg,rgba(14,165,233,0.08),rgba(99,102,241,0.08));border:1px solid #0ea5e944;border-radius:8px;display:flex;align-items:flex-start;gap:0.5rem">';
         html += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0ea5e9" stroke-width="2" style="flex-shrink:0;margin-top:2px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>';
-        html += '<div style="font-size:0.78rem"><span style="font-weight:600;color:#0ea5e9">Validated Against Org References</span><ul style="margin:0.25rem 0 0 1rem;color:var(--text-2);list-style:disc">';
-        d.references_used.forEach(function(ref) { html += '<li>' + escapeHtml(ref) + '</li>'; });
+        html += '<div style="font-size:0.78rem"><span style="font-weight:600;color:#0ea5e9">Validated Against Org References</span><ul style="margin:0.25rem 0 0 1rem;color:var(--text-2);list-style:none;padding:0">';
+        d.references_used.forEach(function(r) {
+          var label = typeof r === 'string' ? r : r.ref;
+          var ok = typeof r === 'string' || r.status === 'ok';
+          if (ok) {
+            html += '<li style="margin-bottom:0.2rem"><span style="color:#10b981;margin-right:4px">&#10003;</span>' + escapeHtml(label) + '</li>';
+          } else {
+            html += '<li style="margin-bottom:0.2rem"><span style="color:#ef4444;margin-right:4px">&#10007;</span>' + escapeHtml(label) + ' <span style="color:#ef4444;font-size:0.72rem">(' + escapeHtml(r.reason || 'unreachable') + ')</span></li>';
+          }
+        });
         html += '</ul></div></div>';
       }
       html += '</div>';

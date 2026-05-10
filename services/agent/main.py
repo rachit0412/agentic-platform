@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from agent.graph import run_agent, run_agent_stream
 from agent.memory import (
@@ -1111,12 +1111,81 @@ async def custom_tools_delete_endpoint(tool_id: str):
 # ── Skills CRUD endpoints ─────────────────────────────────────────────────
 
 
+_SECRET_PATTERNS = [
+    "sk-",
+    "api_key",
+    "apikey",
+    "secret",
+    "password",
+    "token",
+    "aws_access",
+    "aws_secret",
+    "bearer ",
+    "ghp_",
+    "gho_",
+    "-----BEGIN",
+    "AKIA",
+]
+_VALID_PARAM_TYPES = {"string", "number", "boolean", "array", "object"}
+
+
+def _check_no_secrets(text: str, field_name: str) -> None:
+    """Raise ValueError if text contains likely hardcoded secrets."""
+    lower = text.lower()
+    for pat in _SECRET_PATTERNS:
+        if pat.lower() in lower:
+            raise ValueError(
+                f"{field_name} appears to contain a hardcoded secret or credential "
+                f"(matched '{pat}'). Use environment variables or MCP connections instead."
+            )
+
+
+def _validate_input_parameters(params: list[dict]) -> list[dict]:
+    """Validate input parameter schema."""
+    seen_names: set[str] = set()
+    for i, p in enumerate(params):
+        name = p.get("name", "").strip()
+        if not name:
+            raise ValueError(f"Input parameter {i + 1}: name is required")
+        if not name.replace("_", "").replace("-", "").isalnum():
+            raise ValueError(
+                f"Input parameter '{name}': name must be alphanumeric "
+                f"(underscores and hyphens allowed)"
+            )
+        if name in seen_names:
+            raise ValueError(f"Duplicate input parameter name: '{name}'")
+        seen_names.add(name)
+        ptype = p.get("type", "string")
+        if ptype not in _VALID_PARAM_TYPES:
+            raise ValueError(
+                f"Input parameter '{name}': type must be one of "
+                f"{', '.join(sorted(_VALID_PARAM_TYPES))}, got '{ptype}'"
+            )
+    return params
+
+
 class SkillCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: str = Field(default="", max_length=1000)
     system_prompt: str = Field(default="", max_length=10000)
     tool_ids: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
+    input_parameters: list[dict] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_skill(self):
+        # Security: no secrets in prompts or constraints
+        _check_no_secrets(self.system_prompt, "System prompt")
+        for i, c in enumerate(self.constraints):
+            _check_no_secrets(c, f"Constraint {i + 1}")
+        # Prompt token estimate (rough: 1 token ~ 4 chars)
+        if len(self.system_prompt) > 20000:
+            raise ValueError(
+                "System prompt exceeds ~5,000 tokens. Move reference docs to external files."
+            )
+        # Validate input parameters
+        _validate_input_parameters(self.input_parameters)
+        return self
 
 
 class SkillUpdate(BaseModel):
@@ -1125,6 +1194,22 @@ class SkillUpdate(BaseModel):
     system_prompt: str | None = None
     tool_ids: list[str] | None = None
     constraints: list[str] | None = None
+    input_parameters: list[dict] | None = None
+
+    @model_validator(mode="after")
+    def validate_skill(self):
+        if self.system_prompt is not None:
+            _check_no_secrets(self.system_prompt, "System prompt")
+            if len(self.system_prompt) > 20000:
+                raise ValueError(
+                    "System prompt exceeds ~5,000 tokens. Move reference docs to external files."
+                )
+        if self.constraints is not None:
+            for i, c in enumerate(self.constraints):
+                _check_no_secrets(c, f"Constraint {i + 1}")
+        if self.input_parameters is not None:
+            _validate_input_parameters(self.input_parameters)
+        return self
 
 
 @app.get("/skills")
@@ -1140,6 +1225,7 @@ async def skills_create_endpoint(body: SkillCreate):
         system_prompt=body.system_prompt,
         tool_ids=body.tool_ids,
         constraints=body.constraints,
+        input_parameters=body.input_parameters,
     )
     return skill
 
@@ -1173,6 +1259,243 @@ async def skills_delete_endpoint(skill_id: str):
 
         return JSONResponse(status_code=404, content={"error": "Skill not found"})
     return {"deleted": True}
+
+
+@app.post("/skills/enrich")
+async def skills_enrich_endpoint(request: Request):
+    """Use LLM to enrich a partially-filled skill with AI-generated suggestions."""
+    data = await request.json()
+    name = data.get("name", "").strip()
+    description = data.get("description", "").strip()
+    system_prompt = data.get("system_prompt", "").strip()
+    constraints = data.get("constraints", [])
+    input_parameters = data.get("input_parameters", [])
+    available_tools = data.get("available_tools", [])
+    best_practices = data.get("best_practices", "")
+
+    if not name and not description:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Provide at least a name or description to enrich"},
+        )
+
+    from agent.llm import get_llm
+    from langchain_core.messages import SystemMessage, HumanMessage
+    import json as _json
+
+    system = """\
+You are an expert skill architect for an AI agent platform. Given partial information about a skill, enrich and improve it.
+
+A skill is a packaged capability: code + prompt(s) + tools + contracts, exposed as a callable function.
+Skills are like reusable functions that take input parameters, use tools, follow a prompt, and operate within constraints.
+
+Return ONLY a JSON object (no other text):
+{
+  "name": "improved skill name (concise, max 8 words)",
+  "description": "clear description of what the skill does and WHEN to use it (max 200 chars). Include keywords that help agents identify relevant tasks.",
+  "system_prompt": "production-ready prompt text (max 500 words). Include: persona, step-by-step instructions, expected input/output format, edge cases.",
+  "constraints": ["constraint 1", "constraint 2", "..."],
+  "input_parameters": [
+    {"name": "param_name", "type": "string|number|boolean|array|object", "required": true/false, "default_value": "optional default or description"}
+  ],
+  "suggested_tools": ["tool1", "tool2"],
+  "score": <integer 1-10 quality score>,
+  "improvements": ["what was improved 1", "what was improved 2"]
+}
+
+Rules:
+- Preserve any user-provided values that are already good; improve what is weak or missing.
+- If user provided a prompt, enhance it — don't replace it wholesale.
+- If no input_parameters are defined, infer logical ones from the skill's purpose.
+- suggested_tools should come from the available tools list when possible.
+- Constraints should include security and quality guardrails.
+"""
+
+    if best_practices:
+        system += "\n\nOrganizational Best Practices to align with:\n" + best_practices
+
+    user_parts = []
+    if name:
+        user_parts.append(f"Name: {name}")
+    if description:
+        user_parts.append(f"Description: {description}")
+    if system_prompt:
+        user_parts.append(f"Current Prompt:\n{system_prompt}")
+    if constraints:
+        user_parts.append(f"Constraints: {', '.join(constraints)}")
+    if input_parameters:
+        user_parts.append(f"Input Parameters: {_json.dumps(input_parameters)}")
+    if available_tools:
+        user_parts.append(f"Available Tools: {', '.join(available_tools)}")
+
+    user_msg = "Enrich this skill:\n\n" + "\n".join(user_parts)
+
+    try:
+        from agent.llm import get_active_model as _gam
+
+        req_provider = data.get("provider")
+        req_model = data.get("model")
+        if req_provider and req_model:
+            provider = req_provider
+            model = req_model
+        else:
+            active = _gam()
+            provider = active.get("provider", "ollama")
+            model = active.get("model", "llama3")
+        msgs = [SystemMessage(content=system), HumanMessage(content=user_msg)]
+        for temp in (0.7, 1, None):
+            try:
+                kwargs = {
+                    "provider": provider,
+                    "model": model,
+                    "max_completion_tokens": 4096,
+                }
+                if temp is not None:
+                    kwargs["temperature"] = temp
+                llm = get_llm(**kwargs)
+                result = await llm.ainvoke(msgs)
+                parsed = _extract_json(result.content or "")
+                if parsed is not None:
+                    return parsed
+                return {
+                    "error": "LLM returned invalid JSON",
+                    "name": name,
+                    "description": description,
+                }
+            except Exception as e2:
+                if "temperature" in str(e2).lower():
+                    continue
+                raise
+        return {
+            "error": "Model rejects all temperature values",
+            "name": name,
+            "description": description,
+        }
+    except Exception as e:
+        return {"error": str(e), "name": name, "description": description}
+
+
+@app.post("/skills/decompose")
+async def skills_decompose_endpoint(request: Request):
+    """Decompose a concept/prompt into a family of related skills."""
+    data = await request.json()
+    concept = data.get("concept", "").strip()
+    base_prompt = data.get("base_prompt", "").strip()
+    count = min(int(data.get("count", 5)), 10)
+    available_tools = data.get("available_tools", [])
+    best_practices = data.get("best_practices", "")
+
+    if not concept and not base_prompt:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Provide a concept or base prompt to decompose into skills"
+            },
+        )
+
+    from agent.llm import get_llm
+    from langchain_core.messages import SystemMessage, HumanMessage
+    import json as _json
+
+    system = f"""\
+You are an expert skill architect for an AI agent platform.
+
+A skill is a packaged capability: code + prompt(s) + tools + contracts, exposed as a callable function.
+Skills follow the Agent Skills open standard (agentskills.io).
+
+Your task: given a concept or base prompt, decompose it into a FAMILY of {count} complementary skills.
+Each skill should be a distinct, focused capability that together cover the full lifecycle.
+
+Think about it this way:
+- A prompt defines HOW to do something
+- A skill defines HOW that capability WORKS in the organization
+- A skill family covers the complete workflow: create, update, validate, convert, compare, extract
+
+Return ONLY a JSON object (no other text):
+{{
+  "family_name": "short family name (e.g. Documentation, Code Review, Data Analysis)",
+  "family_description": "what this skill family covers as a whole",
+  "skills": [
+    {{
+      "name": "ConcisePascalCaseName",
+      "description": "clear description (max 200 chars) — when should an agent activate this skill?",
+      "system_prompt": "production-ready prompt (max 400 words). Include: persona, step-by-step instructions, expected I/O format, edge cases.",
+      "constraints": ["constraint 1", "constraint 2"],
+      "input_parameters": [
+        {{"name": "param_name", "type": "string|number|boolean|array|object", "required": true, "default_value": ""}}
+      ],
+      "suggested_tools": ["tool1"],
+      "role_in_family": "What role this skill plays (e.g. Creator, Validator, Converter)"
+    }}
+  ]
+}}
+
+Rules:
+- Each skill must be DISTINCT — no overlapping responsibilities
+- Skills should compose well together (output of one can feed into another)
+- Include at least one validation/quality-check skill
+- Include input_parameters that make each skill reusable and composable
+- Constraints should include security and quality guardrails
+- If a base prompt is provided, the first skill should wrap that prompt; others complement it
+"""
+
+    if best_practices:
+        system += (
+            "\n\nOrganizational Best Practices to align with:\n" + best_practices
+        )
+
+    user_parts = []
+    if concept:
+        user_parts.append(f"Concept/Domain: {concept}")
+    if base_prompt:
+        user_parts.append(f"Base Prompt:\n{base_prompt}")
+    if available_tools:
+        user_parts.append(f"Available Tools: {', '.join(available_tools)}")
+
+    user_msg = (
+        f"Decompose this into a family of {count} skills:\n\n"
+        + "\n".join(user_parts)
+    )
+
+    try:
+        from agent.llm import get_active_model as _gam
+
+        req_provider = data.get("provider")
+        req_model = data.get("model")
+        if req_provider and req_model:
+            provider = req_provider
+            model = req_model
+        else:
+            active = _gam()
+            provider = active.get("provider", "ollama")
+            model = active.get("model", "llama3")
+        msgs = [SystemMessage(content=system), HumanMessage(content=user_msg)]
+        for temp in (0.7, 1, None):
+            try:
+                kwargs = {
+                    "provider": provider,
+                    "model": model,
+                    "max_completion_tokens": 8192,
+                }
+                if temp is not None:
+                    kwargs["temperature"] = temp
+                llm = get_llm(**kwargs)
+                result = await llm.ainvoke(msgs)
+                parsed = _extract_json(result.content or "")
+                if parsed is not None and "skills" in parsed:
+                    return parsed
+                return {"error": "LLM returned invalid JSON", "concept": concept}
+            except Exception as e2:
+                if "temperature" in str(e2).lower():
+                    continue
+                raise
+        return {"error": "Model rejects all temperature values", "concept": concept}
+    except Exception as e:
+        return {"error": str(e), "concept": concept}
 
 
 # ── Prompts CRUD endpoints ────────────────────────────────────────────────
@@ -1263,6 +1586,106 @@ def _extract_json(raw: str):
     return None
 
 
+async def _fetch_references(references: list) -> dict:
+    """Fetch URL references concurrently. Returns {ref_text, references_used} with status per ref."""
+    import httpx
+    import asyncio
+    import re as _re
+
+    url_pattern = _re.compile(r"^https?://", _re.IGNORECASE)
+    urls = [
+        (i, r)
+        for i, r in enumerate(references)
+        if r.strip() and url_pattern.match(r.strip())
+    ]
+    plain = [
+        (i, r)
+        for i, r in enumerate(references)
+        if r.strip() and not url_pattern.match(r.strip())
+    ]
+
+    results = [None] * len(references)
+
+    # Fetch URLs concurrently
+    async def fetch_one(idx, url):
+        url = url.strip()
+        try:
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                resp = await client.get(
+                    url, headers={"User-Agent": "AgenticPlatform/1.0"}
+                )
+                if resp.status_code >= 400:
+                    results[idx] = {
+                        "ref": url,
+                        "status": "error",
+                        "reason": f"HTTP {resp.status_code}",
+                    }
+                else:
+                    # Extract text content (strip HTML tags for a rough plain-text extraction)
+                    content_type = resp.headers.get("content-type", "")
+                    body = resp.text[:8000]  # cap content to avoid huge payloads
+                    if "html" in content_type:
+                        body = _re.sub(
+                            r"<script[^>]*>.*?</script>",
+                            "",
+                            body,
+                            flags=_re.DOTALL | _re.IGNORECASE,
+                        )
+                        body = _re.sub(
+                            r"<style[^>]*>.*?</style>",
+                            "",
+                            body,
+                            flags=_re.DOTALL | _re.IGNORECASE,
+                        )
+                        body = _re.sub(r"<[^>]+>", " ", body)
+                        body = _re.sub(r"\s+", " ", body).strip()[:4000]
+                    results[idx] = {"ref": url, "status": "ok", "content": body}
+        except httpx.TimeoutException:
+            results[idx] = {
+                "ref": url,
+                "status": "error",
+                "reason": "Timeout (unreachable after 10s)",
+            }
+        except httpx.ConnectError:
+            results[idx] = {
+                "ref": url,
+                "status": "error",
+                "reason": "Connection refused or DNS failure",
+            }
+        except Exception as e:
+            results[idx] = {"ref": url, "status": "error", "reason": str(e)[:100]}
+
+    if urls:
+        await asyncio.gather(*(fetch_one(i, u) for i, u in urls))
+
+    # Plain-text references
+    for idx, text in plain:
+        results[idx] = {"ref": text, "status": "ok", "content": text}
+
+    # Build the text to inject into the system prompt
+    ref_parts = []
+    for r in results:
+        if r is None:
+            continue
+        if r["status"] == "ok":
+            ref_parts.append(f"[REFERENCE: {r['ref']}]\n{r['content']}")
+        else:
+            ref_parts.append(f"[REFERENCE: {r['ref']}] — UNREACHABLE: {r['reason']}")
+    ref_text = "\n\n".join(ref_parts)
+
+    # Build references_used metadata for the response
+    references_used = []
+    for r in results:
+        if r is None:
+            continue
+        entry = {"ref": r["ref"], "status": r["status"]}
+        if r["status"] == "error":
+            entry["reason"] = r["reason"]
+        references_used.append(entry)
+
+    return {"ref_text": ref_text, "references_used": references_used}
+
+
 @app.post("/prompts/validate")
 async def prompts_validate_endpoint(request: Request):
     """Validate a prompt using LLM — returns quality score, issues, suggestions."""
@@ -1308,11 +1731,12 @@ Respond ONLY with valid JSON."""
     )
 
     references = data.get("references", [])
+    refs_meta = None
     if references:
-        ref_text = "\n".join(f"- {r}" for r in references if r.strip())
+        refs_meta = await _fetch_references(references)
         system += (
             "\n\nOrganizational Best Practices & References (evaluate the prompt against these standards and flag deviations as issues):\n"
-            + ref_text
+            + refs_meta["ref_text"]
         )
 
     try:
@@ -1341,8 +1765,8 @@ Respond ONLY with valid JSON."""
                 result = await llm.ainvoke(msgs)
                 parsed = _extract_json(result.content)
                 if parsed is not None:
-                    if references:
-                        parsed["references_used"] = references
+                    if refs_meta:
+                        parsed["references_used"] = refs_meta["references_used"]
                     return parsed
                 return {
                     "score": 0,
@@ -1405,11 +1829,12 @@ Respond ONLY with the JSON object."""
     )
 
     references = data.get("references", [])
+    refs_meta = None
     if references:
-        ref_text = "\n".join(f"- {r}" for r in references if r.strip())
+        refs_meta = await _fetch_references(references)
         system += (
             "\n\nOrganizational Best Practices & References (align the generated prompt with these):\n"
-            + ref_text
+            + refs_meta["ref_text"]
         )
 
     try:
@@ -1438,8 +1863,8 @@ Respond ONLY with the JSON object."""
                 result = await llm.ainvoke(msgs)
                 parsed = _extract_json(result.content or "")
                 if parsed is not None:
-                    if references:
-                        parsed["references_used"] = references
+                    if refs_meta:
+                        parsed["references_used"] = refs_meta["references_used"]
                     return parsed
                 return {"error": "LLM returned invalid JSON", "content": "", "name": ""}
             except Exception as e2:
