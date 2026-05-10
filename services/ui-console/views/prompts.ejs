@@ -151,9 +151,13 @@
     <label class="field-label">Tags <span style="color:var(--text-3);font-weight:400">(comma-separated)</span></label>
     <input type="text" id="prompt-tags" class="input" placeholder="e.g. research, citations, structured-output">
   </div>
-  <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+  <div style="display:flex;gap:0.75rem;margin-top:1.25rem;align-items:center">
     <button class="btn btn-primary" onclick="savePrompt()">Save</button>
     <button class="btn" onclick="hideForm()">Cancel</button>
+    <button class="btn" id="regenerate-btn" style="display:none;margin-left:auto;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600;box-shadow:0 2px 8px rgba(99,102,241,0.25)" onclick="regeneratePrompt()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      Regenerate with AI
+    </button>
   </div>
 </div>
 
@@ -432,6 +436,7 @@
     document.getElementById('prompt-content').value = '';
     document.getElementById('prompt-tags').value = '';
     document.getElementById('validation-results').style.display = 'none';
+    document.getElementById('regenerate-btn').style.display = 'none';
     document.getElementById('prompt-form').style.display = 'block';
     document.getElementById('prompt-name').focus();
   }
@@ -454,9 +459,32 @@
       document.getElementById('prompt-content').value = p.content || '';
       document.getElementById('prompt-tags').value = (p.tags || []).join(', ');
       document.getElementById('validation-results').style.display = 'none';
+      document.getElementById('regenerate-btn').style.display = 'inline-flex';
       document.getElementById('prompt-form').style.display = 'block';
       document.getElementById('prompt-name').focus();
     } catch(e) { showToast('Error loading prompt: ' + e.message, 'error'); }
+  }
+
+  async function regeneratePrompt() {
+    var desc = document.getElementById('prompt-desc').value.trim();
+    var name = document.getElementById('prompt-name').value.trim();
+    if (!desc && !name) { showToast('Add a description so AI knows what to generate', 'error'); return; }
+    var btn = document.getElementById('regenerate-btn');
+    btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;animation:spin 1s linear infinite"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Regenerating...';
+    try {
+      var payload = { description: desc || name, category: document.getElementById('prompt-category').value };
+      var refEl = document.getElementById('prompt-references');
+      var refVal = (refEl ? refEl.value : '').trim();
+      if (refVal) { payload.references = refVal.split('\\n').filter(function(l) { return l.trim(); }); }
+      var r = await fetch('/api/prompts/generate', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      var d = await r.json();
+      if (d.error && !d.content) { showToast('Regeneration failed: ' + d.error, 'error'); return; }
+      document.getElementById('prompt-content').value = d.content || '';
+      if (d.tags && d.tags.length) document.getElementById('prompt-tags').value = d.tags.join(', ');
+      showToast('Prompt regenerated \u2014 review and save when ready', 'success');
+      saveDraft();
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    finally { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Regenerate with AI'; }
   }
 
   async function savePrompt() {
