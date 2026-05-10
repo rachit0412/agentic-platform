@@ -210,7 +210,7 @@
         payload.model = parts.slice(1).join(':');
       }
       var refs = (document.getElementById('ai-gen-references').value || '').trim();
-      if (refs) { payload.references = refs.split('\n').filter(function(l) { return l.trim(); }); }
+      if (refs) { payload.references = refs.split('\\n').filter(function(l) { return l.trim(); }); }
       var r = await fetch('/api/prompts/generate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
@@ -276,7 +276,7 @@
       var valPayload = { content: content, category: document.getElementById('prompt-category').value };
       var refEl = document.getElementById('prompt-references');
       var refVal = (refEl ? refEl.value : '').trim();
-      if (refVal) { valPayload.references = refVal.split('\n').filter(function(l) { return l.trim(); }); }
+      if (refVal) { valPayload.references = refVal.split('\\n').filter(function(l) { return l.trim(); }); }
       const r = await fetch('/api/prompts/validate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
