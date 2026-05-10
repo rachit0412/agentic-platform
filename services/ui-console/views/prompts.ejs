@@ -44,20 +44,36 @@
       <label class="field-label">Describe your prompt</label>
       <textarea id="ai-gen-desc" class="input" rows="3" placeholder="e.g. A prompt that instructs the model to act as a code reviewer, checking for bugs, security issues, and performance problems, and outputting results in markdown" style="resize:vertical;font-family:var(--mono)"></textarea>
     </div>
-    <div>
-      <label class="field-label">Category</label>
-      <select id="ai-gen-category" class="input" style="height:34px">
-        <option value="general">General</option>
-        <option value="research">Research</option>
-        <option value="coding">Coding</option>
-        <option value="analysis">Analysis</option>
-        <option value="writing">Writing</option>
-        <option value="summarization">Summarization</option>
-        <option value="qa">QA / Testing</option>
-        <option value="custom">Custom</option>
-      </select>
+    <div style="display:flex;flex-direction:column;gap:0.75rem">
+      <div>
+        <label class="field-label">Model</label>
+        <select id="ai-gen-model" class="input" style="height:38px;min-width:200px;padding:0.4rem 0.5rem;font-size:0.82rem">
+          <option value="">Active Model</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Category</label>
+        <select id="ai-gen-category" class="input" style="height:38px;min-width:200px;padding:0.4rem 0.5rem;font-size:0.82rem">
+          <option value="general">General</option>
+          <option value="research">Research</option>
+          <option value="coding">Coding</option>
+          <option value="analysis">Analysis</option>
+          <option value="writing">Writing</option>
+          <option value="summarization">Summarization</option>
+          <option value="qa">QA / Testing</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
     </div>
   </div>
+  <!-- Advanced Options -->
+  <details id="ai-gen-advanced" style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Options &mdash; Org Best Practices &amp; References</summary>
+    <div style="margin-top:0.75rem">
+      <label class="field-label">Reference Links / Guidelines <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; one per line (URLs or text guidelines from your org)</span></label>
+      <textarea id="ai-gen-references" class="input" rows="4" placeholder="e.g.\nhttps://company.com/prompt-engineering-guide\nhttps://learn.microsoft.com/en-us/ai/prompt-engineering-best-practices\nAll prompts must include a persona, constraints, and output format per KPMG standards.\nAvoid vague instructions; always specify expected output structure." style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
+    </div>
+  </details>
   <div style="display:flex;gap:0.75rem;margin-top:1rem">
     <button class="btn btn-primary" id="ai-gen-btn" onclick="generatePrompt()">Generate with AI</button>
     <button class="btn" onclick="hideAIGenerate()">Cancel</button>
@@ -113,8 +129,8 @@
   <div style="margin-top:1rem">
     <label class="field-label" style="display:flex;justify-content:space-between;align-items:center">
       <span>Prompt Content <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the full instructional text</span></span>
-      <button class="btn btn-sm" id="validate-btn" onclick="validatePrompt()" style="font-size:0.72rem;padding:0.2rem 0.6rem">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      <button class="btn btn-sm" id="validate-btn" onclick="validatePrompt()" style="font-size:0.78rem;padding:0.35rem 0.85rem;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:6px;font-weight:600;box-shadow:0 2px 8px rgba(16,185,129,0.25)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
         Validate Quality
       </button>
     </label>
@@ -122,6 +138,14 @@
   </div>
   <!-- Validation Results -->
   <div id="validation-results" style="display:none;margin-top:0.75rem"></div>
+  <!-- Advanced: References for validation -->
+  <details style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; Org Best Practices &amp; References</summary>
+    <div style="margin-top:0.75rem">
+      <label class="field-label">Reference Links / Guidelines <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; used during validation &amp; generation to align with your org standards</span></label>
+      <textarea id="prompt-references" class="input" rows="3" placeholder="e.g.\nhttps://company.com/prompt-standards\nAll prompts must define a persona, output format, and constraints." style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
+    </div>
+  </details>
   <div style="margin-top:1rem">
     <label class="field-label">Tags <span style="color:var(--text-3);font-weight:400">(comma-separated)</span></label>
     <input type="text" id="prompt-tags" class="input" placeholder="e.g. research, citations, structured-output">
@@ -148,6 +172,24 @@
   function showAIGenerate() {
     document.getElementById('ai-generate-panel').style.display = 'block';
     document.getElementById('ai-gen-desc').focus();
+    _loadGenModels();
+  }
+  async function _loadGenModels() {
+    var sel = document.getElementById('ai-gen-model');
+    if (sel.options.length > 1) return;
+    try {
+      var r = await fetch('/api/models', { signal: AbortSignal.timeout(5000) });
+      var d = await r.json();
+      if (!d.models) return;
+      d.models.forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m.provider + ':' + m.model;
+        var provLabel = m.provider === 'azure-openai' ? '\u2601\uFE0F Azure' : m.provider === 'openai' ? '\uD83D\uDD11 OpenAI' : m.provider === 'azure-foundry' ? '\uD83C\uDFED Foundry' : '\uD83E\uDD99 Ollama';
+        opt.textContent = provLabel + ' \u2014 ' + m.model;
+        if (m.active) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch(e) {}
   }
   function hideAIGenerate() {
     document.getElementById('ai-generate-panel').style.display = 'none';
@@ -155,15 +197,24 @@
     _generatedPrompt = null;
   }
   async function generatePrompt() {
-    const desc = document.getElementById('ai-gen-desc').value.trim();
+    var desc = document.getElementById('ai-gen-desc').value.trim();
     if (!desc) { showToast('Describe what your prompt should do', 'error'); return; }
-    const btn = document.getElementById('ai-gen-btn');
+    var btn = document.getElementById('ai-gen-btn');
     btn.disabled = true; btn.textContent = 'Generating...';
     try {
-      const r = await fetch('/api/prompts/generate', {
+      var payload = { description: desc, category: document.getElementById('ai-gen-category').value };
+      var modelVal = document.getElementById('ai-gen-model').value;
+      if (modelVal) {
+        var parts = modelVal.split(':');
+        payload.provider = parts[0];
+        payload.model = parts.slice(1).join(':');
+      }
+      var refs = (document.getElementById('ai-gen-references').value || '').trim();
+      if (refs) { payload.references = refs.split('\n').filter(function(l) { return l.trim(); }); }
+      var r = await fetch('/api/prompts/generate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ description: desc, category: document.getElementById('ai-gen-category').value })
+        body: JSON.stringify(payload)
       });
       const d = await r.json();
       if (d.error && !d.content) { showToast('Generation failed: ' + d.error, 'error'); return; }
@@ -222,10 +273,14 @@
     const vr = document.getElementById('validation-results');
     vr.style.display = 'none';
     try {
+      var valPayload = { content: content, category: document.getElementById('prompt-category').value };
+      var refEl = document.getElementById('prompt-references');
+      var refVal = (refEl ? refEl.value : '').trim();
+      if (refVal) { valPayload.references = refVal.split('\n').filter(function(l) { return l.trim(); }); }
       const r = await fetch('/api/prompts/validate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ content, category: document.getElementById('prompt-category').value })
+        body: JSON.stringify(valPayload)
       });
       const d = await r.json();
       if (d.error && !d.score) { vr.innerHTML = '<div style="color:var(--danger);padding:0.5rem">Validation failed: ' + escapeHtml(d.error) + '</div>'; vr.style.display='block'; return; }

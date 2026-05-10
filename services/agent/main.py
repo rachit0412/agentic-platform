@@ -1307,12 +1307,26 @@ Category context: """
 Respond ONLY with valid JSON."""
     )
 
+    references = data.get("references", [])
+    if references:
+        ref_text = "\n".join(f"- {r}" for r in references if r.strip())
+        system += (
+            "\n\nOrganizational Best Practices & References (evaluate the prompt against these standards and flag deviations as issues):\n"
+            + ref_text
+        )
+
     try:
         from agent.llm import get_active_model as _gam
 
-        active = _gam()
-        provider = active.get("provider", "ollama")
-        model = active.get("model", "llama3")
+        req_provider = data.get("provider")
+        req_model = data.get("model")
+        if req_provider and req_model:
+            provider = req_provider
+            model = req_model
+        else:
+            active = _gam()
+            provider = active.get("provider", "ollama")
+            model = active.get("model", "llama3")
         msgs = [SystemMessage(content=system), HumanMessage(content=content)]
         for temp in (0, 1, None):
             try:
@@ -1388,12 +1402,26 @@ Keep the content field concise but complete. Do NOT include examples or lengthy 
 Respond ONLY with the JSON object."""
     )
 
+    references = data.get("references", [])
+    if references:
+        ref_text = "\n".join(f"- {r}" for r in references if r.strip())
+        system += (
+            "\n\nOrganizational Best Practices & References (align the generated prompt with these):\n"
+            + ref_text
+        )
+
     try:
         from agent.llm import get_active_model as _gam
 
-        active = _gam()
-        provider = active.get("provider", "ollama")
-        model = active.get("model", "llama3")
+        req_provider = data.get("provider")
+        req_model = data.get("model")
+        if req_provider and req_model:
+            provider = req_provider
+            model = req_model
+        else:
+            active = _gam()
+            provider = active.get("provider", "ollama")
+            model = active.get("model", "llama3")
         msgs = [SystemMessage(content=system), HumanMessage(content=description)]
         for temp in (0.7, 1, None):
             try:
