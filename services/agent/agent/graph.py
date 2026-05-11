@@ -27,7 +27,13 @@ from agent.memory import (
     get_session_summary,
     update_session_summary,
 )
-from agent.tools import get_all_tools, catalogue_as_text, call_tool, TOOL_CATALOGUE
+from agent.tools import (
+    get_all_tools,
+    catalogue_as_text,
+    catalogue_as_text_filtered,
+    call_tool,
+    TOOL_CATALOGUE,
+)
 from agent.llm import get_llm
 from agent.llm import get_active_model as _get_active_model
 from agent.observability import (
@@ -488,6 +494,104 @@ def _check_guardrails_output(text: str, agent_config: dict | None = None) -> lis
         return []
 
 
+# ── Agent skill/tool helpers ────────────────────────────────────────────────
+
+
+def _build_agent_context(agent_config: dict | None) -> tuple[str, str, list]:
+    """Build tools text, skills section, and extra system parts from agent_config.
+    Returns (tools_text, skills_section, extra_system_parts)."""
+    extra_system_parts: list[str] = []
+    skills_section = ""
+    tool_ids = None
+
+    if agent_config:
+        if agent_config.get("system_prompt"):
+            extra_system_parts.append(agent_config["system_prompt"])
+
+        # Resolve skills into skill metadata + system prompts
+        skill_ids = agent_config.get("skill_ids", [])
+        if skill_ids:
+            from agent.memory import get_skill
+
+            skill_lines = []
+            for sid in skill_ids:
+                sk = get_skill(sid)
+                if not sk:
+                    continue
+                desc = sk.get("description", "") or ""
+                constraints = (
+                    json.loads(sk.get("constraints", "[]"))
+                    if isinstance(sk.get("constraints"), str)
+                    else (sk.get("constraints") or [])
+                )
+                params = (
+                    json.loads(sk.get("input_parameters", "[]"))
+                    if isinstance(sk.get("input_parameters"), str)
+                    else (sk.get("input_parameters") or [])
+                )
+                skill_line = f"  - {sk['name']}"
+                if desc:
+                    skill_line += f": {desc}"
+                if constraints:
+                    skill_line += f"\n    Constraints: {', '.join(constraints)}"
+                if params:
+                    param_names = [
+                        p.get("name", p) if isinstance(p, dict) else str(p)
+                        for p in params
+                    ]
+                    skill_line += f"\n    Parameters: {', '.join(param_names)}"
+                skill_lines.append(skill_line)
+
+                if sk.get("system_prompt"):
+                    extra_system_parts.append(
+                        f"[Skill: {sk['name']}]\n{sk['system_prompt']}"
+                    )
+
+            if skill_lines:
+                skills_section = (
+                    "\nYour assigned skills (these are NOT tools — they define your specialized capabilities):\n"
+                    + "\n".join(skill_lines)
+                    + "\n\nWhen asked to list your skills, list ONLY the skills above. Do NOT list tools as skills."
+                )
+
+        # Collect tool_ids for filtering
+        tool_ids = agent_config.get("tool_ids")
+        if isinstance(tool_ids, str):
+            try:
+                tool_ids = json.loads(tool_ids)
+            except Exception:
+                tool_ids = None
+        if tool_ids and not isinstance(tool_ids, list):
+            tool_ids = None
+        # Empty list means no restriction
+        if tool_ids is not None and len(tool_ids) == 0:
+            tool_ids = None
+
+        # Inject sub-agent list for orchestrators
+        sub_agent_ids = agent_config.get("sub_agent_ids", [])
+        if sub_agent_ids:
+            from agent.memory import get_agent
+
+            sub_agents_desc = []
+            for sa_id in sub_agent_ids:
+                sa = get_agent(sa_id)
+                if sa:
+                    sub_agents_desc.append(
+                        f"- {sa['name']} (id: {sa['id']}): {sa.get('description', '')}"
+                    )
+            if sub_agents_desc:
+                extra_system_parts.append(
+                    "[Orchestration]\n"
+                    "You can delegate tasks to these sub-agents using the delegate_to_agent tool:\n"
+                    + "\n".join(sub_agents_desc)
+                    + "\n"
+                    "Use delegate_to_agent when a sub-agent is better suited for a specific part of the task."
+                )
+
+    tools_text = catalogue_as_text_filtered(tool_ids)
+    return tools_text, skills_section, extra_system_parts
+
+
 # ── Prompt templates ────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """\
@@ -496,7 +600,7 @@ You are a helpful AI assistant with access to tools, a knowledge base, and conve
 {memory_section}
 
 {kb_section}
-
+{skills_section}
 Available tools:
 {tools}
 
@@ -754,43 +858,19 @@ async def reason(state: AgentState) -> dict:
         tools=catalogue_as_text(),
         kb_section=kb_section,
         memory_section=memory_section,
+        skills_section="",
     )
 
-    # Merge agent custom prompt + skill prompts
-    extra_system_parts = []
+    # Merge agent custom prompt + skill prompts (with isolation)
+    tools_text, skills_section, extra_system_parts = _build_agent_context(agent_config)
     if agent_config:
-        if agent_config.get("system_prompt"):
-            extra_system_parts.append(agent_config["system_prompt"])
-        skill_ids = agent_config.get("skill_ids", [])
-        if skill_ids:
-            from agent.memory import get_skill
-
-            for sid in skill_ids:
-                sk = get_skill(sid)
-                if sk and sk.get("system_prompt"):
-                    extra_system_parts.append(
-                        f"[Skill: {sk['name']}]\n{sk['system_prompt']}"
-                    )
-        # Inject sub-agent list for orchestrators
-        sub_agent_ids = agent_config.get("sub_agent_ids", [])
-        if sub_agent_ids:
-            from agent.memory import get_agent
-
-            sub_agents_desc = []
-            for sa_id in sub_agent_ids:
-                sa = get_agent(sa_id)
-                if sa:
-                    sub_agents_desc.append(
-                        f"- {sa['name']} (id: {sa['id']}): {sa.get('description', '')}"
-                    )
-            if sub_agents_desc:
-                extra_system_parts.append(
-                    "[Orchestration]\n"
-                    "You can delegate tasks to these sub-agents using the delegate_to_agent tool:\n"
-                    + "\n".join(sub_agents_desc)
-                    + "\n"
-                    "Use delegate_to_agent when a sub-agent is better suited for a specific part of the task."
-                )
+        # Rebuild system prompt with agent-scoped tools and skills
+        system = SYSTEM_PROMPT.format(
+            tools=tools_text,
+            kb_section=kb_section,
+            memory_section=memory_section,
+            skills_section=skills_section,
+        )
     if extra_system_parts:
         system += "\n\n" + "\n\n".join(extra_system_parts)
 
@@ -1105,24 +1185,12 @@ async def run_agent_stream(
         )
     history = get_history(session_id, limit=memory_window)
 
-    # Build merged system prompt from agent config + skills
-    extra_system_parts = []
-    if agent_config:
-        if agent_config.get("system_prompt"):
-            extra_system_parts.append(agent_config["system_prompt"])
-        # Resolve skills into additional system prompts
-        skill_ids = agent_config.get("skill_ids", [])
-        if skill_ids:
-            from agent.memory import get_skill
-
-            for sid in skill_ids:
-                sk = get_skill(sid)
-                if sk and sk.get("system_prompt"):
-                    extra_system_parts.append(
-                        f"[Skill: {sk['name']}]\n{sk['system_prompt']}"
-                    )
+    # Build merged system prompt from agent config + skills (with isolation)
+    tools_text, skills_section, extra_system_parts = _build_agent_context(agent_config)
 
     agent_extra_prompt = "\n\n".join(extra_system_parts) if extra_system_parts else ""
+    agent_tools_text = tools_text
+    agent_skills_section = skills_section
 
     # ── Step 0: Input guardrails ────────────────────────────────────────
     yield {
@@ -1283,7 +1351,10 @@ async def run_agent_stream(
     t0 = _time.time()
 
     system = SYSTEM_PROMPT.format(
-        tools=catalogue_as_text(), kb_section=kb_section, memory_section=memory_section
+        tools=agent_tools_text,
+        kb_section=kb_section,
+        memory_section=memory_section,
+        skills_section=agent_skills_section,
     )
     if agent_extra_prompt:
         system += "\n\n" + agent_extra_prompt

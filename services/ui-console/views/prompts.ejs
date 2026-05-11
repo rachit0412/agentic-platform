@@ -8,7 +8,7 @@
 <div class="flex-between mb-2">
   <div style="display:flex;gap:0.75rem;align-items:center">
     <span id="prompt-count" class="badge" style="font-size:0.78rem">0 prompts</span>
-    <select id="category-filter" class="input" style="width:160px;height:34px;font-size:0.78rem" onchange="loadPrompts()">
+    <select id="category-filter" class="input" style="width:auto;min-width:140px;height:34px;font-size:0.78rem" onchange="loadPrompts()">
       <option value="">All Categories</option>
       <option value="general">General</option>
       <option value="research">Research</option>
@@ -68,14 +68,10 @@
   </div>
   <!-- Advanced Options -->
   <details id="ai-gen-advanced" style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
-    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Options &mdash; Directions, Best Practices &amp; References</summary>
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Directions</summary>
     <div style="margin-top:0.75rem">
-      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; extra guidance to steer how the AI generates your prompt</span></label>
-      <textarea id="ai-gen-directions" class="input" rows="3" placeholder="e.g.\nUse chain-of-thought reasoning in the prompt\nInclude explicit output format (JSON with specific fields)\nDon't include example inputs — keep it generic\nMake it suitable for GPT-4 and Llama 3" style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
-    </div>
-    <div style="margin-top:0.75rem">
-      <label class="field-label">Reference Links / Guidelines <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; one per line (URLs or text guidelines from your org)</span></label>
-      <textarea id="ai-gen-references" class="input" rows="4" placeholder="e.g.\nhttps://company.com/prompt-engineering-guide\nhttps://learn.microsoft.com/en-us/ai/prompt-engineering-best-practices\nAll prompts must include a persona, constraints, and output format per KPMG standards.\nAvoid vague instructions; always specify expected output structure." style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
+      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; org standards, tone, structure, constraints, references, or any guidance for the AI</span></label>
+      <textarea id="ai-gen-directions" class="input" rows="4" placeholder="e.g.\nUse chain-of-thought reasoning in the prompt\nInclude explicit output format (JSON with specific fields)\nFollow our org standard: persona + constraints + output format\nKeep under 300 words, no examples — keep it generic\nMake it suitable for GPT-4 and Llama 3\nAll prompts must align with KPMG prompt engineering guidelines" style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
     </div>
   </details>
   <div style="display:flex;gap:0.75rem;margin-top:1rem">
@@ -143,12 +139,20 @@
   </div>
   <!-- Validation Results -->
   <div id="validation-results" style="display:none;margin-top:0.75rem"></div>
-  <!-- Advanced: References for validation -->
+  <!-- Advanced: Model & Directions -->
   <details style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
-    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; Org Best Practices &amp; References</summary>
-    <div style="margin-top:0.75rem">
-      <label class="field-label">Reference Links / Guidelines <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; used during validation &amp; generation to align with your org standards</span></label>
-      <textarea id="prompt-references" class="input" rows="3" placeholder="e.g.\nhttps://company.com/prompt-standards\nAll prompts must define a persona, output format, and constraints." style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Model &amp; Directions</summary>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:1rem;margin-top:0.75rem">
+      <div>
+        <label class="field-label">AI Model <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; for Regenerate &amp; Validate</span></label>
+        <select id="prompt-model" class="input" style="min-height:36px;font-size:0.82rem">
+          <option value="">Active Model</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; org standards, tone, structure, constraints, references, or any guidance (used by Regenerate &amp; Validate)</span></label>
+        <textarea id="prompt-directions" class="input" rows="3" placeholder="e.g.\nUse chain-of-thought, keep under 400 words\nOutput must be JSON with persona + constraints + format\nAlign with our org prompt engineering standards\nNo examples — keep it generic and reusable" style="resize:vertical;font-family:var(--mono);font-size:0.78rem"></textarea>
+      </div>
     </div>
   </details>
   <div style="margin-top:1rem">
@@ -184,19 +188,24 @@
     _loadGenModels();
   }
   async function _loadGenModels() {
-    var sel = document.getElementById('ai-gen-model');
-    if (sel.options.length > 1) return;
+    var selectors = ['ai-gen-model', 'prompt-model'];
+    var first = document.getElementById(selectors[0]);
+    if (first && first.options.length > 1) return;
     try {
       var r = await fetch('/api/models', { signal: AbortSignal.timeout(5000) });
       var d = await r.json();
       if (!d.models) return;
-      d.models.forEach(function(m) {
-        var opt = document.createElement('option');
-        opt.value = m.provider + ':' + m.model;
-        var provLabel = m.provider === 'azure-openai' ? '\u2601\uFE0F Azure' : m.provider === 'openai' ? '\uD83D\uDD11 OpenAI' : m.provider === 'azure-foundry' ? '\uD83C\uDFED Foundry' : '\uD83E\uDD99 Ollama';
-        opt.textContent = provLabel + ' \u2014 ' + m.model;
-        if (m.active) opt.selected = true;
-        sel.appendChild(opt);
+      selectors.forEach(function(id) {
+        var sel = document.getElementById(id);
+        if (!sel || sel.options.length > 1) return;
+        d.models.forEach(function(m) {
+          var opt = document.createElement('option');
+          opt.value = m.provider + ':' + m.model;
+          var provLabel = m.provider === 'azure-openai' ? '\u2601\uFE0F Azure' : m.provider === 'openai' ? '\uD83D\uDD11 OpenAI' : m.provider === 'azure-foundry' ? '\uD83C\uDFED Foundry' : '\uD83E\uDD99 Ollama';
+          opt.textContent = provLabel + ' \u2014 ' + m.model;
+          if (m.active) opt.selected = true;
+          sel.appendChild(opt);
+        });
       });
     } catch(e) {}
   }
@@ -220,14 +229,14 @@
       }
       var dirs = (document.getElementById('ai-gen-directions').value || '').trim();
       if (dirs) { payload.directions = dirs; }
-      var refs = (document.getElementById('ai-gen-references').value || '').trim();
-      if (refs) { payload.references = refs.split('\\n').filter(function(l) { return l.trim(); }); }
+      showLlmUsageToastLoading('Generate Prompt');
       var r = await fetch('/api/prompts/generate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
       const d = await r.json();
+      if (d._llm_usage) showLlmUsageToast(d._llm_usage);
       if (d.error && !d.content) { showToast('Generation failed: ' + d.error, 'error'); return; }
       _generatedPrompt = d;
       document.getElementById('ai-gen-name').textContent = d.name || 'Untitled';
@@ -305,15 +314,16 @@
     vr.style.display = 'none';
     try {
       var valPayload = { content: content, category: document.getElementById('prompt-category').value };
-      var refEl = document.getElementById('prompt-references');
-      var refVal = (refEl ? refEl.value : '').trim();
-      if (refVal) { valPayload.references = refVal.split('\\n').filter(function(l) { return l.trim(); }); }
+      var dirs = (document.getElementById('prompt-directions').value || '').trim();
+      if (dirs) { valPayload.directions = dirs; }
+      showLlmUsageToastLoading('Validate Prompt');
       const r = await fetch('/api/prompts/validate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(valPayload)
       });
       const d = await r.json();
+      if (d._llm_usage) showLlmUsageToast(d._llm_usage);
       if (d.error && !d.score) { vr.innerHTML = '<div style="color:var(--danger);padding:0.5rem">Validation failed: ' + escapeHtml(d.error) + '</div>'; vr.style.display='block'; return; }
       const sc = d.score || 0;
       const barColor = sc >= 7 ? '#10b981' : sc >= 4 ? '#f59e0b' : '#ef4444';
@@ -438,6 +448,7 @@
       document.getElementById('prompt-tags').value = d.tags || '';
       document.getElementById('form-title').textContent = d.formTitle || 'Create Prompt';
       document.getElementById('prompt-form').style.display = 'block';
+      _loadGenModels();
     } catch(e) { clearDraft(); }
   }
   // Auto-save on input
@@ -461,6 +472,7 @@
     document.getElementById('regenerate-btn').style.display = 'none';
     document.getElementById('prompt-form').style.display = 'block';
     document.getElementById('prompt-name').focus();
+    _loadGenModels();
   }
 
   function hideForm() {
@@ -484,6 +496,7 @@
       document.getElementById('regenerate-btn').style.display = 'inline-flex';
       document.getElementById('prompt-form').style.display = 'block';
       document.getElementById('prompt-name').focus();
+      _loadGenModels();
     } catch(e) { showToast('Error loading prompt: ' + e.message, 'error'); }
   }
 
@@ -495,11 +508,14 @@
     btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;animation:spin 1s linear infinite"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Regenerating...';
     try {
       var payload = { description: desc || name, category: document.getElementById('prompt-category').value };
-      var refEl = document.getElementById('prompt-references');
-      var refVal = (refEl ? refEl.value : '').trim();
-      if (refVal) { payload.references = refVal.split('\\n').filter(function(l) { return l.trim(); }); }
+      var modelVal = document.getElementById('prompt-model').value;
+      if (modelVal) { var parts = modelVal.split(':'); payload.provider = parts[0]; payload.model = parts.slice(1).join(':'); }
+      var dirs = (document.getElementById('prompt-directions').value || '').trim();
+      if (dirs) { payload.directions = dirs; }
+      showLlmUsageToastLoading('Regenerate Prompt');
       var r = await fetch('/api/prompts/generate', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       var d = await r.json();
+      if (d._llm_usage) showLlmUsageToast(d._llm_usage);
       if (d.error && !d.content) { showToast('Regeneration failed: ' + d.error, 'error'); return; }
       document.getElementById('prompt-content').value = d.content || '';
       if (d.tags && d.tags.length) document.getElementById('prompt-tags').value = d.tags.join(', ');

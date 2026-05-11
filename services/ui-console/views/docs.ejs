@@ -80,23 +80,25 @@
   .docs-diagram .mermaid .node rect,
   .docs-diagram .mermaid .node circle,
   .docs-diagram .mermaid .node polygon,
-  .docs-diagram .mermaid .node ellipse { rx:10; ry:10; stroke-width:1.5 !important; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.08)); transition:filter 0.2s; }
+  .docs-diagram .mermaid .node ellipse { rx:10; ry:10; stroke-width:1px !important; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.08)); transition:filter 0.2s; }
   .docs-diagram .mermaid .node:hover rect,
   .docs-diagram .mermaid .node:hover circle,
   .docs-diagram .mermaid .node:hover polygon { filter:drop-shadow(0 4px 12px rgba(6,182,212,0.2)) !important; }
   .docs-diagram .mermaid .nodeLabel,
   .docs-diagram .mermaid .label { font-family:'Inter',var(--sans),sans-serif !important; font-size:0.78rem !important; font-weight:600 !important; letter-spacing:-0.01em; }
   .docs-diagram .mermaid .edgeLabel { font-family:'Inter',var(--sans),sans-serif !important; font-size:0.68rem !important; font-weight:500 !important; background:var(--bg) !important; padding:0.15rem 0.4rem !important; border-radius:6px !important; border:1px solid var(--glass-border) !important; }
-  .docs-diagram .mermaid .edgePath .path { stroke-width:1.8 !important; }
+  .docs-diagram .mermaid .edgePath .path { stroke-width:1.2px !important; fill:none !important; }
+  .docs-diagram .mermaid .flowchart-link { stroke-width:1.2px !important; fill:none !important; }
   .docs-diagram .mermaid marker polygon { stroke:none !important; }
-  .docs-diagram .mermaid .cluster rect { rx:16 !important; ry:16 !important; stroke-width:1.5 !important; stroke-dasharray:6 4 !important; }
+  .docs-diagram .mermaid marker { overflow:visible; }
+  .docs-diagram .mermaid .cluster rect { rx:16 !important; ry:16 !important; stroke-width:1px !important; stroke-dasharray:6 4 !important; }
   .docs-diagram .mermaid .cluster .nodeLabel,
   .docs-diagram .mermaid .cluster-label .nodeLabel { font-size:0.82rem !important; font-weight:700 !important; letter-spacing:0.02em; text-transform:uppercase; }
-  .docs-diagram .mermaid .actor { rx:12; ry:12; stroke-width:2 !important; }
-  .docs-diagram .mermaid .actor-line { stroke-dasharray:4 3 !important; stroke-width:1.2 !important; }
+  .docs-diagram .mermaid .actor { rx:12; ry:12; stroke-width:1px !important; }
+  .docs-diagram .mermaid .actor-line { stroke-dasharray:4 3 !important; stroke-width:1px !important; }
   .docs-diagram .mermaid text.actor { font-size:0.8rem !important; font-weight:700 !important; font-family:'Inter',var(--sans),sans-serif !important; }
   .docs-diagram .mermaid .messageLine0,
-  .docs-diagram .mermaid .messageLine1 { stroke-width:1.8 !important; }
+  .docs-diagram .mermaid .messageLine1 { stroke-width:1.2px !important; }
   .docs-diagram .mermaid .messageText { font-size:0.74rem !important; font-weight:600 !important; font-family:'Inter',var(--sans),sans-serif !important; }
   .docs-diagram .mermaid .note { rx:10 !important; ry:10 !important; }
   .docs-diagram .mermaid .noteText { font-size:0.72rem !important; font-weight:500 !important; }
@@ -123,7 +125,7 @@
   /* State diagrams */
   .docs-diagram .mermaid .statediagram-state rect { rx:12 !important; ry:12 !important; }
   .docs-diagram .mermaid .state-note rect { rx:10 !important; }
-  .docs-diagram .mermaid .transition { stroke-width:1.5 !important; }
+  .docs-diagram .mermaid .transition { stroke-width:1px !important; }
   /* Subgraph titles */
   .docs-diagram .mermaid .subgraph-label { font-size:0.78rem !important; }
   .diagram-lightbox { position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.88); backdrop-filter:blur(12px); display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; }
@@ -2121,13 +2123,13 @@ docker-compose --profile gpu up -d</code></pre>
     /* SVG background */
     svg.style.background = 'transparent';
     /* Sequence diagram actors */
-    svg.querySelectorAll('rect.actor').forEach(function(r) { r.style.fill='#cffafe'; r.style.stroke='#0e7490'; r.style.strokeWidth='2'; });
+    svg.querySelectorAll('rect.actor').forEach(function(r) { r.style.fill='#cffafe'; r.style.stroke='#0e7490'; r.style.strokeWidth='1px'; });
     svg.querySelectorAll('text.actor').forEach(function(t) { t.style.fill='#0c4a6e'; });
     svg.querySelectorAll('text.actor > tspan').forEach(function(t) { t.style.fill='#0c4a6e'; });
     /* Lifelines */
-    svg.querySelectorAll('line.actor-line, .actor-line').forEach(function(l) { l.style.stroke='#64748b'; l.style.strokeWidth='1.2'; });
+    svg.querySelectorAll('line.actor-line, .actor-line').forEach(function(l) { l.style.stroke='#64748b'; l.style.strokeWidth='1px'; });
     /* Message arrows */
-    svg.querySelectorAll('.messageLine0, .messageLine1').forEach(function(l) { l.style.stroke='#1e293b'; l.style.strokeWidth='1.8'; });
+    svg.querySelectorAll('.messageLine0, .messageLine1').forEach(function(l) { l.style.stroke='#1e293b'; l.style.strokeWidth='1.2px'; });
     /* Message text */
     svg.querySelectorAll('.messageText').forEach(function(t) { t.style.fill='#0f172a'; t.style.fontWeight='600'; t.style.fontSize='0.74rem'; });
     /* Activation bars */
@@ -2143,8 +2145,8 @@ docker-compose --profile gpu up -d</code></pre>
     /* Arrowheads (markers) */
     svg.querySelectorAll('marker polygon, marker path').forEach(function(m) { m.style.fill='#1e293b'; });
     /* Flowchart nodes & edges */
-    svg.querySelectorAll('.edgePath .path').forEach(function(p) { p.style.stroke='#475569'; });
-    svg.querySelectorAll('.node rect, .node polygon, .node circle').forEach(function(n) { if (!n.style.fill || n.style.fill === 'none') { n.style.fill='#e0f2fe'; n.style.stroke='#0891b2'; } });
+    svg.querySelectorAll('.edgePath .path, .flowchart-link').forEach(function(p) { p.style.stroke='#475569'; p.style.strokeWidth='1.2px'; p.style.fill='none'; });
+    svg.querySelectorAll('.node rect, .node polygon, .node circle').forEach(function(n) { if (!n.style.fill || n.style.fill === 'none') { n.style.fill='#e0f2fe'; n.style.stroke='#0891b2'; } n.style.strokeWidth='1px'; });
     svg.querySelectorAll('.nodeLabel, .label').forEach(function(t) { t.style.color='#0f172a'; t.style.fill='#0f172a'; });
     /* Cluster / subgraph */
     svg.querySelectorAll('.cluster rect').forEach(function(r) { r.style.fill='rgba(139,92,246,0.06)'; r.style.stroke='rgba(124,58,237,0.3)'; });

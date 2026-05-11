@@ -237,6 +237,11 @@ async def run(body: RunRequest, request: Request):
     # Build agent_config for run_agent (same pattern as /run/stream)
     if agent_config is None:
         agent_config = {}
+    # If user explicitly chose provider/model, override agent defaults
+    if body.provider:
+        agent_config["provider"] = body.provider
+    if body.model:
+        agent_config["model"] = body.model
     agent_config["use_kb"] = body.use_kb if hasattr(body, "use_kb") else True
     if body.temperature is not None:
         agent_config["temperature"] = body.temperature
@@ -325,6 +330,11 @@ async def run_stream(body: RunRequest):
     # Override agent config with request-level params
     if agent_config is None:
         agent_config = {}
+    # If user explicitly chose provider/model, override agent defaults
+    if body.provider:
+        agent_config["provider"] = body.provider
+    if body.model:
+        agent_config["model"] = body.model
     agent_config["use_kb"] = body.use_kb
     if body.temperature is not None:
         agent_config["temperature"] = body.temperature
@@ -1272,6 +1282,7 @@ async def skills_enrich_endpoint(request: Request):
     input_parameters = data.get("input_parameters", [])
     available_tools = data.get("available_tools", [])
     best_practices = data.get("best_practices", "")
+    directions = data.get("directions", "").strip()
 
     if not name and not description:
         from fastapi.responses import JSONResponse
@@ -1316,6 +1327,12 @@ Rules:
     if best_practices:
         system += "\n\nOrganizational Best Practices to align with:\n" + best_practices
 
+    if directions:
+        system += (
+            "\n\nIMPORTANT — Additional Directions from the user (follow these strictly):\n"
+            + directions
+        )
+
     user_parts = []
     if name:
         user_parts.append(f"Name: {name}")
@@ -1333,6 +1350,9 @@ Rules:
     user_msg = "Enrich this skill:\n\n" + "\n".join(user_parts)
 
     try:
+        import time as _time
+
+        _start = _time.time()
         from agent.llm import get_active_model as _gam
 
         req_provider = data.get("provider")
@@ -1356,13 +1376,18 @@ Rules:
                     kwargs["temperature"] = temp
                 llm = get_llm(**kwargs)
                 result = await llm.ainvoke(msgs)
+                usage_meta = _log_ai_usage(
+                    provider, model, result, _start, "skills-enrich"
+                )
                 parsed = _extract_json(result.content or "")
                 if parsed is not None:
+                    parsed["_llm_usage"] = usage_meta
                     return parsed
                 return {
                     "error": "LLM returned invalid JSON",
                     "name": name,
                     "description": description,
+                    "_llm_usage": usage_meta,
                 }
             except Exception as e2:
                 if "temperature" in str(e2).lower():
@@ -1387,6 +1412,7 @@ async def skills_decompose_endpoint(request: Request):
     count = min(int(raw_count), 10) if raw_count is not None else None
     available_tools = data.get("available_tools", [])
     best_practices = data.get("best_practices", "")
+    directions = data.get("directions", "").strip()
 
     if not concept and not base_prompt:
         from fastapi.responses import JSONResponse
@@ -1448,6 +1474,12 @@ Rules:
     if best_practices:
         system += "\n\nOrganizational Best Practices to align with:\n" + best_practices
 
+    if directions:
+        system += (
+            "\n\nIMPORTANT — Additional Directions from the user (follow these strictly):\n"
+            + directions
+        )
+
     user_parts = []
     if concept:
         user_parts.append(f"Concept/Domain: {concept}")
@@ -1462,6 +1494,9 @@ Rules:
     )
 
     try:
+        import time as _time
+
+        _start = _time.time()
         from agent.llm import get_active_model as _gam
 
         req_provider = data.get("provider")
@@ -1485,10 +1520,18 @@ Rules:
                     kwargs["temperature"] = temp
                 llm = get_llm(**kwargs)
                 result = await llm.ainvoke(msgs)
+                usage_meta = _log_ai_usage(
+                    provider, model, result, _start, "skills-decompose"
+                )
                 parsed = _extract_json(result.content or "")
                 if parsed is not None and "skills" in parsed:
+                    parsed["_llm_usage"] = usage_meta
                     return parsed
-                return {"error": "LLM returned invalid JSON", "concept": concept}
+                return {
+                    "error": "LLM returned invalid JSON",
+                    "concept": concept,
+                    "_llm_usage": usage_meta,
+                }
             except Exception as e2:
                 if "temperature" in str(e2).lower():
                     continue
@@ -1584,6 +1627,70 @@ def _extract_json(raw: str):
         except _json.JSONDecodeError:
             pass
     return None
+
+
+def _log_ai_usage(
+    provider: str,
+    model: str,
+    result,
+    start_time: float,
+    feature: str = "ai-feature",
+) -> dict:
+    """Log LLM usage from an AI feature endpoint and return usage metadata."""
+    import time as _time
+
+    usage_meta = {
+        "provider": provider,
+        "model": model,
+        "feature": feature,
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+        "latency_ms": int((_time.time() - start_time) * 1000),
+        "estimated_cost": 0.0,
+    }
+    try:
+        from agent.memory import log_llm_usage
+
+        # Extract token counts from LangChain response metadata
+        usage = getattr(result, "usage_metadata", None) or {}
+        prompt_tokens = usage.get("input_tokens", 0)
+        completion_tokens = usage.get("output_tokens", 0)
+        total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+        # Fallback: try response_metadata (OpenAI/Azure style)
+        if not prompt_tokens and hasattr(result, "response_metadata"):
+            rm = result.response_metadata or {}
+            tu = rm.get("token_usage") or rm.get("usage") or {}
+            prompt_tokens = tu.get("prompt_tokens", 0)
+            completion_tokens = tu.get("completion_tokens", 0)
+            total_tokens = tu.get("total_tokens", prompt_tokens + completion_tokens)
+
+        latency_ms = int((_time.time() - start_time) * 1000)
+        entry = log_llm_usage(
+            request_id=f"{feature}-{str(__import__('uuid').uuid4())[:8]}",
+            session_id=feature,
+            provider=provider,
+            model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            latency_ms=latency_ms,
+            tools_used=[],
+            guardrail_status="passed",
+            agent_id="",
+        )
+        usage_meta.update(
+            {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "latency_ms": latency_ms,
+                "estimated_cost": entry.get("estimated_cost", 0.0),
+            }
+        )
+    except Exception as e:
+        logger.warning("Failed to log AI feature usage (%s): %s", feature, e)
+    return usage_meta
 
 
 async def _fetch_references(references: list) -> dict:
@@ -1740,6 +1847,9 @@ Respond ONLY with valid JSON."""
         )
 
     try:
+        import time as _time
+
+        _start = _time.time()
         from agent.llm import get_active_model as _gam
 
         req_provider = data.get("provider")
@@ -1763,15 +1873,20 @@ Respond ONLY with valid JSON."""
                     kwargs["temperature"] = temp
                 llm = get_llm(**kwargs)
                 result = await llm.ainvoke(msgs)
+                usage_meta = _log_ai_usage(
+                    provider, model, result, _start, "prompts-validate"
+                )
                 parsed = _extract_json(result.content)
                 if parsed is not None:
                     if refs_meta:
                         parsed["references_used"] = refs_meta["references_used"]
+                    parsed["_llm_usage"] = usage_meta
                     return parsed
                 return {
                     "score": 0,
                     "error": "LLM returned invalid JSON",
                     "summary": "Validation failed",
+                    "_llm_usage": usage_meta,
                 }
             except Exception as e2:
                 if "temperature" in str(e2).lower():
@@ -1828,6 +1943,7 @@ Keep the content field concise but complete. Do NOT include examples or lengthy 
 Respond ONLY with the JSON object."""
     )
 
+    directions = data.get("directions", "").strip()
     references = data.get("references", [])
     refs_meta = None
     if references:
@@ -1837,7 +1953,16 @@ Respond ONLY with the JSON object."""
             + refs_meta["ref_text"]
         )
 
+    if directions:
+        system += (
+            "\n\nIMPORTANT — Additional Directions from the user (follow these strictly):\n"
+            + directions
+        )
+
     try:
+        import time as _time
+
+        _start = _time.time()
         from agent.llm import get_active_model as _gam
 
         req_provider = data.get("provider")
@@ -1861,12 +1986,21 @@ Respond ONLY with the JSON object."""
                     kwargs["temperature"] = temp
                 llm = get_llm(**kwargs)
                 result = await llm.ainvoke(msgs)
+                usage_meta = _log_ai_usage(
+                    provider, model, result, _start, "prompts-generate"
+                )
                 parsed = _extract_json(result.content or "")
                 if parsed is not None:
                     if refs_meta:
                         parsed["references_used"] = refs_meta["references_used"]
+                    parsed["_llm_usage"] = usage_meta
                     return parsed
-                return {"error": "LLM returned invalid JSON", "content": "", "name": ""}
+                return {
+                    "error": "LLM returned invalid JSON",
+                    "content": "",
+                    "name": "",
+                    "_llm_usage": usage_meta,
+                }
             except Exception as e2:
                 if "temperature" in str(e2).lower():
                     continue

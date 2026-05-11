@@ -42,10 +42,10 @@
       <textarea id="prompt" rows="3" placeholder="Ask something... e.g. What is 42 * 13?" style="margin-bottom:0.75rem"></textarea>
       <div class="flex" style="gap:0.5rem;flex-wrap:wrap;align-items:center">
         <input id="session" placeholder="Session ID (auto)" style="max-width:200px" />
-        <select id="agent-select" style="max-width:200px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
+        <select id="agent-select" style="width:auto;min-width:160px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
           <option value="">Default Agent</option>
         </select>
-        <select id="model-select" style="max-width:220px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
+        <select id="model-select" style="width:auto;min-width:180px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
           <option value="">Default Model</option>
         </select>
         <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;color:var(--text-2);cursor:pointer;user-select:none;padding:0.35rem 0.6rem;background:var(--glass-bg);border:1px solid var(--divider);border-radius:8px" title="Toggle Knowledge Base retrieval. Disable for faster responses when KB context is not needed.">

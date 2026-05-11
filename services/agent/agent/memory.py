@@ -1934,17 +1934,45 @@ def _init_llm_usage_table():
 
 # Pricing table: [input_per_1M_tokens, output_per_1M_tokens]
 _LLM_PRICING = {
+    # OpenAI / Azure OpenAI
     "gpt-4o": [2.50, 10.00],
     "gpt-4o-mini": [0.15, 0.60],
     "gpt-4.1": [2.00, 8.00],
     "gpt-4.1-mini": [0.40, 1.60],
     "gpt-4.1-nano": [0.10, 0.40],
+    "gpt-4-turbo": [10.00, 30.00],
+    "gpt-4": [30.00, 60.00],
     "gpt-5-nano": [0.10, 0.40],
     "gpt-5.4-mini": [0.40, 1.60],
     "gpt-3.5-turbo": [0.50, 1.50],
+    "o1": [15.00, 60.00],
+    "o1-mini": [3.00, 12.00],
+    "o3": [10.00, 40.00],
+    "o3-mini": [1.10, 4.40],
+    "o4-mini": [1.10, 4.40],
+    # Azure AI Foundry / open models
+    "phi-4": [0.07, 0.14],
+    "phi-3": [0.05, 0.10],
+    "mistral-large": [2.00, 6.00],
+    "mistral-small": [0.10, 0.30],
+    "mistral-medium": [2.70, 8.10],
+    "command-r-plus": [3.00, 15.00],
+    "command-r": [0.50, 1.50],
+    "jamba-1.5-large": [2.00, 8.00],
+    "jamba-1.5-mini": [0.20, 0.40],
+    "deepseek-r1": [0.55, 2.19],
+    "deepseek-v3": [0.27, 1.10],
+    # Meta (via Azure Foundry or local)
+    "llama-4-maverick": [0.20, 0.60],
+    "llama-4-scout": [0.15, 0.40],
+    "llama-3.3": [0.0, 0.0],
+    "llama-3.1": [0.0, 0.0],
     "llama3": [0.0, 0.0],
+    # Local / self-hosted (free)
     "mistral": [0.0, 0.0],
-    "deepseek-r1": [0.0, 0.0],
+    "qwen": [0.0, 0.0],
+    "gemma": [0.0, 0.0],
+    "codellama": [0.0, 0.0],
 }
 
 

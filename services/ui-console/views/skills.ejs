@@ -98,7 +98,7 @@
   <div style="margin-top:0.75rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
       <label class="field-label" style="margin-bottom:0">Base Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; optional: paste an existing prompt or pick from your library</span></label>
-      <select id="decompose-prompt-picker" class="input" style="width:260px;min-height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPromptToDecompose()">
+      <select id="decompose-prompt-picker" class="input" style="width:auto;min-width:240px;min-height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPromptToDecompose()">
         <option value="">&mdash; Select from Prompt Library &mdash;</option>
       </select>
     </div>
@@ -106,9 +106,9 @@
   </div>
   <!-- Skill Family Advanced Directions -->
   <details style="margin-top:0.75rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
-    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Directions <span style="font-weight:400;color:var(--text-3);font-size:0.72rem">&mdash; extra guidance for the AI</span></summary>
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Directions <span style="font-weight:400;color:var(--text-3);font-size:0.72rem">&mdash; org standards, naming, structure, or any guidance</span></summary>
     <div style="margin-top:0.75rem">
-      <label class="field-label">Custom Instructions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; steer how the AI generates skills</span></label>
+      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; steer how the AI decomposes &amp; generates skills</span></label>
       <textarea id="decompose-directions" class="input" rows="3" placeholder="e.g.\nEach skill should have at most 2 input parameters\nUse imperative verbs in skill names (Analyze, Generate, Validate)\nInclude error handling constraints\nFocus on data validation use cases" style="font-size:0.78rem;font-family:var(--mono);resize:vertical"></textarea>
     </div>
   </details>
@@ -169,7 +169,7 @@
   <div style="margin-top:1rem">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem">
       <label class="field-label" style="margin-bottom:0">Prompt <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">— the instructional context: what the model should do, how it should behave, what output is expected</span></label>
-      <select id="prompt-library-picker" class="input" style="width:260px;min-height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPrompt()">
+      <select id="prompt-library-picker" class="input" style="width:auto;min-width:240px;min-height:34px;font-size:0.75rem;position:relative;z-index:10" onchange="applyLibraryPrompt()">
         <option value="">&mdash; Select from Prompt Library &mdash;</option>
       </select>
     </div>
@@ -211,7 +211,7 @@
   <details style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
     <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Model, Directions &amp; Best Practices</summary>
     <div style="margin-top:0.75rem">
-      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; extra guidance for the AI (e.g. don't add parameters, use chain-of-thought, keep it concise)</span></label>
+      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; org standards, naming conventions, structure, constraints, or any guidance for the AI</span></label>
       <textarea id="enrich-directions" class="input" rows="3" placeholder="e.g.\nDon't add more than 3 parameters\nUse structured JSON output format\nFollow our internal naming convention: snake_case for params\nKeep the prompt under 500 words" style="font-size:0.78rem;font-family:var(--mono);resize:vertical"></textarea>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
@@ -708,12 +708,14 @@
     }
 
     try {
+      showLlmUsageToastLoading('Enrich Skill');
       var r = await fetch('/api/skills/enrich', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
       var d = await r.json();
+      if (d._llm_usage) showLlmUsageToast(d._llm_usage);
       if (d.error && !d.system_prompt) {
         showToast('Enrichment failed: ' + d.error, 'error');
         return;
@@ -837,12 +839,14 @@
     }
 
     try {
+      showLlmUsageToastLoading('Decompose Skills');
       var r = await fetch('/api/skills/decompose', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
       var d = await r.json();
+      if (d._llm_usage) showLlmUsageToast(d._llm_usage);
       if (d.error && !d.skills) {
         showToast('Decompose failed: ' + d.error, 'error');
         return;
@@ -989,12 +993,14 @@
     }
 
     try {
+      showLlmUsageToastLoading('Decompose Skills');
       var r = await fetch('/api/skills/decompose', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
       var d = await r.json();
+      if (d._llm_usage) showLlmUsageToast(d._llm_usage);
       if (d.error && !d.skills) {
         showToast('Failed: ' + d.error, 'error');
         return;

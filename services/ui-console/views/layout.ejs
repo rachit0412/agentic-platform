@@ -1450,5 +1450,108 @@
       });
     });
   </script>
+
+  <!-- ── Global LLM Activity Toast ── -->
+  <div id="llm-usage-toast" class="llm-toast-container">
+    <div class="llm-toast-header">
+      <span class="llm-toast-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        LLM Activity
+      </span>
+      <button onclick="closeLlmToast()" class="llm-toast-close">&times;</button>
+    </div>
+    <div id="llm-usage-toast-body" class="llm-toast-body"></div>
+  </div>
+  <style>
+    @keyframes llmToastIn { from { opacity:0; transform:translateY(20px) scale(.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+    @keyframes llmPulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
+    .llm-toast-container {
+      display:none; position:fixed; bottom:24px; right:24px; z-index:99999;
+      min-width:340px; max-width:420px;
+      background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border:1px solid var(--glass-border); border-radius:14px;
+      box-shadow: var(--glass-shadow); padding:0; font-family:inherit;
+      animation: llmToastIn .3s ease;
+    }
+    .llm-toast-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px 8px; border-bottom:1px solid var(--divider);
+    }
+    .llm-toast-title {
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; font-weight:600; color:var(--text-1);
+    }
+    .llm-toast-close {
+      background:none; border:none; color:var(--text-3); cursor:pointer;
+      font-size:18px; line-height:1; padding:4px;
+    }
+    .llm-toast-close:hover { color:var(--text-1); }
+    .llm-toast-body { padding:12px 16px 16px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .llm-toast-body .llm-tile {
+      background: var(--input-bg); border:1px solid var(--border-base);
+      border-radius:8px; padding:8px 10px;
+    }
+    .llm-toast-body .llm-tile-label {
+      font-size:10px; text-transform:uppercase; letter-spacing:.5px;
+      color:var(--text-3); margin-bottom:2px;
+    }
+    .llm-toast-body .llm-tile-value { font-size:14px; font-weight:600; color:var(--text-1); }
+    .llm-toast-body .llm-tile-value.loading { animation: llmPulse 1.2s ease-in-out infinite; color:var(--text-2); }
+    .llm-toast-body .llm-spinner {
+      display:inline-block; width:14px; height:14px; border:2px solid var(--text-3);
+      border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite;
+      vertical-align:middle; margin-right:6px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+  <script>
+    function showLlmUsageToastLoading(feature) {
+      var toast = document.getElementById('llm-usage-toast');
+      var body = document.getElementById('llm-usage-toast-body');
+      body.innerHTML =
+        '<div class="llm-tile" style="grid-column:span 2"><div class="llm-tile-label">Feature</div><div class="llm-tile-value"><span class="llm-spinner"></span>' + (feature || 'AI Processing') + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Status</div><div class="llm-tile-value loading">Calling LLM...</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Latency</div><div class="llm-tile-value loading" id="llm-toast-elapsed">0.0s</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Tokens</div><div class="llm-tile-value loading">—</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Cost</div><div class="llm-tile-value loading">—</div></div>';
+      toast.style.display = 'block';
+      clearTimeout(window._llmToastTimer);
+      // Live elapsed timer
+      window._llmToastStart = Date.now();
+      clearInterval(window._llmToastElapsed);
+      window._llmToastElapsed = setInterval(function() {
+        var el = document.getElementById('llm-toast-elapsed');
+        if (el) el.textContent = ((Date.now() - window._llmToastStart) / 1000).toFixed(1) + 's';
+      }, 100);
+    }
+    function showLlmUsageToast(usage) {
+      if (!usage) return;
+      clearInterval(window._llmToastElapsed);
+      var toast = document.getElementById('llm-usage-toast');
+      var body = document.getElementById('llm-usage-toast-body');
+      var cost = typeof usage.estimated_cost === 'number' ? '$' + usage.estimated_cost.toFixed(5) : '$0.00';
+      var latency = usage.latency_ms ? (usage.latency_ms / 1000).toFixed(2) + 's' : '—';
+      var tokPerSec = (usage.completion_tokens && usage.latency_ms) ? Math.round(usage.completion_tokens / (usage.latency_ms / 1000)) : '—';
+      body.innerHTML =
+        '<div class="llm-tile"><div class="llm-tile-label">Provider</div><div class="llm-tile-value">' + (usage.provider || '—') + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Model</div><div class="llm-tile-value">' + (usage.model || '—') + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Feature</div><div class="llm-tile-value">' + (usage.feature || '—') + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Latency</div><div class="llm-tile-value">' + latency + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Prompt Tokens</div><div class="llm-tile-value">' + (usage.prompt_tokens || 0) + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Completion Tokens</div><div class="llm-tile-value">' + (usage.completion_tokens || 0) + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Total Tokens</div><div class="llm-tile-value">' + (usage.total_tokens || 0) + '</div></div>' +
+        '<div class="llm-tile"><div class="llm-tile-label">Tokens/sec</div><div class="llm-tile-value">' + tokPerSec + '</div></div>' +
+        '<div class="llm-tile" style="grid-column:span 2"><div class="llm-tile-label">Est. Cost</div><div class="llm-tile-value">' + cost + '</div></div>';
+      toast.style.display = 'block';
+      clearTimeout(window._llmToastTimer);
+      window._llmToastTimer = setTimeout(closeLlmToast, 15000);
+    }
+    function closeLlmToast() {
+      var toast = document.getElementById('llm-usage-toast');
+      if (toast) toast.style.display = 'none';
+      clearTimeout(window._llmToastTimer);
+      clearInterval(window._llmToastElapsed);
+    }
+  </script>
 </body>
 </html>

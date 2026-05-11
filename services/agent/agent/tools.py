@@ -561,6 +561,19 @@ def catalogue_as_text() -> str:
     return "\n".join(lines)
 
 
+def catalogue_as_text_filtered(tool_ids: list[str] | None = None) -> str:
+    """Render tool list filtered by tool_ids. If tool_ids is None or empty, return all."""
+    _refresh_catalogue()
+    all_tools = get_all_tools()
+    if tool_ids:
+        id_set = set(tool_ids)
+        all_tools = [t for t in all_tools if t.name in id_set]
+    lines = []
+    for t in all_tools:
+        lines.append(f"- {t.name}: {t.description}")
+    return "\n".join(lines)
+
+
 async def call_tool(tool_name: str, arguments: dict) -> dict:
     """Legacy: call a tool by name with arguments dict."""
     tools_map = {t.name: t for t in get_all_tools()}
