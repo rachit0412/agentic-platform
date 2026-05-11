@@ -2114,43 +2114,46 @@ docker-compose --profile gpu up -d</code></pre>
   });
 
   /* ── Light-mode Mermaid post-render patch ── */
+  /* Apply light-mode colors to a single SVG element */
+  function patchSvgLightColors(svg) {
+    /* Nuke Mermaid's internal <style> overrides so our inline styles win */
+    svg.querySelectorAll('style').forEach(function(s) { s.remove(); });
+    /* SVG background */
+    svg.style.background = 'transparent';
+    /* Sequence diagram actors */
+    svg.querySelectorAll('rect.actor').forEach(function(r) { r.style.fill='#cffafe'; r.style.stroke='#0e7490'; r.style.strokeWidth='2'; });
+    svg.querySelectorAll('text.actor').forEach(function(t) { t.style.fill='#0c4a6e'; });
+    svg.querySelectorAll('text.actor > tspan').forEach(function(t) { t.style.fill='#0c4a6e'; });
+    /* Lifelines */
+    svg.querySelectorAll('line.actor-line, .actor-line').forEach(function(l) { l.style.stroke='#64748b'; l.style.strokeWidth='1.2'; });
+    /* Message arrows */
+    svg.querySelectorAll('.messageLine0, .messageLine1').forEach(function(l) { l.style.stroke='#1e293b'; l.style.strokeWidth='1.8'; });
+    /* Message text */
+    svg.querySelectorAll('.messageText').forEach(function(t) { t.style.fill='#0f172a'; t.style.fontWeight='600'; t.style.fontSize='0.74rem'; });
+    /* Activation bars */
+    svg.querySelectorAll('[class*="activation"]').forEach(function(r) { r.style.fill='#a5f3fc'; r.style.stroke='#0891b2'; });
+    /* Notes */
+    svg.querySelectorAll('.note').forEach(function(r) { r.style.fill='#fef3c7'; r.style.stroke='#d97706'; });
+    svg.querySelectorAll('.noteText, .noteText tspan').forEach(function(t) { t.style.fill='#78350f'; });
+    /* Loop / alt labels */
+    svg.querySelectorAll('.loopText, .loopText tspan').forEach(function(t) { t.style.fill='#5b21b6'; t.style.fontWeight='700'; });
+    svg.querySelectorAll('.labelBox').forEach(function(r) { r.style.fill='#f1f5f9'; r.style.stroke='#cbd5e1'; });
+    svg.querySelectorAll('.labelText, .labelText tspan').forEach(function(t) { t.style.fill='#0f172a'; });
+    svg.querySelectorAll('.loopLine').forEach(function(l) { l.style.stroke='#94a3b8'; });
+    /* Arrowheads (markers) */
+    svg.querySelectorAll('marker polygon, marker path').forEach(function(m) { m.style.fill='#1e293b'; });
+    /* Flowchart nodes & edges */
+    svg.querySelectorAll('.edgePath .path').forEach(function(p) { p.style.stroke='#475569'; });
+    svg.querySelectorAll('.node rect, .node polygon, .node circle').forEach(function(n) { if (!n.style.fill || n.style.fill === 'none') { n.style.fill='#e0f2fe'; n.style.stroke='#0891b2'; } });
+    svg.querySelectorAll('.nodeLabel, .label').forEach(function(t) { t.style.color='#0f172a'; t.style.fill='#0f172a'; });
+    /* Cluster / subgraph */
+    svg.querySelectorAll('.cluster rect').forEach(function(r) { r.style.fill='rgba(139,92,246,0.06)'; r.style.stroke='rgba(124,58,237,0.3)'; });
+    svg.querySelectorAll('.cluster-label .nodeLabel').forEach(function(t) { t.style.color='#5b21b6'; });
+  }
+
   function patchMermaidLightMode() {
     if (document.documentElement.classList.contains('dark')) return;
-    document.querySelectorAll('.docs-diagram .mermaid svg').forEach(function(svg) {
-      /* Nuke Mermaid's internal <style> overrides so our inline styles win */
-      svg.querySelectorAll('style').forEach(function(s) { s.remove(); });
-      /* SVG background */
-      svg.style.background = 'transparent';
-      /* Sequence diagram actors */
-      svg.querySelectorAll('rect.actor').forEach(function(r) { r.style.fill='#cffafe'; r.style.stroke='#0e7490'; r.style.strokeWidth='2'; });
-      svg.querySelectorAll('text.actor').forEach(function(t) { t.style.fill='#0c4a6e'; });
-      svg.querySelectorAll('text.actor > tspan').forEach(function(t) { t.style.fill='#0c4a6e'; });
-      /* Lifelines */
-      svg.querySelectorAll('line.actor-line, .actor-line').forEach(function(l) { l.style.stroke='#64748b'; l.style.strokeWidth='1.2'; });
-      /* Message arrows */
-      svg.querySelectorAll('.messageLine0, .messageLine1').forEach(function(l) { l.style.stroke='#1e293b'; l.style.strokeWidth='1.8'; });
-      /* Message text */
-      svg.querySelectorAll('.messageText').forEach(function(t) { t.style.fill='#0f172a'; t.style.fontWeight='600'; t.style.fontSize='0.74rem'; });
-      /* Activation bars */
-      svg.querySelectorAll('[class*="activation"]').forEach(function(r) { r.style.fill='#a5f3fc'; r.style.stroke='#0891b2'; });
-      /* Notes */
-      svg.querySelectorAll('.note').forEach(function(r) { r.style.fill='#fef3c7'; r.style.stroke='#d97706'; });
-      svg.querySelectorAll('.noteText, .noteText tspan').forEach(function(t) { t.style.fill='#78350f'; });
-      /* Loop / alt labels */
-      svg.querySelectorAll('.loopText, .loopText tspan').forEach(function(t) { t.style.fill='#5b21b6'; t.style.fontWeight='700'; });
-      svg.querySelectorAll('.labelBox').forEach(function(r) { r.style.fill='#f1f5f9'; r.style.stroke='#cbd5e1'; });
-      svg.querySelectorAll('.labelText, .labelText tspan').forEach(function(t) { t.style.fill='#0f172a'; });
-      svg.querySelectorAll('.loopLine').forEach(function(l) { l.style.stroke='#94a3b8'; });
-      /* Arrowheads (markers) */
-      svg.querySelectorAll('marker polygon, marker path').forEach(function(m) { m.style.fill='#1e293b'; });
-      /* Flowchart nodes & edges */
-      svg.querySelectorAll('.edgePath .path').forEach(function(p) { p.style.stroke='#475569'; });
-      svg.querySelectorAll('.node rect, .node polygon, .node circle').forEach(function(n) { if (!n.style.fill || n.style.fill === 'none') { n.style.fill='#e0f2fe'; n.style.stroke='#0891b2'; } });
-      svg.querySelectorAll('.nodeLabel, .label').forEach(function(t) { t.style.color='#0f172a'; t.style.fill='#0f172a'; });
-      /* Cluster / subgraph */
-      svg.querySelectorAll('.cluster rect').forEach(function(r) { r.style.fill='rgba(139,92,246,0.06)'; r.style.stroke='rgba(124,58,237,0.3)'; });
-      svg.querySelectorAll('.cluster-label .nodeLabel').forEach(function(t) { t.style.color='#5b21b6'; });
-    });
+    document.querySelectorAll('.docs-diagram .mermaid svg').forEach(patchSvgLightColors);
   }
 
   /* ── Capability Pop-out Modal ── */
@@ -2385,6 +2388,7 @@ docker-compose --profile gpu up -d</code></pre>
           svg.style.width = '100%';
           svg.style.height = 'auto';
           svg.style.maxHeight = '78vh';
+          if (!document.documentElement.classList.contains('dark')) patchSvgLightColors(svg);
         }
       }).catch(function() {
         cloneSvgIntoLightbox(diagramEl, inner);
@@ -2424,6 +2428,7 @@ docker-compose --profile gpu up -d</code></pre>
       clone.style.height = 'auto';
       clone.style.maxHeight = '78vh';
       container.appendChild(clone);
+      if (!document.documentElement.classList.contains('dark')) patchSvgLightColors(clone);
     } else {
       container.innerHTML = '<p style="color:var(--text-3)">Unable to load diagram<\/p>';
     }
