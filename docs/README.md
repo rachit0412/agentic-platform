@@ -2,187 +2,66 @@
 
 ## Guides
 
-| Document                                          | Description                                              |
-| ------------------------------------------------- | -------------------------------------------------------- |
-| [README](../README.md)                            | Project overview, quick start, configuration             |
-| [Architecture](ARCHITECTURE.md)                   | System overview, data flows, services, orchestration     |
-| [Architecture Diagram](architecture-diagram.html) | Interactive visual system architecture (open in browser) |
-| [Principles](PRINCIPLES.md)                       | 18 architecture principles guiding all design choices    |
-| [Building Blocks](BUILDING-BLOCKS.md)             | 15 ABBs (abstract) and SBBs (solution) with traceability |
-| [Decisions](DECISIONS.md)                         | 15 Architecture Decision Records (ADRs)                  |
-| [Installation Guide](../INSTALL.md)               | Prerequisites, per-platform setup, GPU configuration     |
-| [Contributing](../CONTRIBUTING.md)                | Code style, PR process, commit conventions               |
+| Document | Description |
+|----------|-------------|
+| [README](../README.md) | Project overview, quick start, configuration |
+| [Architecture](ARCHITECTURE.md) | System overview, data flows, services |
+| [Principles](PRINCIPLES.md) | 18 architecture principles with maturity levels |
+| [Building Blocks](BUILDING-BLOCKS.md) | 15 ABBs/SBBs with traceability |
+| [Decisions](DECISIONS.md) | 19 Architecture Decision Records |
+| [Installation](../INSTALL.md) | Prerequisites, setup, GPU configuration |
+| [Contributing](../CONTRIBUTING.md) | Code style, PR process, commit conventions |
 
-## Interactive API Console
+## Live API Docs
 
-The platform includes a built-in **REST Console** at **http://localhost:3000/rest** for interactively testing all 69 agent-service and 10 tools-service endpoints. Navigate to **Protocols → REST Console** in the dashboard.
+| Service | URL | Description |
+|---------|-----|-------------|
+| Agent Service | http://localhost:8010/docs | FastAPI auto-docs (69+ endpoints) |
+| Tools Service | http://localhost:8011/docs | FastAPI auto-docs (35 endpoints) |
+| REST Console | http://localhost:3000/rest | Interactive API testing UI |
 
-## API Reference
+## API Quick Reference
 
-Interactive API docs are available at **http://localhost:8010/docs** (agent-service) and **http://localhost:8011/docs** (tools-service) when the platform is running.
+### Agent Execution
 
-### Agent Service — `http://localhost:8010`
+```
+POST /agent-run           # Run agent (blocking)
+POST /agent-run/stream    # Run agent with SSE streaming
+```
 
-#### Agent Execution
+### CRUD Entities
 
-| Method | Endpoint            | Description                  |
-| ------ | ------------------- | ---------------------------- |
-| POST   | `/agent-run`        | Run agent (blocking)         |
-| POST   | `/agent-run/stream` | Run agent with SSE streaming |
+| Entity | Endpoints |
+|--------|-----------|
+| Agents | `GET/POST /agents`, `GET/PUT/DELETE /agents/{id}` |
+| Skills | `GET/POST /skills`, `GET/PUT/DELETE /skills/{id}` |
+| Prompts | `GET/POST /prompts`, `GET/PUT/DELETE /prompts/{id}` |
+| Guardrails | `GET/POST /guardrails`, `GET/PUT/DELETE /guardrails/{id}` |
+| Custom Tools | `GET/POST /custom-tools`, `GET/PUT/DELETE /custom-tools/{id}` |
 
-#### Agent CRUD
+### Protocols
 
-| Method | Endpoint       | Description     |
-| ------ | -------------- | --------------- |
-| GET    | `/agents`      | List all agents |
-| POST   | `/agents`      | Create agent    |
-| GET    | `/agents/{id}` | Get agent by ID |
-| PUT    | `/agents/{id}` | Update agent    |
-| DELETE | `/agents/{id}` | Delete agent    |
+| Protocol | Endpoints |
+|----------|-----------|
+| A2A | `CRUD /a2a/peers`, `POST /a2a/send`, `GET /a2a/card` |
+| MCP | `CRUD /mcp/servers`, `POST /mcp/servers/{id}/discover`, `POST /mcp/servers/{id}/invoke` |
 
-**Agent fields:** `name`, `description`, `provider`, `model`, `temperature`, `top_p`, `system_prompt`, `skill_ids` (array), `tool_ids` (array), `sub_agent_ids` (array — for orchestration), `kb_collection`, `max_iterations`, `memory_enabled`
+### Knowledge Base
 
-#### Skill CRUD
+```
+POST /documents/ingest    # Ingest text/URL/file
+POST /documents/search    # Semantic search
+GET  /documents           # List all documents
+POST /documents/upload    # Upload file for RAG
+```
 
-| Method | Endpoint       | Description     |
-| ------ | -------------- | --------------- |
-| GET    | `/skills`      | List all skills |
-| POST   | `/skills`      | Create skill    |
-| GET    | `/skills/{id}` | Get skill by ID |
-| PUT    | `/skills/{id}` | Update skill    |
-| DELETE | `/skills/{id}` | Delete skill    |
+### System
 
-#### Prompt CRUD
-
-| Method | Endpoint        | Description      |
-| ------ | --------------- | ---------------- |
-| GET    | `/prompts`      | List all prompts |
-| POST   | `/prompts`      | Create prompt    |
-| GET    | `/prompts/{id}` | Get prompt by ID |
-| PUT    | `/prompts/{id}` | Update prompt    |
-| DELETE | `/prompts/{id}` | Delete prompt    |
-
-#### Tools
-
-| Method | Endpoint             | Description            |
-| ------ | -------------------- | ---------------------- |
-| GET    | `/tools`             | List built-in + custom |
-| GET    | `/custom-tools`      | List custom tools only |
-| POST   | `/custom-tools`      | Create custom tool     |
-| GET    | `/custom-tools/{id}` | Get custom tool        |
-| PUT    | `/custom-tools/{id}` | Update custom tool     |
-| DELETE | `/custom-tools/{id}` | Delete custom tool     |
-
-#### A2A Protocol
-
-| Method | Endpoint               | Description                     |
-| ------ | ---------------------- | ------------------------------- |
-| GET    | `/a2a/peers`           | List peer agents                |
-| POST   | `/a2a/peers`           | Register peer agent             |
-| GET    | `/a2a/peers/{id}`      | Get peer config                 |
-| PUT    | `/a2a/peers/{id}`      | Update peer config              |
-| DELETE | `/a2a/peers/{id}`      | Unregister peer                 |
-| POST   | `/a2a/peers/{id}/ping` | Check peer health               |
-| POST   | `/a2a/send`            | Send task to peer agent         |
-| GET    | `/a2a/card`            | Get this agent's discovery card |
-
-#### MCP Registry
-
-| Method | Endpoint                     | Description                |
-| ------ | ---------------------------- | -------------------------- |
-| GET    | `/mcp/servers`               | List MCP servers           |
-| POST   | `/mcp/servers`               | Register MCP server        |
-| GET    | `/mcp/servers/{id}`          | Get MCP server config      |
-| PUT    | `/mcp/servers/{id}`          | Update MCP server          |
-| DELETE | `/mcp/servers/{id}`          | Unregister MCP server      |
-| POST   | `/mcp/servers/{id}/discover` | Discover tools from server |
-| POST   | `/mcp/servers/{id}/invoke`   | Invoke MCP tool            |
-
-#### Sessions & Memory
-
-| Method | Endpoint                 | Description           |
-| ------ | ------------------------ | --------------------- |
-| GET    | `/sessions`              | List all sessions     |
-| GET    | `/sessions/{id}/history` | Get message history   |
-| GET    | `/sessions/{id}/summary` | Get session summary   |
-| DELETE | `/sessions/{id}`         | Delete session        |
-| GET    | `/memory/stats`          | Get memory & KB stats |
-
-#### Documents / RAG
-
-| Method | Endpoint                          | Description                    |
-| ------ | --------------------------------- | ------------------------------ |
-| GET    | `/documents`                      | List documents by collection   |
-| GET    | `/documents/stats`                | Get vector store stats         |
-| GET    | `/documents/collections`          | List ChromaDB collections      |
-| POST   | `/documents/ingest`               | Ingest text into vector store  |
-| POST   | `/documents/search`               | Search documents by similarity |
-| POST   | `/documents/fetch-url`            | Fetch & extract text from URL  |
-| DELETE | `/documents/{source}`             | Delete document by source      |
-| POST   | `/documents/copy`                 | Copy docs between collections  |
-| GET    | `/documents/registry`             | List docs with filters         |
-| GET    | `/documents/folders`              | List folder paths with counts  |
-| PUT    | `/documents/registry/{id}/tags`   | Set agent tags for document    |
-| PUT    | `/documents/registry/{id}/folder` | Move document to folder        |
-| DELETE | `/documents/registry/{id}`        | Delete from registry           |
-
-#### Guardrails
-
-| Method | Endpoint           | Description               |
-| ------ | ------------------ | ------------------------- |
-| GET    | `/guardrails`      | List all guardrails       |
-| GET    | `/guardrails/{id}` | Get guardrail config      |
-| PUT    | `/guardrails/{id}` | Update guardrail settings |
-
-#### Models
-
-| Method | Endpoint         | Description                          |
-| ------ | ---------------- | ------------------------------------ |
-| GET    | `/models`        | List available models + active model |
-| POST   | `/models/switch` | Switch active LLM provider/model     |
-
-#### System
-
-| Method | Endpoint    | Description              |
-| ------ | ----------- | ------------------------ |
-| GET    | `/health`   | Health check             |
-| GET    | `/db-stats` | Database record counts   |
-| GET    | `/export`   | Export all data as JSON  |
-| POST   | `/import`   | Import/merge data backup |
-
-#### Versions & Audit
-
-| Method | Endpoint                                                    | Description            |
-| ------ | ----------------------------------------------------------- | ---------------------- |
-| GET    | `/versions/{entity_type}/{entity_id}`                       | List version history   |
-| GET    | `/versions/detail/{version_id}`                             | Get version snapshot   |
-| POST   | `/versions/{entity_type}/{entity_id}/rollback/{version_id}` | Rollback to version    |
-| GET    | `/audit-log`                                                | List audit log entries |
-
-### Tools Service — `http://localhost:8011`
-
-| Method | Endpoint               | Description                                |
-| ------ | ---------------------- | ------------------------------------------ |
-| GET    | `/health`              | Health check                               |
-| POST   | `/tools/math`          | Evaluate math expression (AST-based, safe) |
-| POST   | `/tools/http-fetch`    | Fetch URL content (domain allowlist)       |
-| POST   | `/tools/file-write`    | Write note to `/data/notes/`               |
-| POST   | `/tools/file-read`     | Read note from `/data/notes/`              |
-| POST   | `/tools/datetime`      | Get current UTC date/time                  |
-| POST   | `/tools/web-search`    | Web search via DuckDuckGo                  |
-| POST   | `/tools/code-execute`  | Execute Python code (sandboxed)            |
-| POST   | `/tools/vector-search` | Search documents (proxy to agent-service)  |
-| POST   | `/tools/vector-store`  | Ingest documents (proxy to agent-service)  |
-
-## Service URLs
-
-| Service        | URL                        | Credentials                |
-| -------------- | -------------------------- | -------------------------- |
-| UI Console     | http://localhost:3000      | —                          |
-| REST Console   | http://localhost:3000/rest | —                          |
-| Agent API Docs | http://localhost:8010/docs | —                          |
-| Tools API Docs | http://localhost:8011/docs | —                          |
-| n8n            | http://localhost:5678      | admin / changeme           |
-| Langfuse       | http://localhost:3012      | admin@local.dev / changeme |
-| Grafana        | http://localhost:3013      | admin / admin              |
-| Prometheus     | http://localhost:9090      | —                          |
+```
+GET  /health              # Service health
+GET  /models              # Available models + capabilities
+POST /models/switch       # Change active model at runtime
+GET  /export              # Export full platform config
+POST /import              # Import platform config
+GET  /audit-log           # Query audit trail
+```

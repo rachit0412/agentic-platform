@@ -1,51 +1,115 @@
 # Architecture
 
-> **Auto-generated** — do not edit manually. Run `bash scripts/generate-docs.sh` to refresh.
-
 ## System Overview
 
-The Agentic Platform is a containerised agent factory built with:
-- **Frontend**: Express.js + EJS (ui-console)
-- **Agent Runtime**: FastAPI + LangGraph (agent-service)
-- **Tool Runtime**: FastAPI (tools-service)
-- **LLM Providers**: Ollama (local), Azure OpenAI, OpenAI, Azure AI Foundry
-- **Knowledge Base**: ChromaDB (vector store, RAG)
-- **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers)
-- **Workflows**: n8n (automation, webhooks)
-- **Observability**: Prometheus + Grafana + Loki + OpenTelemetry + Langfuse
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🖥️  UI Console (Express.js + EJS)                :3000        │
+│  24 pages — build, run, evaluate, trace agents                 │
+├─────────────────────────────────────────────────────────────────┤
+│  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
+│  ReAct loop · agent/skill registry · auto-RAG · memory         │
+├──────────────────────┬──────────────────────────────────────────┤
+│  🔧 Tools Service    │  📚 ChromaDB        │  💾 SQLite         │
+│  :8011               │  :8200              │  (embedded)        │
+│  35 tool endpoints   │  Vector store / RAG │  Memory & registry │
+├──────────────────────┴──────────────────────┴───────────────────┤
+│  🤖 LLM Layer                                                  │
+│  Ollama (local) · OpenAI · Azure OpenAI · Azure AI Foundry     │
+├─────────────────────────────────────────────────────────────────┤
+│  📡 Observability                                               │
+│  Langfuse · Prometheus · Grafana · Loki · OTel Collector        │
+├─────────────────────────────────────────────────────────────────┤
+│  ⚡ Orchestration                                               │
+│  n8n (workflows, webhooks, scheduled jobs)                      │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-## Services (5 source directories)
+## Services
 
-| Directory | Description |
-| --------- | ----------- |
-| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry |
-| `services/n8n-proxy` | Service |
-| `services/otel` | OpenTelemetry Collector configuration |
-| `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
-| `services/ui-console` | Express.js platform dashboard — 24 pages, API proxies |
+| Service | Port | Tech | Role |
+|---------|------|------|------|
+| ui-console | 3000 | Express.js + EJS | Platform dashboard, API proxy |
+| agent-service | 8010 | FastAPI + LangGraph | ReAct agent, registry, RAG, memory |
+| tools-service | 8011 | FastAPI | 35 sandboxed tool endpoints |
+| ollama | 11436 | Ollama | Local LLM runtime |
+| chromadb | 8200 | ChromaDB | Vector store for RAG |
+| n8n | 5678 | n8n | Workflow automation |
+| langfuse | 3012 | Langfuse | LLM tracing & cost tracking |
+| grafana | 3013 | Grafana | Monitoring dashboards |
+| prometheus | 9090 | Prometheus | Metrics |
+| loki | 3100 | Loki | Log aggregation |
+| otel-collector | 4317 | OTel | Telemetry pipeline |
 
-## Docker Compose Services (23 containers)
+## Agent Execution Flow
 
-`agent-service` `chroma-data` `chromadb` `datastore-db` `datastore-db-data` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `n8n-proxy` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
+```
+User Prompt
+    │
+    ▼
+┌─────────────────────────────────┐
+│  1. Input guardrails (safety)   │
+│  2. Retrieve context (RAG)      │
+│  3. Load memory (session)       │
+│  4. Inject skills + prompt      │
+│  5. LLM reasoning (ReAct)      │
+│     ├─ Tool calls → tools-svc   │
+│     └─ Delegate → sub-agent     │
+│  6. Output guardrails           │
+│  7. Generate response           │
+│  8. Save memory + emit traces   │
+└─────────────────────────────────┘
+    │
+    ├──→ Langfuse (trace)
+    ├──→ Prometheus (metrics)
+    └──→ Response to user
+```
 
-## UI Pages (24 pages)
+## Data Architecture
 
-
-
-## Test Suites
-
-
+```
+┌─────────────────┐     ┌──────────────┐     ┌──────────────┐
+│  SQLite         │     │  PostgreSQL  │     │  ChromaDB    │
+│  /data/platform │     │  :5433       │     │  :8200       │
+│  .db            │     │              │     │              │
+├─────────────────┤     ├──────────────┤     ├──────────────┤
+│ agents          │     │ documents    │     │ collections  │
+│ skills          │     │ (JSONB meta) │     │ (per-agent)  │
+│ prompts         │     │              │     │              │
+│ guardrails      │     └──────────────┘     └──────────────┘
+│ custom_tools    │
+│ conversations   │
+│ a2a_peers       │
+│ mcp_servers     │
+│ llm_usage_log   │
+│ audit_log       │
+│ version_history │
+└─────────────────┘
+```
 
 ## Telemetry Pipeline
 
 ```
-agent-service → OTel Collector → Prometheus (metrics)
-                               → Loki (logs)
-agent-service → Langfuse SDK   → Langfuse (LLM traces)
-Grafana ← Prometheus + Loki
+agent-service ──→ OTel Collector ──→ Prometheus (metrics)
+                                 └──→ Loki (logs)
+agent-service ──→ Langfuse SDK  ──→ Langfuse (LLM traces)
+Grafana ←── Prometheus + Loki
 ```
 
 ## Protocols
 
-- **A2A (Agent-to-Agent)**: Peer agents registered by URL; agents delegate sub-tasks via HTTP
-- **MCP (Model Context Protocol)**: External tool servers provide dynamic tool discovery
+| Protocol | Purpose | Implementation |
+|----------|---------|----------------|
+| **A2A** | Agent-to-Agent delegation | HTTP peer registry, agent cards, task dispatch |
+| **MCP** | External tool discovery | Server registry, JSON-RPC tool discovery & invocation |
+
+## Key Design Decisions
+
+- **LangGraph** over AgentExecutor — explicit state graph with guardrail injection points
+- **Separate tools-service** — sandboxed execution, crash isolation, independent scaling
+- **SQLite + PostgreSQL** — zero-config for config/memory, PostgreSQL for document registry
+- **Multi-provider LLM** — runtime switching via API, no redeploy needed
+- **ChromaDB** — per-agent collections for KB isolation
+- **Three-pipeline observability** — Langfuse (LLM traces) + Prometheus (metrics) + Loki (logs)
+
+→ Full ADRs: [DECISIONS.md](DECISIONS.md)
