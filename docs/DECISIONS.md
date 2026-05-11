@@ -6,27 +6,27 @@
 
 ## ADR Index
 
-| ID | Decision | Principles | Date |
-|----|----------|-----------|------|
-| 001 | LangGraph over AgentExecutor | AP-7, AP-5 | 2024-10 |
-| 002 | SQLite for Config and Memory | AP-3, AP-10 | 2024-10 |
-| 003 | Separate Tools Service | AP-4, AP-7 | 2024-10 |
-| 004 | Multi-Provider LLM Switching | AP-2, AP-1 | 2024-11 |
-| 005 | ChromaDB for Vector Storage | AP-3, AP-8 | 2024-10 |
-| 006 | Three-Pipeline Observability | AP-5, AP-10 | 2024-11 |
-| 007 | EJS + CSS Custom Properties | AP-3 | 2024-11 |
-| 008 | Guardrails as Graph Gates | AP-4, AP-9 | 2024-12 |
-| 009 | A2A and MCP Protocols | AP-6 | 2025-01 |
-| 010 | Thin UI Proxy Pattern | AP-1, AP-7 | 2024-10 |
+| ID  | Decision                            | Principles       | Date    |
+| --- | ----------------------------------- | ---------------- | ------- |
+| 001 | LangGraph over AgentExecutor        | AP-7, AP-5       | 2024-10 |
+| 002 | SQLite for Config and Memory        | AP-3, AP-10      | 2024-10 |
+| 003 | Separate Tools Service              | AP-4, AP-7       | 2024-10 |
+| 004 | Multi-Provider LLM Switching        | AP-2, AP-1       | 2024-11 |
+| 005 | ChromaDB for Vector Storage         | AP-3, AP-8       | 2024-10 |
+| 006 | Three-Pipeline Observability        | AP-5, AP-10      | 2024-11 |
+| 007 | EJS + CSS Custom Properties         | AP-3             | 2024-11 |
+| 008 | Guardrails as Graph Gates           | AP-4, AP-9       | 2024-12 |
+| 009 | A2A and MCP Protocols               | AP-6             | 2025-01 |
+| 010 | Thin UI Proxy Pattern               | AP-1, AP-7       | 2024-10 |
 | 011 | Dual-Mode Multi-Agent Orchestration | AP-7, AP-9, AP-6 | 2025-05 |
-| 012 | Per-Agent KB Isolation | AP-8, AP-4 | 2025-05 |
-| 013 | LlamaIndex Advanced Retrieval | AP-8, AP-2 | 2025-06 |
-| 014 | Data Connectors Framework | AP-8, AP-3 | 2025-06 |
-| 015 | Hybrid SQLite + PostgreSQL | AP-10, AP-13 | 2025-06 |
-| 016 | LLM-Based Guardrail Detection | AP-4, AP-10 | 2025-06 |
-| 017 | LLM Activity Tracking | AP-5, AP-1 | 2025-06 |
-| 018 | Dynamic Model Capabilities | AP-10, AP-9 | 2025-06 |
-| 019 | Clickable Execution Details | AP-5, AP-1 | 2025-06 |
+| 012 | Per-Agent KB Isolation              | AP-8, AP-4       | 2025-05 |
+| 013 | LlamaIndex Advanced Retrieval       | AP-8, AP-2       | 2025-06 |
+| 014 | Data Connectors Framework           | AP-8, AP-3       | 2025-06 |
+| 015 | Hybrid SQLite + PostgreSQL          | AP-10, AP-13     | 2025-06 |
+| 016 | LLM-Based Guardrail Detection       | AP-4, AP-10      | 2025-06 |
+| 017 | LLM Activity Tracking               | AP-5, AP-1       | 2025-06 |
+| 018 | Dynamic Model Capabilities          | AP-10, AP-9      | 2025-06 |
+| 019 | Clickable Execution Details         | AP-5, AP-1       | 2025-06 |
 
 ---
 
@@ -37,6 +37,7 @@
 **Decision**: Use LangGraph `StateGraph` with explicit nodes (`retrieve_context`, `reason`, `execute_tools`, `generate_response`) and conditional edges.
 
 **Why not alternatives**:
+
 - AgentExecutor — simpler but opaque, no guardrail injection points
 - Custom async loop — full control but no graph visualisation
 
@@ -51,6 +52,7 @@
 **Decision**: SQLite at `/data/platform.db` for config/memory/audit. Thread-local connections.
 
 **Why not alternatives**:
+
 - PostgreSQL — overkill for single-node dev platform
 - In-memory — no persistence across restarts
 
@@ -85,6 +87,7 @@
 **Decision**: ChromaDB (HTTP mode, port 8200) with Ollama embeddings.
 
 **Why not alternatives**:
+
 - Pinecone — requires cloud account
 - FAISS — no persistence without custom serialisation
 - pgvector — not justified when SQLite handles config

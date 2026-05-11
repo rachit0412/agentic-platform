@@ -92,14 +92,34 @@
   .docs-diagram .mermaid .cluster rect { rx:16 !important; ry:16 !important; stroke-width:1.5 !important; stroke-dasharray:6 4 !important; }
   .docs-diagram .mermaid .cluster .nodeLabel,
   .docs-diagram .mermaid .cluster-label .nodeLabel { font-size:0.82rem !important; font-weight:700 !important; letter-spacing:0.02em; text-transform:uppercase; }
-  .docs-diagram .mermaid .actor { rx:12; ry:12; stroke-width:1.5 !important; }
-  .docs-diagram .mermaid .actor-line { stroke-dasharray:4 3 !important; stroke-width:1 !important; }
+  .docs-diagram .mermaid .actor { rx:12; ry:12; stroke-width:2 !important; }
+  .docs-diagram .mermaid .actor-line { stroke-dasharray:4 3 !important; stroke-width:1.2 !important; }
   .docs-diagram .mermaid text.actor { font-size:0.8rem !important; font-weight:700 !important; font-family:'Inter',var(--sans),sans-serif !important; }
   .docs-diagram .mermaid .messageLine0,
-  .docs-diagram .mermaid .messageLine1 { stroke-width:1.5 !important; }
-  .docs-diagram .mermaid .messageText { font-size:0.72rem !important; font-weight:500 !important; font-family:'Inter',var(--sans),sans-serif !important; }
+  .docs-diagram .mermaid .messageLine1 { stroke-width:1.8 !important; }
+  .docs-diagram .mermaid .messageText { font-size:0.74rem !important; font-weight:600 !important; font-family:'Inter',var(--sans),sans-serif !important; }
   .docs-diagram .mermaid .note { rx:10 !important; ry:10 !important; }
-  .docs-diagram .mermaid .noteText { font-size:0.72rem !important; }
+  .docs-diagram .mermaid .noteText { font-size:0.72rem !important; font-weight:500 !important; }
+  /* Light-mode contrast boost for sequence diagrams */
+  :root:not(.dark) .docs-diagram .mermaid .messageLine0,
+  :root:not(.dark) .docs-diagram .mermaid .messageLine1 { stroke:#334155 !important; }
+  :root:not(.dark) .docs-diagram .mermaid .messageText { fill:#0f172a !important; }
+  :root:not(.dark) .docs-diagram .mermaid .actor { fill:#cffafe !important; stroke:#0e7490 !important; }
+  :root:not(.dark) .docs-diagram .mermaid text.actor { fill:#0c4a6e !important; }
+  :root:not(.dark) .docs-diagram .mermaid .actor-line { stroke:#64748b !important; }
+  :root:not(.dark) .docs-diagram .mermaid .activation0,
+  :root:not(.dark) .docs-diagram .mermaid .activation1,
+  :root:not(.dark) .docs-diagram .mermaid .activation2 { fill:#a5f3fc !important; stroke:#0891b2 !important; }
+  :root:not(.dark) .docs-diagram .mermaid .note { fill:#fef3c7 !important; stroke:#d97706 !important; }
+  :root:not(.dark) .docs-diagram .mermaid .noteText { fill:#78350f !important; }
+  :root:not(.dark) .docs-diagram .mermaid .loopText,
+  :root:not(.dark) .docs-diagram .mermaid .loopText>tspan { fill:#6d28d9 !important; font-weight:600 !important; }
+  :root:not(.dark) .docs-diagram .mermaid .labelBox { fill:#f1f5f9 !important; stroke:#cbd5e1 !important; }
+  :root:not(.dark) .docs-diagram .mermaid .labelText { fill:#0f172a !important; }
+  /* Light-mode flowchart contrast */
+  :root:not(.dark) .docs-diagram .mermaid .edgePath .path { stroke:#475569 !important; }
+  :root:not(.dark) .docs-diagram .mermaid .cluster rect { fill:rgba(139,92,246,0.06) !important; stroke:rgba(124,58,237,0.3) !important; }
+  :root:not(.dark) .docs-diagram .mermaid .cluster-label .nodeLabel { color:#5b21b6 !important; }
   /* State diagrams */
   .docs-diagram .mermaid .statediagram-state rect { rx:12 !important; ry:12 !important; }
   .docs-diagram .mermaid .state-note rect { rx:10 !important; }
@@ -221,71 +241,93 @@
       </div>
 
       <h2>Platform Architecture</h2>
-      <div class="docs-diagram docs-diagram-full">
-        <div class="mermaid">
-graph TB
-    subgraph FRONTEND["🖥️ Presentation"]
-        UI["<b>UI Console</b><br/>Express + EJS :3000"]
-        N8P["<b>n8n Proxy</b><br/>Nginx :5679"]
-    end
-
-    subgraph RUNTIME["⚙️ Application Runtime"]
-        AGENT["<b>Agent Service</b><br/>FastAPI + LangGraph :8010"]
-        TOOLS["<b>Tools Service</b><br/>Sandbox :8011"]
-        N8N["<b>n8n</b><br/>Workflows :5678"]
-    end
-
-    subgraph LLM_LAYER["🧠 LLM Providers"]
-        OLLAMA["<b>Ollama</b><br/>Local :11436"]
-        AZURE["<b>Azure OpenAI</b><br/>Cloud"]
-        OAI["<b>OpenAI</b><br/>Cloud"]
-        FOUNDRY["<b>Azure Foundry</b><br/>Cloud"]
-    end
-
-    subgraph DATA["💾 Data & Knowledge"]
-        CHROMA["<b>ChromaDB</b><br/>Vectors :8200"]
-        SQLITE[("<b>SQLite</b><br/>Config + Memory")]
-        PG[("<b>PostgreSQL</b><br/>Datastore :5433")]
-    end
-
-    subgraph OBSERVE["📊 Observability"]
-        OTEL["<b>OTel Collector</b><br/>:4317"]
-        PROM["<b>Prometheus</b><br/>:9090"]
-        GRAF["<b>Grafana</b><br/>:3003"]
-        LOKI["<b>Loki</b><br/>:3100"]
-        LF["<b>Langfuse</b><br/>:3014"]
-    end
-
-    UI -->|"SSE / API"| AGENT
-    UI -.->|"iframe"| N8P
-    N8P --> N8N
-    AGENT -->|"tool calls"| TOOLS
-    AGENT -->|"completions"| OLLAMA
-    AGENT -.->|"fallback"| AZURE
-    AGENT -.->|"fallback"| OAI
-    AGENT -.->|"fallback"| FOUNDRY
-    AGENT -->|"embed + search"| CHROMA
-    AGENT -->|"read/write"| SQLITE
-    AGENT -->|"documents"| PG
-    N8N -->|"webhooks"| AGENT
-    AGENT -->|"OTLP"| OTEL
-    AGENT -->|"traces"| LF
-    OTEL -->|"metrics"| PROM
-    OTEL -->|"logs"| LOKI
-    PROM --> GRAF
-    LOKI --> GRAF
-
-    classDef pres fill:#0e7490,stroke:#06b6d4,color:#fff,rx:8
-    classDef app fill:#7c3aed,stroke:#8b5cf6,color:#fff,rx:8
-    classDef llm fill:#d97706,stroke:#f59e0b,color:#fff,rx:8
-    classDef data fill:#059669,stroke:#10b981,color:#fff,rx:8
-    classDef obs fill:#6366f1,stroke:#818cf8,color:#fff,rx:8
-
-    class UI,N8P pres
-    class AGENT,TOOLS,N8N app
-    class OLLAMA,AZURE,OAI,FOUNDRY llm
-    class CHROMA,SQLITE,PG data
-    class OTEL,PROM,GRAF,LOKI,LF obs
+      <style>
+        .plat-arch { display:flex; flex-direction:column; gap:0.5rem; padding:1.5rem; background:linear-gradient(145deg, rgba(6,182,212,0.03), rgba(139,92,246,0.03)); border:1px solid var(--glass-border); border-radius:16px; margin:1.5rem 0; }
+        .plat-layer { display:flex; align-items:stretch; gap:0.5rem; }
+        .plat-layer-label { writing-mode:vertical-rl; text-orientation:mixed; transform:rotate(180deg); font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:0.5rem 0.25rem; border-radius:8px; display:flex; align-items:center; justify-content:center; min-width:22px; flex-shrink:0; }
+        .plat-layer-body { flex:1; display:flex; flex-wrap:wrap; gap:0.4rem; padding:0.6rem; border-radius:12px; border:1px solid var(--glass-border); }
+        .plat-svc { flex:1; min-width:120px; padding:0.5rem 0.65rem; border-radius:8px; border:1px solid; text-align:center; font-size:0.72rem; line-height:1.4; transition:transform 0.15s, box-shadow 0.15s; }
+        .plat-svc:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+        .plat-svc strong { display:block; font-size:0.78rem; font-weight:700; }
+        .plat-svc .plat-port { font-family:'JetBrains Mono',monospace; font-size:0.62rem; opacity:0.7; margin-top:0.15rem; }
+        /* Arrows between layers */
+        .plat-arrows { display:flex; justify-content:center; gap:1.5rem; padding:0.15rem 0; }
+        .plat-arrow { font-size:0.7rem; color:var(--text-3); display:flex; align-items:center; gap:0.25rem; }
+        .plat-arrow svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2; }
+        /* Colors */
+        .plat-l-pres { background:rgba(6,182,212,0.06); color:#0891b2; }
+        .plat-s-pres { background:rgba(6,182,212,0.08); border-color:rgba(6,182,212,0.3); color:var(--text-1); }
+        .plat-l-app { background:rgba(139,92,246,0.06); color:#7c3aed; }
+        .plat-s-app { background:rgba(139,92,246,0.08); border-color:rgba(139,92,246,0.3); color:var(--text-1); }
+        .plat-l-llm { background:rgba(245,158,11,0.06); color:#d97706; }
+        .plat-s-llm { background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.3); color:var(--text-1); }
+        .plat-l-data { background:rgba(16,185,129,0.06); color:#059669; }
+        .plat-s-data { background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.3); color:var(--text-1); }
+        .plat-l-obs { background:rgba(99,102,241,0.06); color:#6366f1; }
+        .plat-s-obs { background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.3); color:var(--text-1); }
+        @media (max-width:600px) { .plat-svc { min-width:80px; } }
+      </style>
+      <div class="plat-arch">
+        <!-- Presentation -->
+        <div class="plat-layer">
+          <div class="plat-layer-label plat-l-pres">PRESENTATION</div>
+          <div class="plat-layer-body" style="border-color:rgba(6,182,212,0.15)">
+            <div class="plat-svc plat-s-pres"><strong>🖥️ UI Console</strong>Express.js + EJS<div class="plat-port">:3000</div></div>
+            <div class="plat-svc plat-s-pres"><strong>🔀 n8n Proxy</strong>Nginx reverse proxy<div class="plat-port">:5679</div></div>
+          </div>
+        </div>
+        <div class="plat-arrows">
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>SSE / API</span>
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>iframe</span>
+        </div>
+        <!-- Application -->
+        <div class="plat-layer">
+          <div class="plat-layer-label plat-l-app">APPLICATION</div>
+          <div class="plat-layer-body" style="border-color:rgba(139,92,246,0.15)">
+            <div class="plat-svc plat-s-app"><strong>🧠 Agent Service</strong>FastAPI + LangGraph<div class="plat-port">:8010</div></div>
+            <div class="plat-svc plat-s-app"><strong>🔧 Tools Service</strong>Sandboxed execution<div class="plat-port">:8011</div></div>
+            <div class="plat-svc plat-s-app"><strong>⚡ n8n</strong>Workflow automation<div class="plat-port">:5678</div></div>
+          </div>
+        </div>
+        <div class="plat-arrows">
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>completions</span>
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>embed + search</span>
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>read / write</span>
+        </div>
+        <!-- LLM + Data side by side -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div class="plat-layer">
+            <div class="plat-layer-label plat-l-llm">LLM</div>
+            <div class="plat-layer-body" style="border-color:rgba(245,158,11,0.15)">
+              <div class="plat-svc plat-s-llm"><strong>🦙 Ollama</strong>Local models<div class="plat-port">:11436</div></div>
+              <div class="plat-svc plat-s-llm"><strong>Azure OpenAI</strong>Cloud<div class="plat-port">API</div></div>
+              <div class="plat-svc plat-s-llm"><strong>OpenAI</strong>Cloud<div class="plat-port">API</div></div>
+              <div class="plat-svc plat-s-llm"><strong>AI Foundry</strong>Managed<div class="plat-port">API</div></div>
+            </div>
+          </div>
+          <div class="plat-layer">
+            <div class="plat-layer-label plat-l-data">DATA</div>
+            <div class="plat-layer-body" style="border-color:rgba(16,185,129,0.15)">
+              <div class="plat-svc plat-s-data"><strong>🧠 ChromaDB</strong>Vectors / RAG<div class="plat-port">:8200</div></div>
+              <div class="plat-svc plat-s-data"><strong>💾 SQLite</strong>Config + Memory<div class="plat-port">embedded</div></div>
+              <div class="plat-svc plat-s-data"><strong>🐘 PostgreSQL</strong>Datastore<div class="plat-port">:5433</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="plat-arrows">
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>OTLP spans</span>
+          <span class="plat-arrow"><svg viewBox="0 0 12 12"><path d="M6 2v8M3 7l3 3 3-3"/></svg>LLM traces</span>
+        </div>
+        <!-- Observability -->
+        <div class="plat-layer">
+          <div class="plat-layer-label plat-l-obs">OBSERVABILITY</div>
+          <div class="plat-layer-body" style="border-color:rgba(99,102,241,0.15)">
+            <div class="plat-svc plat-s-obs"><strong>📡 OTel Collector</strong>Telemetry routing<div class="plat-port">:4317</div></div>
+            <div class="plat-svc plat-s-obs"><strong>📈 Prometheus</strong>Metrics TSDB<div class="plat-port">:9090</div></div>
+            <div class="plat-svc plat-s-obs"><strong>📊 Grafana</strong>Dashboards<div class="plat-port">:3013</div></div>
+            <div class="plat-svc plat-s-obs"><strong>📋 Loki</strong>Log aggregation<div class="plat-port">:3100</div></div>
+            <div class="plat-svc plat-s-obs"><strong>🔍 Langfuse</strong>LLM tracing<div class="plat-port">:3012</div></div>
+          </div>
         </div>
       </div>
 
@@ -2017,52 +2059,52 @@ docker-compose --profile gpu up -d</code></pre>
       innerEndBackground: '#06b6d4',
       specialStateColor: '#8b5cf6'
     } : {
-      primaryColor: 'rgba(6,182,212,0.08)',
-      primaryTextColor: '#0f172a',
+      primaryColor: '#e0f2fe',
+      primaryTextColor: '#0c4a6e',
       primaryBorderColor: '#0891b2',
-      secondaryColor: 'rgba(139,92,246,0.06)',
-      secondaryTextColor: '#6d28d9',
-      secondaryBorderColor: '#8b5cf6',
-      tertiaryColor: 'rgba(16,185,129,0.06)',
+      secondaryColor: '#ede9fe',
+      secondaryTextColor: '#5b21b6',
+      secondaryBorderColor: '#7c3aed',
+      tertiaryColor: '#d1fae5',
       tertiaryTextColor: '#065f46',
-      tertiaryBorderColor: '#10b981',
-      lineColor: '#64748b',
-      textColor: '#1e293b',
-      mainBkg: 'rgba(6,182,212,0.06)',
+      tertiaryBorderColor: '#059669',
+      lineColor: '#334155',
+      textColor: '#0f172a',
+      mainBkg: '#e0f2fe',
       nodeBorder: '#0891b2',
-      clusterBkg: 'rgba(139,92,246,0.04)',
-      clusterBorder: 'rgba(139,92,246,0.2)',
-      titleColor: '#7c3aed',
+      clusterBkg: 'rgba(139,92,246,0.07)',
+      clusterBorder: 'rgba(124,58,237,0.35)',
+      titleColor: '#6d28d9',
       edgeLabelBackground: '#ffffff',
-      nodeTextColor: '#1e293b',
-      actorBkg: 'rgba(6,182,212,0.08)',
-      actorBorder: '#0891b2',
-      actorTextColor: '#0f172a',
-      actorLineColor: '#94a3b8',
-      signalColor: '#64748b',
-      signalTextColor: '#1e293b',
-      labelBoxBkgColor: '#f8fafc',
-      labelBoxBorderColor: '#e2e8f0',
-      labelTextColor: '#1e293b',
-      loopTextColor: '#7c3aed',
-      noteBkgColor: 'rgba(245,158,11,0.08)',
-      noteTextColor: '#92400e',
-      noteBorderColor: '#f59e0b',
-      activationBkgColor: 'rgba(6,182,212,0.1)',
+      nodeTextColor: '#0f172a',
+      actorBkg: '#cffafe',
+      actorBorder: '#0e7490',
+      actorTextColor: '#0c4a6e',
+      actorLineColor: '#64748b',
+      signalColor: '#334155',
+      signalTextColor: '#0f172a',
+      labelBoxBkgColor: '#f1f5f9',
+      labelBoxBorderColor: '#cbd5e1',
+      labelTextColor: '#0f172a',
+      loopTextColor: '#6d28d9',
+      noteBkgColor: '#fef3c7',
+      noteTextColor: '#78350f',
+      noteBorderColor: '#d97706',
+      activationBkgColor: '#a5f3fc',
       activationBorderColor: '#0891b2',
       sequenceNumberColor: '#ffffff',
       sectionBkgColor: 'transparent',
-      altSectionBkgColor: 'rgba(139,92,246,0.03)',
-      gridColor: '#e2e8f0',
-      taskBkgColor: 'rgba(6,182,212,0.08)',
-      taskTextColor: '#0f172a',
-      activeTaskBkgColor: 'rgba(139,92,246,0.12)',
-      doneTaskBkgColor: 'rgba(16,185,129,0.1)',
-      critBkgColor: 'rgba(239,68,68,0.08)',
+      altSectionBkgColor: 'rgba(139,92,246,0.06)',
+      gridColor: '#cbd5e1',
+      taskBkgColor: '#e0f2fe',
+      taskTextColor: '#0c4a6e',
+      activeTaskBkgColor: '#ede9fe',
+      doneTaskBkgColor: '#d1fae5',
+      critBkgColor: '#fee2e2',
       taskBorderColor: '#0891b2',
-      compositeBackground: 'rgba(248,250,252,0.8)',
-      compositeBorder: '#e2e8f0',
-      compositeTitleBackground: 'rgba(139,92,246,0.08)',
+      compositeBackground: '#f8fafc',
+      compositeBorder: '#cbd5e1',
+      compositeTitleBackground: '#ede9fe',
       innerEndBackground: '#0891b2',
       specialStateColor: '#7c3aed'
     },
@@ -2070,6 +2112,46 @@ docker-compose --profile gpu up -d</code></pre>
     sequence: { mirrorActors:false, messageMargin:35, boxMargin:8, noteMargin:10, actorMargin:50, useMaxWidth:true, rightAngles:false, showSequenceNumbers:false },
     state: { padding:8, dividerMargin:10, sizeUnit:5 }
   });
+
+  /* ── Light-mode Mermaid post-render patch ── */
+  function patchMermaidLightMode() {
+    if (document.documentElement.classList.contains('dark')) return;
+    document.querySelectorAll('.docs-diagram .mermaid svg').forEach(function(svg) {
+      /* Nuke Mermaid's internal <style> overrides so our inline styles win */
+      svg.querySelectorAll('style').forEach(function(s) { s.remove(); });
+      /* SVG background */
+      svg.style.background = 'transparent';
+      /* Sequence diagram actors */
+      svg.querySelectorAll('rect.actor').forEach(function(r) { r.style.fill='#cffafe'; r.style.stroke='#0e7490'; r.style.strokeWidth='2'; });
+      svg.querySelectorAll('text.actor').forEach(function(t) { t.style.fill='#0c4a6e'; });
+      svg.querySelectorAll('text.actor > tspan').forEach(function(t) { t.style.fill='#0c4a6e'; });
+      /* Lifelines */
+      svg.querySelectorAll('line.actor-line, .actor-line').forEach(function(l) { l.style.stroke='#64748b'; l.style.strokeWidth='1.2'; });
+      /* Message arrows */
+      svg.querySelectorAll('.messageLine0, .messageLine1').forEach(function(l) { l.style.stroke='#1e293b'; l.style.strokeWidth='1.8'; });
+      /* Message text */
+      svg.querySelectorAll('.messageText').forEach(function(t) { t.style.fill='#0f172a'; t.style.fontWeight='600'; t.style.fontSize='0.74rem'; });
+      /* Activation bars */
+      svg.querySelectorAll('[class*="activation"]').forEach(function(r) { r.style.fill='#a5f3fc'; r.style.stroke='#0891b2'; });
+      /* Notes */
+      svg.querySelectorAll('.note').forEach(function(r) { r.style.fill='#fef3c7'; r.style.stroke='#d97706'; });
+      svg.querySelectorAll('.noteText, .noteText tspan').forEach(function(t) { t.style.fill='#78350f'; });
+      /* Loop / alt labels */
+      svg.querySelectorAll('.loopText, .loopText tspan').forEach(function(t) { t.style.fill='#5b21b6'; t.style.fontWeight='700'; });
+      svg.querySelectorAll('.labelBox').forEach(function(r) { r.style.fill='#f1f5f9'; r.style.stroke='#cbd5e1'; });
+      svg.querySelectorAll('.labelText, .labelText tspan').forEach(function(t) { t.style.fill='#0f172a'; });
+      svg.querySelectorAll('.loopLine').forEach(function(l) { l.style.stroke='#94a3b8'; });
+      /* Arrowheads (markers) */
+      svg.querySelectorAll('marker polygon, marker path').forEach(function(m) { m.style.fill='#1e293b'; });
+      /* Flowchart nodes & edges */
+      svg.querySelectorAll('.edgePath .path').forEach(function(p) { p.style.stroke='#475569'; });
+      svg.querySelectorAll('.node rect, .node polygon, .node circle').forEach(function(n) { if (!n.style.fill || n.style.fill === 'none') { n.style.fill='#e0f2fe'; n.style.stroke='#0891b2'; } });
+      svg.querySelectorAll('.nodeLabel, .label').forEach(function(t) { t.style.color='#0f172a'; t.style.fill='#0f172a'; });
+      /* Cluster / subgraph */
+      svg.querySelectorAll('.cluster rect').forEach(function(r) { r.style.fill='rgba(139,92,246,0.06)'; r.style.stroke='rgba(124,58,237,0.3)'; });
+      svg.querySelectorAll('.cluster-label .nodeLabel').forEach(function(t) { t.style.color='#5b21b6'; });
+    });
+  }
 
   /* ── Capability Pop-out Modal ── */
   var CAP_DATA = {
@@ -2385,6 +2467,7 @@ docker-compose --profile gpu up -d</code></pre>
       section.querySelectorAll('.mermaid').forEach(function(el) {
         if (!el.getAttribute('data-processed')) {
           mermaid.run({ nodes: [el] }).then(function() {
+            patchMermaidLightMode();
             attachDiagramZoom();
             attachNodeClickHandlers();
           });
@@ -2425,6 +2508,7 @@ docker-compose --profile gpu up -d</code></pre>
       });
       active.querySelectorAll('.mermaid').forEach(function(el) {
         mermaid.run({ nodes: [el] }).then(function() {
+          patchMermaidLightMode();
           attachDiagramZoom();
           attachNodeClickHandlers();
         });

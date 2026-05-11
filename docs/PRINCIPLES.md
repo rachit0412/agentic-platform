@@ -75,31 +75,31 @@ Platform remains functional when optional services are unavailable. Langfuse fal
 
 ## Enterprise Principles (Roadmap)
 
-| # | Principle | Status | Key Gap |
-|---|-----------|--------|---------|
-| AP-11 | Identity & Access Control | 🔴 | No auth, no RBAC, all endpoints public |
-| AP-12 | Cost Accountability | 🟡 | Token tracking exists; no enforcement |
-| AP-13 | Elastic Scaling | 🔴 | Single-writer SQLite; no K8s |
-| AP-14 | Compliance & Governance | 🔴 | No data classification or retention |
-| AP-15 | Disaster Recovery | 🔴 | No automated backup or RTO/RPO |
-| AP-16 | Zero-Trust Networking | 🔴 | Plain HTTP, single flat network |
-| AP-17 | Agent Lifecycle Governance | 🔴 | No approval workflow or A/B testing |
-| AP-18 | Secret Management | 🟡 | Secrets in env vars, no vault |
+| #     | Principle                  | Status | Key Gap                                |
+| ----- | -------------------------- | ------ | -------------------------------------- |
+| AP-11 | Identity & Access Control  | 🔴     | No auth, no RBAC, all endpoints public |
+| AP-12 | Cost Accountability        | 🟡     | Token tracking exists; no enforcement  |
+| AP-13 | Elastic Scaling            | 🔴     | Single-writer SQLite; no K8s           |
+| AP-14 | Compliance & Governance    | 🔴     | No data classification or retention    |
+| AP-15 | Disaster Recovery          | 🔴     | No automated backup or RTO/RPO         |
+| AP-16 | Zero-Trust Networking      | 🔴     | Plain HTTP, single flat network        |
+| AP-17 | Agent Lifecycle Governance | 🔴     | No approval workflow or A/B testing    |
+| AP-18 | Secret Management          | 🟡     | Secrets in env vars, no vault          |
 
 ---
 
 ## Priority Roadmap
 
-| Priority | Action | Principle |
-|----------|--------|-----------|
-| P1 | Pre-configure OTel endpoint in docker-compose | AP-5 |
-| P1 | Add Loki + Langfuse panels to Grafana | AP-5 |
-| P1 | Move secrets to vault integration | AP-18 |
-| P2 | Add `/v1/` API prefix | AP-1 |
-| P2 | JWT/OAuth2 middleware with RBAC | AP-11 |
-| P2 | Enforce rate limiting from guardrail config | AP-12 |
-| P3 | Agent lifecycle stages (draft → production) | AP-17 |
-| P3 | Migrate SQLite → PostgreSQL for scaling | AP-13 |
-| P4 | mTLS via service mesh | AP-16 |
-| P4 | Data retention policies + GDPR delete | AP-14 |
-| P4 | Automated backup + recovery runbook | AP-15 |
+| Priority | Action                                        | Principle |
+| -------- | --------------------------------------------- | --------- |
+| P1       | Pre-configure OTel endpoint in docker-compose | AP-5      |
+| P1       | Add Loki + Langfuse panels to Grafana         | AP-5      |
+| P1       | Move secrets to vault integration             | AP-18     |
+| P2       | Add `/v1/` API prefix                         | AP-1      |
+| P2       | JWT/OAuth2 middleware with RBAC               | AP-11     |
+| P2       | Enforce rate limiting from guardrail config   | AP-12     |
+| P3       | Agent lifecycle stages (draft → production)   | AP-17     |
+| P3       | Migrate SQLite → PostgreSQL for scaling       | AP-13     |
+| P4       | mTLS via service mesh                         | AP-16     |
+| P4       | Data retention policies + GDPR delete         | AP-14     |
+| P4       | Automated backup + recovery runbook           | AP-15     |

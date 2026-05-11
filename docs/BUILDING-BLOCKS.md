@@ -4,23 +4,23 @@
 
 ## Core Platform
 
-| # | Capability | Technology | Source |
-|---|-----------|-----------|--------|
-| 1 | Agent Reasoning Engine | LangGraph ReAct StateGraph | `graph.py` |
-| 2 | LLM Abstraction | LangChain BaseChatModel — Ollama, Azure OpenAI, OpenAI, Foundry | `llm.py` |
-| 3 | Knowledge Management (RAG) | ChromaDB + LlamaIndex + PostgreSQL doc registry | `vectorstore.py`, `advanced_retrieval.py` |
-| 4 | Conversation Memory | SQLite conversations + rolling session summaries | `memory.py` |
-| 5 | Tool Execution | tools-service FastAPI (sandboxed) + delegate_to_agent | `tools.py`, tools `main.py` |
-| 6 | Guardrails Engine | LLM-based classifier + regex fallback, input & output gates | `graph.py` |
-| 7 | Configuration Store | SQLite CRUD — 15 tables, full versioning & audit | `memory.py` |
-| 8 | A2A Protocol | HTTP peer registry, agent cards, task dispatch | `main.py` |
-| 9 | MCP Protocol | Server registry, JSON-RPC tool discovery & invocation | `main.py` |
-| 10 | Observability | OTel + Langfuse + Prometheus + Loki + Grafana | `observability.py` |
-| 11 | Workflow Automation | n8n — 6 pre-built templates incl. multi-agent orchestration | `n8n/workflows/` |
-| 12 | Platform Dashboard | Express.js + EJS, 24 pages, thin API proxy | `server.js`, `views/` |
-| 13 | Multi-Agent Orchestration | sub_agent_ids + delegate_to_agent + n8n DAGs | `tools.py`, `graph.py` |
-| 14 | Data Connectors | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte | `connectors/` |
-| 15 | LlamaIndex Integration | Multi-format parsing, 5 retrieval modes, structured queries | `llamaindex_loader.py`, `structured_query.py` |
+| #   | Capability                 | Technology                                                      | Source                                        |
+| --- | -------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| 1   | Agent Reasoning Engine     | LangGraph ReAct StateGraph                                      | `graph.py`                                    |
+| 2   | LLM Abstraction            | LangChain BaseChatModel — Ollama, Azure OpenAI, OpenAI, Foundry | `llm.py`                                      |
+| 3   | Knowledge Management (RAG) | ChromaDB + LlamaIndex + PostgreSQL doc registry                 | `vectorstore.py`, `advanced_retrieval.py`     |
+| 4   | Conversation Memory        | SQLite conversations + rolling session summaries                | `memory.py`                                   |
+| 5   | Tool Execution             | tools-service FastAPI (sandboxed) + delegate_to_agent           | `tools.py`, tools `main.py`                   |
+| 6   | Guardrails Engine          | LLM-based classifier + regex fallback, input & output gates     | `graph.py`                                    |
+| 7   | Configuration Store        | SQLite CRUD — 15 tables, full versioning & audit                | `memory.py`                                   |
+| 8   | A2A Protocol               | HTTP peer registry, agent cards, task dispatch                  | `main.py`                                     |
+| 9   | MCP Protocol               | Server registry, JSON-RPC tool discovery & invocation           | `main.py`                                     |
+| 10  | Observability              | OTel + Langfuse + Prometheus + Loki + Grafana                   | `observability.py`                            |
+| 11  | Workflow Automation        | n8n — 6 pre-built templates incl. multi-agent orchestration     | `n8n/workflows/`                              |
+| 12  | Platform Dashboard         | Express.js + EJS, 24 pages, thin API proxy                      | `server.js`, `views/`                         |
+| 13  | Multi-Agent Orchestration  | sub_agent_ids + delegate_to_agent + n8n DAGs                    | `tools.py`, `graph.py`                        |
+| 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte  | `connectors/`                                 |
+| 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries     | `llamaindex_loader.py`, `structured_query.py` |
 
 ## Detail: Agent Reasoning Engine
 
@@ -36,12 +36,12 @@ retrieve_context → reason → execute_tools → generate_response
 
 ## Detail: LLM Layer
 
-| Provider | Use Case | Selection |
-|----------|----------|-----------|
-| Ollama | Local dev, zero cost | Default — `LLM_PROVIDER=ollama` |
-| Azure OpenAI | Enterprise compliance | `LLM_PROVIDER=azure-openai` |
-| OpenAI | Latest models | `LLM_PROVIDER=openai` |
-| Azure AI Foundry | Managed deployment | `LLM_PROVIDER=azure-foundry` |
+| Provider         | Use Case              | Selection                       |
+| ---------------- | --------------------- | ------------------------------- |
+| Ollama           | Local dev, zero cost  | Default — `LLM_PROVIDER=ollama` |
+| Azure OpenAI     | Enterprise compliance | `LLM_PROVIDER=azure-openai`     |
+| OpenAI           | Latest models         | `LLM_PROVIDER=openai`           |
+| Azure AI Foundry | Managed deployment    | `LLM_PROVIDER=azure-foundry`    |
 
 Runtime switching via `POST /models/switch`. Per-model capabilities exposed on `GET /models`.
 
@@ -53,6 +53,7 @@ Retrieve: Query → Embed → Similarity search → Top-K context → Inject int
 ```
 
 **Retrieval Modes** (per-agent `retrieval_mode`):
+
 - `basic` — Direct ChromaDB cosine similarity
 - `hybrid` — Keyword + vector search combined
 - `reranked` — Cross-encoder reranking
@@ -63,10 +64,10 @@ Retrieve: Query → Embed → Similarity search → Top-K context → Inject int
 
 35 tools, split across two services:
 
-| Location | Tools | Why |
-|----------|-------|-----|
-| tools-service (HTTP) | math, http_fetch, file ops, datetime, web_search, code_execute, etc. | Crash isolation, SSRF protection |
-| agent-service (in-process) | vector_search, vector_store, delegate_to_agent | Low-latency RAG + delegation |
+| Location                   | Tools                                                                | Why                              |
+| -------------------------- | -------------------------------------------------------------------- | -------------------------------- |
+| tools-service (HTTP)       | math, http_fetch, file ops, datetime, web_search, code_execute, etc. | Crash isolation, SSRF protection |
+| agent-service (in-process) | vector_search, vector_store, delegate_to_agent                       | Low-latency RAG + delegation     |
 
 **Sandboxing**: URL whitelist, blocked imports, filename sanitisation, 10s timeout, AST-safe eval.
 
@@ -84,17 +85,17 @@ Output: PII flagging, data-leak blocking, toxicity, length enforcement, hallucin
 
 ## Traceability Matrix
 
-| Capability | Service | Key File |
-|-----------|---------|----------|
-| Agent Reasoning | agent-service | `graph.py` |
-| LLM Abstraction | agent-service | `llm.py` |
-| Knowledge/RAG | agent-service + chromadb | `vectorstore.py`, `advanced_retrieval.py` |
-| Memory | agent-service | `memory.py` |
-| Tool Execution | tools-service + agent-service | `tools.py`, tools `main.py` |
-| Guardrails | agent-service | `graph.py` |
-| Config Store | agent-service | `memory.py` |
-| A2A / MCP | agent-service | `main.py` |
-| Observability | otel, langfuse, prometheus, loki, grafana | `observability.py` |
-| Workflows | n8n | `n8n/workflows/` |
-| Dashboard | ui-console | `server.js`, `views/` |
-| Connectors | agent-service | `connectors/` |
+| Capability      | Service                                   | Key File                                  |
+| --------------- | ----------------------------------------- | ----------------------------------------- |
+| Agent Reasoning | agent-service                             | `graph.py`                                |
+| LLM Abstraction | agent-service                             | `llm.py`                                  |
+| Knowledge/RAG   | agent-service + chromadb                  | `vectorstore.py`, `advanced_retrieval.py` |
+| Memory          | agent-service                             | `memory.py`                               |
+| Tool Execution  | tools-service + agent-service             | `tools.py`, tools `main.py`               |
+| Guardrails      | agent-service                             | `graph.py`                                |
+| Config Store    | agent-service                             | `memory.py`                               |
+| A2A / MCP       | agent-service                             | `main.py`                                 |
+| Observability   | otel, langfuse, prometheus, loki, grafana | `observability.py`                        |
+| Workflows       | n8n                                       | `n8n/workflows/`                          |
+| Dashboard       | ui-console                                | `server.js`, `views/`                     |
+| Connectors      | agent-service                             | `connectors/`                             |

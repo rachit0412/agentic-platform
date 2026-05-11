@@ -68,7 +68,11 @@
   </div>
   <!-- Advanced Options -->
   <details id="ai-gen-advanced" style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
-    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Options &mdash; Org Best Practices &amp; References</summary>
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Options &mdash; Directions, Best Practices &amp; References</summary>
+    <div style="margin-top:0.75rem">
+      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; extra guidance to steer how the AI generates your prompt</span></label>
+      <textarea id="ai-gen-directions" class="input" rows="3" placeholder="e.g.\nUse chain-of-thought reasoning in the prompt\nInclude explicit output format (JSON with specific fields)\nDon't include example inputs — keep it generic\nMake it suitable for GPT-4 and Llama 3" style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
+    </div>
     <div style="margin-top:0.75rem">
       <label class="field-label">Reference Links / Guidelines <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; one per line (URLs or text guidelines from your org)</span></label>
       <textarea id="ai-gen-references" class="input" rows="4" placeholder="e.g.\nhttps://company.com/prompt-engineering-guide\nhttps://learn.microsoft.com/en-us/ai/prompt-engineering-best-practices\nAll prompts must include a persona, constraints, and output format per KPMG standards.\nAvoid vague instructions; always specify expected output structure." style="resize:vertical;font-family:var(--mono);font-size:0.8rem"></textarea>
@@ -214,6 +218,8 @@
         payload.provider = parts[0];
         payload.model = parts.slice(1).join(':');
       }
+      var dirs = (document.getElementById('ai-gen-directions').value || '').trim();
+      if (dirs) { payload.directions = dirs; }
       var refs = (document.getElementById('ai-gen-references').value || '').trim();
       if (refs) { payload.references = refs.split('\\n').filter(function(l) { return l.trim(); }); }
       var r = await fetch('/api/prompts/generate', {

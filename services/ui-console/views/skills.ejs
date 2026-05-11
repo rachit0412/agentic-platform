@@ -104,6 +104,14 @@
     </div>
     <textarea id="decompose-prompt" class="input" rows="4" placeholder="e.g. You are a technical documentation writer. Write clear, accurate docs for engineers..." style="resize:vertical;font-family:var(--mono)"></textarea>
   </div>
+  <!-- Skill Family Advanced Directions -->
+  <details style="margin-top:0.75rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced Directions <span style="font-weight:400;color:var(--text-3);font-size:0.72rem">&mdash; extra guidance for the AI</span></summary>
+    <div style="margin-top:0.75rem">
+      <label class="field-label">Custom Instructions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; steer how the AI generates skills</span></label>
+      <textarea id="decompose-directions" class="input" rows="3" placeholder="e.g.\nEach skill should have at most 2 input parameters\nUse imperative verbs in skill names (Analyze, Generate, Validate)\nInclude error handling constraints\nFocus on data validation use cases" style="font-size:0.78rem;font-family:var(--mono);resize:vertical"></textarea>
+    </div>
+  </details>
   <div style="display:flex;gap:0.75rem;margin-top:1rem;align-items:center">
     <button class="btn btn-primary" id="decompose-btn" onclick="decomposeSkills()" style="background:linear-gradient(135deg,#f59e0b,#f97316);border:none;font-weight:600">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
@@ -201,7 +209,11 @@
 
   <!-- AI Enrich Options -->
   <details style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
-    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Model &amp; Org Best Practices</summary>
+    <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Model, Directions &amp; Best Practices</summary>
+    <div style="margin-top:0.75rem">
+      <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; extra guidance for the AI (e.g. don't add parameters, use chain-of-thought, keep it concise)</span></label>
+      <textarea id="enrich-directions" class="input" rows="3" placeholder="e.g.\nDon't add more than 3 parameters\nUse structured JSON output format\nFollow our internal naming convention: snake_case for params\nKeep the prompt under 500 words" style="font-size:0.78rem;font-family:var(--mono);resize:vertical"></textarea>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
       <div>
         <label class="field-label">AI Model <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; used for AI Enrich</span></label>
@@ -684,7 +696,8 @@
       constraints: document.getElementById('skill-constraints').value.split(',').map(function(s){return s.trim()}).filter(Boolean),
       input_parameters: getParameters(),
       available_tools: allTools,
-      best_practices: document.getElementById('enrich-bp-override').value.trim() || getBP().join('. ')
+      best_practices: document.getElementById('enrich-bp-override').value.trim() || getBP().join('. '),
+      directions: document.getElementById('enrich-directions').value.trim() || undefined
     };
 
     var modelVal = document.getElementById('enrich-model').value;
@@ -813,7 +826,8 @@
       base_prompt: basePrompt,
       count: document.getElementById('decompose-count').value.trim() ? parseInt(document.getElementById('decompose-count').value) : null,
       available_tools: allTools,
-      best_practices: getBP().join('. ')
+      best_practices: getBP().join('. '),
+      directions: document.getElementById('decompose-directions').value.trim() || undefined
     };
     var modelVal = document.getElementById('decompose-model').value;
     if (modelVal) {
@@ -964,7 +978,8 @@
       concept: '',
       count: 5,
       available_tools: allTools,
-      best_practices: getBP().join('. ')
+      best_practices: getBP().join('. '),
+      directions: document.getElementById('enrich-directions').value.trim() || undefined
     };
     var modelVal = document.getElementById('enrich-model').value;
     if (modelVal) {

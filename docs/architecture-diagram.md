@@ -52,12 +52,12 @@ flowchart TD
 
 ## Layer Summary
 
-| Layer | Components | Purpose |
-|-------|-----------|---------|
-| Frontend | Express.js + EJS (24 pages) | Dashboard & API proxy |
-| Orchestrator | FastAPI + LangGraph | ReAct loop, routing, state |
-| LLM | Ollama, Azure OpenAI, OpenAI, Foundry | Multi-provider inference |
-| RAG | ChromaDB + LlamaIndex | Retrieval-augmented generation |
-| Tools | tools-service, MCP, A2A, n8n | Tool execution & automation |
-| Data | SQLite + PostgreSQL | Config, memory, documents |
-| Observability | OTel, Prometheus, Grafana, Loki, Langfuse | Metrics, logs, LLM traces |
+| Layer         | Components                                | Purpose                        |
+| ------------- | ----------------------------------------- | ------------------------------ |
+| Frontend      | Express.js + EJS (24 pages)               | Dashboard & API proxy          |
+| Orchestrator  | FastAPI + LangGraph                       | ReAct loop, routing, state     |
+| LLM           | Ollama, Azure OpenAI, OpenAI, Foundry     | Multi-provider inference       |
+| RAG           | ChromaDB + LlamaIndex                     | Retrieval-augmented generation |
+| Tools         | tools-service, MCP, A2A, n8n              | Tool execution & automation    |
+| Data          | SQLite + PostgreSQL                       | Config, memory, documents      |
+| Observability | OTel, Prometheus, Grafana, Loki, Langfuse | Metrics, logs, LLM traces      |

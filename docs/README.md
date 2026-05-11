@@ -2,23 +2,23 @@
 
 ## Guides
 
-| Document | Description |
-|----------|-------------|
-| [README](../README.md) | Project overview, quick start, configuration |
-| [Architecture](ARCHITECTURE.md) | System overview, data flows, services |
-| [Principles](PRINCIPLES.md) | 18 architecture principles with maturity levels |
-| [Building Blocks](BUILDING-BLOCKS.md) | 15 ABBs/SBBs with traceability |
-| [Decisions](DECISIONS.md) | 19 Architecture Decision Records |
-| [Installation](../INSTALL.md) | Prerequisites, setup, GPU configuration |
-| [Contributing](../CONTRIBUTING.md) | Code style, PR process, commit conventions |
+| Document                              | Description                                     |
+| ------------------------------------- | ----------------------------------------------- |
+| [README](../README.md)                | Project overview, quick start, configuration    |
+| [Architecture](ARCHITECTURE.md)       | System overview, data flows, services           |
+| [Principles](PRINCIPLES.md)           | 18 architecture principles with maturity levels |
+| [Building Blocks](BUILDING-BLOCKS.md) | 15 ABBs/SBBs with traceability                  |
+| [Decisions](DECISIONS.md)             | 19 Architecture Decision Records                |
+| [Installation](../INSTALL.md)         | Prerequisites, setup, GPU configuration         |
+| [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions      |
 
 ## Live API Docs
 
-| Service | URL | Description |
-|---------|-----|-------------|
+| Service       | URL                        | Description                       |
+| ------------- | -------------------------- | --------------------------------- |
 | Agent Service | http://localhost:8010/docs | FastAPI auto-docs (69+ endpoints) |
-| Tools Service | http://localhost:8011/docs | FastAPI auto-docs (35 endpoints) |
-| REST Console | http://localhost:3000/rest | Interactive API testing UI |
+| Tools Service | http://localhost:8011/docs | FastAPI auto-docs (35 endpoints)  |
+| REST Console  | http://localhost:3000/rest | Interactive API testing UI        |
 
 ## API Quick Reference
 
@@ -31,20 +31,20 @@ POST /agent-run/stream    # Run agent with SSE streaming
 
 ### CRUD Entities
 
-| Entity | Endpoints |
-|--------|-----------|
-| Agents | `GET/POST /agents`, `GET/PUT/DELETE /agents/{id}` |
-| Skills | `GET/POST /skills`, `GET/PUT/DELETE /skills/{id}` |
-| Prompts | `GET/POST /prompts`, `GET/PUT/DELETE /prompts/{id}` |
-| Guardrails | `GET/POST /guardrails`, `GET/PUT/DELETE /guardrails/{id}` |
+| Entity       | Endpoints                                                     |
+| ------------ | ------------------------------------------------------------- |
+| Agents       | `GET/POST /agents`, `GET/PUT/DELETE /agents/{id}`             |
+| Skills       | `GET/POST /skills`, `GET/PUT/DELETE /skills/{id}`             |
+| Prompts      | `GET/POST /prompts`, `GET/PUT/DELETE /prompts/{id}`           |
+| Guardrails   | `GET/POST /guardrails`, `GET/PUT/DELETE /guardrails/{id}`     |
 | Custom Tools | `GET/POST /custom-tools`, `GET/PUT/DELETE /custom-tools/{id}` |
 
 ### Protocols
 
-| Protocol | Endpoints |
-|----------|-----------|
-| A2A | `CRUD /a2a/peers`, `POST /a2a/send`, `GET /a2a/card` |
-| MCP | `CRUD /mcp/servers`, `POST /mcp/servers/{id}/discover`, `POST /mcp/servers/{id}/invoke` |
+| Protocol | Endpoints                                                                               |
+| -------- | --------------------------------------------------------------------------------------- |
+| A2A      | `CRUD /a2a/peers`, `POST /a2a/send`, `GET /a2a/card`                                    |
+| MCP      | `CRUD /mcp/servers`, `POST /mcp/servers/{id}/discover`, `POST /mcp/servers/{id}/invoke` |
 
 ### Knowledge Base
 
