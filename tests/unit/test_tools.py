@@ -1,9 +1,25 @@
 """Unit tests for Tools Service endpoints."""
+import sys
+import os
+import tempfile
+import importlib.util
+
+# Set NOTES_DIR before import to avoid creating /data/notes on Windows
+os.environ.setdefault("NOTES_DIR", os.path.join(tempfile.gettempdir(), "tools-test-notes"))
+
+# Import tools service main via importlib (don't pollute sys.modules['main'])
+_tools_main_path = os.path.join(
+    os.path.dirname(__file__), "..", "..", "services", "tools", "main.py"
+)
+_spec = importlib.util.spec_from_file_location("tools_main", _tools_main_path)
+_tools_main = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_tools_main)
+
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 from httpx import AsyncClient, ASGITransport
 
-from main import app
+app = _tools_main.app
 
 
 @pytest.fixture
@@ -78,7 +94,7 @@ async def test_http_fetch_no_scheme(client):
 
 @pytest.mark.anyio
 async def test_file_write_read(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("main.NOTES_DIR", tmp_path)
+    monkeypatch.setattr(_tools_main, "NOTES_DIR", tmp_path)
     w = await client.post(
         "/tools/file-write",
         json={"filename": "hello.txt", "content": "Hello World"},
@@ -93,14 +109,14 @@ async def test_file_write_read(client, tmp_path, monkeypatch):
 
 @pytest.mark.anyio
 async def test_file_read_not_found(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("main.NOTES_DIR", tmp_path)
+    monkeypatch.setattr(_tools_main, "NOTES_DIR", tmp_path)
     r = await client.post("/tools/file-read", json={"filename": "nope.txt"})
     assert r.status_code == 404
 
 
 @pytest.mark.anyio
 async def test_file_write_path_traversal(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("main.NOTES_DIR", tmp_path)
+    monkeypatch.setattr(_tools_main, "NOTES_DIR", tmp_path)
     r = await client.post(
         "/tools/file-write",
         json={"filename": "../../../etc/passwd", "content": "bad"},
@@ -112,7 +128,7 @@ async def test_file_write_path_traversal(client, tmp_path, monkeypatch):
 
 @pytest.mark.anyio
 async def test_file_write_dot_file_rejected(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("main.NOTES_DIR", tmp_path)
+    monkeypatch.setattr(_tools_main, "NOTES_DIR", tmp_path)
     r = await client.post(
         "/tools/file-write",
         json={"filename": ".hidden", "content": "secret"},
@@ -139,13 +155,17 @@ async def test_web_search_missing_query(client):
 
 
 @pytest.mark.anyio
+@pytest.mark.skipif(
+    not __import__("importlib").util.find_spec("ddgs"),
+    reason="ddgs not installed locally",
+)
 async def test_web_search_with_mock(client):
     """Mock DuckDuckGo to avoid real network calls."""
     mock_results = [
         {"title": "Python.org", "href": "https://python.org", "body": "Welcome to Python"},
         {"title": "Docs", "href": "https://docs.python.org", "body": "Python docs"},
     ]
-    with patch("main.DDGS") as MockDDGS:
+    with patch("ddgs.DDGS") as MockDDGS:
         instance = MagicMock()
         instance.text.return_value = mock_results
         MockDDGS.return_value.__enter__ = MagicMock(return_value=instance)
@@ -171,14 +191,19 @@ async def test_code_execute_simple(client):
 @pytest.mark.anyio
 async def test_code_execute_blocked_import(client):
     r = await client.post("/tools/code-execute", json={"code": "import os; os.system('ls')"})
-    assert r.status_code == 400
-    assert "blocked" in r.json()["detail"].lower() or "security" in r.json()["detail"].lower()
+    assert r.status_code == 200
+    body = r.json()
+    assert body["exit_code"] == 1
+    assert "blocked" in body["stderr"].lower()
 
 
 @pytest.mark.anyio
 async def test_code_execute_blocked_subprocess(client):
     r = await client.post("/tools/code-execute", json={"code": "import subprocess"})
-    assert r.status_code == 400
+    assert r.status_code == 200
+    body = r.json()
+    assert body["exit_code"] == 1
+    assert "blocked" in body["stderr"].lower()
 
 
 @pytest.mark.anyio

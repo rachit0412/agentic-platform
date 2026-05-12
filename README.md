@@ -174,7 +174,7 @@ curl -X POST http://localhost:8010/run \
 | ---------------- | --------------------------------------------------------------------------------- |
 | Overview         | Platform stats, architecture, quick-start guide                                   |
 | Run Agent        | Execute agents, stream responses, browse sessions                                 |
-| Agent Builder    | Visual agent composition with sub-agent orchestration, templates, and live test   |
+| Agent Builder    | Visual agent composition with skill workflow orchestration, sub-agents, and live test |
 | AI Studio        | IDE-style code editor with chat, preview, and projects                            |
 | Agent Hub        | Agent factory overview dashboard                                                  |
 | Agent Registry   | Create and manage agent definitions                                               |

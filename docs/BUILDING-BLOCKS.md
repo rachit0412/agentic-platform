@@ -20,6 +20,7 @@
 | 11  | Workflow Automation        | n8n — 6 pre-built templates incl. multi-agent orchestration        | `n8n/workflows/`                              |
 | 12  | Platform Dashboard         | Express.js + EJS, 24 pages, thin API proxy                         | `server.js`, `views/`                         |
 | 13  | Multi-Agent Orchestration  | sub_agent_ids + delegate_to_agent + n8n DAGs                       | `tools.py`, `graph.py`                        |
+| 13b | Skill Workflow             | Sequential / Router skill execution ordering in Agent Builder      | `agent-builder.ejs`                           |
 | 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte     | `connectors/`                                 |
 | 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries        | `llamaindex_loader.py`, `structured_query.py` |
 
@@ -83,6 +84,19 @@ Output: PII flagging, data-leak blocking, toxicity, length enforcement, hallucin
 - Azure content filter auto-triggers toxicity detection
 - Regex fallback ensures availability if LLM fails
 - Per-agent guardrail assignment via `guardrail_ids`
+
+## Detail: Skill Workflow
+
+When an agent has 2+ skills attached, the Agent Builder displays a visual workflow editor:
+
+| Mode       | Behavior                                                             |
+| ---------- | -------------------------------------------------------------------- |
+| Sequential | Skills execute in user-defined order — drag to reorder               |
+| Router     | LLM dynamically selects the best skill per request (fan-out pattern) |
+
+- Workflow config (`workflow_mode`, `workflow_order`) persisted with agent definition
+- Visual flow: Start node → skill nodes (numbered, with tool counts) → End node
+- Drag-and-drop reordering in sequential mode
 
 ## Traceability Matrix
 

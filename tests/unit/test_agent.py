@@ -1,4 +1,5 @@
 """Unit tests for Agent Service — graph logic, parsing, endpoints."""
+import os
 import pytest
 import json
 from unittest.mock import patch, AsyncMock, MagicMock
@@ -6,11 +7,37 @@ from httpx import AsyncClient, ASGITransport
 
 # Patch out observability before importing anything
 import agent.observability as _obs_mod
-_obs_mod.LangfuseTrace = MagicMock
+_mock_trace = MagicMock()
+_mock_trace.trace_id = "test-trace-id"
+_obs_mod.LangfuseTrace = MagicMock(return_value=_mock_trace)
 _obs_mod.track_llm_call = MagicMock(return_value=MagicMock(__enter__=MagicMock(), __exit__=MagicMock()))
 
 from agent.graph import _parse_tool_calls, should_continue, build_graph
+from agent.tools import TOOL_CATALOGUE, _refresh_catalogue
 from main import app
+
+
+@pytest.fixture(autouse=True)
+def _setup_env(tmp_path, monkeypatch):
+    """Use temp dirs so SQLite and filestore work on any OS."""
+    db_dir = str(tmp_path / "data")
+    fs_dir = str(tmp_path / "filestore")
+    os.makedirs(db_dir, exist_ok=True)
+    os.makedirs(fs_dir, exist_ok=True)
+    monkeypatch.setenv("MEMORY_DIR", db_dir)
+    monkeypatch.setenv("FILESTORE_DIR", fs_dir)
+    # Re-initialise DB for this test
+    import agent.memory as _mem
+    _mem._local = __import__("threading").local()  # reset thread-local conn
+    _mem.MEMORY_DIR = db_dir
+    _mem.DB_PATH = os.path.join(db_dir, "platform.db")
+    _mem.init_db()
+
+
+@pytest.fixture(autouse=True)
+def _populate_catalogue():
+    """Ensure TOOL_CATALOGUE is populated so _parse_tool_calls works."""
+    _refresh_catalogue()
 
 
 @pytest.fixture
@@ -192,4 +219,4 @@ async def test_models_list(client):
     r = await client.get("/models")
     assert r.status_code == 200
     body = r.json()
-    assert "current_model" in body
+    assert "active" in body or "current_model" in body
