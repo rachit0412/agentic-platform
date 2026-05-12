@@ -145,11 +145,11 @@
   </div>
 </div>
 
-<!-- Skill Inputs Button (opens modal) -->
+<!-- Skill Inputs Button (opens modal for pre-filling all inputs upfront) -->
 <div id="skill-inputs-trigger" style="display:none;margin-top:0.75rem">
   <button class="btn btn-secondary btn-sm" onclick="openSkillModal()" style="font-size:0.75rem;padding:0.4rem 0.7rem;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);color:#8b5cf6">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-    Skill Inputs
+    Pre-fill All Inputs
     <span id="skill-input-count" style="font-size:0.65rem;background:rgba(139,92,246,0.2);padding:0.1rem 0.35rem;border-radius:4px;margin-left:0.25rem"></span>
   </button>
 </div>
@@ -160,11 +160,11 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <div style="display:flex;align-items:center;gap:0.5rem">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <h3 style="margin:0;font-size:0.95rem;color:var(--text-1)">Skill Inputs</h3>
+        <h3 style="margin:0;font-size:0.95rem;color:var(--text-1)">Pre-fill All Skill Inputs</h3>
       </div>
       <button onclick="closeSkillModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem;padding:0.25rem 0.5rem;border-radius:6px;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">&times;</button>
     </div>
-    <p style="font-size:0.72rem;color:var(--text-3);margin-bottom:0.75rem">Fill in parameters for this agent's skills (optional &mdash; the agent will ask if missing)</p>
+    <p style="font-size:0.72rem;color:var(--text-3);margin-bottom:0.75rem">Fill in all parameters upfront (optional &mdash; or let the agent ask for them one-by-one during the conversation)</p>
     <div id="skill-inputs-list"></div>
     <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--divider)">
       <button class="btn btn-secondary btn-sm" onclick="closeSkillModal()">Cancel</button>
@@ -194,6 +194,23 @@
   </div>
   <div id="response" style="white-space:pre-wrap;line-height:1.7;margin-top:0.75rem;color:var(--text-1)"></div>
   <div id="meta" class="mono mt-1" style="font-size:0.72rem"></div>
+  <!-- Inline Skill Inputs Panel (appears after run, only if skills have params) -->
+  <div id="inline-skill-inputs" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--divider)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+      <span style="font-size:0.78rem;font-weight:600;color:var(--accent-text);display:flex;align-items:center;gap:0.35rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Provide Skill Inputs
+      </span>
+      <span style="font-size:0.62rem;color:var(--text-3)">Fill the parameters the agent needs and send</span>
+    </div>
+    <div id="inline-params-list"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:0.5rem">
+      <button class="btn btn-primary btn-sm" onclick="sendInlineParams()" style="font-size:0.78rem;padding:0.45rem 0.85rem">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Inputs
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- LLM Execution Details -->
@@ -294,8 +311,8 @@
     }
   }
 
-  async function runAgent() {
-    const prompt = document.getElementById('prompt').value.trim();
+  async function runAgent(overridePrompt) {
+    const prompt = (typeof overridePrompt === 'string') ? overridePrompt.trim() : document.getElementById('prompt').value.trim();
     if (!prompt) return;
     const session = document.getElementById('session').value || ('s-' + Math.random().toString(36).slice(2,8));
     document.getElementById('session').value = session;
@@ -333,6 +350,7 @@
     document.getElementById('exec-detail-card').style.display = 'none';
     document.getElementById('guardrail-results-card').style.display = 'none';
     document.getElementById('control-matrix-card').style.display = 'none';
+    hideInlineSkillInputs();
 
     const startTime = Date.now();
     const stepElements = {};
@@ -432,6 +450,7 @@
       loadSessions();
       loadMemoryStats();
       loadSessionSummary(session);
+      showInlineSkillInputs();
     } catch(e) {
       if (e.name === 'AbortError') {
         document.getElementById('response').style.color = 'var(--warning, #f59e0b)';
@@ -837,7 +856,7 @@
     var list = document.getElementById('skill-inputs-list');
     var trigger = document.getElementById('skill-inputs-trigger');
     var agentId = document.getElementById('agent-select').value;
-    if (!agentId) { trigger.style.display = 'none'; list.innerHTML = ''; return; }
+    if (!agentId) { trigger.style.display = 'none'; list.innerHTML = ''; cacheSkillParams([]); return; }
     try {
       var agent = _agentSkillsCache[agentId];
       if (!agent) {
@@ -846,7 +865,7 @@
         _agentSkillsCache[agentId] = agent;
       }
       var skillIds = agent.skill_ids || [];
-      if (skillIds.length === 0) { trigger.style.display = 'none'; list.innerHTML = ''; return; }
+      if (skillIds.length === 0) { trigger.style.display = 'none'; list.innerHTML = ''; cacheSkillParams([]); return; }
 
       // Fetch skills in parallel
       var skills = await Promise.all(skillIds.map(async function(sid) {
@@ -863,7 +882,10 @@
         return params && (typeof params === 'string' ? JSON.parse(params) : params).length > 0;
       });
       var trigger = document.getElementById('skill-inputs-trigger');
-      if (withParams.length === 0) { trigger.style.display = 'none'; list.innerHTML = ''; return; }
+      if (withParams.length === 0) { trigger.style.display = 'none'; list.innerHTML = ''; cacheSkillParams([]); return; }
+
+      // Cache params for quick-reply popup
+      cacheSkillParams(withParams);
 
       // Show trigger button with count
       trigger.style.display = 'block';
@@ -942,12 +964,18 @@
   var _lastPrompt = '';
 
   var _origRunAgent = runAgent;
-  runAgent = function() {
+  runAgent = function(overridePrompt) {
+    if (typeof overridePrompt === 'string') {
+      // Quick-reply path: don't touch the original prompt textarea
+      _lastPrompt = overridePrompt.trim();
+      return _origRunAgent(overridePrompt);
+    }
     _lastPrompt = document.getElementById('prompt').value.trim();
-    // Inject filled skill inputs into the prompt
+    // Inject filled skill inputs into the prompt (pre-fill modal path)
     var skillContext = collectSkillInputs();
     if (skillContext) {
-      document.getElementById('prompt').value = _lastPrompt + '\\n\\n' + skillContext;
+      var combined = _lastPrompt + '\\n\\n' + skillContext;
+      return _origRunAgent(combined);
     }
     return _origRunAgent();
   };
@@ -1001,8 +1029,75 @@
   });
   // Close modal on Escape key
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeSkillModal();
+    if (e.key === 'Escape') { closeSkillModal(); }
   });
+
+  // ── Inline Skill Inputs (post-run) ──
+  var _cachedSkillParams = []; // [{skillName, paramName, type, required}]
+
+  function showInlineSkillInputs() {
+    // Only show if agent has skills with params
+    if (_cachedSkillParams.length === 0) return;
+    var panel = document.getElementById('inline-skill-inputs');
+    var list = document.getElementById('inline-params-list');
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem">';
+    _cachedSkillParams.forEach(function(p) {
+      html += '<div>';
+      html += '<label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:0.15rem">';
+      html += p.paramName;
+      if (p.required) html += ' <span style="color:#ef4444">*</span>';
+      html += '<span style="font-size:0.6rem;color:var(--text-3);margin-left:0.25rem">(' + p.skillName + ')</span>';
+      html += '</label>';
+      if (p.type === 'boolean') {
+        html += '<select class="inline-param-input" data-param="' + p.paramName + '" style="width:100%;font-size:0.78rem;padding:0.35rem 0.5rem;border-radius:8px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">';
+        html += '<option value="">—</option><option value="true">Yes</option><option value="false">No</option>';
+        html += '<\/select>';
+      } else {
+        html += '<input class="inline-param-input" data-param="' + p.paramName + '" type="text" placeholder="' + (p.type || 'text') + '" style="width:100%;font-size:0.78rem;padding:0.35rem 0.5rem;border-radius:8px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)" />';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    list.innerHTML = html;
+    panel.style.display = 'block';
+  }
+
+  function hideInlineSkillInputs() {
+    document.getElementById('inline-skill-inputs').style.display = 'none';
+  }
+
+  function sendInlineParams() {
+    var inputs = document.querySelectorAll('.inline-param-input');
+    var lines = [];
+    inputs.forEach(function(el) {
+      var val = el.value.trim();
+      if (!val) return;
+      lines.push(el.getAttribute('data-param') + ': ' + val);
+    });
+    if (lines.length === 0) { showToast('Fill in at least one parameter', 'warning'); return; }
+    var text = '[Skill Inputs]\\n' + lines.join('\\n');
+    hideInlineSkillInputs();
+    runAgent(text);
+  }
+
+  // Cache skill params when agent is selected
+  function cacheSkillParams(skills) {
+    _cachedSkillParams = [];
+    if (!skills) return;
+    skills.forEach(function(sk) {
+      var params = sk.input_parameters;
+      if (!params) return;
+      if (typeof params === 'string') try { params = JSON.parse(params); } catch(e) { return; }
+      params.forEach(function(p) {
+        _cachedSkillParams.push({
+          skillName: sk.name || 'Skill',
+          paramName: p.name,
+          type: p.type || 'string',
+          required: !!p.required
+        });
+      });
+    });
+  }
 
   loadSessions();
   loadMemoryStats();
