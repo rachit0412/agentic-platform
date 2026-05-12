@@ -540,6 +540,16 @@ def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str,
     agent_constraints = ""
     tool_ids = None
 
+    # Fetch global constraints (apply to all agents/skills)
+    from agent.memory import get_global_constraints
+
+    global_constraint_list = get_global_constraints()
+    if global_constraint_list:
+        agent_constraints = (
+            "GLOBAL CONSTRAINTS (always follow these — apply to all agents and skills):\n"
+            + "\n".join(f"- {c}" for c in global_constraint_list)
+        )
+
     if agent_config:
         if agent_config.get("system_prompt"):
             extra_system_parts.append(agent_config["system_prompt"])
@@ -552,8 +562,9 @@ def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str,
             except Exception:
                 agent_constraint_list = []
         if agent_constraint_list:
-            agent_constraints = (
-                "AGENT CONSTRAINTS (always follow these):\n"
+            agent_constraints += (
+                ("\n\n" if agent_constraints else "")
+                + "AGENT CONSTRAINTS (always follow these):\n"
                 + "\n".join(f"- {c}" for c in agent_constraint_list)
             )
 

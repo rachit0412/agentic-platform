@@ -258,6 +258,22 @@ def init_db():
             created_at      TEXT NOT NULL
         )
         """)
+    # ── Platform Settings table (global constraints, etc.) ──
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS platform_settings (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL DEFAULT '[]'
+        )
+        """)
+    # Seed global constraints if not present
+    existing_gc = conn.execute(
+        "SELECT key FROM platform_settings WHERE key = 'global_constraints'"
+    ).fetchone()
+    if not existing_gc:
+        conn.execute(
+            "INSERT INTO platform_settings (key, value) VALUES (?, ?)",
+            ("global_constraints", "[]"),
+        )
     # Ensure default agent exists
     existing = conn.execute("SELECT id FROM agents WHERE is_default = 1").fetchone()
     if not existing:
@@ -613,6 +629,38 @@ def delete_skill(skill_id: str) -> bool:
         # Clean up files on disk
         _delete_skill_files_dir(skill_id)
     return cursor.rowcount > 0
+
+
+# ── Global Constraints (platform-level) ────────────────────────────────────
+
+
+def get_global_constraints() -> list[str]:
+    """Return the list of global constraints that apply to all agents and skills."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT value FROM platform_settings WHERE key = 'global_constraints'"
+    ).fetchone()
+    if not row:
+        return []
+    return json.loads(row["value"])
+
+
+def set_global_constraints(constraints: list[str]) -> list[str]:
+    """Replace the global constraints list."""
+    conn = _get_conn()
+    conn.execute(
+        "INSERT INTO platform_settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("global_constraints", json.dumps(constraints)),
+    )
+    conn.commit()
+    log_audit(
+        "update",
+        "platform_settings",
+        "global_constraints",
+        f"{len(constraints)} constraints",
+    )
+    return constraints
 
 
 # ── Skill File Management ──────────────────────────────────────────────────

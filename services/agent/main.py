@@ -1268,6 +1268,42 @@ async def skills_delete_endpoint(skill_id: str):
     return {"deleted": True}
 
 
+# ── Global Constraints endpoints ───────────────────────────────────────────
+
+
+@app.get("/global-constraints")
+async def global_constraints_get():
+    from agent.memory import get_global_constraints
+
+    return {"constraints": get_global_constraints()}
+
+
+@app.put("/global-constraints")
+async def global_constraints_update(request: Request):
+    data = await request.json()
+    constraints = data.get("constraints", [])
+    if not isinstance(constraints, list):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400, content={"error": "constraints must be a list of strings"}
+        )
+    for i, c in enumerate(constraints):
+        if not isinstance(c, str) or not c.strip():
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Constraint {i + 1} must be a non-empty string"},
+            )
+        _check_no_secrets(c, f"Global constraint {i + 1}")
+
+    from agent.memory import set_global_constraints
+
+    updated = set_global_constraints([c.strip() for c in constraints if c.strip()])
+    return {"constraints": updated}
+
+
 # ── Skill File Endpoints ───────────────────────────────────────────────────
 
 

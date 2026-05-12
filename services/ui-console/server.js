@@ -421,6 +421,14 @@ app.delete("/api/custom-tools/:id", async (req, res) => {
 // ── API: Documents / RAG (proxy to agent) ─────────────
 
 // ── API: Guardrails (proxy to agent) ──────────────────
+app.get("/api/global-constraints", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/global-constraints`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/global-constraints", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
 app.get("/api/guardrails", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/guardrails`, { signal: AbortSignal.timeout(5000) });
