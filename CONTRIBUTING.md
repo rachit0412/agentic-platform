@@ -73,9 +73,9 @@ docker compose logs -f
 ### Key Concepts for Contributors
 
 - **Agent** = `LLM + Tools + Memory + Control Logic + Context` — an autonomous loop, not just a model
-- **Skill** = A packaged capability (prompt + tools + constraints) — reusable function with intelligence
+- **Skill** = A self-contained capability package (instructions + tools + constraints + optional file attachments: scripts, references, assets). Files are per-skill isolated on disk at `/data/filestore/skills/{id}/{category}/`
 - **Prompt** = The instructional context given to a model or skill — defines behavior and output format
-- All agent/skill CRUD is in `services/agent/main.py`, storage in `services/agent/agent/memory.py` (SQLite)
+- All agent/skill CRUD is in `services/agent/main.py`, storage in `services/agent/agent/memory.py` (SQLite + disk filestore)
 
 ## Code Style
 

@@ -207,6 +207,60 @@
     </div>
   </div>
 
+  <!-- Skill Files (Scripts / References / Assets) -->
+  <div style="margin-top:1rem" id="skill-files-section">
+    <label class="field-label" style="margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-2)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Skill Files
+      <span style="color:var(--text-3);font-weight:400;font-size:0.75rem">&mdash; attach scripts, reference docs, and templates to this skill</span>
+    </label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
+      <!-- Scripts -->
+      <div class="file-drop-zone" data-category="scripts" style="border:1px dashed rgba(34,197,94,0.3);border-radius:10px;padding:0.75rem;background:rgba(34,197,94,0.03);min-height:100px;transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#22c55e" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <strong style="font-size:0.78rem;color:#22c55e">Scripts</strong>
+          <span style="font-size:0.65rem;color:var(--text-3)">.py .sh .js .ts .ps1</span>
+        </div>
+        <div class="file-list" data-category="scripts"></div>
+        <label style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:0.4rem;border-radius:6px;font-size:0.72rem;color:var(--text-3);border:1px dashed var(--glass-border);margin-top:0.35rem;transition:background 0.2s" onmouseover="this.style.background='var(--glass-bg)'" onmouseout="this.style.background='transparent'">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Upload
+          <input type="file" class="file-input-hidden" data-category="scripts" accept=".py,.sh,.bash,.js,.ts,.ps1" multiple style="display:none" onchange="handleFileUpload(this)">
+        </label>
+      </div>
+      <!-- References -->
+      <div class="file-drop-zone" data-category="references" style="border:1px dashed rgba(99,102,241,0.3);border-radius:10px;padding:0.75rem;background:rgba(99,102,241,0.03);min-height:100px;transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6366f1" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <strong style="font-size:0.78rem;color:#6366f1">References</strong>
+          <span style="font-size:0.65rem;color:var(--text-3)">.md .txt .pdf .json .yaml</span>
+        </div>
+        <div class="file-list" data-category="references"></div>
+        <label style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:0.4rem;border-radius:6px;font-size:0.72rem;color:var(--text-3);border:1px dashed var(--glass-border);margin-top:0.35rem;transition:background 0.2s" onmouseover="this.style.background='var(--glass-bg)'" onmouseout="this.style.background='transparent'">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Upload
+          <input type="file" class="file-input-hidden" data-category="references" accept=".md,.txt,.pdf,.docx,.json,.yaml,.yml,.csv,.html" multiple style="display:none" onchange="handleFileUpload(this)">
+        </label>
+      </div>
+      <!-- Assets -->
+      <div class="file-drop-zone" data-category="assets" style="border:1px dashed rgba(245,158,11,0.3);border-radius:10px;padding:0.75rem;background:rgba(245,158,11,0.03);min-height:100px;transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.4rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <strong style="font-size:0.78rem;color:#f59e0b">Assets</strong>
+          <span style="font-size:0.65rem;color:var(--text-3)">.md .json .xml .tmpl .j2</span>
+        </div>
+        <div class="file-list" data-category="assets"></div>
+        <label style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:0.4rem;border-radius:6px;font-size:0.72rem;color:var(--text-3);border:1px dashed var(--glass-border);margin-top:0.35rem;transition:background 0.2s" onmouseover="this.style.background='var(--glass-bg)'" onmouseout="this.style.background='transparent'">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Upload
+          <input type="file" class="file-input-hidden" data-category="assets" accept=".md,.txt,.json,.yaml,.yml,.csv,.html,.xml,.tmpl,.jinja,.j2" multiple style="display:none" onchange="handleFileUpload(this)">
+        </label>
+      </div>
+    </div>
+    <div style="font-size:0.65rem;color:var(--text-3);margin-top:0.35rem">📁 Max 1MB per file, 5MB total per skill. Files are available to the agent as context when this skill is active.</div>
+  </div>
+
   <!-- AI Enrich Options -->
   <details style="margin-top:1rem;border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;background:var(--card-bg)">
     <summary style="cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text-2);user-select:none">Advanced &mdash; AI Model, Directions &amp; Best Practices</summary>
@@ -316,6 +370,116 @@
     (params || []).forEach(p => addParameter(p));
   }
 
+  // ── Skill File Upload ──
+  var _editingSkillId = null;  // set when editing an existing skill
+  var _categoryColors = { scripts: '#22c55e', references: '#6366f1', assets: '#f59e0b' };
+
+  function renderFileList(category, files) {
+    var list = document.querySelector('.file-list[data-category="' + category + '"]');
+    if (!list) return;
+    var catFiles = (files || []).filter(function(f) { return f.category === category; });
+    if (catFiles.length === 0) { list.innerHTML = ''; return; }
+    list.innerHTML = catFiles.map(function(f) {
+      var sizeKB = (f.size_bytes / 1024).toFixed(1);
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.3rem 0.5rem;margin-bottom:0.25rem;border-radius:6px;background:var(--glass-bg);font-size:0.72rem">' +
+        '<span style="color:var(--text-1);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px" title="' + escapeHtml(f.name) + '">' + escapeHtml(f.name) + '</span>' +
+        '<span style="display:flex;align-items:center;gap:0.35rem">' +
+          '<span style="color:var(--text-3)">' + sizeKB + 'KB</span>' +
+          '<button type="button" onclick="deleteSkillFile(\\'' + escapeHtml(category) + '\\', \\'' + escapeHtml(f.name) + '\\')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;font-size:0.72rem" title="Remove">&times;</button>' +
+        '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderAllFileLists(files) {
+    ['scripts', 'references', 'assets'].forEach(function(cat) { renderFileList(cat, files); });
+  }
+
+  function clearAllFileLists() {
+    ['scripts', 'references', 'assets'].forEach(function(cat) {
+      var list = document.querySelector('.file-list[data-category="' + cat + '"]');
+      if (list) list.innerHTML = '';
+    });
+  }
+
+  async function handleFileUpload(inputEl) {
+    var category = inputEl.getAttribute('data-category');
+    var skillId = _editingSkillId;
+    if (!skillId) {
+      showToast('Save the skill first before uploading files', 'warning');
+      inputEl.value = '';
+      return;
+    }
+    var files = inputEl.files;
+    if (!files || files.length === 0) return;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (f.size > 1024 * 1024) {
+        showToast(f.name + ' exceeds 1MB limit', 'error');
+        continue;
+      }
+      var form = new FormData();
+      form.append('file', f);
+      form.append('category', category);
+      try {
+        var r = await fetch('/api/skills/' + encodeURIComponent(skillId) + '/files', { method: 'POST', body: form });
+        if (!r.ok) {
+          var err = await r.json().catch(function() { return {}; });
+          showToast('Upload failed: ' + (err.error || r.statusText), 'error');
+          continue;
+        }
+        showToast(f.name + ' uploaded', 'success');
+      } catch(e) {
+        showToast('Upload error: ' + e.message, 'error');
+      }
+    }
+    inputEl.value = '';
+    // Refresh file list
+    await refreshSkillFiles(skillId);
+    loadSkills();
+  }
+
+  async function deleteSkillFile(category, filename) {
+    if (!_editingSkillId) return;
+    try {
+      var r = await fetch('/api/skills/' + encodeURIComponent(_editingSkillId) + '/files/' + encodeURIComponent(category) + '/' + encodeURIComponent(filename), { method: 'DELETE' });
+      if (!r.ok) {
+        showToast('Delete failed', 'error');
+        return;
+      }
+      showToast(filename + ' removed', 'success');
+      await refreshSkillFiles(_editingSkillId);
+      loadSkills();
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  }
+
+  async function refreshSkillFiles(skillId) {
+    try {
+      var r = await fetch('/api/skills/' + encodeURIComponent(skillId) + '/files');
+      var d = await r.json();
+      renderAllFileLists(d.files || []);
+    } catch(e) { clearAllFileLists(); }
+  }
+
+  // Drag & drop support
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
+      zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderStyle = 'solid'; zone.style.opacity = '0.85'; });
+      zone.addEventListener('dragleave', function() { zone.style.borderStyle = 'dashed'; zone.style.opacity = '1'; });
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        zone.style.borderStyle = 'dashed';
+        zone.style.opacity = '1';
+        var cat = zone.getAttribute('data-category');
+        var input = zone.querySelector('.file-input-hidden');
+        if (input && e.dataTransfer.files.length) {
+          input.files = e.dataTransfer.files;
+          handleFileUpload(input);
+        }
+      });
+    });
+  });
+
   async function loadTools() {
     try {
       const r = await fetch('/api/tools');
@@ -378,6 +542,25 @@
           ? '<div style="margin:0.4rem 0;font-size:0.72rem;color:var(--text-3);font-family:var(--mono);background:var(--input-bg);padding:0.4rem 0.6rem;border-radius:6px;overflow:hidden;max-height:48px">' +
               (s.input_parameters||[]).map(function(p){return '<span style="color:#818cf8">' + escapeHtml(p.name) + '</span><span style="color:var(--text-3)">:</span><span style="color:#f59e0b">' + escapeHtml(p.type||'string') + '</span>' + (p.required ? '<span style="color:#ef4444">*</span>' : '')}).join('<span style="color:var(--text-3)">, </span>') +
             '</div>' : '';
+        const constraintsList = (s.constraints || []);
+        const constraintsHtml = constraintsList.length > 0
+          ? '<div style="margin:0.4rem 0">' +
+              '<div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.25rem;font-weight:600">Constraints</div>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:0.25rem">' +
+                constraintsList.map(function(c){ return '<span style="display:inline-block;font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:20px;background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2)">' + escapeHtml(c) + '</span>' }).join('') +
+              '</div>' +
+            '</div>'
+          : '';
+        const constraintBadge = constraintsList.length > 0
+          ? ' <span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:0.7rem">' + constraintsList.length + ' rule' + (constraintsList.length > 1 ? 's' : '') + '</span>'
+          : '';
+        const filesList = s.files || [];
+        const scriptsCount = filesList.filter(function(f){return f.category==='scripts'}).length;
+        const refsCount = filesList.filter(function(f){return f.category==='references'}).length;
+        const assetsCount = filesList.filter(function(f){return f.category==='assets'}).length;
+        const fileBadges = (scriptsCount ? ' <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;font-size:0.7rem">' + scriptsCount + ' script' + (scriptsCount>1?'s':'') + '</span>' : '')
+          + (refsCount ? ' <span class="badge" style="background:rgba(99,102,241,0.15);color:#818cf8;font-size:0.7rem">' + refsCount + ' ref' + (refsCount>1?'s':'') + '</span>' : '')
+          + (assetsCount ? ' <span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:0.7rem">' + assetsCount + ' asset' + (assetsCount>1?'s':'') + '</span>' : '');
         return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
           '<div>' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
@@ -387,7 +570,8 @@
             '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + escapeHtml(s.description || 'No description') + '</p>' +
             (s.system_prompt ? '<div style="background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);max-height:60px;overflow:hidden;margin-bottom:0.5rem">' + escapeHtml(s.system_prompt.slice(0,150)) + (s.system_prompt.length > 150 ? '...' : '') + '</div>' : '') +
             paramSig +
-            '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.5rem">' + toolBadges + extra + paramBadge + '</div>' +
+            constraintsHtml +
+            '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.5rem">' + toolBadges + extra + paramBadge + constraintBadge + fileBadges + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
             '<button class="btn btn-sm" onclick="editSkill(\\'' + escapeHtml(s.id) + '\\')">Edit</button>' +
@@ -451,6 +635,9 @@
     renderToolsDropdown([]);
     document.getElementById('skill-constraints').value = '';
     clearParameters();
+    _editingSkillId = null;
+    clearAllFileLists();
+    document.getElementById('skill-files-section').style.display = 'none';
     document.getElementById('enrich-bp-override').value = '';
     dismissEnrichment();
     document.getElementById('skill-form').style.display = 'block';
@@ -474,6 +661,9 @@
       renderToolsDropdown(s.tool_ids || []);
       document.getElementById('skill-constraints').value = (s.constraints || []).join(', ');
       loadParametersIntoForm(s.input_parameters || []);
+      _editingSkillId = s.id;
+      document.getElementById('skill-files-section').style.display = 'block';
+      renderAllFileLists(s.files || []);
       document.getElementById('skill-form').style.display = 'block';
       document.getElementById('skill-name').focus();
     } catch(e) { showToast('Error loading skill: ' + e.message, 'error'); }
@@ -574,6 +764,16 @@
         try { errBody = await res.json(); } catch(e2) { errBody = null; }
         var errMsg = (errBody && errBody.detail) ? (Array.isArray(errBody.detail) ? errBody.detail.map(function(d){return d.msg || d}).join('; ') : errBody.detail) : res.statusText;
         showToast('Save failed: ' + errMsg, 'error');
+        return;
+      }
+      var savedSkill = await res.json();
+      if (!id && savedSkill && savedSkill.id) {
+        // New skill created — switch to edit mode so files can be uploaded
+        _editingSkillId = savedSkill.id;
+        document.getElementById('edit-id').value = savedSkill.id;
+        document.getElementById('skill-files-section').style.display = 'block';
+        showToast('Skill created — you can now upload files', 'success');
+        loadSkills();
         return;
       }
       showToast(id ? 'Skill updated' : 'Skill created', 'success');

@@ -8,7 +8,7 @@
 | [Architecture](ARCHITECTURE.md)       | System overview, data flows, services           |
 | [Principles](PRINCIPLES.md)           | 18 architecture principles with maturity levels |
 | [Building Blocks](BUILDING-BLOCKS.md) | 15 ABBs/SBBs with traceability                  |
-| [Decisions](DECISIONS.md)             | 19 Architecture Decision Records                |
+| [Decisions](DECISIONS.md)             | 20 Architecture Decision Records                |
 | [Installation](../INSTALL.md)         | Prerequisites, setup, GPU configuration         |
 | [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions      |
 
@@ -31,13 +31,14 @@ POST /agent-run/stream    # Run agent with SSE streaming
 
 ### CRUD Entities
 
-| Entity       | Endpoints                                                     |
-| ------------ | ------------------------------------------------------------- |
-| Agents       | `GET/POST /agents`, `GET/PUT/DELETE /agents/{id}`             |
-| Skills       | `GET/POST /skills`, `GET/PUT/DELETE /skills/{id}`             |
-| Prompts      | `GET/POST /prompts`, `GET/PUT/DELETE /prompts/{id}`           |
-| Guardrails   | `GET/POST /guardrails`, `GET/PUT/DELETE /guardrails/{id}`     |
-| Custom Tools | `GET/POST /custom-tools`, `GET/PUT/DELETE /custom-tools/{id}` |
+| Entity       | Endpoints                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------- |
+| Agents       | `GET/POST /agents`, `GET/PUT/DELETE /agents/{id}`                                                 |
+| Skills       | `GET/POST /skills`, `GET/PUT/DELETE /skills/{id}`                                                 |
+| Skill Files  | `POST /skills/{id}/files`, `GET /skills/{id}/files`, `GET/DELETE /skills/{id}/files/{cat}/{name}` |
+| Prompts      | `GET/POST /prompts`, `GET/PUT/DELETE /prompts/{id}`                                               |
+| Guardrails   | `GET/POST /guardrails`, `GET/PUT/DELETE /guardrails/{id}`                                         |
+| Custom Tools | `GET/POST /custom-tools`, `GET/PUT/DELETE /custom-tools/{id}`                                     |
 
 ### Protocols
 

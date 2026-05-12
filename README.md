@@ -36,19 +36,19 @@ If you're the kind of person who'd rather understand the full picture than glue 
 
 Most agent repos give you a chatbot. This gives you a **factory**.
 
-| What you get                  | Why it matters                                                                                                                                       |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent Registry**            | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot                             |
-| **Multi-Agent Orchestration** | One orchestrator agent delegates to specialist sub-agents at runtime. LLM decides who handles what. Plus n8n pipelines for sequential/parallel flows |
-| **Skills System**             | Package a prompt + tools + constraints into a reusable skill. Attach it to any agent. Think: _functions, but intelligent_                            |
-| **4 LLM Providers**           | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                                            |
-| **Auto-RAG**                  | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context. Per-agent isolated KB                      |
-| **A2A Protocol**              | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                                            |
-| **MCP Registry**              | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime                                        |
-| **Full Traceability**         | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                                                          |
-| **Responsible AI**            | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                           |
-| **22-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                          |
-| **One-command setup**         | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                  |
+| What you get                  | Why it matters                                                                                                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Agent Registry**            | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot                                                         |
+| **Multi-Agent Orchestration** | One orchestrator agent delegates to specialist sub-agents at runtime. LLM decides who handles what. Plus n8n pipelines for sequential/parallel flows                             |
+| **Skills System**             | Package a prompt + tools + constraints + file attachments (scripts, references, assets) into a reusable skill. Input parameters let skills prompt for structured data at runtime |
+| **4 LLM Providers**           | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                                                                        |
+| **Auto-RAG**                  | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context. Per-agent isolated KB                                                  |
+| **A2A Protocol**              | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                                                                        |
+| **MCP Registry**              | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime                                                                    |
+| **Full Traceability**         | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                                                                                      |
+| **Responsible AI**            | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                       |
+| **22-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                      |
+| **One-command setup**         | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                                              |
 
 <details>
 <summary><b>📋 Full feature list</b></summary>
@@ -56,6 +56,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Prompt Library** — Create, categorize, and tag prompt templates; attach to skills or agents
 - **Conversation Memory** — SQLite-backed session summaries for rolling context across messages
 - **LangGraph ReAct Agent** — State graph: retrieve context → reason → execute tools → respond
+- **Skill Files** — Attach scripts, reference docs, and template assets to any skill — files are per-skill isolated and auto-injected into agent context
 - **9 Built-in Tools** — Math, HTTP fetch, file I/O, datetime, web search, code execution, vector search & ingest
 - **Multi-Agent Delegation** — Orchestrator agents delegate to sub-agents via `delegate_to_agent` tool; LLM decides routing
 - **Per-Agent Knowledge Base** — Each agent gets its own isolated ChromaDB collection; documents don't cross-contaminate
@@ -132,8 +133,8 @@ Open **http://localhost:3000** — you're running a full agent factory.
 
 ### Your first agent in 60 seconds
 
-1. **Skills** → Create a skill (name it, write a prompt, pick tools)
-2. **Agents** → Create an agent (pick a model, attach skills, optionally upload docs for RAG)
+1. **Skills** → Create a skill (name it, write a prompt, pick tools, optionally upload scripts/references/assets)
+2. **Agents** → Create an agent (pick a model, attach skills, set constraints, optionally upload docs for RAG)
 3. **Run Agent** → Select your agent, type a prompt, watch it reason and act in real-time
 4. **Traceability** → Click the trace link to see exactly what the LLM did
 
@@ -169,30 +170,30 @@ curl -X POST http://localhost:8010/run \
 
 ### Dashboard Pages (22)
 
-| Page             | What you do there                                                               |
-| ---------------- | ------------------------------------------------------------------------------- |
-| Overview         | Platform stats, architecture, quick-start guide                                 |
-| Run Agent        | Execute agents, stream responses, browse sessions                               |
-| Agent Builder    | Visual agent composition with sub-agent orchestration, templates, and live test |
-| AI Studio        | IDE-style code editor with chat, preview, and projects                          |
-| Agent Hub        | Agent factory overview dashboard                                                |
-| Agent Registry   | Create and manage agent definitions                                             |
-| Skills           | Build reusable skill packages                                                   |
-| Prompts          | Prompt template library                                                         |
-| Tools            | Manage agent tools and capabilities                                             |
-| Knowledge Base   | Upload, search, manage RAG docs                                                 |
-| Workflows        | n8n workflow monitoring                                                         |
-| A2A Protocol     | Register peer agents for inter-agent delegation                                 |
-| MCP Registry     | Connect and manage external tool servers                                        |
-| REST Console     | Interactive API console — test all 69 endpoints                                 |
-| Intelligence Hub | Operational intelligence overview                                               |
-| Traceability     | Langfuse trace timeline and deep-dive                                           |
-| Evaluation       | Agent quality scoring and model comparison                                      |
-| Observability    | Stack health — Prometheus, Grafana, Loki status                                 |
-| Guardrails       | Runtime safety controls and policy enforcement                                  |
-| Marketplace      | Browse and install templates                                                    |
-| Admin            | System admin — DB stats, export/import, diagnostics                             |
-| Documentation    | Auto-generated API & architecture docs                                          |
+| Page             | What you do there                                                                 |
+| ---------------- | --------------------------------------------------------------------------------- |
+| Overview         | Platform stats, architecture, quick-start guide                                   |
+| Run Agent        | Execute agents, stream responses, browse sessions                                 |
+| Agent Builder    | Visual agent composition with sub-agent orchestration, templates, and live test   |
+| AI Studio        | IDE-style code editor with chat, preview, and projects                            |
+| Agent Hub        | Agent factory overview dashboard                                                  |
+| Agent Registry   | Create and manage agent definitions                                               |
+| Skills           | Build reusable skill packages with file attachments (scripts, references, assets) |
+| Prompts          | Prompt template library                                                           |
+| Tools            | Manage agent tools and capabilities                                               |
+| Knowledge Base   | Upload, search, manage RAG docs                                                   |
+| Workflows        | n8n workflow monitoring                                                           |
+| A2A Protocol     | Register peer agents for inter-agent delegation                                   |
+| MCP Registry     | Connect and manage external tool servers                                          |
+| REST Console     | Interactive API console — test all 69 endpoints                                   |
+| Intelligence Hub | Operational intelligence overview                                                 |
+| Traceability     | Langfuse trace timeline and deep-dive                                             |
+| Evaluation       | Agent quality scoring and model comparison                                        |
+| Observability    | Stack health — Prometheus, Grafana, Loki status                                   |
+| Guardrails       | Runtime safety controls and policy enforcement                                    |
+| Marketplace      | Browse and install templates                                                      |
+| Admin            | System admin — DB stats, export/import, diagnostics                               |
+| Documentation    | Auto-generated API & architecture docs                                            |
 
 ---
 
@@ -205,7 +206,7 @@ User Prompt
 ┌──────────────────────────────────────────┐
 │  1. Retrieve context (ChromaDB → RAG)    │
 │  2. Load memory (SQLite → session)       │
-│  3. Inject skills + system prompt        │
+│  3. Inject skills + files + system prompt │
 │  4. LLM reasoning (ReAct loop)           │
 │  5. Tool execution (if needed)           │
 │  5b. Delegate to sub-agent (if needed)   │
@@ -266,7 +267,7 @@ k6 run tests/load/load-test.js
 
 - Data ingestion (connectors, sync jobs, document lifecycle)
 - Agent CRUD and multi-agent orchestration
-- Skills, prompts, custom tools management
+- Skills (with file upload/download/delete), prompts, custom tools management
 - A2A protocol and MCP registry
 - Guardrails (input/output safety gates)
 - Versioning and audit logging

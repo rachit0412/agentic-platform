@@ -89,6 +89,36 @@ app.delete("/api/skills/:id", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
+// ── Skill files proxy (upload streams raw body) ────────
+app.post("/api/skills/:id/files", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/skills/${req.params.id}/files`, {
+      method: "POST",
+      headers: { "content-type": req.headers["content-type"] },
+      body: req,
+      duplex: "half",
+    });
+    res.status(r.status).json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/skills/:id/files", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}/files`); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/skills/:id/files/:category/:filename", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/skills/${req.params.id}/files/${req.params.category}/${req.params.filename}`);
+    if (!r.ok) return res.status(r.status).json(await r.json());
+    const ct = r.headers.get("content-type") || "application/octet-stream";
+    res.setHeader("content-type", ct);
+    const arrayBuf = await r.arrayBuffer();
+    res.send(Buffer.from(arrayBuf));
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/skills/:id/files/:category/:filename", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}/files/${req.params.category}/${req.params.filename}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
 app.post("/api/skills/enrich", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/skills/enrich`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }

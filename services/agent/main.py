@@ -9,7 +9,7 @@ import json
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
@@ -352,11 +352,8 @@ async def run_stream(body: RunRequest):
             request_id=request_id,
             agent_config=agent_config,
         ):
-            data = (
-                json.dumps(event["data"])
-                if isinstance(event["data"], dict)
-                else event["data"]
-            )
+            # Always JSON-encode to keep SSE frames newline-safe
+            data = json.dumps(event["data"])
             yield f"event: {event['event']}\ndata: {data}\n\n"
 
     return StreamingResponse(
@@ -1271,6 +1268,61 @@ async def skills_delete_endpoint(skill_id: str):
     return {"deleted": True}
 
 
+# ── Skill File Endpoints ───────────────────────────────────────────────────
+
+
+@app.post("/skills/{skill_id}/files")
+async def skill_upload_file(
+    skill_id: str, category: str = Form(...), file: UploadFile = File(...)
+):
+    """Upload a file (script, reference, or asset) to a skill."""
+    from agent.memory import add_skill_file
+
+    try:
+        content = await file.read()
+        meta = add_skill_file(skill_id, category, file.filename, content)
+        return {"file": meta}
+    except ValueError as e:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=400, content={"error": str(e)})
+
+
+@app.get("/skills/{skill_id}/files")
+async def skill_list_files(skill_id: str):
+    """List all files attached to a skill."""
+    skill = get_skill(skill_id)
+    if not skill:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Skill not found"})
+    return {"files": skill.get("files", [])}
+
+
+@app.get("/skills/{skill_id}/files/{category}/{filename}")
+async def skill_download_file(skill_id: str, category: str, filename: str):
+    """Download a skill file."""
+    from agent.memory import get_skill_file_path
+    from fastapi.responses import FileResponse, JSONResponse
+
+    path = get_skill_file_path(skill_id, category, filename)
+    if not path:
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    return FileResponse(path, filename=filename)
+
+
+@app.delete("/skills/{skill_id}/files/{category}/{filename}")
+async def skill_delete_file(skill_id: str, category: str, filename: str):
+    """Delete a file from a skill."""
+    from agent.memory import remove_skill_file
+    from fastapi.responses import JSONResponse
+
+    ok = remove_skill_file(skill_id, category, filename)
+    if not ok:
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    return {"deleted": True}
+
+
 @app.post("/skills/enrich")
 async def skills_enrich_endpoint(request: Request):
     """Use LLM to enrich a partially-filled skill with AI-generated suggestions."""
@@ -2028,6 +2080,7 @@ class AgentCreate(BaseModel):
     skill_ids: list[str] = Field(default_factory=list)
     tool_ids: list[str] = Field(default_factory=list)
     sub_agent_ids: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
     kb_collection: str = Field(default="agentic_docs")
     retrieval_mode: str = Field(default="basic")
     max_iterations: int = Field(default=5, ge=1, le=20)
@@ -2045,6 +2098,7 @@ class AgentUpdate(BaseModel):
     skill_ids: list[str] | None = None
     tool_ids: list[str] | None = None
     sub_agent_ids: list[str] | None = None
+    constraints: list[str] | None = None
     kb_collection: str | None = None
     retrieval_mode: str | None = None
     max_iterations: int | None = None
@@ -2069,6 +2123,7 @@ async def agents_create_endpoint(body: AgentCreate):
         skill_ids=body.skill_ids,
         tool_ids=body.tool_ids,
         sub_agent_ids=body.sub_agent_ids,
+        constraints=body.constraints,
         kb_collection=body.kb_collection,
         retrieval_mode=body.retrieval_mode,
         max_iterations=body.max_iterations,

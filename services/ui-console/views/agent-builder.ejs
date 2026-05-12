@@ -163,6 +163,12 @@
       </div>
     </div>
   </div>
+
+  <div style="margin-top:1rem">
+    <label class="field-label">Agent Constraints <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">Behavioral guardrails that apply to every conversation (comma-separated)</span></label>
+    <textarea id="ab-constraints" class="input" rows="3" placeholder="e.g. Always cite sources, Max 500 words per response, Never provide medical advice, Use formal tone" style="resize:vertical;font-family:var(--mono);font-size:0.82rem"></textarea>
+    <span style="font-size:0.68rem;color:var(--text-3)">These rules are enforced across all skills and conversations for this agent</span>
+  </div>
 </div>
 
 <!-- ── Panel 2: Skills ── -->
@@ -1060,6 +1066,7 @@ function abLoadExisting() {
   document.getElementById('ab-desc').value = agent.description || '';
   document.getElementById('ab-prompt').value = agent.system_prompt || '';
   abUpdatePromptChars();
+  document.getElementById('ab-constraints').value = (agent.constraints || []).join(', ');
 
   abData.selectedSkills = (agent.skill_ids || []).slice();
   abData.selectedTools = (agent.tool_ids || []).slice();
@@ -1109,6 +1116,7 @@ function abReset() {
   document.getElementById('ab-desc').value = '';
   document.getElementById('ab-prompt').value = '';
   document.getElementById('ab-prompt-library').value = '';
+  document.getElementById('ab-constraints').value = '';
   abUpdatePromptChars();
   abData.selectedSkills = [];
   abData.selectedTools = [];
@@ -1213,6 +1221,7 @@ function abGetConfig() {
     skill_ids: abData.selectedSkills.slice(),
     tool_ids: abData.selectedTools.slice(),
     sub_agent_ids: subAgentIds,
+    constraints: document.getElementById('ab-constraints').value.split(',').map(function(s){return s.trim()}).filter(Boolean),
     kb_collection: newCol || document.getElementById('ab-kb-collection').value || abGetAgentCollectionName() || 'agentic_docs',
     max_iterations: parseInt(document.getElementById('ab-max-iter').value) || 5,
     memory_enabled: document.getElementById('ab-memory').value === '1'

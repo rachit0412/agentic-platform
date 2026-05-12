@@ -171,6 +171,18 @@ def init_db():
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
+    # ── Migration: add constraints column to agents if missing ──
+    try:
+        conn.execute("ALTER TABLE agents ADD COLUMN constraints TEXT DEFAULT '[]'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
+    # ── Migration: add files column to skills if missing ──
+    try:
+        conn.execute("ALTER TABLE skills ADD COLUMN files TEXT DEFAULT '[]'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ── A2A Peers table ──
     conn.execute("""
         CREATE TABLE IF NOT EXISTS a2a_peers (
@@ -511,6 +523,7 @@ def _row_to_skill(row) -> dict:
         "tool_ids": json.loads(row["tool_ids"]),
         "constraints": json.loads(row["constraints"]),
         "input_parameters": json.loads(row["input_parameters"] or "[]"),
+        "files": json.loads(row["files"]) if "files" in row.keys() else [],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
@@ -597,7 +610,154 @@ def delete_skill(skill_id: str) -> bool:
     conn.commit()
     if cursor.rowcount > 0 and existing:
         log_audit("delete", "skill", skill_id, existing.get("name", ""))
+        # Clean up files on disk
+        _delete_skill_files_dir(skill_id)
     return cursor.rowcount > 0
+
+
+# ── Skill File Management ──────────────────────────────────────────────────
+
+SKILL_FILES_ROOT = os.path.join(
+    os.getenv("FILESTORE_ROOT", "/data/filestore"), "skills"
+)
+ALLOWED_FILE_EXTENSIONS = {
+    ".py",
+    ".sh",
+    ".bash",
+    ".js",
+    ".ts",
+    ".ps1",
+    ".md",
+    ".txt",
+    ".pdf",
+    ".docx",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".csv",
+    ".html",
+    ".xml",
+    ".tmpl",
+    ".jinja",
+    ".j2",
+}
+VALID_CATEGORIES = {"scripts", "references", "assets"}
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB per file
+MAX_SKILL_FILES_SIZE = 5 * 1024 * 1024  # 5 MB total per skill
+
+
+def _skill_file_dir(skill_id: str, category: str) -> str:
+    return os.path.join(SKILL_FILES_ROOT, skill_id, category)
+
+
+def _delete_skill_files_dir(skill_id: str):
+    import shutil
+
+    d = os.path.join(SKILL_FILES_ROOT, skill_id)
+    if os.path.isdir(d):
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def add_skill_file(skill_id: str, category: str, filename: str, content: bytes) -> dict:
+    """Save a file to a skill and update file metadata in DB. Returns file info."""
+    if category not in VALID_CATEGORIES:
+        raise ValueError(f"Invalid category: {category}")
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_FILE_EXTENSIONS:
+        raise ValueError(
+            f"File type '{ext}' not allowed. Allowed: {', '.join(sorted(ALLOWED_FILE_EXTENSIONS))}"
+        )
+    if len(content) > MAX_FILE_SIZE:
+        raise ValueError(f"File exceeds {MAX_FILE_SIZE // 1024}KB limit")
+
+    skill = get_skill(skill_id)
+    if not skill:
+        raise ValueError("Skill not found")
+
+    # Check total size
+    existing_files = skill.get("files", [])
+    total = sum(f.get("size_bytes", 0) for f in existing_files)
+    if total + len(content) > MAX_SKILL_FILES_SIZE:
+        raise ValueError(
+            f"Total file size would exceed {MAX_SKILL_FILES_SIZE // (1024*1024)}MB limit"
+        )
+
+    # Sanitize filename: only allow safe characters
+    import re
+
+    safe_name = re.sub(r"[^\w.\-]", "_", filename)
+    if not safe_name:
+        raise ValueError("Invalid filename")
+
+    # Write to disk
+    d = _skill_file_dir(skill_id, category)
+    os.makedirs(d, exist_ok=True)
+    filepath = os.path.join(d, safe_name)
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    # Update metadata in DB
+    file_meta = {
+        "name": safe_name,
+        "category": category,
+        "size_bytes": len(content),
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+    }
+    # Remove existing entry with same name+category, then append
+    existing_files = [
+        f
+        for f in existing_files
+        if not (f["name"] == safe_name and f["category"] == category)
+    ]
+    existing_files.append(file_meta)
+    conn = _get_conn()
+    conn.execute(
+        "UPDATE skills SET files = ?, updated_at = ? WHERE id = ?",
+        (json.dumps(existing_files), datetime.now(timezone.utc).isoformat(), skill_id),
+    )
+    conn.commit()
+    return file_meta
+
+
+def remove_skill_file(skill_id: str, category: str, filename: str) -> bool:
+    """Delete a file from a skill."""
+    skill = get_skill(skill_id)
+    if not skill:
+        return False
+    filepath = os.path.join(_skill_file_dir(skill_id, category), filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    existing = skill.get("files", [])
+    new_files = [
+        f for f in existing if not (f["name"] == filename and f["category"] == category)
+    ]
+    if len(new_files) == len(existing):
+        return False
+    conn = _get_conn()
+    conn.execute(
+        "UPDATE skills SET files = ?, updated_at = ? WHERE id = ?",
+        (json.dumps(new_files), datetime.now(timezone.utc).isoformat(), skill_id),
+    )
+    conn.commit()
+    return True
+
+
+def get_skill_file_path(skill_id: str, category: str, filename: str) -> str | None:
+    """Return the disk path of a skill file, or None."""
+    p = os.path.join(_skill_file_dir(skill_id, category), filename)
+    return p if os.path.exists(p) else None
+
+
+def read_skill_file_text(skill_id: str, category: str, filename: str) -> str | None:
+    """Read a skill file as text. Returns None if not found or binary."""
+    p = get_skill_file_path(skill_id, category, filename)
+    if not p:
+        return None
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            return f.read()
+    except (UnicodeDecodeError, OSError):
+        return None
 
 
 # ── Agents CRUD ────────────────────────────────────────────────────────────
@@ -617,6 +777,9 @@ def _row_to_agent(row) -> dict:
         "tool_ids": json.loads(row["tool_ids"]),
         "sub_agent_ids": (
             json.loads(row["sub_agent_ids"]) if "sub_agent_ids" in row.keys() else []
+        ),
+        "constraints": (
+            json.loads(row["constraints"]) if "constraints" in row.keys() else []
         ),
         "kb_collection": row["kb_collection"],
         "max_iterations": row["max_iterations"],
@@ -652,6 +815,7 @@ def create_agent(
     skill_ids: list[str] | None = None,
     tool_ids: list[str] | None = None,
     sub_agent_ids: list[str] | None = None,
+    constraints: list[str] | None = None,
     kb_collection: str = "agentic_docs",
     retrieval_mode: str = "basic",
     max_iterations: int = 5,
@@ -661,7 +825,7 @@ def create_agent(
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, constraints, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             agent_id,
             name,
@@ -674,6 +838,7 @@ def create_agent(
             json.dumps(skill_ids or []),
             json.dumps(tool_ids or []),
             json.dumps(sub_agent_ids or []),
+            json.dumps(constraints or []),
             kb_collection,
             retrieval_mode,
             max_iterations,
@@ -728,7 +893,7 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(int(kwargs[key]))
-    for key in ("skill_ids", "tool_ids", "sub_agent_ids"):
+    for key in ("skill_ids", "tool_ids", "sub_agent_ids", "constraints"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))

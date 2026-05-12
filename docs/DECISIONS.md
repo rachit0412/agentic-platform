@@ -7,7 +7,7 @@
 ## ADR Index
 
 | ID  | Decision                            | Principles       | Date    |
-| --- | ----------------------------------- | ---------------- | ------- |
+| --- | ----------------------------------- | ---------------- | ------- | --- | --- | ---------------------- | ---------------- | ------- |
 | 001 | LangGraph over AgentExecutor        | AP-7, AP-5       | 2024-10 |
 | 002 | SQLite for Config and Memory        | AP-3, AP-10      | 2024-10 |
 | 003 | Separate Tools Service              | AP-4, AP-7       | 2024-10 |
@@ -26,7 +26,7 @@
 | 016 | LLM-Based Guardrail Detection       | AP-4, AP-10      | 2025-06 |
 | 017 | LLM Activity Tracking               | AP-5, AP-1       | 2025-06 |
 | 018 | Dynamic Model Capabilities          | AP-10, AP-9      | 2025-06 |
-| 019 | Clickable Execution Details         | AP-5, AP-1       | 2025-06 |
+| 019 | Clickable Execution Details         | AP-5, AP-1       | 2025-06 |     | 020 | Skill File Attachments | AP-8, AP-4, AP-9 | 2025-05 |
 
 ---
 
@@ -233,3 +233,21 @@
 **Decision**: Trace ID links to `/traceability?traceId=X`, Request ID links to `/llm-activity?requestId=X`. Target pages auto-filter.
 
 **Consequence**: Single-click navigation. Deep-link URLs are shareable. Minimal code change.
+
+---
+
+## ADR-020 · Skill File Attachments
+
+**Context**: Skills only supported instruction text. Real-world skills often need executable scripts, reference documentation, and template assets.
+
+**Decision**: Each skill can have files in three categories: `scripts/` (executable code: .py, .sh, .js, etc.), `references/` (supporting documentation: .md, .txt, .pdf, etc.), and `assets/` (templates and format files: .json, .yaml, .tmpl, etc.). Files are stored on disk under `/data/filestore/skills/{skill_id}/{category}/` with metadata in SQLite (`files` JSON column on `skills` table). Text file contents are auto-injected into the agent’s system prompt at runtime.
+
+**Key constraints**: 1 MB per file, 5 MB total per skill, ~20 allowed extensions, sanitised filenames.
+
+**Why not alternatives**:
+
+- Blob column in SQLite — poor for large files, no streaming
+- Shared file pool — breaks isolation between skills
+- External object store — overkill for single-node deployment
+
+**Consequence**: Skills become self-contained packages (instructions + code + docs + templates). Files are strictly per-skill isolated — no cross-skill file sharing. Deleting a skill cascade-deletes its files.

@@ -324,7 +324,7 @@ docker compose logs --tail=100
 After successful installation:
 
 1. Open the UI at http://localhost:3000
-2. Create a **Skill** (prompt + tools + constraints)
+2. Create a **Skill** (prompt + tools + constraints + optional file attachments: scripts, references, assets)
 3. Create an **Agent** (model + skills + knowledge base)
 4. Run your agent in **Run Agent**
 5. Pull additional models: `docker exec ollama ollama pull mistral`
