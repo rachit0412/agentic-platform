@@ -35,8 +35,9 @@
   </a>
 </div>
 
-<div style="display:flex;gap:1.5rem">
-  <div style="flex:1">
+<!-- Row 1: Prompt + Agent Activity side by side -->
+<div style="display:flex;gap:1.5rem;align-items:flex-start">
+  <div style="flex:1;min-width:0">
     <div class="card animate-fade-up">
       <div class="mb-1"><label style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Prompt</label></div>
       <textarea id="prompt" rows="3" placeholder="Ask something... e.g. What is 42 * 13?" style="margin-bottom:0.75rem"></textarea>
@@ -108,128 +109,133 @@
         Use the <strong>KB</strong> toggle to enable/disable Knowledge Base retrieval. Disable it for faster responses.
       </div>
     </div>
-
-    <!-- Skill Inputs Button (opens modal) -->
-    <div id="skill-inputs-trigger" style="display:none;margin-top:0.5rem">
-      <button class="btn btn-secondary btn-sm" onclick="openSkillModal()" style="font-size:0.75rem;padding:0.4rem 0.7rem;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);color:#8b5cf6">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Skill Inputs
-        <span id="skill-input-count" style="font-size:0.65rem;background:rgba(139,92,246,0.2);padding:0.1rem 0.35rem;border-radius:4px;margin-left:0.25rem"></span>
-      </button>
-    </div>
-
-    <!-- Skill Inputs Modal -->
-    <div id="skill-inputs-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
-      <div style="background:var(--card-bg,#1a1a2e);border:1px solid rgba(139,92,246,0.3);border-radius:16px;padding:1.5rem;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-          <div style="display:flex;align-items:center;gap:0.5rem">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <h3 style="margin:0;font-size:0.95rem;color:var(--text-1)">Skill Inputs</h3>
-          </div>
-          <button onclick="closeSkillModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem;padding:0.25rem 0.5rem;border-radius:6px;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">&times;</button>
-        </div>
-        <p style="font-size:0.72rem;color:var(--text-3);margin-bottom:0.75rem">Fill in parameters for this agent's skills (optional &mdash; the agent will ask if missing)</p>
-        <div id="skill-inputs-list"></div>
-        <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--divider)">
-          <button class="btn btn-secondary btn-sm" onclick="closeSkillModal()">Cancel</button>
-          <button class="btn btn-primary btn-sm" onclick="closeSkillModal()" style="font-size:0.78rem">Apply</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card animate-fade-up delay-100" id="result-card" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <h3>Response</h3>
-        <div style="display:flex;gap:0.35rem">
-          <button class="btn btn-secondary btn-sm" onclick="copyResponse()" title="Copy response" style="font-size:0.72rem;padding:0.3rem 0.5rem">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copy
-          </button>
-          <button class="btn btn-secondary btn-sm" onclick="regenerateResponse()" title="Regenerate response" style="font-size:0.72rem;padding:0.3rem 0.5rem">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            Retry
-          </button>
-          <button class="btn btn-secondary btn-sm" onclick="exportResponse()" title="Export" style="font-size:0.72rem;padding:0.3rem 0.5rem">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export
-          </button>
-        </div>
-      </div>
-      <div id="response" style="white-space:pre-wrap;line-height:1.7;margin-top:0.75rem;color:var(--text-1)"></div>
-      <div id="meta" class="mono mt-1" style="font-size:0.72rem"></div>
-    </div>
-
-    <!-- Activity Panel moved to right sidebar -->
-
-    <!-- LLM Execution Details -->
-    <div class="card animate-fade-up delay-100" id="exec-detail-card" style="display:none">
-      <h3 style="display:flex;align-items:center;gap:0.5rem;cursor:pointer" onclick="window.location.href='/llm-activity'" title="Click to view full LLM Activity Dashboard">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-        LLM Execution Details
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-3)" stroke-width="2" style="margin-left:auto"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      </h3>
-      <div id="exec-detail-body" style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem"></div>
-    </div>
-
-    <!-- Guardrail Results -->
-    <div class="card animate-fade-up delay-100" id="guardrail-results-card" style="display:none">
-      <h3 style="display:flex;align-items:center;gap:0.5rem">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Guardrail Results
-      </h3>
-      <div id="guardrail-results-body" style="margin-top:0.75rem"></div>
-    </div>
-
-    <!-- Control Matrix -->
-    <div class="card animate-fade-up delay-100" id="control-matrix-card" style="display:none">
-      <h3 style="display:flex;align-items:center;gap:0.5rem">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        Control Matrix
-        <span style="font-size:0.65rem;color:var(--text-3);font-weight:400">(Post-Run Quality Assessment)</span>
-      </h3>
-      <div id="control-matrix-body" style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem"></div>
-    </div>
-
-    <div class="card animate-fade-up delay-200" style="display:none">
-      <!-- Tools moved to /tools page -->
-    </div>
   </div>
 
-  <!-- Right sidebar: Agent Activity -->
-  <div style="width:300px;min-width:300px">
-    <div class="card animate-fade-up delay-100" id="activity-card" style="display:none">
+  <!-- Agent Activity (right of prompt) -->
+  <div style="width:340px;min-width:340px">
+    <div class="card animate-fade-up delay-100" id="activity-card" style="min-height:180px">
       <div class="section-header" style="cursor:pointer" onclick="toggleActivity()">
-        <h3 style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem">
+        <h3 style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;margin:0">
           <svg id="activity-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           Agent Activity
-          <span id="activity-status" class="badge" style="font-size:0.68rem">idle</span>
+          <span id="activity-status" class="badge" style="font-size:0.65rem">idle</span>
         </h3>
-        <span id="activity-total-time" class="mono" style="font-size:0.72rem;color:var(--text-3)"></span>
+        <span id="activity-total-time" class="mono" style="font-size:0.7rem;color:var(--text-3)"></span>
       </div>
-      <div id="activity-steps" style="margin-top:0.75rem;border-left:2px solid var(--accent);padding-left:0.75rem;max-height:500px;overflow-y:auto"></div>
+      <div id="activity-steps" style="margin-top:0.75rem;border-left:2px solid var(--accent);padding-left:0.75rem;max-height:280px;overflow-y:auto;font-size:0.8rem">
+        <div style="color:var(--text-3);font-size:0.78rem;padding:0.5rem 0">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:middle;margin-right:0.3rem;opacity:0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Send a prompt to see agent steps here
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Bottom Section: Summary + Sessions -->
-<div style="display:flex;gap:1.5rem;margin-top:1.5rem">
-  <div style="flex:1">
-    <div class="card animate-fade-up delay-200" id="summary-card" style="display:none">
-      <h3>Session Summary</h3>
-      <div id="session-summary" class="mono" style="font-size:0.78rem;color:var(--text-2);white-space:pre-wrap;max-height:200px;overflow-y:auto;line-height:1.5"></div>
+<!-- Row 2: Sessions + Session Summary (equal-width boxes) -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem">
+  <div class="card animate-fade-up delay-100">
+    <div class="section-header mb-1">
+      <h3 style="display:flex;align-items:center;gap:0.5rem;margin:0;font-size:0.88rem">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        Sessions
+      </h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadSessions()" style="font-size:0.72rem;padding:0.3rem 0.5rem">Refresh</button>
+    </div>
+    <div id="sessions-list" style="max-height:220px;overflow-y:auto;margin-top:0.5rem">
+      <span style="color:var(--text-3);font-size:0.82rem">Fetching sessions...</span>
     </div>
   </div>
-  <div style="flex:1">
-    <div class="card animate-fade-up delay-100">
-      <div class="section-header mb-1">
-        <h3>Sessions</h3>
-        <button class="btn btn-secondary btn-sm" onclick="loadSessions()">Refresh</button>
-      </div>
-      <div id="sessions-list" style="max-height:300px;overflow-y:auto">
-        <span style="color:var(--text-3);font-size:0.82rem">Fetching sessions...</span>
-      </div>
+  <div class="card animate-fade-up delay-200" id="summary-card">
+    <h3 style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.5rem 0;font-size:0.88rem">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Session Summary
+    </h3>
+    <div id="session-summary" class="mono" style="font-size:0.78rem;color:var(--text-2);white-space:pre-wrap;max-height:200px;overflow-y:auto;line-height:1.5">
+      <span style="color:var(--text-3);font-size:0.78rem">Select a session to view its summary</span>
     </div>
   </div>
+</div>
+
+<!-- Response & Detail Cards (full width) -->
+<!-- Skill Inputs Button (opens modal) -->
+<div id="skill-inputs-trigger" style="display:none;margin-top:0.75rem">
+  <button class="btn btn-secondary btn-sm" onclick="openSkillModal()" style="font-size:0.75rem;padding:0.4rem 0.7rem;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);color:#8b5cf6">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    Skill Inputs
+    <span id="skill-input-count" style="font-size:0.65rem;background:rgba(139,92,246,0.2);padding:0.1rem 0.35rem;border-radius:4px;margin-left:0.25rem"></span>
+  </button>
+</div>
+
+<!-- Skill Inputs Modal -->
+<div id="skill-inputs-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:var(--card-bg,#1a1a2e);border:1px solid rgba(139,92,246,0.3);border-radius:16px;padding:1.5rem;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <h3 style="margin:0;font-size:0.95rem;color:var(--text-1)">Skill Inputs</h3>
+      </div>
+      <button onclick="closeSkillModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem;padding:0.25rem 0.5rem;border-radius:6px;transition:background 0.15s" onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='none'">&times;</button>
+    </div>
+    <p style="font-size:0.72rem;color:var(--text-3);margin-bottom:0.75rem">Fill in parameters for this agent's skills (optional &mdash; the agent will ask if missing)</p>
+    <div id="skill-inputs-list"></div>
+    <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--divider)">
+      <button class="btn btn-secondary btn-sm" onclick="closeSkillModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeSkillModal()" style="font-size:0.78rem">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="card animate-fade-up delay-100" id="result-card" style="display:none;margin-top:1.5rem">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h3>Response</h3>
+    <div style="display:flex;gap:0.35rem">
+      <button class="btn btn-secondary btn-sm" onclick="copyResponse()" title="Copy response" style="font-size:0.72rem;padding:0.3rem 0.5rem">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="regenerateResponse()" title="Regenerate response" style="font-size:0.72rem;padding:0.3rem 0.5rem">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Retry
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="exportResponse()" title="Export" style="font-size:0.72rem;padding:0.3rem 0.5rem">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+  <div id="response" style="white-space:pre-wrap;line-height:1.7;margin-top:0.75rem;color:var(--text-1)"></div>
+  <div id="meta" class="mono mt-1" style="font-size:0.72rem"></div>
+</div>
+
+<!-- LLM Execution Details -->
+<div class="card animate-fade-up delay-100" id="exec-detail-card" style="display:none;margin-top:1rem">
+  <h3 style="display:flex;align-items:center;gap:0.5rem;cursor:pointer" onclick="window.location.href='/llm-activity'" title="Click to view full LLM Activity Dashboard">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+    LLM Execution Details
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-3)" stroke-width="2" style="margin-left:auto"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </h3>
+  <div id="exec-detail-body" style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem"></div>
+</div>
+
+<!-- Guardrail Results -->
+<div class="card animate-fade-up delay-100" id="guardrail-results-card" style="display:none;margin-top:1rem">
+  <h3 style="display:flex;align-items:center;gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Guardrail Results
+  </h3>
+  <div id="guardrail-results-body" style="margin-top:0.75rem"></div>
+</div>
+
+<!-- Control Matrix -->
+<div class="card animate-fade-up delay-100" id="control-matrix-card" style="display:none;margin-top:1rem">
+  <h3 style="display:flex;align-items:center;gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    Control Matrix
+    <span style="font-size:0.65rem;color:var(--text-3);font-weight:400">(Post-Run Quality Assessment)</span>
+  </h3>
+  <div id="control-matrix-body" style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem"></div>
 </div>
 
 <script>
@@ -278,13 +284,12 @@
       const r = await fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/summary');
       const d = await r.json();
       if (d.summary) {
-        document.getElementById('summary-card').style.display = 'block';
         document.getElementById('session-summary').textContent = d.summary;
       } else {
-        document.getElementById('summary-card').style.display = 'none';
+        document.getElementById('session-summary').innerHTML = '<span style="color:var(--text-3);font-size:0.78rem">No summary available for this session</span>';
       }
     } catch(e) {
-      document.getElementById('summary-card').style.display = 'none';
+      document.getElementById('session-summary').innerHTML = '<span style="color:var(--text-3);font-size:0.78rem">Select a session to view its summary</span>';
     }
   }
 
@@ -317,7 +322,6 @@
     document.getElementById('meta').textContent = '';
 
     // Show activity panel
-    document.getElementById('activity-card').style.display = 'block';
     document.getElementById('activity-steps').innerHTML = '';
     document.getElementById('activity-status').textContent = 'running';
     document.getElementById('activity-status').style.background = 'rgba(6,182,212,0.15)';
