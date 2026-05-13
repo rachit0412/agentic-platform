@@ -170,30 +170,30 @@ curl -X POST http://localhost:8010/run \
 
 ### Dashboard Pages (22)
 
-| Page             | What you do there                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| Overview         | Platform stats, architecture, quick-start guide                                       |
-| Run Agent        | Execute agents, stream responses, browse sessions                                     |
-| Agent Builder    | Visual agent composition with skill workflow orchestration, sub-agents, and live test |
-| AI Studio        | IDE-style code editor with chat, preview, and projects                                |
-| Agent Hub        | Agent factory overview dashboard                                                      |
-| Agent Registry   | Create and manage agent definitions                                                   |
-| Skills           | Build reusable skill packages with file attachments (scripts, references, assets)     |
-| Prompts          | Prompt template library                                                               |
-| Tools            | Manage agent tools and capabilities                                                   |
-| Knowledge Base   | Upload, search, manage RAG docs                                                       |
-| Workflows        | n8n workflow monitoring                                                               |
-| A2A Protocol     | Register peer agents for inter-agent delegation                                       |
-| MCP Registry     | Connect and manage external tool servers                                              |
-| REST Console     | Interactive API console — test all 69 endpoints                                       |
-| Intelligence Hub | Operational intelligence overview                                                     |
-| Traceability     | Langfuse trace timeline and deep-dive                                                 |
-| Evaluation       | Agent quality scoring and model comparison                                            |
-| Observability    | Stack health — Prometheus, Grafana, Loki status                                       |
-| Guardrails       | Runtime safety controls and policy enforcement                                        |
-| Marketplace      | Browse and install templates                                                          |
+| Page             | What you do there                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| Overview         | Platform stats, architecture, quick-start guide                                                     |
+| Run Agent        | Execute agents, stream responses, browse sessions                                                   |
+| Agent Builder    | Visual agent composition with skill workflow orchestration, sub-agents, and live test               |
+| AI Studio        | IDE-style code editor with chat, preview, and projects                                              |
+| Agent Hub        | Agent factory overview dashboard                                                                    |
+| Agent Registry   | Create and manage agent definitions                                                                 |
+| Skills           | Build reusable skill packages with file attachments (scripts, references, assets)                   |
+| Prompts          | Prompt template library                                                                             |
+| Tools            | Manage agent tools and capabilities                                                                 |
+| Knowledge Base   | Upload, search, manage RAG docs                                                                     |
+| Workflows        | n8n workflow monitoring                                                                             |
+| A2A Protocol     | Register peer agents for inter-agent delegation                                                     |
+| MCP Registry     | Connect and manage external tool servers                                                            |
+| REST Console     | Interactive API console — test all 69 endpoints                                                     |
+| Intelligence Hub | Operational intelligence overview                                                                   |
+| Traceability     | Langfuse trace timeline and deep-dive                                                               |
+| Evaluation       | Agent quality scoring and model comparison                                                          |
+| Observability    | Stack health — Prometheus, Grafana, Loki status                                                     |
+| Guardrails       | Runtime safety controls and policy enforcement                                                      |
+| Marketplace      | Browse and install templates                                                                        |
 | Admin            | 6-tab admin plane — service health, platform overview, LLM management, DB & data, config, audit log |
-| Documentation    | Auto-generated API & architecture docs                                                |
+| Documentation    | Auto-generated API & architecture docs                                                              |
 
 ---
 

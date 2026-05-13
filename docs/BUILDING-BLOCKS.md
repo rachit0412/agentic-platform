@@ -4,25 +4,25 @@
 
 ## Core Platform
 
-| #   | Capability                 | Technology                                                         | Source                                        |
-| --- | -------------------------- | ------------------------------------------------------------------ | --------------------------------------------- |
-| 1   | Agent Reasoning Engine     | LangGraph ReAct StateGraph                                         | `graph.py`                                    |
-| 2   | LLM Abstraction            | LangChain BaseChatModel — Ollama, Azure OpenAI, OpenAI, Foundry    | `llm.py`                                      |
-| 3   | Knowledge Management (RAG) | ChromaDB + LlamaIndex + PostgreSQL doc registry                    | `vectorstore.py`, `advanced_retrieval.py`     |
-| 4   | Conversation Memory        | SQLite conversations + rolling session summaries                   | `memory.py`                                   |
-| 5   | Tool Execution             | tools-service FastAPI (sandboxed) + delegate_to_agent              | `tools.py`, tools `main.py`                   |
-| 6   | Guardrails Engine          | LLM-based classifier + regex fallback, input & output gates        | `graph.py`                                    |
-| 7   | Configuration Store        | SQLite CRUD — 15 tables, full versioning & audit                   | `memory.py`                                   |
-| 7b  | Skill File Store           | Disk-based per-skill isolated file storage (scripts, refs, assets) | `memory.py`, `/data/filestore/skills/`        |
-| 8   | A2A Protocol               | HTTP peer registry, agent cards, task dispatch                     | `main.py`                                     |
-| 9   | MCP Protocol               | Server registry, JSON-RPC tool discovery & invocation              | `main.py`                                     |
-| 10  | Observability              | OTel + Langfuse + Prometheus + Loki + Grafana                      | `observability.py`                            |
-| 11  | Workflow Automation        | n8n — 6 pre-built templates incl. multi-agent orchestration        | `n8n/workflows/`                              |
-| 12  | Platform Dashboard         | Express.js + EJS, 24 pages, thin API proxy                         | `server.js`, `views/`                         |
-| 13  | Multi-Agent Orchestration  | sub_agent_ids + delegate_to_agent + n8n DAGs                       | `tools.py`, `graph.py`                        |
-| 13b | Skill Workflow             | Sequential / Router skill execution ordering in Agent Builder      | `agent-builder.ejs`                           |
-| 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte     | `connectors/`                                 |
-| 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries        | `llamaindex_loader.py`, `structured_query.py` |
+| #   | Capability                 | Technology                                                                  | Source                                        |
+| --- | -------------------------- | --------------------------------------------------------------------------- | --------------------------------------------- |
+| 1   | Agent Reasoning Engine     | LangGraph ReAct StateGraph                                                  | `graph.py`                                    |
+| 2   | LLM Abstraction            | LangChain BaseChatModel — Ollama, Azure OpenAI, OpenAI, Foundry             | `llm.py`                                      |
+| 3   | Knowledge Management (RAG) | ChromaDB + LlamaIndex + PostgreSQL doc registry                             | `vectorstore.py`, `advanced_retrieval.py`     |
+| 4   | Conversation Memory        | SQLite conversations + rolling session summaries                            | `memory.py`                                   |
+| 5   | Tool Execution             | tools-service FastAPI (sandboxed) + delegate_to_agent                       | `tools.py`, tools `main.py`                   |
+| 6   | Guardrails Engine          | LLM-based classifier + regex fallback, input & output gates                 | `graph.py`                                    |
+| 7   | Configuration Store        | SQLite CRUD — 15 tables, full versioning & audit                            | `memory.py`                                   |
+| 7b  | Skill File Store           | Disk-based per-skill isolated file storage (scripts, refs, assets)          | `memory.py`, `/data/filestore/skills/`        |
+| 8   | A2A Protocol               | HTTP peer registry, agent cards, task dispatch                              | `main.py`                                     |
+| 9   | MCP Protocol               | Server registry, JSON-RPC tool discovery & invocation                       | `main.py`                                     |
+| 10  | Observability              | OTel + Langfuse + Prometheus + Loki + Grafana                               | `observability.py`                            |
+| 11  | Workflow Automation        | n8n — 6 pre-built templates incl. multi-agent orchestration                 | `n8n/workflows/`                              |
+| 12  | Platform Dashboard         | Express.js + EJS, 24 pages, thin API proxy                                  | `server.js`, `views/`                         |
+| 13  | Multi-Agent Orchestration  | sub_agent_ids + delegate_to_agent + n8n DAGs                                | `tools.py`, `graph.py`                        |
+| 13b | Skill Workflow             | Sequential / Router skill execution ordering in Agent Builder               | `agent-builder.ejs`                           |
+| 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte              | `connectors/`                                 |
+| 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries                 | `llamaindex_loader.py`, `structured_query.py` |
 | 16  | Admin Plane                | 6-tab control centre: service health, LLM management, DB ops, config, audit | `admin.ejs`, `server.js`                      |
 
 ## Detail: Agent Reasoning Engine
