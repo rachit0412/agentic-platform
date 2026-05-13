@@ -29,15 +29,21 @@
   </div>
 </div>
 
-<!-- ── Admin Content (hidden until authenticated) ── -->
+<!-- ── Admin Content ── -->
 <div id="admin-content" style="display:none">
 
+<!-- Header -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
   <div>
     <h1 class="text-glow-cyan" style="margin-bottom:0.25rem">Admin Plane</h1>
-    <p style="color:var(--text-3);font-size:0.82rem;margin:0">System configuration, service management, and operational controls</p>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0">System health, configuration, services, data management &amp; audit controls</p>
   </div>
   <div style="display:flex;gap:0.5rem;align-items:center">
+    <span id="admin-last-refresh" style="font-size:0.68rem;color:var(--text-3)"></span>
+    <button class="btn btn-sm" onclick="adminLoadAll()" title="Refresh all" style="font-size:0.72rem">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
     <span id="admin-session-user" style="font-size:0.78rem;color:var(--text-3)"></span>
     <button class="btn btn-sm" onclick="adminLogout()" style="font-size:0.72rem">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -46,130 +52,431 @@
   </div>
 </div>
 
-<div class="card animate-fade-up" style="margin-bottom:1.5rem">
-  <h3>Environment Info</h3>
-  <table class="mt-1">
-    <tr><th>Variable</th><th>Value</th></tr>
-    <tr><td>Node Environment</td><td class="mono">${process.env.NODE_ENV || 'development'}</td></tr>
-    <tr><td>Agent Service</td><td class="mono" style="color:var(--accent-text)">${urls.agent}</td></tr>
-    <tr><td>n8n</td><td class="mono" style="color:var(--accent-text)">${urls.n8n}</td></tr>
-    <tr><td>Langfuse</td><td class="mono" style="color:var(--accent-text)">${urls.langfuse}</td></tr>
-    <tr><td>Grafana</td><td class="mono" style="color:var(--accent-text)">${urls.grafana}</td></tr>
-  </table>
+<!-- Tab Navigation -->
+<div style="display:flex;gap:0.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--glass-border);padding-bottom:0;overflow-x:auto">
+  <button class="btn btn-sm admin-tab active" data-tab="health" onclick="switchTab('health')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Service Health
+  </button>
+  <button class="btn btn-sm admin-tab" data-tab="overview" onclick="switchTab('overview')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Platform Overview
+  </button>
+  <button class="btn btn-sm admin-tab" data-tab="llm" onclick="switchTab('llm')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    LLM &amp; Models
+  </button>
+  <button class="btn btn-sm admin-tab" data-tab="database" onclick="switchTab('database')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    Database &amp; Data
+  </button>
+  <button class="btn btn-sm admin-tab" data-tab="config" onclick="switchTab('config')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+    Configuration
+  </button>
+  <button class="btn btn-sm admin-tab" data-tab="audit" onclick="switchTab('audit')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Audit Log
+  </button>
 </div>
 
-<div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
-  <div class="section-header">
-    <h3>Ollama Models</h3>
-    <button class="btn btn-secondary btn-sm" onclick="loadModels()">Refresh</button>
-  </div>
-  <div id="models-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
-</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 1: SERVICE HEALTH                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-health" class="admin-tab-content">
 
-<div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
-  <h3>Service Versions</h3>
-  <table class="mt-1">
-    <tr><th>Service</th><th>Version</th></tr>
-    <tr><td>Agent Service</td><td class="mono" style="font-size:0.78rem">2.0.0 (FastAPI + LangGraph + LangChain)</td></tr>
-    <tr><td>Tools Service</td><td class="mono" style="font-size:0.78rem">2.0.0 (FastAPI + Web Search + Code Exec)</td></tr>
-    <tr><td>UI Console</td><td class="mono" style="font-size:0.78rem">2.0.0 (Express + EJS)</td></tr>
-    <tr><td>ChromaDB</td><td class="mono" style="font-size:0.78rem">latest (Vector Store)</td></tr>
-    <tr><td>Ollama</td><td class="mono" style="font-size:0.78rem">latest</td></tr>
-    <tr><td>n8n</td><td class="mono" style="font-size:0.78rem">latest</td></tr>
-    <tr><td>Langfuse</td><td class="mono" style="font-size:0.78rem">2.x</td></tr>
-    <tr><td>Grafana</td><td class="mono" style="font-size:0.78rem">latest</td></tr>
-  </table>
-</div>
-
-<div class="card animate-fade-up delay-300" style="margin-bottom:1.5rem">
-  <div class="section-header">
-    <h3>Database Status</h3>
-    <div>
-      <button class="btn btn-secondary btn-sm" onclick="loadDbStats()">Refresh</button>
-      <button class="btn btn-primary btn-sm" onclick="exportData()" style="margin-left:.5rem">Export All</button>
-      <label class="btn btn-secondary btn-sm" style="margin-left:.5rem;cursor:pointer">Import
-        <input type="file" accept=".json" style="display:none" onchange="importData(event)">
-      </label>
+  <!-- Health Summary Bar -->
+  <div id="health-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:2rem;font-weight:700;color:var(--success)" id="health-count-healthy">—</div>
+      <div style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Healthy</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:2rem;font-weight:700;color:var(--danger)" id="health-count-unhealthy">—</div>
+      <div style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Unhealthy</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:2rem;font-weight:700;color:var(--text-1)" id="health-count-total">—</div>
+      <div style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Total Services</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:1rem;font-weight:600;color:var(--accent-text)" id="health-timestamp">—</div>
+      <div style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Last Check</div>
     </div>
   </div>
-  <div id="db-stats" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
-</div>
 
-<div class="card animate-fade-up delay-300">
-  <h3>Feature Toggles</h3>
-  <table class="mt-1">
-    <tr><th>Feature</th><th>Status</th></tr>
-    <tr>
-      <td>LangChain Integration</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>Vector Memory (ChromaDB)</td>
-      <td><span class="badge badge-success">Enabled (Core)</span></td>
-    </tr>
-    <tr>
-      <td>RAG Pipeline</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>Web Search (DuckDuckGo)</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>Code Execution (Sandboxed)</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>LLM Tracing (Langfuse)</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>OpenTelemetry</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>Streaming SSE</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>ReAct Agent Loop</td>
-      <td><span class="badge badge-success">Enabled (max 5 iters)</span></td>
-    </tr>
-    <tr>
-      <td>Version History</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-    <tr>
-      <td>Audit Logging</td>
-      <td><span class="badge badge-success">Enabled</span></td>
-    </tr>
-  </table>
-</div>
-
-<div class="card animate-fade-up delay-400" style="margin-top:1.5rem">
-  <div class="section-header">
-    <h3>Audit Log</h3>
-    <div>
-      <select id="audit-filter-type" style="background:var(--input-bg);color:var(--text-1);border:1px solid var(--glass-border);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.78rem;margin-right:.5rem">
-        <option value="">All Types</option>
-        <option value="agent">Agents</option>
-        <option value="skill">Skills</option>
-        <option value="prompt">Prompts</option>
-      </select>
-      <select id="audit-filter-action" style="background:var(--input-bg);color:var(--text-1);border:1px solid var(--glass-border);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.78rem;margin-right:.5rem">
-        <option value="">All Actions</option>
-        <option value="create">Create</option>
-        <option value="update">Update</option>
-        <option value="delete">Delete</option>
-        <option value="rollback">Rollback</option>
-      </select>
-      <button class="btn btn-secondary btn-sm" onclick="loadAuditLog()">Refresh</button>
+  <!-- Service Health Grid -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>All Services</h3>
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="loadServiceHealth()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 21 12"/></svg>
+          Check Now
+        </button>
+      </div>
+    </div>
+    <div id="service-health-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.75rem;margin-top:0.75rem">
+      <div style="color:var(--text-3);font-size:0.82rem;grid-column:1/-1">Loading service health...</div>
     </div>
   </div>
-  <div id="audit-log" class="mt-1" style="color:var(--text-3);font-size:0.82rem;max-height:400px;overflow-y:auto">Loading...</div>
+
+  <!-- Environment Info -->
+  <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+    <h3>Environment &amp; Endpoints</h3>
+    <table class="mt-1">
+      <tr><th>Service</th><th>Internal URL</th><th>External URL</th></tr>
+      <tr><td>Agent Service</td><td class="mono" style="font-size:0.75rem">http://agent-service:8000</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">${urls.agent}</td></tr>
+      <tr><td>Tools Service</td><td class="mono" style="font-size:0.75rem">http://tools-service:8001</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">http://localhost:8011</td></tr>
+      <tr><td>n8n</td><td class="mono" style="font-size:0.75rem">http://n8n:5678</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">${urls.n8n}</td></tr>
+      <tr><td>Langfuse</td><td class="mono" style="font-size:0.75rem">http://langfuse:3000</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">${urls.langfuse}</td></tr>
+      <tr><td>Grafana</td><td class="mono" style="font-size:0.75rem">http://grafana:3000</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">${urls.grafana}</td></tr>
+      <tr><td>ChromaDB</td><td class="mono" style="font-size:0.75rem">http://chromadb:8000</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">http://localhost:8200</td></tr>
+      <tr><td>Ollama</td><td class="mono" style="font-size:0.75rem">http://ollama:11434</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">http://localhost:11436</td></tr>
+      <tr><td>Prometheus</td><td class="mono" style="font-size:0.75rem">http://prometheus:9090</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">http://localhost:9090</td></tr>
+      <tr><td>Loki</td><td class="mono" style="font-size:0.75rem">http://loki:3100</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">http://localhost:3100</td></tr>
+      <tr><td>OTel Collector</td><td class="mono" style="font-size:0.75rem">http://otel-collector:4318</td><td class="mono" style="color:var(--accent-text);font-size:0.75rem">http://localhost:4318</td></tr>
+    </table>
+  </div>
+
+  <!-- Service Versions -->
+  <div class="card animate-fade-up delay-200">
+    <h3>Service Versions</h3>
+    <table class="mt-1">
+      <tr><th>Service</th><th>Version</th><th>Stack</th></tr>
+      <tr><td>Agent Service</td><td class="mono" style="font-size:0.78rem">2.0.0</td><td style="font-size:0.75rem;color:var(--text-3)">FastAPI + LangGraph + LangChain + LlamaIndex</td></tr>
+      <tr><td>Tools Service</td><td class="mono" style="font-size:0.78rem">2.0.0</td><td style="font-size:0.75rem;color:var(--text-3)">FastAPI + DuckDuckGo + Code Sandbox</td></tr>
+      <tr><td>UI Console</td><td class="mono" style="font-size:0.78rem">2.0.0</td><td style="font-size:0.75rem;color:var(--text-3)">Express.js + EJS + SSE</td></tr>
+      <tr><td>ChromaDB</td><td class="mono" style="font-size:0.78rem">0.6.3</td><td style="font-size:0.75rem;color:var(--text-3)">Vector Store</td></tr>
+      <tr><td>PostgreSQL</td><td class="mono" style="font-size:0.78rem">16</td><td style="font-size:0.75rem;color:var(--text-3)">Document Registry (datastore-db)</td></tr>
+      <tr><td>Ollama</td><td class="mono" style="font-size:0.78rem">latest</td><td style="font-size:0.75rem;color:var(--text-3)">Local LLM Runtime</td></tr>
+      <tr><td>n8n</td><td class="mono" style="font-size:0.78rem">latest</td><td style="font-size:0.75rem;color:var(--text-3)">Workflow Orchestration</td></tr>
+      <tr><td>Langfuse</td><td class="mono" style="font-size:0.78rem">2.x</td><td style="font-size:0.75rem;color:var(--text-3)">LLM Tracing &amp; Observability</td></tr>
+      <tr><td>Grafana</td><td class="mono" style="font-size:0.78rem">11.0.0</td><td style="font-size:0.75rem;color:var(--text-3)">Metrics Dashboards</td></tr>
+      <tr><td>Prometheus</td><td class="mono" style="font-size:0.78rem">latest</td><td style="font-size:0.75rem;color:var(--text-3)">Metrics Aggregation</td></tr>
+      <tr><td>Loki</td><td class="mono" style="font-size:0.78rem">3.0.0</td><td style="font-size:0.75rem;color:var(--text-3)">Log Aggregation</td></tr>
+      <tr><td>OTel Collector</td><td class="mono" style="font-size:0.78rem">0.100.0</td><td style="font-size:0.75rem;color:var(--text-3)">Telemetry Pipeline</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 2: PLATFORM OVERVIEW                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-overview" class="admin-tab-content" style="display:none">
+
+  <!-- Resource Counts Grid -->
+  <div id="overview-counts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.5rem"></div>
+
+  <!-- Feature Toggles -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <h3>Platform Capabilities</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.5rem;margin-top:0.75rem" id="feature-grid">
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">LangChain + LangGraph</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">LlamaIndex (Advanced RAG)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Vector Memory (ChromaDB)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">RAG Pipeline (5 modes)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Multi-Provider LLM</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Web Search (DuckDuckGo)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Code Execution (Sandbox)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Streaming SSE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">ReAct Agent Loop</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">A2A Protocol</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">MCP Tool Registry</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">LLM Tracing (Langfuse)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">OpenTelemetry</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Version History</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Audit Logging</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Data Connectors</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">Guardrails (Input/Output)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0"></span>
+        <span style="font-size:0.78rem">n8n Workflow Engine</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory/Platform Stats -->
+  <div class="card animate-fade-up delay-100">
+    <div class="section-header">
+      <h3>Memory &amp; Storage Stats</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadMemoryStats()">Refresh</button>
+    </div>
+    <div id="memory-stats" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 3: LLM & MODELS                                    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-llm" class="admin-tab-content" style="display:none">
+
+  <!-- Active LLM Config -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Active LLM Configuration</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadLlmConfig()">Refresh</button>
+    </div>
+    <div id="llm-active-config" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- Model Switcher -->
+  <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+    <h3>Switch LLM Provider / Model</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-top:0.75rem;align-items:end">
+      <div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Provider</label>
+        <select id="switch-provider" class="input" style="width:100%">
+          <option value="ollama">Ollama (Local)</option>
+          <option value="openai">OpenAI</option>
+          <option value="azure-openai">Azure OpenAI</option>
+          <option value="azure-foundry">Azure Foundry</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Model Name</label>
+        <input type="text" id="switch-model" class="input" placeholder="e.g. llama3, gpt-4o" style="width:100%">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="switchModel()">Switch</button>
+    </div>
+  </div>
+
+  <!-- Available Models -->
+  <div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Available Models</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadModels()">Refresh</button>
+    </div>
+    <div id="models-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- LLM Usage Summary -->
+  <div class="card animate-fade-up delay-300">
+    <div class="section-header">
+      <h3>LLM Usage Summary</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadLlmSummary()">Refresh</button>
+    </div>
+    <div id="llm-usage-summary" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 4: DATABASE & DATA                                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-database" class="admin-tab-content" style="display:none">
+
+  <!-- Database Status -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>SQLite Database</h3>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="loadDbStats()">Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="exportData()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export All
+        </button>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import
+          <input type="file" accept=".json" style="display:none" onchange="importData(event)">
+        </label>
+      </div>
+    </div>
+    <div id="db-stats" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- ChromaDB Collections -->
+  <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>ChromaDB / Vector Store</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadChromaStats()">Refresh</button>
+    </div>
+    <div id="chroma-stats" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- Document Stats -->
+  <div class="card animate-fade-up delay-200">
+    <div class="section-header">
+      <h3>Knowledge Base Stats</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadDocStats()">Refresh</button>
+    </div>
+    <div id="doc-stats" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 5: CONFIGURATION                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-config" class="admin-tab-content" style="display:none">
+
+  <!-- Global Constraints -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Global Constraints</h3>
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="loadGlobalConstraints()">Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="saveGlobalConstraints()" style="margin-left:0.5rem">Save</button>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem">
+      <textarea id="global-constraints-editor" class="input" style="width:100%;min-height:200px;font-family:var(--font-mono);font-size:0.78rem;resize:vertical" placeholder="Loading constraints..."></textarea>
+      <p style="font-size:0.68rem;color:var(--text-3);margin-top:0.35rem">JSON format. These constraints apply to all agents globally (e.g. content policies, response length limits).</p>
+    </div>
+  </div>
+
+  <!-- Guardrails Overview -->
+  <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Guardrails Registry</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadGuardrails()">Refresh</button>
+    </div>
+    <div id="guardrails-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- n8n Workflows -->
+  <div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>n8n Workflows</h3>
+      <button class="btn btn-secondary btn-sm" onclick="loadN8nWorkflows()">Refresh</button>
+    </div>
+    <div id="n8n-workflows" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+  </div>
+
+  <!-- External Links -->
+  <div class="card animate-fade-up delay-300">
+    <h3>Quick Links</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-top:0.75rem">
+      <a href="${urls.grafana}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Grafana Dashboards
+      </a>
+      <a href="${urls.langfuse}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Langfuse Traces
+      </a>
+      <a href="${urls.n8n}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        n8n Workflows
+      </a>
+      <a href="http://localhost:9090" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Prometheus
+      </a>
+      <a href="${urls.agent}/docs" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Agent API Docs
+      </a>
+      <a href="http://localhost:8011/docs" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Tools API Docs
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 6: AUDIT LOG                                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-audit" class="admin-tab-content" style="display:none">
+  <div class="card animate-fade-up">
+    <div class="section-header">
+      <h3>Audit Log</h3>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <select id="audit-filter-type" class="input" style="font-size:0.78rem;padding:0.25rem 0.5rem;min-width:100px">
+          <option value="">All Types</option>
+          <option value="agent">Agents</option>
+          <option value="skill">Skills</option>
+          <option value="prompt">Prompts</option>
+          <option value="guardrail">Guardrails</option>
+          <option value="custom_tool">Custom Tools</option>
+          <option value="a2a_peer">A2A Peers</option>
+          <option value="mcp_server">MCP Servers</option>
+          <option value="connector">Connectors</option>
+        </select>
+        <select id="audit-filter-action" class="input" style="font-size:0.78rem;padding:0.25rem 0.5rem;min-width:100px">
+          <option value="">All Actions</option>
+          <option value="create">Create</option>
+          <option value="update">Update</option>
+          <option value="delete">Delete</option>
+          <option value="rollback">Rollback</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadAuditLog()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 21 12"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+    <div id="audit-log" class="mt-1" style="color:var(--text-3);font-size:0.82rem;max-height:600px;overflow-y:auto">Loading...</div>
+  </div>
 </div>
 
 </div><!-- /admin-content -->
+
+<style>
+.admin-tab { background:transparent; border:none; border-bottom:2px solid transparent; border-radius:0; color:var(--text-3); padding:0.5rem 1rem; font-size:0.78rem; transition:all 0.2s; white-space:nowrap; }
+.admin-tab:hover { color:var(--text-1); background:rgba(255,255,255,0.03); }
+.admin-tab.active { color:var(--accent-text); border-bottom-color:var(--accent-text); }
+.health-card { padding:0.75rem;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg);display:flex;align-items:center;gap:0.75rem;transition:all 0.2s }
+.health-card:hover { border-color:var(--accent-border) }
+.health-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0 }
+.health-dot.healthy { background:var(--success);box-shadow:0 0 8px rgba(16,185,129,0.4) }
+.health-dot.unhealthy { background:var(--danger);box-shadow:0 0 8px rgba(239,68,68,0.4) }
+.health-dot.unreachable { background:var(--text-3);box-shadow:0 0 8px rgba(100,116,139,0.3) }
+.count-card { padding:1rem;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg);text-align:center }
+.count-card .count-num { font-size:1.75rem;font-weight:700;color:var(--text-1) }
+.count-card .count-label { font-size:0.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-top:0.15rem }
+</style>
 
 <script>
 /* ═══ AUTH ═══ */
@@ -219,29 +526,254 @@ function adminCheckSession() {
   document.getElementById('admin-user').focus();
 }
 
-function adminLoadAll() {
-  loadDbStats();
-  loadModels();
-  loadAuditLog();
+/* ═══ TABS ═══ */
+function switchTab(tab) {
+  document.querySelectorAll('.admin-tab-content').forEach(function(el) { el.style.display = 'none'; });
+  document.querySelectorAll('.admin-tab').forEach(function(el) { el.classList.remove('active'); });
+  var tabEl = document.getElementById('tab-' + tab);
+  if (tabEl) tabEl.style.display = 'block';
+  var btn = document.querySelector('.admin-tab[data-tab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  /* Load data for the active tab */
+  if (tab === 'health') loadServiceHealth();
+  if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
+  if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
+  if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
+  if (tab === 'config') { loadGlobalConstraints(); loadGuardrails(); loadN8nWorkflows(); }
+  if (tab === 'audit') loadAuditLog();
 }
+
+/* ═══ LOAD ALL ═══ */
+function adminLoadAll() {
+  document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
+  loadServiceHealth();
+}
+
+/* ═══ SERVICE HEALTH ═══ */
+async function loadServiceHealth() {
+  try {
+    var r = await fetch('/api/admin/services/health');
+    var d = await r.json();
+    /* Summary */
+    document.getElementById('health-count-healthy').textContent = d.summary.healthy;
+    document.getElementById('health-count-unhealthy').textContent = d.summary.unhealthy;
+    document.getElementById('health-count-total').textContent = d.summary.total;
+    document.getElementById('health-timestamp').textContent = new Date(d.summary.timestamp).toLocaleTimeString();
+    /* Grid */
+    var grid = document.getElementById('service-health-grid');
+    grid.innerHTML = d.services.map(function(s) {
+      var statusColor = s.status === 'healthy' ? 'var(--success)' : s.status === 'unhealthy' ? 'var(--danger)' : 'var(--text-3)';
+      var typeBadge = s.type === 'core' ? '<span class="badge badge-info" style="font-size:0.62rem">core</span>' :
+                      s.type === 'integration' ? '<span class="badge badge-warning" style="font-size:0.62rem">integration</span>' :
+                      '<span class="badge" style="font-size:0.62rem;background:rgba(139,92,246,0.1);color:#a78bfa">observability</span>';
+      return '<div class="health-card">' +
+        '<div class="health-dot ' + s.status + '"></div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:0.5rem">' +
+            '<strong style="font-size:0.82rem;color:var(--text-1)">' + escapeHtml(s.name) + '</strong>' +
+            typeBadge +
+          '</div>' +
+          '<div style="font-size:0.72rem;color:' + statusColor + ';font-weight:600;text-transform:uppercase;margin-top:0.15rem">' + s.status + '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div class="mono" style="font-size:0.72rem;color:var(--text-3)">' + s.latency + 'ms</div>' +
+          (s.code ? '<div class="mono" style="font-size:0.68rem;color:var(--text-3)">HTTP ' + s.code + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('service-health-grid').innerHTML = '<div style="color:var(--danger);grid-column:1/-1">Failed to load service health: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+/* ═══ PLATFORM OVERVIEW ═══ */
+async function loadOverviewCounts() {
+  try {
+    var r = await fetch('/api/admin/overview');
+    var d = await r.json();
+    var el = document.getElementById('overview-counts');
+    var items = [
+      { key: 'agents', label: 'Agents', icon: '&#x1F916;' },
+      { key: 'skills', label: 'Skills', icon: '&#x26A1;' },
+      { key: 'prompts', label: 'Prompts', icon: '&#x1F4DD;' },
+      { key: 'tools', label: 'Tools', icon: '&#x1F527;' },
+      { key: 'custom_tools', label: 'Custom Tools', icon: '&#x1F6E0;' },
+      { key: 'sessions', label: 'Sessions', icon: '&#x1F4AC;' },
+      { key: 'guardrails', label: 'Guardrails', icon: '&#x1F6E1;' },
+      { key: 'a2a_peers', label: 'A2A Peers', icon: '&#x1F310;' },
+      { key: 'mcp_servers', label: 'MCP Servers', icon: '&#x1F50C;' },
+      { key: 'connectors', label: 'Connectors', icon: '&#x1F517;' },
+    ];
+    el.innerHTML = items.map(function(it) {
+      return '<div class="count-card"><div class="count-num">' + (d[it.key] || 0) + '</div><div class="count-label">' + it.icon + ' ' + it.label + '</div></div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('overview-counts').innerHTML = '<div style="color:var(--danger)">Failed to load overview</div>';
+  }
+}
+
+/* ═══ MEMORY STATS ═══ */
+async function loadMemoryStats() {
+  try {
+    var r = await fetch('/api/admin/memory-stats');
+    var d = await r.json();
+    var el = document.getElementById('memory-stats');
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem">';
+    for (var k in d) {
+      if (typeof d[k] === 'object' && d[k] !== null) {
+        html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">';
+        html += '<div style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">' + escapeHtml(k) + '</div>';
+        for (var sk in d[k]) {
+          html += '<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:0.15rem 0"><span style="color:var(--text-2)">' + escapeHtml(sk) + '</span><span class="mono" style="color:var(--text-1)">' + d[k][sk] + '</span></div>';
+        }
+        html += '</div>';
+      } else {
+        html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-align:center">';
+        html += '<div style="font-size:1.5rem;font-weight:700;color:var(--text-1)">' + d[k] + '</div>';
+        html += '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(k) + '</div>';
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) { document.getElementById('memory-stats').innerHTML = '<p style="color:var(--text-3)">Memory stats unavailable</p>'; }
+}
+
+/* ═══ LLM CONFIG ═══ */
+async function loadLlmConfig() {
+  try {
+    var r = await fetch('/api/models');
+    var d = await r.json();
+    var el = document.getElementById('llm-active-config');
+    if (!d.active) { el.innerHTML = '<p style="color:var(--text-3)">No active model configuration</p>'; return; }
+    var a = d.active;
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem">' +
+      '<div style="padding:0.75rem;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:8px">' +
+        '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">Provider</div>' +
+        '<div style="font-size:1rem;font-weight:600;color:var(--success);margin-top:0.25rem">' + escapeHtml(a.provider || 'unknown') + '</div>' +
+      '</div>' +
+      '<div style="padding:0.75rem;background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.2);border-radius:8px">' +
+        '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">Model</div>' +
+        '<div style="font-size:1rem;font-weight:600;color:var(--accent-text);margin-top:0.25rem">' + escapeHtml(a.model || 'unknown') + '</div>' +
+      '</div>' +
+      '<div style="padding:0.75rem;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.2);border-radius:8px">' +
+        '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">Embedding</div>' +
+        '<div style="font-size:1rem;font-weight:600;color:#a78bfa;margin-top:0.25rem">' + escapeHtml(a.embedding_model || 'default') + '</div>' +
+      '</div>' +
+    '</div>';
+    if (a.provider) {
+      document.getElementById('switch-provider').value = a.provider;
+      document.getElementById('switch-model').value = a.model || '';
+    }
+  } catch(e) { document.getElementById('llm-active-config').innerHTML = '<p style="color:var(--danger)">Failed to load LLM config</p>'; }
+}
+
+async function switchModel() {
+  var provider = document.getElementById('switch-provider').value;
+  var model = document.getElementById('switch-model').value.trim();
+  if (!model) { showToast('Please enter a model name', 'warning'); return; }
+  try {
+    var r = await fetch('/api/models/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ provider: provider, model: model }) });
+    var d = await r.json();
+    if (r.ok) {
+      showToast('Switched to ' + provider + ' / ' + model, 'success');
+      loadLlmConfig();
+      loadModels();
+    } else {
+      showToast('Switch failed: ' + (d.detail || d.error || 'Unknown error'), 'error');
+    }
+  } catch(e) { showToast('Switch failed: ' + e.message, 'error'); }
+}
+
+/* ═══ MODELS ═══ */
+async function loadModels() {
+  try {
+    var r = await fetch('/api/models');
+    var d = await r.json();
+    var el = document.getElementById('models-list');
+    if (!d.models || d.models.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker exec ollama ollama pull llama3</code></p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Model</th><th>Provider</th><th>Size</th><th>Status</th></tr>' +
+      d.models.map(function(m) {
+        var name = escapeHtml(m.full_name || m.model || '');
+        var provider = escapeHtml(m.provider || '');
+        var size = m.size ? (m.size / 1e9).toFixed(1) + ' GB' : String.fromCharCode(0x2014);
+        var badge = m.active ? '<span class="badge badge-success">active</span>' : '<span class="badge" style="font-size:0.68rem">available</span>';
+        return '<tr><td>' + name + '</td><td class="mono" style="font-size:0.78rem">' + provider + '</td><td class="mono">' + size + '</td><td>' + badge + '</td></tr>';
+      }).join('') + '</table>';
+  } catch(e) {
+    document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';
+  }
+}
+
+/* ═══ LLM USAGE SUMMARY ═══ */
+async function loadLlmSummary() {
+  try {
+    var r = await fetch('/api/admin/llm-summary');
+    var d = await r.json();
+    var el = document.getElementById('llm-usage-summary');
+    if (!d || (typeof d === 'object' && Object.keys(d).length === 0)) {
+      el.innerHTML = '<p style="color:var(--text-3)">No LLM usage data yet. Run some agent prompts to generate usage data.</p>';
+      return;
+    }
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.75rem">';
+    var metricLabels = { total_calls: 'Total Calls', total_tokens: 'Total Tokens', total_input_tokens: 'Input Tokens', total_output_tokens: 'Output Tokens', avg_latency_ms: 'Avg Latency', total_cost: 'Est. Cost' };
+    for (var k in d) {
+      if (k === 'by_model' || k === 'by_provider' || k === 'recent') continue;
+      var label = metricLabels[k] || k;
+      var val = typeof d[k] === 'number' ? (k.includes('cost') ? '$' + d[k].toFixed(4) : k.includes('latency') ? d[k].toFixed(0) + 'ms' : d[k].toLocaleString()) : d[k];
+      html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-align:center">';
+      html += '<div style="font-size:1.25rem;font-weight:700;color:var(--text-1)">' + val + '</div>';
+      html += '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(label) + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    if (d.by_model && d.by_model.length > 0) {
+      html += '<h4 style="margin-top:1rem;margin-bottom:0.5rem;font-size:0.85rem">By Model</h4><table><tr><th>Model</th><th>Provider</th><th>Calls</th><th>Tokens</th><th>Cost</th></tr>';
+      for (var i = 0; i < d.by_model.length; i++) {
+        var m = d.by_model[i];
+        html += '<tr><td>' + escapeHtml(m.model || 'unknown') + '</td><td>' + escapeHtml(m.provider || '') + '</td><td class="mono">' + (m.requests || m.calls || 0) + '</td><td class="mono">' + (m.tokens || 0).toLocaleString() + '</td><td class="mono">$' + (m.cost || 0).toFixed(4) + '</td></tr>';
+      }
+      html += '</table>';
+    }
+    el.innerHTML = html;
+  } catch(e) { document.getElementById('llm-usage-summary').innerHTML = '<p style="color:var(--text-3)">LLM usage summary unavailable</p>'; }
+}
+
+/* ═══ DB STATS ═══ */
 async function loadDbStats() {
   try {
-    const r = await fetch('/api/db-stats');
-    const d = await r.json();
-    const el = document.getElementById('db-stats');
-    const sizeMB = (d.db_size_bytes / (1024*1024)).toFixed(2);
-    const tables = ['agents','skills','prompts','conversations','documents','mcp_servers','a2a_peers','guardrails','custom_tools','session_summaries','version_history','audit_log'];
-    el.innerHTML = '<p style="margin-bottom:.5rem"><strong>DB Path:</strong> <code style="color:var(--accent-text)">' + escapeHtml(d.db_path||'unknown') + '</code> &nbsp; <strong>Size:</strong> ' + sizeMB + ' MB</p>' +
-      '<table><tr><th>Table</th><th>Records</th></tr>' +
-      tables.map(t => '<tr><td>' + t + '</td><td class="mono">' + (d[t]||0) + '</td></tr>').join('') + '</table>';
+    var r = await fetch('/api/db-stats');
+    var d = await r.json();
+    var el = document.getElementById('db-stats');
+    var sizeMB = (d.db_size_bytes / (1024*1024)).toFixed(2);
+    var tables = ['agents','skills','prompts','conversations','documents','mcp_servers','a2a_peers','guardrails','custom_tools','session_summaries','connectors','sync_jobs','version_history','audit_log'];
+    var totalRecords = tables.reduce(function(sum, t) { return sum + (d[t] || 0); }, 0);
+    el.innerHTML = '<div style="display:flex;gap:1.5rem;margin-bottom:0.75rem;flex-wrap:wrap">' +
+      '<div><span style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase">Path</span><br><code style="color:var(--accent-text);font-size:0.78rem">' + escapeHtml(d.db_path||'unknown') + '</code></div>' +
+      '<div><span style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase">Size</span><br><span class="mono" style="font-size:0.95rem;font-weight:600">' + sizeMB + ' MB</span></div>' +
+      '<div><span style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase">Total Records</span><br><span class="mono" style="font-size:0.95rem;font-weight:600">' + totalRecords.toLocaleString() + '</span></div>' +
+    '</div>' +
+      '<table><tr><th>Table</th><th>Records</th><th>% of Total</th></tr>' +
+      tables.map(function(t) {
+        var count = d[t] || 0;
+        var pct = totalRecords > 0 ? ((count / totalRecords) * 100).toFixed(1) : '0.0';
+        var barWidth = totalRecords > 0 ? Math.max(2, (count / totalRecords) * 100) : 0;
+        return '<tr><td>' + t + '</td><td class="mono">' + count.toLocaleString() + '</td>' +
+          '<td><div style="display:flex;align-items:center;gap:0.5rem"><div style="width:80px;height:6px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div style="width:' + barWidth + '%;height:100%;background:var(--accent-text);border-radius:3px"></div></div><span class="mono" style="font-size:0.72rem;color:var(--text-3)">' + pct + '%</span></div></td></tr>';
+      }).join('') + '</table>';
   } catch(e) { document.getElementById('db-stats').innerHTML = '<p style="color:var(--danger)">Failed to load DB stats</p>'; }
 }
+
+/* ═══ EXPORT/IMPORT ═══ */
 async function exportData() {
   try {
-    const r = await fetch('/api/export');
-    const d = await r.json();
-    const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
+    var r = await fetch('/api/export');
+    var d = await r.json();
+    var blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
+    var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'agentic-platform-export-' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
@@ -249,72 +781,174 @@ async function exportData() {
     showToast('Data exported successfully', 'success');
   } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
 }
+
 async function importData(evt) {
-  const file = evt.target.files[0];
+  var file = evt.target.files[0];
   if (!file) return;
   try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    const r = await fetch('/api/import', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    var text = await file.text();
+    var data = JSON.parse(text);
+    var r = await fetch('/api/import', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
     if (!r.ok) { showToast('Import failed: ' + r.statusText, 'error'); return; }
-    const result = await r.json();
+    await r.json();
     showToast('Import complete', 'success');
     loadDbStats();
   } catch(e) { showToast('Import failed: ' + e.message, 'error'); }
   evt.target.value = '';
 }
 
-async function loadModels() {
+/* ═══ CHROMADB ═══ */
+async function loadChromaStats() {
   try {
-    const r = await fetch('/api/models');
-    const d = await r.json();
-    const el = document.getElementById('models-list');
-    if (!d.models || d.models.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker exec ollama ollama pull llama3</code></p>';
-      return;
+    var r1 = await fetch('/api/chromadb/stats');
+    var hb = await r1.json();
+    var r2 = await fetch('/api/admin/chromadb/collections');
+    var cols = await r2.json();
+    var el = document.getElementById('chroma-stats');
+    var statusBadge = hb.status === 'connected' ? '<span class="badge badge-success">Connected</span>' : '<span class="badge" style="background:rgba(239,68,68,0.1);color:#f87171">Unreachable</span>';
+    var html = '<div style="margin-bottom:0.75rem">' + statusBadge + '</div>';
+    if (Array.isArray(cols) || (cols && cols.collections)) {
+      var collections = cols.collections || cols;
+      if (Array.isArray(collections) && collections.length > 0) {
+        html += '<table><tr><th>Collection</th><th>Documents</th></tr>';
+        collections.forEach(function(c) {
+          var name = typeof c === 'string' ? c : (c.name || c.id || 'unknown');
+          var count = c.count || c.document_count || String.fromCharCode(0x2014);
+          html += '<tr><td>' + escapeHtml(name) + '</td><td class="mono">' + count + '</td></tr>';
+        });
+        html += '</table>';
+      } else {
+        html += '<p style="color:var(--text-3)">No collections found</p>';
+      }
+    } else {
+      html += '<p style="color:var(--text-3)">Collections data unavailable</p>';
     }
-    var activeModel = d.active ? d.active.model : '';
-    el.innerHTML = '<table><tr><th>Model</th><th>Provider</th><th>Size</th></tr>' +
-      d.models.map(m => \`<tr>
-        <td>\${escapeHtml(m.full_name || m.model)} \${m.active ? '<span class="badge badge-success">active</span>' : ''}</td>
-        <td class="mono" style="font-size:0.78rem">\${escapeHtml(m.provider || '')}</td>
-        <td class="mono">\${m.size ? (m.size / 1e9).toFixed(1) + ' GB' : '—'}</td>
-      </tr>\`).join('') + '</table>';
+    el.innerHTML = html;
+  } catch(e) { document.getElementById('chroma-stats').innerHTML = '<p style="color:var(--danger)">Failed to load ChromaDB stats</p>'; }
+}
+
+/* ═══ DOC STATS ═══ */
+async function loadDocStats() {
+  try {
+    var r = await fetch('/api/admin/documents/stats');
+    var d = await r.json();
+    var el = document.getElementById('doc-stats');
+    if (!d || typeof d !== 'object') { el.innerHTML = '<p style="color:var(--text-3)">No document stats available</p>'; return; }
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem">';
+    for (var k in d) {
+      if (typeof d[k] === 'number' || typeof d[k] === 'string') {
+        html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-align:center">';
+        html += '<div style="font-size:1.25rem;font-weight:700;color:var(--text-1)">' + (typeof d[k] === 'number' ? d[k].toLocaleString() : escapeHtml(String(d[k]))) + '</div>';
+        html += '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(k.replace(/_/g, ' ')) + '</div>';
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) { document.getElementById('doc-stats').innerHTML = '<p style="color:var(--text-3)">Document stats unavailable</p>'; }
+}
+
+/* ═══ GLOBAL CONSTRAINTS ═══ */
+async function loadGlobalConstraints() {
+  try {
+    var r = await fetch('/api/admin/global-constraints');
+    var d = await r.json();
+    document.getElementById('global-constraints-editor').value = JSON.stringify(d, null, 2);
   } catch(e) {
-    document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';
+    document.getElementById('global-constraints-editor').value = '{}';
   }
 }
 
-async function loadAuditLog() {
+async function saveGlobalConstraints() {
   try {
-    const typeFilter = document.getElementById('audit-filter-type').value;
-    const actionFilter = document.getElementById('audit-filter-action').value;
-    const params = new URLSearchParams({limit: '100'});
-    if (typeFilter) params.set('entity_type', typeFilter);
-    if (actionFilter) params.set('action', actionFilter);
-    const r = await fetch('/api/audit-log?' + params.toString());
-    const d = await r.json();
-    const el = document.getElementById('audit-log');
-    if (!d.entries || d.entries.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">No audit log entries yet. Changes to agents, skills, and prompts will appear here.</p>';
+    var text = document.getElementById('global-constraints-editor').value;
+    var data = JSON.parse(text);
+    var r = await fetch('/api/admin/global-constraints', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    if (r.ok) { showToast('Global constraints saved', 'success'); }
+    else { showToast('Failed to save constraints', 'error'); }
+  } catch(e) { showToast('Invalid JSON: ' + e.message, 'error'); }
+}
+
+/* ═══ GUARDRAILS ═══ */
+async function loadGuardrails() {
+  try {
+    var r = await fetch('/api/guardrails');
+    var d = await r.json();
+    var el = document.getElementById('guardrails-list');
+    var items = Array.isArray(d) ? d : (d.guardrails || []);
+    if (items.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No guardrails configured. Create them from the <a href="/guardrails" style="color:var(--accent-text)">Guardrails</a> page.</p>';
       return;
     }
-    const actionColors = {create:'var(--success)',update:'var(--info)',delete:'var(--danger)',rollback:'var(--warning)'};
+    el.innerHTML = '<table><tr><th>Name</th><th>Status</th><th>Checks</th></tr>' +
+      items.map(function(g) {
+        var status = g.enabled !== false ? '<span class="badge badge-success">Active</span>' : '<span class="badge" style="font-size:0.68rem">Disabled</span>';
+        var checks = '';
+        if (g.checks_config) {
+          try {
+            var cfg = typeof g.checks_config === 'string' ? JSON.parse(g.checks_config) : g.checks_config;
+            checks = Object.keys(cfg).filter(function(k) { return cfg[k]; }).join(', ');
+          } catch(e2) { checks = 'custom'; }
+        }
+        return '<tr><td>' + escapeHtml(g.name || g.id) + '</td><td>' + status + '</td><td style="font-size:0.75rem;color:var(--text-3)">' + escapeHtml(checks) + '</td></tr>';
+      }).join('') + '</table>';
+  } catch(e) { document.getElementById('guardrails-list').innerHTML = '<p style="color:var(--text-3)">Guardrails unavailable</p>'; }
+}
+
+/* ═══ N8N WORKFLOWS ═══ */
+async function loadN8nWorkflows() {
+  try {
+    var r = await fetch('/api/admin/n8n/workflows');
+    var d = await r.json();
+    var el = document.getElementById('n8n-workflows');
+    var items = d.data || [];
+    if (items.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No n8n workflows found. ' + (d.error ? 'Error: ' + escapeHtml(d.error) : 'Create workflows from the <a href="/workflows" style="color:var(--accent-text)">Workflows</a> page.') + '</p>';
+      return;
+    }
+    el.innerHTML = '<table><tr><th>Name</th><th>Status</th><th>Created</th></tr>' +
+      items.map(function(w) {
+        var status = w.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge" style="font-size:0.68rem">Inactive</span>';
+        var created = w.createdAt ? new Date(w.createdAt).toLocaleDateString() : String.fromCharCode(0x2014);
+        return '<tr><td>' + escapeHtml(w.name || w.id) + '</td><td>' + status + '</td><td class="mono" style="font-size:0.75rem">' + created + '</td></tr>';
+      }).join('') + '</table>';
+  } catch(e) { document.getElementById('n8n-workflows').innerHTML = '<p style="color:var(--text-3)">n8n unavailable</p>'; }
+}
+
+/* ═══ AUDIT LOG ═══ */
+async function loadAuditLog() {
+  try {
+    var typeFilter = document.getElementById('audit-filter-type').value;
+    var actionFilter = document.getElementById('audit-filter-action').value;
+    var params = new URLSearchParams({limit: '100'});
+    if (typeFilter) params.set('entity_type', typeFilter);
+    if (actionFilter) params.set('action', actionFilter);
+    var r = await fetch('/api/audit-log?' + params.toString());
+    var d = await r.json();
+    var el = document.getElementById('audit-log');
+    if (!d.entries || d.entries.length === 0) {
+      el.innerHTML = '<p style="color:var(--text-3)">No audit log entries yet. Changes to agents, skills, prompts, and other entities will appear here.</p>';
+      return;
+    }
+    var actionColors = {create:'var(--success)',update:'var(--info)',delete:'var(--danger)',rollback:'var(--warning)'};
     el.innerHTML = '<table><tr><th>Time</th><th>Action</th><th>Type</th><th>Name</th><th>Details</th></tr>' +
-      d.entries.map(e => {
-        const time = new Date(e.created_at).toLocaleString();
-        const color = actionColors[e.action] || 'var(--text-3)';
-        const details = e.details && Object.keys(e.details).length > 0 ? escapeHtml(JSON.stringify(e.details)) : '';
+      d.entries.map(function(e) {
+        var time = new Date(e.created_at).toLocaleString();
+        var color = actionColors[e.action] || 'var(--text-3)';
+        var details = e.details && Object.keys(e.details).length > 0 ? escapeHtml(JSON.stringify(e.details)).substring(0, 120) : '';
         return '<tr><td class="mono" style="font-size:0.72rem;white-space:nowrap">' + time + '</td>' +
           '<td><span style="color:' + color + ';font-weight:600;text-transform:uppercase;font-size:0.72rem">' + escapeHtml(e.action) + '</span></td>' +
           '<td style="font-size:0.78rem">' + escapeHtml(e.entity_type) + '</td>' +
           '<td style="font-size:0.78rem">' + escapeHtml(e.entity_name || e.entity_id) + '</td>' +
-          '<td class="mono" style="font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis">' + details + '</td></tr>';
+          '<td class="mono" style="font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + details + '">' + details + '</td></tr>';
       }).join('') + '</table>';
   } catch(e) { document.getElementById('audit-log').innerHTML = '<p style="color:var(--danger)">Failed to load audit log</p>'; }
 }
+
 document.getElementById('audit-filter-type').addEventListener('change', loadAuditLog);
 document.getElementById('audit-filter-action').addEventListener('change', loadAuditLog);
+
+/* ═══ INIT ═══ */
 adminCheckSession();
 <\/script>
 ` }) %>

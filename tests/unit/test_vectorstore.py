@@ -1,4 +1,5 @@
 """Unit tests for vectorstore module."""
+
 import sys
 import types
 import pytest
@@ -18,6 +19,7 @@ for _mod_name in ("langchain_chroma", "chromadb"):
 def clear_cache():
     """Clear the vectorstore cache between tests."""
     import agent.vectorstore as vs_mod
+
     vs_mod._vectorstores.clear()
     yield
     vs_mod._vectorstores.clear()
@@ -55,14 +57,16 @@ def mock_chroma():
         (MagicMock(page_content="hello", metadata={"source": "a.txt"}), 0.9),
     ]
 
-    with patch("langchain_chroma.Chroma", return_value=chroma_instance) as mock_cls, \
-         patch("chromadb.HttpClient", return_value=mock_raw_client):
+    with patch(
+        "langchain_chroma.Chroma", return_value=chroma_instance
+    ) as mock_cls, patch("chromadb.HttpClient", return_value=mock_raw_client):
         yield mock_cls
 
 
 class TestGetVectorstore:
     def test_returns_chroma_instance(self, mock_chroma):
         from agent.vectorstore import get_vectorstore
+
         vs = get_vectorstore()
         assert vs is not None
 
@@ -70,6 +74,7 @@ class TestGetVectorstore:
 class TestCollectionStats:
     def test_stats_returns_count_and_sources(self, mock_chroma):
         from agent.vectorstore import get_collection_stats
+
         stats = get_collection_stats()
         assert stats["total_chunks"] == 10
         assert stats["unique_documents"] == 2
@@ -78,6 +83,7 @@ class TestCollectionStats:
 class TestSearchSimilar:
     def test_search_returns_results(self, mock_chroma):
         from agent.vectorstore import search_similar
+
         results = search_similar("hello", k=3)
         assert len(results) == 1
         assert results[0]["content"] == "hello"
@@ -87,6 +93,7 @@ class TestSearchSimilar:
 class TestListDocuments:
     def test_list_returns_sources(self, mock_chroma):
         from agent.vectorstore import list_documents
+
         docs = list_documents()
         sources = [d["source"] for d in docs]
         assert "a.txt" in sources
@@ -96,6 +103,7 @@ class TestListDocuments:
 class TestDeleteDocument:
     def test_delete_calls_chroma(self, mock_chroma):
         from agent.vectorstore import delete_document
+
         # The delete_document function gets the _collection from get_vectorstore()
         # and calls collection.get(where=...) then collection.delete(ids=...)
         result = delete_document("a.txt")

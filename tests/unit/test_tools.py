@@ -1,11 +1,14 @@
 """Unit tests for Tools Service endpoints."""
+
 import sys
 import os
 import tempfile
 import importlib.util
 
 # Set NOTES_DIR before import to avoid creating /data/notes on Windows
-os.environ.setdefault("NOTES_DIR", os.path.join(tempfile.gettempdir(), "tools-test-notes"))
+os.environ.setdefault(
+    "NOTES_DIR", os.path.join(tempfile.gettempdir(), "tools-test-notes")
+)
 
 # Import tools service main via importlib (don't pollute sys.modules['main'])
 _tools_main_path = os.path.join(
@@ -148,6 +151,7 @@ async def test_datetime(client):
 
 # ── Web Search ─────────────────────────────────────────────────────────────
 
+
 @pytest.mark.anyio
 async def test_web_search_missing_query(client):
     r = await client.post("/tools/web-search", json={})
@@ -162,7 +166,11 @@ async def test_web_search_missing_query(client):
 async def test_web_search_with_mock(client):
     """Mock DuckDuckGo to avoid real network calls."""
     mock_results = [
-        {"title": "Python.org", "href": "https://python.org", "body": "Welcome to Python"},
+        {
+            "title": "Python.org",
+            "href": "https://python.org",
+            "body": "Welcome to Python",
+        },
         {"title": "Docs", "href": "https://docs.python.org", "body": "Python docs"},
     ]
     with patch("ddgs.DDGS") as MockDDGS:
@@ -170,7 +178,9 @@ async def test_web_search_with_mock(client):
         instance.text.return_value = mock_results
         MockDDGS.return_value.__enter__ = MagicMock(return_value=instance)
         MockDDGS.return_value.__exit__ = MagicMock(return_value=False)
-        r = await client.post("/tools/web-search", json={"query": "python", "max_results": 2})
+        r = await client.post(
+            "/tools/web-search", json={"query": "python", "max_results": 2}
+        )
         assert r.status_code == 200
         body = r.json()
         assert "results" in body
@@ -178,6 +188,7 @@ async def test_web_search_with_mock(client):
 
 
 # ── Code Execute ───────────────────────────────────────────────────────────
+
 
 @pytest.mark.anyio
 async def test_code_execute_simple(client):
@@ -190,7 +201,9 @@ async def test_code_execute_simple(client):
 
 @pytest.mark.anyio
 async def test_code_execute_blocked_import(client):
-    r = await client.post("/tools/code-execute", json={"code": "import os; os.system('ls')"})
+    r = await client.post(
+        "/tools/code-execute", json={"code": "import os; os.system('ls')"}
+    )
     assert r.status_code == 200
     body = r.json()
     assert body["exit_code"] == 1

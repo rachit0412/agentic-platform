@@ -1091,6 +1091,139 @@ app.get("/api/chromadb/stats", async (req, res) => {
   }
 });
 
+// ── API: Admin – Full service health (all 10 services) ─
+app.get("/api/admin/services/health", async (req, res) => {
+  const services = [
+    { name: "agent-service", url: `${AGENT_URL}/health`, type: "core" },
+    { name: "tools-service", url: "http://tools-service:8001/health", type: "core" },
+    { name: "chromadb", url: `${CHROMA_URL}/api/v2/heartbeat`, type: "core" },
+    { name: "ollama", url: "http://ollama:11434/api/tags", type: "core" },
+    { name: "n8n", url: `${N8N_URL}/healthz`, type: "integration" },
+    { name: "langfuse", url: `${LANGFUSE_URL}/api/public/health`, type: "observability" },
+    { name: "prometheus", url: "http://prometheus:9090/-/healthy", type: "observability" },
+    { name: "grafana", url: `${GRAFANA_URL}/api/health`, type: "observability" },
+    { name: "loki", url: "http://loki:3100/ready", type: "observability" },
+    { name: "otel-collector", url: "http://otel-collector:13133/", type: "observability" },
+  ];
+  const results = await Promise.all(
+    services.map(async (svc) => {
+      const start = Date.now();
+      try {
+        const resp = await fetch(svc.url, { signal: AbortSignal.timeout(5000) });
+        return { name: svc.name, type: svc.type, status: resp.ok ? "healthy" : "unhealthy", code: resp.status, latency: Date.now() - start };
+      } catch (e) {
+        return { name: svc.name, type: svc.type, status: "unreachable", error: e.message, latency: Date.now() - start };
+      }
+    })
+  );
+  const healthy = results.filter(r => r.status === "healthy").length;
+  res.json({ services: results, summary: { total: results.length, healthy, unhealthy: results.length - healthy, timestamp: new Date().toISOString() } });
+});
+
+// ── API: Admin – Prometheus metrics for services ──────
+app.get("/api/admin/metrics", async (req, res) => {
+  const queries = {
+    cpu: 'rate(process_cpu_seconds_total[5m])',
+    memory: 'process_resident_memory_bytes',
+    http_rate: 'rate(http_requests_total[5m])',
+    http_errors: 'rate(http_requests_total{status=~"5.."}[5m])',
+    up: 'up',
+  };
+  const results = {};
+  for (const [key, query] of Object.entries(queries)) {
+    try {
+      const resp = await fetch(`http://prometheus:9090/api/v1/query?query=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(5000) });
+      const data = await resp.json();
+      results[key] = data.data?.result || [];
+    } catch (e) {
+      results[key] = [];
+    }
+  }
+  res.json(results);
+});
+
+// ── API: Admin – LLM usage summary ───────────────────
+app.get("/api/admin/llm-summary", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/llm-activity/summary`);
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Admin – Memory/platform stats ───────────────
+app.get("/api/admin/memory-stats", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/memory/stats`);
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Admin – Global constraints ──────────────────
+app.get("/api/admin/global-constraints", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/global-constraints`);
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/admin/global-constraints", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Admin – ChromaDB collections detail ─────────
+app.get("/api/admin/chromadb/collections", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/documents/collections`);
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Admin – Document stats ──────────────────────
+app.get("/api/admin/documents/stats", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/documents/stats`);
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Admin – n8n workflow list ───────────────────
+app.get("/api/admin/n8n/workflows", async (req, res) => {
+  try {
+    const headers = {};
+    if (N8N_API_KEY) headers["X-N8N-API-KEY"] = N8N_API_KEY;
+    const resp = await fetch(`${N8N_URL}/api/v1/workflows`, { headers, signal: AbortSignal.timeout(5000) });
+    const data = await resp.json();
+    res.json(data);
+  } catch (e) { res.json({ data: [], error: e.message }); }
+});
+
+// ── API: Admin – Platform overview counts ────────────
+app.get("/api/admin/overview", async (req, res) => {
+  const counts = {};
+  const endpoints = [
+    { key: "agents", url: `${AGENT_URL}/agents` },
+    { key: "skills", url: `${AGENT_URL}/skills` },
+    { key: "prompts", url: `${AGENT_URL}/prompts` },
+    { key: "tools", url: `${AGENT_URL}/tools` },
+    { key: "custom_tools", url: `${AGENT_URL}/custom-tools` },
+    { key: "sessions", url: `${AGENT_URL}/sessions` },
+    { key: "guardrails", url: `${AGENT_URL}/guardrails` },
+    { key: "a2a_peers", url: `${AGENT_URL}/a2a/peers` },
+    { key: "mcp_servers", url: `${AGENT_URL}/mcp/servers` },
+    { key: "connectors", url: `${AGENT_URL}/connectors` },
+  ];
+  await Promise.all(endpoints.map(async (ep) => {
+    try {
+      const r = await fetch(ep.url, { signal: AbortSignal.timeout(5000) });
+      const d = await r.json();
+      counts[ep.key] = Array.isArray(d) ? d.length : (d.items?.length || d.tools?.length || d.peers?.length || d.servers?.length || d.connectors?.length || 0);
+    } catch { counts[ep.key] = 0; }
+  }));
+  res.json(counts);
+});
+
 // ── Pages ──────────────────────────────────────────────
 const externalUrls = {
   n8n: N8N_EXTERNAL,

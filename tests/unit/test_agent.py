@@ -1,4 +1,5 @@
 """Unit tests for Agent Service — graph logic, parsing, endpoints."""
+
 import os
 import pytest
 import json
@@ -7,10 +8,13 @@ from httpx import AsyncClient, ASGITransport
 
 # Patch out observability before importing anything
 import agent.observability as _obs_mod
+
 _mock_trace = MagicMock()
 _mock_trace.trace_id = "test-trace-id"
 _obs_mod.LangfuseTrace = MagicMock(return_value=_mock_trace)
-_obs_mod.track_llm_call = MagicMock(return_value=MagicMock(__enter__=MagicMock(), __exit__=MagicMock()))
+_obs_mod.track_llm_call = MagicMock(
+    return_value=MagicMock(__enter__=MagicMock(), __exit__=MagicMock())
+)
 
 from agent.graph import _parse_tool_calls, should_continue, build_graph
 from agent.tools import TOOL_CATALOGUE, _refresh_catalogue
@@ -28,6 +32,7 @@ def _setup_env(tmp_path, monkeypatch):
     monkeypatch.setenv("FILESTORE_DIR", fs_dir)
     # Re-initialise DB for this test
     import agent.memory as _mem
+
     _mem._local = __import__("threading").local()  # reset thread-local conn
     _mem.MEMORY_DIR = db_dir
     _mem.DB_PATH = os.path.join(db_dir, "platform.db")
@@ -54,6 +59,7 @@ async def client():
 
 # ── Health ─────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.anyio
 async def test_health(client):
     r = await client.get("/health")
@@ -64,6 +70,7 @@ async def test_health(client):
 
 
 # ── Tool-call parsing ─────────────────────────────────────────────────────
+
 
 def test_parse_single_tool_call():
     text = '{"tool": "math", "arguments": {"expression": "2+2"}}'
@@ -122,8 +129,12 @@ def test_parse_vector_search_tool():
 
 # ── Graph routing ──────────────────────────────────────────────────────────
 
+
 def test_should_continue_with_pending_tools():
-    state = {"tool_calls": [{"name": "math", "arguments": {}, "result": None}], "iteration": 0}
+    state = {
+        "tool_calls": [{"name": "math", "arguments": {}, "result": None}],
+        "iteration": 0,
+    }
     assert should_continue(state) == "execute_tools"
 
 
@@ -144,12 +155,14 @@ def test_should_continue_empty():
 
 # ── Graph structure ────────────────────────────────────────────────────────
 
+
 def test_graph_builds():
     g = build_graph()
     assert g is not None
 
 
 # ── Session endpoints ──────────────────────────────────────────────────────
+
 
 @pytest.mark.anyio
 async def test_sessions_list(client):
@@ -173,6 +186,7 @@ async def test_session_delete(client):
 
 
 # ── /run endpoint (mocked Ollama) ──────────────────────────────────────────
+
 
 @pytest.mark.anyio
 async def test_run_no_tools(client):
@@ -199,6 +213,7 @@ async def test_run_prompt_too_long(client):
 
 
 # ── New endpoints ──────────────────────────────────────────────────────────
+
 
 @pytest.mark.anyio
 async def test_tools_list(client):

@@ -27,6 +27,7 @@
 | 017 | LLM Activity Tracking               | AP-5, AP-1       | 2025-06 |
 | 018 | Dynamic Model Capabilities          | AP-10, AP-9      | 2025-06 |
 | 019 | Clickable Execution Details         | AP-5, AP-1       | 2025-06 |     | 020 | Skill File Attachments | AP-8, AP-4, AP-9 | 2025-05 |
+| 021 | Comprehensive Admin Plane            | AP-5, AP-10, AP-1 | 2025-05 |
 
 ---
 
@@ -251,3 +252,25 @@
 - External object store — overkill for single-node deployment
 
 **Consequence**: Skills become self-contained packages (instructions + code + docs + templates). Files are strictly per-skill isolated — no cross-skill file sharing. Deleting a skill cascade-deletes its files.
+
+---
+
+## ADR-021 · Comprehensive Admin Plane
+
+**Context**: The admin page only showed basic DB stats and export/import. No visibility into service health, LLM usage, platform configuration, or audit trails from a single pane.
+
+**Decision**: Rebuild the admin page as a 6-tab control plane:
+1. **Service Health** — Live checks for 10 services with latency, HTTP status, endpoints table, version matrix
+2. **Platform Overview** — Entity counts, 18 capability indicators, memory/storage stats
+3. **LLM & Models** — Active config, provider/model switcher, available models, usage summary with per-model breakdown
+4. **Database & Data** — SQLite table stats with percentage bars, export/import, ChromaDB collections, document stats
+5. **Configuration** — Global constraints JSON editor, guardrails registry, n8n workflows, quick links
+6. **Audit Log** — Filterable audit trail (9 entity types × 4 action types)
+
+Added 9 new server-side API endpoints (`/api/admin/*`) to aggregate data from agent-service, tools-service, ChromaDB, Prometheus, n8n, and Ollama.
+
+**Why not alternatives**:
+- Grafana-only — limited to metrics, no config editing or entity management
+- Separate admin service — overkill for single-node deployment
+
+**Consequence**: Single pane of glass for platform operations. Auth-gated (client-side session). All tabs load data lazily on switch.

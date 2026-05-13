@@ -23,6 +23,7 @@
 | 13b | Skill Workflow             | Sequential / Router skill execution ordering in Agent Builder      | `agent-builder.ejs`                           |
 | 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte     | `connectors/`                                 |
 | 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries        | `llamaindex_loader.py`, `structured_query.py` |
+| 16  | Admin Plane                | 6-tab control centre: service health, LLM management, DB ops, config, audit | `admin.ejs`, `server.js`                      |
 
 ## Detail: Agent Reasoning Engine
 

@@ -1,4 +1,5 @@
 """Root conftest — ensure agent service is importable for all tests."""
+
 import sys
 import os
 
