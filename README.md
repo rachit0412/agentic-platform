@@ -178,7 +178,7 @@ curl -X POST http://localhost:8010/run \
 | AI Studio        | IDE-style code editor with chat, preview, and projects                                              |
 | Agent Hub        | Agent factory overview dashboard                                                                    |
 | Agent Registry   | Create and manage agent definitions                                                                 |
-| Skills           | Build reusable skill packages with file attachments (scripts, references, assets)                   |
+| Skills           | Build reusable skill packages with file attachments (scripts, references, assets). Platform-wide settings (security, best practices) shown read-only |
 | Prompts          | Prompt template library                                                                             |
 | Tools            | Manage agent tools and capabilities                                                                 |
 | Knowledge Base   | Upload, search, manage RAG docs                                                                     |
@@ -192,7 +192,7 @@ curl -X POST http://localhost:8010/run \
 | Observability    | Stack health — Prometheus, Grafana, Loki status                                                     |
 | Guardrails       | Runtime safety controls and policy enforcement                                                      |
 | Marketplace      | Browse and install templates                                                                        |
-| Admin            | 6-tab admin plane — service health, platform overview, LLM management, DB & data, config, audit log |
+| Admin            | 6-tab admin plane — service health, platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Hash-based tab navigation for deep linking |
 | Documentation    | Auto-generated API & architecture docs                                                              |
 
 ---

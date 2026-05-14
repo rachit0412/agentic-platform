@@ -461,6 +461,43 @@
     </div>
   </div>
 
+  <!-- Security & Best Practices -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Security &amp; Best Practices</h3>
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="loadSecurityConsiderations();loadBestPractices()">Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSecurityConsiderations();saveBestPractices()" style="margin-left:0.5rem">Save All</button>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <!-- Security (editable) -->
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:0.75rem 1rem">
+        <h4 style="margin:0 0 0.5rem;font-size:0.82rem;color:#ef4444;display:flex;align-items:center;gap:0.35rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Security Considerations
+        </h4>
+        <textarea id="security-editor" class="input" rows="10" placeholder="One security consideration per line..." style="width:100%;font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--font-mono)"></textarea>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;align-items:center">
+          <button class="btn btn-sm" onclick="resetSecurityConsiderations()" style="font-size:0.72rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef444444">Reset to Defaults</button>
+          <span style="margin-left:auto;font-size:0.68rem;color:var(--text-3)">One item per line.</span>
+        </div>
+      </div>
+      <!-- Best Practices (editable) -->
+      <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:0.75rem 1rem">
+        <h4 style="margin:0 0 0.5rem;font-size:0.82rem;color:#22c55e;display:flex;align-items:center;gap:0.35rem">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Best Practices
+        </h4>
+        <textarea id="best-practices-editor" class="input" rows="10" placeholder="One best practice per line..." style="width:100%;font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--font-mono)"></textarea>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;align-items:center">
+          <button class="btn btn-sm" onclick="resetBestPractices()" style="font-size:0.72rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef444444">Reset to Defaults</button>
+          <span style="margin-left:auto;font-size:0.68rem;color:var(--text-3)">One practice per line. These appear as guidance on the Skills page.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Guardrails Overview -->
   <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
     <div class="section-header">
@@ -623,12 +660,13 @@ function switchTab(tab) {
   if (tabEl) tabEl.style.display = 'block';
   var btn = document.querySelector('.admin-tab[data-tab="' + tab + '"]');
   if (btn) btn.classList.add('active');
+  history.replaceState(null, '', '#' + tab);
   /* Load data for the active tab */
   if (tab === 'health') loadServiceHealth();
   if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
   if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
-  if (tab === 'config') { loadGlobalConstraints(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
+  if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
   if (tab === 'audit') loadAuditLog();
 }
 
@@ -656,7 +694,10 @@ function highlightThemeCard() {
 /* ═══ LOAD ALL ═══ */
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
-  loadServiceHealth();
+  var hash = (location.hash || '').replace('#', '');
+  var validTabs = ['health','overview','llm','database','config','audit'];
+  var startTab = validTabs.indexOf(hash) >= 0 ? hash : 'health';
+  switchTab(startTab);
 }
 
 /* ═══ SERVICE HEALTH ═══ */
@@ -977,6 +1018,84 @@ async function saveGlobalConstraints() {
     if (r.ok) { showToast('Global constraints saved', 'success'); }
     else { showToast('Failed to save constraints', 'error'); }
   } catch(e) { showToast('Invalid JSON: ' + e.message, 'error'); }
+}
+
+/* ═══ SECURITY CONSIDERATIONS ═══ */
+var _defaultSC = [
+  'Exercise caution when adding scripts to your skill',
+  'Never hardcode API keys, passwords, or secrets in prompts or constraints',
+  'Review any skills you download before enabling them',
+  'Use appropriate MCP connections for external service access',
+  'Validate input parameters to prevent injection attacks'
+];
+
+async function loadSecurityConsiderations() {
+  try {
+    var r = await fetch('/api/admin/security-considerations');
+    var d = await r.json();
+    var items = d.items || [];
+    document.getElementById('security-editor').value = items.length ? items.join('\\n') : _defaultSC.join('\\n');
+  } catch(e) {
+    document.getElementById('security-editor').value = _defaultSC.join('\\n');
+  }
+}
+
+async function saveSecurityConsiderations() {
+  var lines = document.getElementById('security-editor').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean);
+  if (lines.length === 0) { showToast('Add at least one security consideration', 'error'); return; }
+  try {
+    var r = await fetch('/api/admin/security-considerations', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ items: lines }) });
+    var d = await r.json();
+    if (d.error) { showToast('Error: ' + d.error, 'error'); return; }
+    showToast('Security considerations saved (' + (d.items || lines).length + ' items)', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function resetSecurityConsiderations() {
+  document.getElementById('security-editor').value = _defaultSC.join('\\n');
+  showToast('Reset to defaults \\u2014 click Save All to persist', 'info');
+}
+
+/* ═══ BEST PRACTICES ═══ */
+var _defaultBP = [
+  'Write a clear, specific description so agents know WHEN to activate this skill (progressive disclosure)',
+  'Keep prompts under 5,000 tokens \u2014 move reference docs, templates, and assets to external files',
+  'Define input parameters with types and defaults for reusable, composable skills (like function arguments)',
+  'Limit allowed tools to only what the skill needs (principle of least privilege)',
+  'Add constraints as behavioral guardrails (e.g. "Max 500 words", "Always cite sources", "Never output PII")',
+  'Include examples of expected inputs & outputs in the prompt for consistency and auditability',
+  'Bundle scripts, reference materials, and templates alongside the skill for self-contained execution',
+  'Capture domain expertise and org-specific workflows as repeatable, version-controlled procedures',
+  'Design skills to be portable and cross-product \u2014 follow the Agent Skills open standard (agentskills.io)',
+  'Use MCP connections for external services instead of hardcoding credentials or secrets',
+  'Test your skill with edge cases and adversarial inputs before deploying to production'
+];
+
+async function loadBestPractices() {
+  try {
+    var r = await fetch('/api/admin/best-practices');
+    var d = await r.json();
+    var items = d.practices || [];
+    document.getElementById('best-practices-editor').value = items.length ? items.join('\\n') : _defaultBP.join('\\n');
+  } catch(e) {
+    document.getElementById('best-practices-editor').value = _defaultBP.join('\\n');
+  }
+}
+
+async function saveBestPractices() {
+  var lines = document.getElementById('best-practices-editor').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean);
+  if (lines.length === 0) { showToast('Add at least one best practice', 'error'); return; }
+  try {
+    var r = await fetch('/api/admin/best-practices', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ practices: lines }) });
+    var d = await r.json();
+    if (d.error) { showToast('Error: ' + d.error, 'error'); return; }
+    showToast('Best practices saved (' + (d.practices || lines).length + ' items)', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function resetBestPractices() {
+  document.getElementById('best-practices-editor').value = _defaultBP.join('\\n');
+  showToast('Reset to defaults \u2014 click Save to persist', 'info');
 }
 
 /* ═══ GUARDRAILS ═══ */

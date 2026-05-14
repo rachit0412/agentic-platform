@@ -1172,6 +1172,40 @@ app.put("/api/admin/global-constraints", async (req, res) => {
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// ── API: Admin – Best practices ──────────────────────
+app.get("/api/admin/security-considerations", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/security-considerations`); res.json(await r.json()); }
+  catch (e) { res.json({ error: e.message }); }
+});
+app.put("/api/admin/security-considerations", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/security-considerations`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    res.json(await r.json());
+  } catch (e) { res.json({ error: e.message }); }
+});
+app.get("/api/security-considerations", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/security-considerations`); res.json(await r.json()); }
+  catch (e) { res.json({ error: e.message }); }
+});
+
+app.get("/api/admin/best-practices", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/best-practices`);
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/admin/best-practices", async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/best-practices`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    res.json(await r.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+// ── Also expose on non-admin path for skills page ────
+app.get("/api/best-practices", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/best-practices`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: Admin – ChromaDB collections detail ─────────
 app.get("/api/admin/chromadb/collections", async (req, res) => {
   try {

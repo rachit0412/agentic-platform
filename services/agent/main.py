@@ -1304,6 +1304,78 @@ async def global_constraints_update(request: Request):
     return {"constraints": updated}
 
 
+# ── Security Considerations endpoints ─────────────────────────────────────
+
+
+@app.get("/security-considerations")
+async def security_considerations_get():
+    from agent.memory import get_security_considerations
+
+    return {"items": get_security_considerations()}
+
+
+@app.put("/security-considerations")
+async def security_considerations_update(request: Request):
+    data = await request.json()
+    items = data.get("items", [])
+    if not isinstance(items, list):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400, content={"error": "items must be a list of strings"}
+        )
+    for i, item in enumerate(items):
+        if not isinstance(item, str) or not item.strip():
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Item {i + 1} must be a non-empty string"},
+            )
+        _check_no_secrets(item, f"Security consideration {i + 1}")
+
+    from agent.memory import set_security_considerations
+
+    updated = set_security_considerations([s.strip() for s in items if s.strip()])
+    return {"items": updated}
+
+
+# ── Best Practices endpoints ──────────────────────────────────────────────
+
+
+@app.get("/best-practices")
+async def best_practices_get():
+    from agent.memory import get_best_practices
+
+    return {"practices": get_best_practices()}
+
+
+@app.put("/best-practices")
+async def best_practices_update(request: Request):
+    data = await request.json()
+    practices = data.get("practices", [])
+    if not isinstance(practices, list):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400, content={"error": "practices must be a list of strings"}
+        )
+    for i, p in enumerate(practices):
+        if not isinstance(p, str) or not p.strip():
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Practice {i + 1} must be a non-empty string"},
+            )
+        _check_no_secrets(p, f"Best practice {i + 1}")
+
+    from agent.memory import set_best_practices
+
+    updated = set_best_practices([p.strip() for p in practices if p.strip()])
+    return {"practices": updated}
+
+
 # ── Skill File Endpoints ───────────────────────────────────────────────────
 
 
@@ -1638,6 +1710,7 @@ class PromptCreate(BaseModel):
     category: str = "general"
     description: str = ""
     tags: list[str] = Field(default_factory=list)
+    model: str = ""
 
 
 class PromptUpdate(BaseModel):
@@ -1646,6 +1719,7 @@ class PromptUpdate(BaseModel):
     category: str | None = None
     description: str | None = None
     tags: list[str] | None = None
+    model: str | None = None
 
 
 @app.get("/prompts")
@@ -1661,6 +1735,7 @@ async def prompts_create_endpoint(body: PromptCreate):
         category=body.category,
         description=body.description,
         tags=body.tags,
+        model=body.model,
     )
     return prompt
 

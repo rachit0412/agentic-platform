@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= title %> — Agentic Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
   <link rel="stylesheet" href="/theme-enterprise.css" />
   <link rel="stylesheet" href="/theme-softui.css" />
@@ -25,27 +28,34 @@
     <!-- Logo -->
     <div class="rail-logo">
       <div class="rail-logo-icon">
-        <svg viewBox="0 0 52 52" width="52" height="52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="logo-tri" x1="14" y1="6" x2="38" y2="46" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#1e3a5f"/>
-              <stop offset="100%" stop-color="#2d5986"/>
+            <linearGradient id="lg-s1" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f472b6"/><stop offset="100%" stop-color="#ec4899"/>
             </linearGradient>
-            <linearGradient id="logo-tri-d" x1="14" y1="6" x2="38" y2="46" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#94a3b8"/>
-              <stop offset="100%" stop-color="#64748b"/>
+            <linearGradient id="lg-s2" x1="48" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#a78bfa"/>
             </linearGradient>
+            <linearGradient id="lg-s3" x1="24" y1="48" x2="24" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0ea5e9"/>
+            </linearGradient>
+            <linearGradient id="lg-s4" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+            <linearGradient id="lg-s5" x1="0" y1="24" x2="48" y2="24" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+            <filter id="lg-glow"><feGaussianBlur stdDeviation="0.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
-          <!-- Outer triangle -->
-          <path d="M26 7 L45 42 H7 Z" stroke="url(#logo-tri)" stroke-width="4" fill="none" stroke-linejoin="round" class="logo-shape"/>
-          <!-- Inner inverted triangle -->
-          <path d="M26 33 L17 17 H35 Z" stroke="url(#logo-tri)" stroke-width="3" fill="none" stroke-linejoin="round" opacity="0.55" class="logo-shape"/>
-          <!-- Cross bar -->
-          <line x1="13" y1="30" x2="39" y2="30" stroke="url(#logo-tri)" stroke-width="3" stroke-linecap="round" opacity="0.4" class="logo-shape"/>
-          <!-- Vertex nodes -->
-          <circle cx="26" cy="7" r="2.2" fill="#1e3a5f" opacity="0.6" class="logo-node"/>
-          <circle cx="7" cy="42" r="1.8" fill="#1e3a5f" opacity="0.35" class="logo-node"/>
-          <circle cx="45" cy="42" r="1.8" fill="#1e3a5f" opacity="0.35" class="logo-node"/>
+          <g filter="url(#lg-glow)">
+            <path d="M23 2 L14 22 L24 20 Z" fill="url(#lg-s1)" opacity="0.9" transform="translate(-1,-0.5)"/>
+            <path d="M25 2 L44 44 L25 22 Z" fill="url(#lg-s2)" opacity="0.85" transform="translate(1,0)"/>
+            <path d="M13 23 L4 44 L24 34 Z" fill="url(#lg-s3)" opacity="0.8" transform="translate(-1,1)"/>
+            <path d="M25 23 L44 44 L25 34 Z" fill="url(#lg-s4)" opacity="0.75" transform="translate(0.5,1)"/>
+            <path d="M5 44 L43 44 L24 35 Z" fill="url(#lg-s5)" opacity="0.6" transform="translate(0,1.5)"/>
+            <circle cx="24" cy="24" r="2" fill="white" opacity="0.5"/>
+            <circle cx="24" cy="24" r="5" fill="white" opacity="0.08"/>
+          </g>
         </svg>
       </div>
       <span class="rail-tooltip">Agentic Platform</span>
@@ -91,11 +101,11 @@
           </a>
           <a href="/skills" class="<%= page === 'skills' ? 'sub-active' : '' %>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            Skills
+            Skill Family
           </a>
           <a href="/prompts" class="<%= page === 'prompts' ? 'sub-active' : '' %>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Prompts
+            Prompt Library
           </a>
           <a href="/tools" class="<%= page === 'tools' ? 'sub-active' : '' %>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
@@ -197,19 +207,17 @@
           <span class="rail-tooltip">Marketplace</span>
         </a>
       </li>
-      <li>
-        <a href="/admin" class="rail-item <%= page === 'admin' ? 'active' : '' %>">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span class="rail-tooltip">Admin Plane <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:4px;font-weight:600">BETA</span></span>
-        </a>
-      </li>
     </ul>
 
-    <!-- Bottom: docs + status -->
+    <!-- Bottom: docs + admin + status -->
     <div class="rail-bottom">
       <a href="/docs" class="rail-item <%= page === 'docs' ? 'active' : '' %>">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <span class="rail-tooltip">Documentation</span>
+      </a>
+      <a href="/admin" class="rail-item <%= page === 'admin' ? 'active' : '' %>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="rail-tooltip">Admin Plane <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(139,92,246,0.15);color:#8b5cf6;margin-left:3px;font-weight:600">BETA</span></span>
       </a>
       <div class="rail-item" id="system-status-dot">
         <span class="pulse-dot-emerald"></span>
@@ -298,6 +306,16 @@
       html.classList.toggle('sidebar-expanded');
       localStorage.setItem('sidebarExpanded', html.classList.contains('sidebar-expanded'));
     }
+
+    // ── Expandable Rail Groups (collapsed by default in expanded sidebar) ──
+    document.querySelectorAll('.rail-group > .rail-item').forEach(function(item) {
+      item.addEventListener('click', function(e) {
+        if (!document.documentElement.classList.contains('sidebar-expanded')) return;
+        e.preventDefault();
+        var group = item.closest('.rail-group');
+        group.classList.toggle('open');
+      });
+    });
     // Enable smooth transitions after initial render (prevents flash on page load)
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {

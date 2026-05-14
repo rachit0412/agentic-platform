@@ -232,12 +232,12 @@
    LOGO — Blue accent instead of cyan-violet
    ═══════════════════════════════════════════ */
 .theme-enterprise .rail-logo-icon {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+  background: transparent !important;
+  box-shadow: none;
   border-radius: 10px;
 }
 .theme-enterprise .rail-logo-icon:hover {
-  box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════

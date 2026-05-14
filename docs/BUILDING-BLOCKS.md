@@ -12,7 +12,7 @@
 | 4   | Conversation Memory        | SQLite conversations + rolling session summaries                            | `memory.py`                                   |
 | 5   | Tool Execution             | tools-service FastAPI (sandboxed) + delegate_to_agent                       | `tools.py`, tools `main.py`                   |
 | 6   | Guardrails Engine          | LLM-based classifier + regex fallback, input & output gates                 | `graph.py`                                    |
-| 7   | Configuration Store        | SQLite CRUD — 15 tables, full versioning & audit                            | `memory.py`                                   |
+| 7   | Configuration Store        | SQLite CRUD — 15+ tables (incl. `platform_settings`), full versioning & audit | `memory.py`                                   |
 | 7b  | Skill File Store           | Disk-based per-skill isolated file storage (scripts, refs, assets)          | `memory.py`, `/data/filestore/skills/`        |
 | 8   | A2A Protocol               | HTTP peer registry, agent cards, task dispatch                              | `main.py`                                     |
 | 9   | MCP Protocol               | Server registry, JSON-RPC tool discovery & invocation                       | `main.py`                                     |
@@ -23,7 +23,7 @@
 | 13b | Skill Workflow             | Sequential / Router skill execution ordering in Agent Builder               | `agent-builder.ejs`                           |
 | 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint, Airbyte              | `connectors/`                                 |
 | 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries                 | `llamaindex_loader.py`, `structured_query.py` |
-| 16  | Admin Plane                | 6-tab control centre: service health, LLM management, DB ops, config, audit | `admin.ejs`, `server.js`                      |
+| 16  | Admin Plane                | 6-tab control centre: service health, LLM management, DB ops, config (security considerations, best practices), audit. Hash-based tab navigation. Platform-wide settings editable here only (read-only elsewhere) | `admin.ejs`, `server.js`                      |
 
 ## Detail: Agent Reasoning Engine
 

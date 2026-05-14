@@ -28,6 +28,7 @@
 | 018 | Dynamic Model Capabilities          | AP-10, AP-9       | 2025-06 |
 | 019 | Clickable Execution Details         | AP-5, AP-1        | 2025-06 |     | 020 | Skill File Attachments | AP-8, AP-4, AP-9 | 2025-05 |
 | 021 | Comprehensive Admin Plane           | AP-5, AP-10, AP-1 | 2025-05 |
+| 022 | Admin-Only Editing for Platform Settings | AP-4, AP-10, AP-1 | 2025-05 |
 
 ---
 
@@ -276,3 +277,26 @@ Added 9 new server-side API endpoints (`/api/admin/*`) to aggregate data from ag
 - Separate admin service — overkill for single-node deployment
 
 **Consequence**: Single pane of glass for platform operations. Auth-gated (client-side session). All tabs load data lazily on switch.
+
+---
+
+## ADR-022 · Admin-Only Editing for Platform Settings
+
+**Context**: Platform-wide settings — security considerations and best practices — were either hardcoded or stored in `localStorage`, meaning each browser had its own copy. Skills page users could edit these freely, creating inconsistency across the team.
+
+**Decision**: Migrate security considerations and best practices to backend storage (`platform_settings` table in SQLite via `GET/PUT /security-considerations` and `GET/PUT /best-practices` endpoints). Make them **editable only in the admin plane** (Configuration tab, "Security & Best Practices" card) and **read-only on the skills page**. Global constraints follow the same pattern — editable in admin, read-only on skills.
+
+**Key changes**:
+
+- New DB functions: `get_security_considerations()`, `set_security_considerations()`, `get_best_practices()`, `set_best_practices()` in `memory.py`
+- New backend endpoints: `GET/PUT /security-considerations`, `GET/PUT /best-practices` in agent-service
+- New proxy routes in `server.js`: `/api/admin/security-considerations`, `/api/admin/best-practices` (and non-admin variants)
+- Admin page uses hash-based tab navigation (`/admin#config` deep links work)
+
+**Why not alternatives**:
+
+- `localStorage` — per-browser, no team consistency, no audit trail
+- Env vars — requires restart to change, no UI editing
+- Separate settings service — overkill for single-node deployment
+
+**Consequence**: Single source of truth for governance content. All users see the same security/best-practices text. Changes are auditable. Skills page consumers cannot accidentally modify platform policy.

@@ -362,16 +362,16 @@
 }
 
 .theme-flux .rail-logo-icon {
-  background: #4f46e5 !important;
+  background: transparent !important;
   border-radius: 10px;
   box-shadow: none;
   transition: background 0.15s ease;
 }
 .theme-flux .rail-logo-icon svg {
-  color: #fff;
+  color: inherit;
 }
 .theme-flux .rail-logo-icon:hover {
-  background: #4338ca !important;
+  background: transparent !important;
   box-shadow: none;
   transform: none;
 }

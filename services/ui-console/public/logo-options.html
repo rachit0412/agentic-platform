@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif; background: #09090b; color: #e2e8f0; padding: 48px 24px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 64px 44px; max-width: 1080px; margin: 0 auto; }
+  .option { text-align: center; }
+  .option h3 { margin: 22px 0 6px; font-size: 13px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #e4e4e7; }
+  .option p { font-size: 11px; color: #52525b; margin: 0 auto; line-height: 1.5; max-width: 200px; }
+  .preview { display: flex; gap: 12px; justify-content: center; align-items: center; }
+  .box { width: 96px; height: 96px; border-radius: 24px; display: flex; align-items: center; justify-content: center; }
+  .dark-bg { background: #18181b; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px rgba(255,255,255,0.04); }
+  .light-bg { background: #ffffff; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.02), 0 0 0 1px rgba(0,0,0,0.06); }
+  h1 { text-align: center; margin-bottom: 6px; font-weight: 200; font-size: 22px; letter-spacing: 4px; text-transform: uppercase; color: #71717a; }
+  .sub { text-align: center; color: #3f3f46; font-size: 11px; margin-bottom: 64px; letter-spacing: 1px; }
+  .label { font-size: 8px; color: #3f3f46; margin-top: 8px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Prism Variations</h1>
+<p class="sub">Six advanced takes on the 3D prism concept</p>
+
+<div class="grid">
+
+  <!-- ═══ E1: Crystal Prism — faceted gem with specular highlights ═══ -->
+  <div class="option">
+    <div class="preview">
+      <div>
+        <div class="box dark-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e1-l" x1="0" y1="20" x2="20" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#818cf8"/>
+                <stop offset="100%" stop-color="#3730a3"/>
+              </linearGradient>
+              <linearGradient id="e1-r" x1="48" y1="20" x2="28" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#6d28d9"/>
+              </linearGradient>
+              <linearGradient id="e1-b" x1="8" y1="44" x2="40" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#4f46e5"/>
+                <stop offset="100%" stop-color="#7c3aed"/>
+              </linearGradient>
+              <linearGradient id="e1-il" x1="14" y1="24" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0.1"/>
+              </linearGradient>
+              <linearGradient id="e1-ir" x1="34" y1="24" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#e9d5ff" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.05"/>
+              </linearGradient>
+              <filter id="e1-glow">
+                <feGaussianBlur stdDeviation="1.2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g filter="url(#e1-glow)">
+              <!-- Main 3 faces -->
+              <path d="M24 3 L5 44 L24 35 Z" fill="url(#e1-l)"/>
+              <path d="M24 3 L43 44 L24 35 Z" fill="url(#e1-r)"/>
+              <path d="M5 44 L43 44 L24 35 Z" fill="url(#e1-b)" opacity="0.6"/>
+              <!-- Inner facet lines for gem cut effect -->
+              <path d="M24 3 L15 24 L24 35 Z" fill="url(#e1-il)"/>
+              <path d="M24 3 L33 24 L24 35 Z" fill="url(#e1-ir)"/>
+              <!-- Edge highlight -->
+              <line x1="24" y1="3" x2="24" y2="35" stroke="white" stroke-width="0.4" opacity="0.25"/>
+              <!-- Top specular -->
+              <path d="M22 10 L24 3 L26 10 L24 14 Z" fill="white" opacity="0.2"/>
+            </g>
+          </svg>
+        </div>
+        <div class="label">dark</div>
+      </div>
+      <div>
+        <div class="box light-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e1-l2" x1="0" y1="20" x2="20" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#312e81"/>
+              </linearGradient>
+              <linearGradient id="e1-r2" x1="48" y1="20" x2="28" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#5b21b6"/>
+              </linearGradient>
+              <linearGradient id="e1-b2" x1="8" y1="44" x2="40" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#3730a3"/>
+                <stop offset="100%" stop-color="#6d28d9"/>
+              </linearGradient>
+              <linearGradient id="e1-il2" x1="14" y1="24" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#818cf8" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.05"/>
+              </linearGradient>
+              <linearGradient id="e1-ir2" x1="34" y1="24" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.03"/>
+              </linearGradient>
+            </defs>
+            <path d="M24 3 L5 44 L24 35 Z" fill="url(#e1-l2)"/>
+            <path d="M24 3 L43 44 L24 35 Z" fill="url(#e1-r2)"/>
+            <path d="M5 44 L43 44 L24 35 Z" fill="url(#e1-b2)" opacity="0.6"/>
+            <path d="M24 3 L15 24 L24 35 Z" fill="url(#e1-il2)"/>
+            <path d="M24 3 L33 24 L24 35 Z" fill="url(#e1-ir2)"/>
+            <line x1="24" y1="3" x2="24" y2="35" stroke="white" stroke-width="0.4" opacity="0.3"/>
+            <path d="M22 10 L24 3 L26 10 L24 14 Z" fill="white" opacity="0.25"/>
+          </svg>
+        </div>
+        <div class="label">light</div>
+      </div>
+    </div>
+    <h3>E1 &mdash; Crystal</h3>
+    <p>Gem-cut facets with inner refraction lines and specular apex highlight.</p>
+  </div>
+
+  <!-- ═══ E2: Hologram Prism — with rainbow edge diffraction ═══ -->
+  <div class="option">
+    <div class="preview">
+      <div>
+        <div class="box dark-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e2-face" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#818cf8" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0.05"/>
+              </linearGradient>
+              <linearGradient id="e2-edge1" x1="24" y1="3" x2="5" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#f472b6"/>
+                <stop offset="30%" stop-color="#a78bfa"/>
+                <stop offset="60%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#34d399"/>
+              </linearGradient>
+              <linearGradient id="e2-edge2" x1="24" y1="3" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#fbbf24"/>
+                <stop offset="30%" stop-color="#f472b6"/>
+                <stop offset="60%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#818cf8"/>
+              </linearGradient>
+              <linearGradient id="e2-edge3" x1="5" y1="44" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#34d399"/>
+                <stop offset="50%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#818cf8"/>
+              </linearGradient>
+              <filter id="e2-glow">
+                <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g filter="url(#e2-glow)">
+              <!-- Glass fill -->
+              <path d="M24 3 L5 44 L43 44 Z" fill="url(#e2-face)"/>
+              <!-- Rainbow edges -->
+              <line x1="24" y1="3" x2="5" y2="44" stroke="url(#e2-edge1)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="24" y1="3" x2="43" y2="44" stroke="url(#e2-edge2)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="5" y1="44" x2="43" y2="44" stroke="url(#e2-edge3)" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Light beam entering -->
+              <line x1="2" y1="22" x2="18" y2="28" stroke="white" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+              <!-- Dispersed rainbow beams exiting -->
+              <line x1="34" y1="24" x2="46" y2="16" stroke="#f472b6" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/>
+              <line x1="35" y1="27" x2="46" y2="24" stroke="#a78bfa" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>
+              <line x1="35" y1="30" x2="46" y2="32" stroke="#38bdf8" stroke-width="0.8" opacity="0.4" stroke-linecap="round"/>
+              <!-- Apex glow -->
+              <circle cx="24" cy="3" r="2" fill="white" opacity="0.4"/>
+            </g>
+          </svg>
+        </div>
+        <div class="label">dark</div>
+      </div>
+      <div>
+        <div class="box light-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e2b-face" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity="0.08"/>
+                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.03"/>
+              </linearGradient>
+              <linearGradient id="e2b-edge1" x1="24" y1="3" x2="5" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ec4899"/>
+                <stop offset="30%" stop-color="#7c3aed"/>
+                <stop offset="60%" stop-color="#0ea5e9"/>
+                <stop offset="100%" stop-color="#10b981"/>
+              </linearGradient>
+              <linearGradient id="e2b-edge2" x1="24" y1="3" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#f59e0b"/>
+                <stop offset="30%" stop-color="#ec4899"/>
+                <stop offset="60%" stop-color="#9333ea"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+              </linearGradient>
+              <linearGradient id="e2b-edge3" x1="5" y1="44" x2="43" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="50%" stop-color="#0ea5e9"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+              </linearGradient>
+            </defs>
+            <path d="M24 3 L5 44 L43 44 Z" fill="url(#e2b-face)"/>
+            <line x1="24" y1="3" x2="5" y2="44" stroke="url(#e2b-edge1)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="24" y1="3" x2="43" y2="44" stroke="url(#e2b-edge2)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="5" y1="44" x2="43" y2="44" stroke="url(#e2b-edge3)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="2" y1="22" x2="18" y2="28" stroke="#71717a" stroke-width="1" opacity="0.4" stroke-linecap="round"/>
+            <line x1="34" y1="24" x2="46" y2="16" stroke="#ec4899" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>
+            <line x1="35" y1="27" x2="46" y2="24" stroke="#7c3aed" stroke-width="0.8" opacity="0.4" stroke-linecap="round"/>
+            <line x1="35" y1="30" x2="46" y2="32" stroke="#0ea5e9" stroke-width="0.8" opacity="0.35" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="label">light</div>
+      </div>
+    </div>
+    <h3>E2 &mdash; Hologram</h3>
+    <p>Glass prism with rainbow-gradient edges and light dispersion beams.</p>
+  </div>
+
+  <!-- ═══ E3: Monolith — solid dark prism with subtle edge glow ═══ -->
+  <div class="option">
+    <div class="preview">
+      <div>
+        <div class="box dark-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e3-body" x1="24" y1="0" x2="24" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#312e81"/>
+              </linearGradient>
+              <linearGradient id="e3-edge" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#c084fc"/>
+                <stop offset="50%" stop-color="#818cf8"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+              </linearGradient>
+              <filter id="e3-glow">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="e3-inner-shadow">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+                <feOffset dx="0" dy="2"/>
+                <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+                <feFlood flood-color="#1e1b4b" flood-opacity="0.6"/>
+                <feComposite in2="SourceAlpha" operator="in"/>
+                <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <!-- Solid body -->
+            <path d="M24 3 L5 44 L43 44 Z" fill="url(#e3-body)" filter="url(#e3-inner-shadow)"/>
+            <!-- Glowing edges -->
+            <g filter="url(#e3-glow)" opacity="0.7">
+              <path d="M24 3 L5 44 L43 44 Z" stroke="url(#e3-edge)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+            </g>
+            <!-- Center vertical axis light -->
+            <line x1="24" y1="8" x2="24" y2="40" stroke="url(#e3-edge)" stroke-width="0.5" opacity="0.15"/>
+            <!-- Apex flare -->
+            <circle cx="24" cy="3" r="1.5" fill="#c084fc" opacity="0.6" filter="url(#e3-glow)"/>
+          </svg>
+        </div>
+        <div class="label">dark</div>
+      </div>
+      <div>
+        <div class="box light-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e3-body2" x1="24" y1="0" x2="24" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#1e1b4b"/>
+              </linearGradient>
+              <linearGradient id="e3-edge2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="50%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#4f46e5"/>
+              </linearGradient>
+            </defs>
+            <path d="M24 3 L5 44 L43 44 Z" fill="url(#e3-body2)"/>
+            <path d="M24 3 L5 44 L43 44 Z" stroke="url(#e3-edge2)" stroke-width="1" fill="none" stroke-linejoin="round" opacity="0.5"/>
+            <circle cx="24" cy="3" r="1.5" fill="#a78bfa" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="label">light</div>
+      </div>
+    </div>
+    <h3>E3 &mdash; Monolith</h3>
+    <p>Dark solid prism with glowing edge outline and apex flare. Commanding.</p>
+  </div>
+
+  <!-- ═══ E4: Shattered — exploded triangle fragments ═══ -->
+  <div class="option">
+    <div class="preview">
+      <div>
+        <div class="box dark-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e4-1" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#f472b6"/>
+                <stop offset="100%" stop-color="#ec4899"/>
+              </linearGradient>
+              <linearGradient id="e4-2" x1="48" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+              <linearGradient id="e4-3" x1="24" y1="48" x2="24" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#0ea5e9"/>
+              </linearGradient>
+              <linearGradient id="e4-4" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#34d399"/>
+                <stop offset="100%" stop-color="#10b981"/>
+              </linearGradient>
+              <linearGradient id="e4-5" x1="0" y1="24" x2="48" y2="24" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#fbbf24"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+              <filter id="e4-glow">
+                <feGaussianBlur stdDeviation="0.8" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g filter="url(#e4-glow)">
+              <!-- Top shard - pink -->
+              <path d="M23 2 L14 22 L24 20 Z" fill="url(#e4-1)" opacity="0.9" transform="translate(-1,-0.5)"/>
+              <!-- Right shard - purple -->
+              <path d="M25 2 L44 44 L25 22 Z" fill="url(#e4-2)" opacity="0.85" transform="translate(1,0)"/>
+              <!-- Bottom-left shard - cyan -->
+              <path d="M13 23 L4 44 L24 34 Z" fill="url(#e4-3)" opacity="0.8" transform="translate(-1,1)"/>
+              <!-- Bottom-right shard - green -->
+              <path d="M25 23 L44 44 L25 34 Z" fill="url(#e4-4)" opacity="0.75" transform="translate(0.5,1)"/>
+              <!-- Bottom center shard - amber -->
+              <path d="M5 44 L43 44 L24 35 Z" fill="url(#e4-5)" opacity="0.6" transform="translate(0,1.5)"/>
+              <!-- Center gap glow -->
+              <circle cx="24" cy="24" r="2" fill="white" opacity="0.5"/>
+              <circle cx="24" cy="24" r="5" fill="white" opacity="0.08"/>
+            </g>
+          </svg>
+        </div>
+        <div class="label">dark</div>
+      </div>
+      <div>
+        <div class="box light-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e4b-1" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ec4899"/>
+                <stop offset="100%" stop-color="#db2777"/>
+              </linearGradient>
+              <linearGradient id="e4b-2" x1="48" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#9333ea"/>
+                <stop offset="100%" stop-color="#7c3aed"/>
+              </linearGradient>
+              <linearGradient id="e4b-3" x1="24" y1="48" x2="24" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0ea5e9"/>
+                <stop offset="100%" stop-color="#0284c7"/>
+              </linearGradient>
+              <linearGradient id="e4b-4" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#10b981"/>
+                <stop offset="100%" stop-color="#059669"/>
+              </linearGradient>
+              <linearGradient id="e4b-5" x1="0" y1="24" x2="48" y2="24" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#d97706"/>
+              </linearGradient>
+            </defs>
+            <path d="M23 2 L14 22 L24 20 Z" fill="url(#e4b-1)" opacity="0.9" transform="translate(-1,-0.5)"/>
+            <path d="M25 2 L44 44 L25 22 Z" fill="url(#e4b-2)" opacity="0.85" transform="translate(1,0)"/>
+            <path d="M13 23 L4 44 L24 34 Z" fill="url(#e4b-3)" opacity="0.8" transform="translate(-1,1)"/>
+            <path d="M25 23 L44 44 L25 34 Z" fill="url(#e4b-4)" opacity="0.75" transform="translate(0.5,1)"/>
+            <path d="M5 44 L43 44 L24 35 Z" fill="url(#e4b-5)" opacity="0.6" transform="translate(0,1.5)"/>
+            <circle cx="24" cy="24" r="2" fill="white" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="label">light</div>
+      </div>
+    </div>
+    <h3>E4 &mdash; Shattered</h3>
+    <p>Rainbow-colored exploded prism fragments — light dispersed into spectrum shards.</p>
+  </div>
+
+  <!-- ═══ E5: Tesseract — nested triangles with depth illusion ═══ -->
+  <div class="option">
+    <div class="preview">
+      <div>
+        <div class="box dark-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e5-outer" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+              </linearGradient>
+              <linearGradient id="e5-mid" x1="48" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#818cf8"/>
+              </linearGradient>
+              <linearGradient id="e5-inner" x1="24" y1="0" x2="24" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#e9d5ff"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+              <filter id="e5-glow">
+                <feGaussianBlur stdDeviation="1" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <g filter="url(#e5-glow)">
+              <!-- Outer triangle -->
+              <path d="M24 2 L4 44 L44 44 Z" stroke="url(#e5-outer)" stroke-width="2" fill="none" stroke-linejoin="round" opacity="0.9"/>
+              <!-- Connecting lines (depth) -->
+              <line x1="24" y1="2" x2="24" y2="16" stroke="url(#e5-mid)" stroke-width="0.8" opacity="0.3"/>
+              <line x1="4" y1="44" x2="14" y2="36" stroke="url(#e5-mid)" stroke-width="0.8" opacity="0.3"/>
+              <line x1="44" y1="44" x2="34" y2="36" stroke="url(#e5-mid)" stroke-width="0.8" opacity="0.3"/>
+              <!-- Middle triangle -->
+              <path d="M24 16 L14 36 L34 36 Z" stroke="url(#e5-mid)" stroke-width="1.8" fill="none" stroke-linejoin="round" opacity="0.6"/>
+              <!-- Inner triangle (filled) -->
+              <path d="M24 22 L19 33 L29 33 Z" fill="url(#e5-inner)" opacity="0.5"/>
+              <!-- Core dot -->
+              <circle cx="24" cy="29" r="2" fill="white" opacity="0.8"/>
+            </g>
+          </svg>
+        </div>
+        <div class="label">dark</div>
+      </div>
+      <div>
+        <div class="box light-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e5b-outer" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#4f46e5"/>
+              </linearGradient>
+              <linearGradient id="e5b-mid" x1="48" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#9333ea"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+              </linearGradient>
+              <linearGradient id="e5b-inner" x1="24" y1="0" x2="24" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#c4b5fd"/>
+                <stop offset="100%" stop-color="#7c3aed"/>
+              </linearGradient>
+            </defs>
+            <path d="M24 2 L4 44 L44 44 Z" stroke="url(#e5b-outer)" stroke-width="2" fill="none" stroke-linejoin="round" opacity="0.85"/>
+            <line x1="24" y1="2" x2="24" y2="16" stroke="url(#e5b-mid)" stroke-width="0.8" opacity="0.25"/>
+            <line x1="4" y1="44" x2="14" y2="36" stroke="url(#e5b-mid)" stroke-width="0.8" opacity="0.25"/>
+            <line x1="44" y1="44" x2="34" y2="36" stroke="url(#e5b-mid)" stroke-width="0.8" opacity="0.25"/>
+            <path d="M24 16 L14 36 L34 36 Z" stroke="url(#e5b-mid)" stroke-width="1.8" fill="none" stroke-linejoin="round" opacity="0.5"/>
+            <path d="M24 22 L19 33 L29 33 Z" fill="url(#e5b-inner)" opacity="0.45"/>
+            <circle cx="24" cy="29" r="2" fill="#3730a3" opacity="0.8"/>
+          </svg>
+        </div>
+        <div class="label">light</div>
+      </div>
+    </div>
+    <h3>E5 &mdash; Tesseract</h3>
+    <p>Nested triangles receding into depth with connecting perspective lines.</p>
+  </div>
+
+  <!-- ═══ E6: Aurora Prism — gradient filled with top light leak ═══ -->
+  <div class="option">
+    <div class="preview">
+      <div>
+        <div class="box dark-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e6-body" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#312e81"/>
+                <stop offset="30%" stop-color="#4f46e5"/>
+                <stop offset="60%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#c084fc"/>
+              </linearGradient>
+              <linearGradient id="e6-shine" x1="24" y1="3" x2="24" y2="30" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="white" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="white" stop-opacity="0"/>
+              </linearGradient>
+              <filter id="e6-glow">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <clipPath id="e6-clip"><path d="M24 3 L5 44 L43 44 Z"/></clipPath>
+            </defs>
+            <g filter="url(#e6-glow)">
+              <!-- Main body -->
+              <path d="M24 3 L5 44 L43 44 Z" fill="url(#e6-body)"/>
+              <!-- Top shine / light leak clipped to triangle -->
+              <ellipse cx="24" cy="12" rx="16" ry="14" fill="url(#e6-shine)" clip-path="url(#e6-clip)"/>
+              <!-- Bottom edge highlight -->
+              <line x1="7" y1="43" x2="41" y2="43" stroke="white" stroke-width="0.6" opacity="0.15"/>
+              <!-- Apex glow -->
+              <circle cx="24" cy="3" r="3" fill="#c084fc" opacity="0.4"/>
+            </g>
+          </svg>
+        </div>
+        <div class="label">dark</div>
+      </div>
+      <div>
+        <div class="box light-bg">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <defs>
+              <linearGradient id="e6-body2" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#1e1b4b"/>
+                <stop offset="30%" stop-color="#3730a3"/>
+                <stop offset="60%" stop-color="#6d28d9"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+              <linearGradient id="e6-shine2" x1="24" y1="3" x2="24" y2="30" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="white" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="white" stop-opacity="0"/>
+              </linearGradient>
+              <clipPath id="e6-clip2"><path d="M24 3 L5 44 L43 44 Z"/></clipPath>
+            </defs>
+            <path d="M24 3 L5 44 L43 44 Z" fill="url(#e6-body2)"/>
+            <ellipse cx="24" cy="12" rx="16" ry="14" fill="url(#e6-shine2)" clip-path="url(#e6-clip2)"/>
+            <line x1="7" y1="43" x2="41" y2="43" stroke="white" stroke-width="0.6" opacity="0.2"/>
+            <circle cx="24" cy="3" r="2.5" fill="#a78bfa" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="label">light</div>
+      </div>
+    </div>
+    <h3>E6 &mdash; Aurora</h3>
+    <p>Rich multi-stop gradient with glossy light leak and apex glow. Premium.</p>
+  </div>
+
+</div>
+</body>
+</html>

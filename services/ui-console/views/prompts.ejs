@@ -1,5 +1,11 @@
 <%- include('layout', { title: 'Prompt Library', page: 'prompts', body: `
 
+<style>
+.score-tip{position:relative}
+.score-tip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);right:0;background:var(--tooltip-bg,#1e293b);color:var(--text-1,#e2e8f0);border:1px solid var(--tooltip-border,#334155);border-radius:8px;padding:0.5rem 0.65rem;font-size:0.72rem;line-height:1.5;white-space:pre-line;min-width:200px;max-width:300px;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 0.15s ease,visibility 0.15s ease;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.3);backdrop-filter:blur(12px)}
+.score-tip:hover::after{opacity:1;visibility:visible}
+</style>
+
 <h1 class="text-glow-cyan">Prompt Library</h1>
 <p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">A <strong style="color:var(--text-1)">prompt</strong> is an instruction you give at runtime to guide the model's behavior right now.</p>
 <p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Think: <strong style="color:#f59e0b">instruction templates</strong>. Each prompt defines <em>what the model should do</em> — categorized, tagged, and ready to be plugged into any skill.</p>
@@ -410,9 +416,9 @@
           if (det.completeness) tipParts.push('Completeness: ' + det.completeness + '/10');
           if (det.effectiveness) tipParts.push('Effectiveness: ' + det.effectiveness + '/10');
           if (det.summary) tipParts.push(det.summary);
-          var tipText = tipParts.join('\n');
-          scoreBadge = '<span title="' + escapeHtml(tipText) + '" style="display:inline-flex;align-items:center;cursor:help;padding:2px;border-radius:50%;background:' + sColor + '15">' +
-            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="' + sColor + '" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></span>';
+          var tipText = tipParts.join('\\n');
+          scoreBadge = '<span class="score-tip" data-tip="' + escapeHtml(tipText) + '" style="display:inline-flex;align-items:center;cursor:help;padding:2px;border-radius:50%;background:' + sColor + '15;position:relative">' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="' + sColor + '" stroke-width="2.5" style="pointer-events:none"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></span>';
         }
         return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
           '<div>' +
@@ -515,7 +521,9 @@
       document.getElementById('regenerate-btn').style.display = 'inline-flex';
       document.getElementById('prompt-form').style.display = 'block';
       document.getElementById('prompt-name').focus();
-      _loadGenModels();
+      _loadGenModels().then(function() {
+        if (p.model) document.getElementById('prompt-model').value = p.model;
+      });
     } catch(e) { showToast('Error loading prompt: ' + e.message, 'error'); }
   }
 
@@ -552,6 +560,7 @@
       description: document.getElementById('prompt-desc').value.trim(),
       content: document.getElementById('prompt-content').value.trim(),
       tags: document.getElementById('prompt-tags').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean),
+      model: document.getElementById('prompt-model').value || '',
     };
     if (!payload.name) { alert('Name is required'); return; }
     if (!payload.content) { alert('Prompt content is required'); return; }

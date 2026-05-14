@@ -8,7 +8,7 @@
 | [Architecture](ARCHITECTURE.md)       | System overview, data flows, services           |
 | [Principles](PRINCIPLES.md)           | 18 architecture principles with maturity levels |
 | [Building Blocks](BUILDING-BLOCKS.md) | 15 ABBs/SBBs with traceability                  |
-| [Decisions](DECISIONS.md)             | 20 Architecture Decision Records                |
+| [Decisions](DECISIONS.md)             | 22 Architecture Decision Records                |
 | [Installation](../INSTALL.md)         | Prerequisites, setup, GPU configuration         |
 | [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions      |
 
@@ -54,6 +54,15 @@ POST /documents/ingest    # Ingest text/URL/file
 POST /documents/search    # Semantic search
 GET  /documents           # List all documents
 POST /documents/upload    # Upload file for RAG
+```
+
+### Platform Settings
+
+```
+GET  /security-considerations   # Read platform security considerations
+PUT  /security-considerations   # Update security considerations (admin)
+GET  /best-practices            # Read platform best practices
+PUT  /best-practices            # Update best practices (admin)
 ```
 
 ### System

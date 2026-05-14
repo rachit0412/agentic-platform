@@ -10,7 +10,7 @@ The Agentic Platform is a containerised agent factory built with:
 - **Tool Runtime**: FastAPI (tools-service)
 - **LLM Providers**: Ollama (local), Azure OpenAI, OpenAI, Azure AI Foundry
 - **Knowledge Base**: ChromaDB (vector store, RAG)
-- **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers)
+- **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers, platform settings)
 - **Workflows**: n8n (automation, webhooks)
 - **Observability**: Prometheus + Grafana + Loki + OpenTelemetry + Langfuse
 
@@ -49,3 +49,12 @@ Grafana ← Prometheus + Loki
 
 - **A2A (Agent-to-Agent)**: Peer agents registered by URL; agents delegate sub-tasks via HTTP
 - **MCP (Model Context Protocol)**: External tool servers provide dynamic tool discovery
+
+## Admin Plane
+
+The admin plane provides platform-wide configuration via a 6-tab control centre. Platform settings (security considerations, best practices) are stored in the `platform_settings` table and exposed via dedicated API endpoints:
+
+- `GET/PUT /security-considerations` — platform-wide security policy text
+- `GET/PUT /best-practices` — platform-wide best practices guidance
+
+These settings are **editable only in the admin plane** and displayed as **read-only on the skills page**, enforcing a single source of truth for governance content.

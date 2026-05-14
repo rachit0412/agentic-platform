@@ -183,8 +183,9 @@ def init_db():
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
-    # ── Migration: add validation columns to prompts if missing ──
+    # ── Migration: add model + validation columns to prompts if missing ──
     for col, default in [
+        ("model", "''"),
         ("validation_score", "NULL"),
         ("validation_details", "'{}'"),
         ("validated_at", "''"),
@@ -672,6 +673,70 @@ def set_global_constraints(constraints: list[str]) -> list[str]:
         f"{len(constraints)} constraints",
     )
     return constraints
+
+
+# ── Security Considerations (platform-level) ──────────────────────────────
+
+
+def get_security_considerations() -> list[str]:
+    """Return the list of organisational security considerations."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT value FROM platform_settings WHERE key = 'security_considerations'"
+    ).fetchone()
+    if not row:
+        return []
+    return json.loads(row["value"])
+
+
+def set_security_considerations(items: list[str]) -> list[str]:
+    """Replace the security considerations list."""
+    conn = _get_conn()
+    conn.execute(
+        "INSERT INTO platform_settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("security_considerations", json.dumps(items)),
+    )
+    conn.commit()
+    log_audit(
+        "update",
+        "platform_settings",
+        "security_considerations",
+        f"{len(items)} items",
+    )
+    return items
+
+
+# ── Best Practices (platform-level) ────────────────────────────────────────
+
+
+def get_best_practices() -> list[str]:
+    """Return the list of organisational best practices."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT value FROM platform_settings WHERE key = 'best_practices'"
+    ).fetchone()
+    if not row:
+        return []
+    return json.loads(row["value"])
+
+
+def set_best_practices(practices: list[str]) -> list[str]:
+    """Replace the best practices list."""
+    conn = _get_conn()
+    conn.execute(
+        "INSERT INTO platform_settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("best_practices", json.dumps(practices)),
+    )
+    conn.commit()
+    log_audit(
+        "update",
+        "platform_settings",
+        "best_practices",
+        f"{len(practices)} practices",
+    )
+    return practices
 
 
 # ── Skill File Management ──────────────────────────────────────────────────
@@ -1209,12 +1274,13 @@ def create_prompt(
     category: str = "general",
     description: str = "",
     tags: list[str] | None = None,
+    model: str = "",
 ) -> dict:
     conn = _get_conn()
     prompt_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO prompts (id, name, category, content, description, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO prompts (id, name, category, content, description, tags, model, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             prompt_id,
             name,
@@ -1222,6 +1288,7 @@ def create_prompt(
             content,
             description,
             json.dumps(tags or []),
+            model,
             now,
             now,
         ),
@@ -1246,7 +1313,7 @@ def update_prompt(prompt_id: str, **kwargs) -> dict | None:
     )
     fields = []
     values = []
-    for key in ("name", "category", "content", "description"):
+    for key in ("name", "category", "content", "description", "model"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
