@@ -183,6 +183,17 @@ def init_db():
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
+    # ── Migration: add validation columns to prompts if missing ──
+    for col, default in [
+        ("validation_score", "NULL"),
+        ("validation_details", "'{}'"),
+        ("validated_at", "''"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE prompts ADD COLUMN {col} TEXT DEFAULT {default}")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # column already exists
     # ── A2A Peers table ──
     conn.execute("""
         CREATE TABLE IF NOT EXISTS a2a_peers (
@@ -1148,7 +1159,7 @@ def delete_mcp_server(server_id: str) -> bool:
 
 
 def _row_to_prompt(row) -> dict:
-    return {
+    d = {
         "id": row["id"],
         "name": row["name"],
         "category": row["category"],
@@ -1158,6 +1169,26 @@ def _row_to_prompt(row) -> dict:
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
+    # validation fields (may be absent on old DBs before migration runs)
+    try:
+        score_raw = row["validation_score"]
+        d["validation_score"] = (
+            int(score_raw) if score_raw not in (None, "", "NULL") else None
+        )
+    except (IndexError, KeyError):
+        d["validation_score"] = None
+    try:
+        details_raw = row["validation_details"]
+        d["validation_details"] = (
+            json.loads(details_raw) if details_raw and details_raw != "{}" else {}
+        )
+    except (IndexError, KeyError, json.JSONDecodeError):
+        d["validation_details"] = {}
+    try:
+        d["validated_at"] = row["validated_at"] or None
+    except (IndexError, KeyError):
+        d["validated_at"] = None
+    return d
 
 
 def list_prompts() -> list[dict]:
@@ -1223,6 +1254,14 @@ def update_prompt(prompt_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))
+    for key in ("validation_details",):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(json.dumps(kwargs[key]))
+    for key in ("validation_score", "validated_at"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(str(kwargs[key]) if kwargs[key] is not None else None)
     if fields:
         fields.append("updated_at = ?")
         values.append(datetime.now(timezone.utc).isoformat())

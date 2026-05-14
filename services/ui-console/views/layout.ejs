@@ -24,70 +24,28 @@
   <aside class="icon-rail">
     <!-- Logo -->
     <div class="rail-logo">
-      <div class="rail-logo-icon" style="background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 40%,#134e4a 100%);border-radius:12px;padding:0;overflow:hidden;position:relative">
+      <div class="rail-logo-icon">
         <svg viewBox="0 0 52 52" width="52" height="52" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <radialGradient id="logo-aura" cx="50%" cy="28%" r="50%">
-              <stop offset="0%" stop-color="#fbbf24"/>
-              <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.4"/>
-              <stop offset="100%" stop-color="#0d9488" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="logo-body" x1="26" y1="4" x2="26" y2="46" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#fbbf24"/>
-              <stop offset="60%" stop-color="#f59e0b"/>
-              <stop offset="100%" stop-color="#d97706"/>
+            <linearGradient id="logo-tri" x1="14" y1="6" x2="38" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1e3a5f"/>
+              <stop offset="100%" stop-color="#2d5986"/>
             </linearGradient>
-            <linearGradient id="logo-circuit" x1="0" y1="0" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.8"/>
-              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+            <linearGradient id="logo-tri-d" x1="14" y1="6" x2="38" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#94a3b8"/>
+              <stop offset="100%" stop-color="#64748b"/>
             </linearGradient>
-            <radialGradient id="logo-crown" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-              <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.3"/>
-            </radialGradient>
           </defs>
-          <!-- Aura glow -->
-          <circle cx="26" cy="18" r="16" fill="url(#logo-aura)" opacity="0.7"/>
-          <!-- Crown chakra -->
-          <circle cx="26" cy="10" r="3.5" fill="url(#logo-crown)" opacity="0.5"/>
-          <circle cx="26" cy="10" r="1.8" fill="#ffffff" opacity="0.85"/>
-          <!-- Head -->
-          <circle cx="26" cy="14" r="4.2" fill="url(#logo-body)" opacity="0.95"/>
-          <!-- Torso -->
-          <path d="M23 18.5C23 18.5 21.8 24 22.2 28L26 30L29.8 28C30.2 24 29 18.5 29 18.5" fill="url(#logo-body)" opacity="0.9"/>
-          <!-- Left arm -->
-          <path d="M22.5 21C20 22.5 15 25 13 28C13 28 15.5 28.5 18 27.5C20.5 26.5 22.5 24.5 22.5 24.5" stroke="url(#logo-body)" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.9"/>
-          <!-- Right arm -->
-          <path d="M29.5 21C32 22.5 37 25 39 28C39 28 36.5 28.5 34 27.5C31.5 26.5 29.5 24.5 29.5 24.5" stroke="url(#logo-body)" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.9"/>
-          <!-- Folded legs - big lotus -->
-          <path d="M22.2 28C20 30 15.5 32.5 13 34C11.5 34.8 11.5 35.5 13 36C15.5 37 19.5 36.5 23 35L26 33.5L29 35C32.5 36.5 36.5 37 39 36C40.5 35.5 40.5 34.8 39 34C36.5 32.5 32 30 29.8 28" fill="url(#logo-body)" opacity="0.9"/>
-          <!-- Left foot detail -->
-          <path d="M13 34.5C14.5 36 17 37.5 19.5 37C21 36.5 21.5 35 23 34.5" stroke="url(#logo-body)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.85"/>
-          <!-- Right foot detail -->
-          <path d="M39 34.5C37.5 36 35 37.5 32.5 37C31 36.5 30.5 35 29 34.5" stroke="url(#logo-body)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.85"/>
-          <!-- Knee bumps -->
-          <circle cx="13" cy="33.5" r="1.5" fill="url(#logo-body)" opacity="0.7"/>
-          <circle cx="39" cy="33.5" r="1.5" fill="url(#logo-body)" opacity="0.7"/>
-          <!-- Ground glow -->
-          <ellipse cx="26" cy="38" rx="14" ry="2.5" fill="#0d9488" opacity="0.3"/>
-          <ellipse cx="26" cy="38" rx="9" ry="1.5" fill="#2dd4bf" opacity="0.2"/>
-          <!-- AI circuit traces -->
-          <line x1="26" y1="9" x2="26" y2="3" stroke="url(#logo-circuit)" stroke-width="0.9" opacity="0.85"/>
-          <circle cx="26" cy="2.5" r="1.2" fill="#2dd4bf" opacity="0.9"/>
-          <line x1="12" y1="27" x2="6" y2="23" stroke="url(#logo-circuit)" stroke-width="0.8" opacity="0.6"/>
-          <circle cx="5" cy="22.5" r="1" fill="#2dd4bf" opacity="0.8"/>
-          <line x1="40" y1="27" x2="46" y2="23" stroke="url(#logo-circuit)" stroke-width="0.8" opacity="0.6"/>
-          <circle cx="47" cy="22.5" r="1" fill="#2dd4bf" opacity="0.8"/>
-          <!-- Neural nodes -->
-          <circle cx="16" cy="7" r="0.8" fill="#2dd4bf" opacity="0.7"/>
-          <circle cx="36" cy="7" r="0.8" fill="#2dd4bf" opacity="0.7"/>
-          <circle cx="8" cy="16" r="0.7" fill="#06b6d4" opacity="0.5"/>
-          <circle cx="44" cy="16" r="0.7" fill="#06b6d4" opacity="0.5"/>
-          <!-- Neural links -->
-          <line x1="16" y1="7" x2="23" y2="12" stroke="#2dd4bf" stroke-width="0.4" opacity="0.4"/>
-          <line x1="36" y1="7" x2="29" y2="12" stroke="#2dd4bf" stroke-width="0.4" opacity="0.4"/>
-          <line x1="8" y1="16" x2="18" y2="19" stroke="#06b6d4" stroke-width="0.3" opacity="0.3"/>
-          <line x1="44" y1="16" x2="34" y2="19" stroke="#06b6d4" stroke-width="0.3" opacity="0.3"/>
+          <!-- Outer triangle -->
+          <path d="M26 7 L45 42 H7 Z" stroke="url(#logo-tri)" stroke-width="4" fill="none" stroke-linejoin="round" class="logo-shape"/>
+          <!-- Inner inverted triangle -->
+          <path d="M26 33 L17 17 H35 Z" stroke="url(#logo-tri)" stroke-width="3" fill="none" stroke-linejoin="round" opacity="0.55" class="logo-shape"/>
+          <!-- Cross bar -->
+          <line x1="13" y1="30" x2="39" y2="30" stroke="url(#logo-tri)" stroke-width="3" stroke-linecap="round" opacity="0.4" class="logo-shape"/>
+          <!-- Vertex nodes -->
+          <circle cx="26" cy="7" r="2.2" fill="#1e3a5f" opacity="0.6" class="logo-node"/>
+          <circle cx="7" cy="42" r="1.8" fill="#1e3a5f" opacity="0.35" class="logo-node"/>
+          <circle cx="45" cy="42" r="1.8" fill="#1e3a5f" opacity="0.35" class="logo-node"/>
         </svg>
       </div>
       <span class="rail-tooltip">Agentic Platform</span>

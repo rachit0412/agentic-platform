@@ -1969,6 +1969,30 @@ Respond ONLY with valid JSON."""
                     if refs_meta:
                         parsed["references_used"] = refs_meta["references_used"]
                     parsed["_llm_usage"] = usage_meta
+                    # ── persist validation score if prompt_id provided ──
+                    prompt_id = data.get("prompt_id")
+                    if prompt_id and parsed.get("score"):
+                        from datetime import datetime, timezone as _tz
+
+                        details = {
+                            k: parsed.get(k)
+                            for k in (
+                                "clarity",
+                                "specificity",
+                                "completeness",
+                                "effectiveness",
+                                "summary",
+                                "issues",
+                                "suggestions",
+                            )
+                            if parsed.get(k) is not None
+                        }
+                        update_prompt(
+                            prompt_id,
+                            validation_score=parsed["score"],
+                            validation_details=details,
+                            validated_at=datetime.now(_tz.utc).isoformat(),
+                        )
                     return parsed
                 return {
                     "score": 0,

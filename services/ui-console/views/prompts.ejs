@@ -314,6 +314,8 @@
     vr.style.display = 'none';
     try {
       var valPayload = { content: content, category: document.getElementById('prompt-category').value };
+      var editId = document.getElementById('edit-id').value;
+      if (editId) { valPayload.prompt_id = editId; }
       var dirs = (document.getElementById('prompt-directions').value || '').trim();
       if (dirs) { valPayload.directions = dirs; }
       showLlmUsageToastLoading('Validate Prompt');
@@ -375,7 +377,7 @@
       vr.innerHTML = html;
       vr.style.display = 'block';
     } catch(e) { vr.innerHTML = '<div style="color:var(--danger)">Error: ' + escapeHtml(e.message) + '</div>'; vr.style.display='block'; }
-    finally { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> Validate Quality'; }
+    finally { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> Validate Quality'; loadPrompts(); }
   }
 
   /* ── CRUD ──────────────────────────────────────────────── */
@@ -396,11 +398,28 @@
         const color = categoryColors[p.category] || '#64748b';
         const tagBadges = (p.tags || []).slice(0,4).map(function(t) { return '<span class="badge">' + escapeHtml(t) + '</span>'; }).join(' ');
         const extra = (p.tags || []).length > 4 ? ' <span class="badge">+' + ((p.tags||[]).length - 4) + '</span>' : '';
+        var scoreBadge = '';
+        if (p.validation_score != null) {
+          var sc = p.validation_score;
+          var sColor = sc >= 7 ? '#10b981' : sc >= 4 ? '#f59e0b' : '#ef4444';
+          var sLabel = sc >= 7 ? 'Validated' : sc >= 4 ? 'Needs Work' : 'Weak';
+          var det = p.validation_details || {};
+          var tipParts = [sLabel + ' (' + sc + '/10)'];
+          if (det.clarity) tipParts.push('Clarity: ' + det.clarity + '/10');
+          if (det.specificity) tipParts.push('Specificity: ' + det.specificity + '/10');
+          if (det.completeness) tipParts.push('Completeness: ' + det.completeness + '/10');
+          if (det.effectiveness) tipParts.push('Effectiveness: ' + det.effectiveness + '/10');
+          if (det.summary) tipParts.push(det.summary);
+          var tipText = tipParts.join('\n');
+          scoreBadge = '<span title="' + escapeHtml(tipText) + '" style="display:inline-flex;align-items:center;cursor:help;padding:2px;border-radius:50%;background:' + sColor + '15">' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="' + sColor + '" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></span>';
+        }
         return '<div class="card animate-fade-up" style="display:flex;flex-direction:column;justify-content:space-between">' +
           '<div>' +
             '<div style="display:flex;align-items:center;justify-content:space-between">' +
               '<h3 style="margin:0;font-size:1rem">' + escapeHtml(p.name) + '</h3>' +
-              '<span class="badge" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + escapeHtml(p.category) + '</span>' +
+              '<div style="display:flex;align-items:center;gap:0.5rem">' + scoreBadge +
+              '<span class="badge" style="background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44">' + escapeHtml(p.category) + '</span></div>' +
             '</div>' +
             '<p style="color:var(--text-3);font-size:0.82rem;margin:0.5rem 0">' + escapeHtml(p.description || 'No description') + '</p>' +
             '<div style="background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);max-height:80px;overflow:hidden;margin-bottom:0.5rem">' + escapeHtml((p.content || '').slice(0,200)) + (p.content && p.content.length > 200 ? '...' : '') + '</div>' +
