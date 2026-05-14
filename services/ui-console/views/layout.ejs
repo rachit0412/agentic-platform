@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= title %> — Agentic Platform</title>
   <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/theme-enterprise.css" />
+  <link rel="stylesheet" href="/theme-softui.css" />
+  <link rel="stylesheet" href="/theme-flux.css" />
+  <script>
+    // Apply saved design theme BEFORE render to avoid flash
+    (function(){
+      var dt = localStorage.getItem('designTheme');
+      if (dt === 'enterprise') document.documentElement.classList.add('theme-enterprise');
+      else if (dt === 'softui') document.documentElement.classList.add('theme-softui');
+      else if (dt === 'flux') document.documentElement.classList.add('theme-flux');
+      if (localStorage.getItem('sidebarExpanded') === 'true') document.documentElement.classList.add('sidebar-expanded');
+    })();
+  </script>
 </head>
 <body>
   <!-- ── Icon Rail ── -->
@@ -106,6 +119,7 @@
       <li class="rail-group">
         <a href="/agent-hub" class="rail-item <%= ['agent-hub','agents','skills','prompts','tools'].includes(page) ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          <span class="rail-tooltip">Agent Factory</span>
         </a>
         <div class="rail-submenu">
           <div class="rail-submenu-title">Agent Factory</div>
@@ -162,6 +176,7 @@
       <li class="rail-group">
         <a href="/a2a" class="rail-item <%= ['a2a','mcp','rest'].includes(page) ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="7.5" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16.5" cy="11" r="1"/></svg>
+          <span class="rail-tooltip">Protocols</span>
         </a>
         <div class="rail-submenu">
           <div class="rail-submenu-title">Protocols <span style="font-size:0.55rem;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:4px;font-weight:600">DEV</span></div>
@@ -184,6 +199,7 @@
       <li class="rail-group">
         <a href="/intelligence-hub" class="rail-item <%= ['intelligence-hub','traceability','evaluation','observability','llm-activity'].includes(page) ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="rail-tooltip">Intelligence Hub</span>
         </a>
         <div class="rail-submenu">
           <div class="rail-submenu-title">Intelligence Hub</div>
@@ -242,6 +258,10 @@
         <span class="rail-tooltip">System Healthy</span>
       </div>
     </div>
+    <!-- Sidebar Toggle -->
+    <button class="rail-toggle" onclick="toggleSidebar()" title="Expand sidebar">
+      <svg class="rail-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </aside>
 
   <!-- ── Main Area ── -->
@@ -313,6 +333,32 @@
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') document.documentElement.classList.remove('dark');
     updateThemeIcons();
+
+    // ── Sidebar Toggle ──
+    function toggleSidebar() {
+      var html = document.documentElement;
+      html.classList.toggle('sidebar-expanded');
+      localStorage.setItem('sidebarExpanded', html.classList.contains('sidebar-expanded'));
+    }
+    // Enable smooth transitions after initial render (prevents flash on page load)
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        document.documentElement.classList.add('sidebar-animated');
+      });
+    });
+
+    // ── Design Theme Switcher ──
+    function setDesignTheme(name) {
+      var html = document.documentElement;
+      html.classList.remove('theme-enterprise', 'theme-softui', 'theme-flux');
+      if (name === 'enterprise') html.classList.add('theme-enterprise');
+      else if (name === 'softui') html.classList.add('theme-softui');
+      else if (name === 'flux') html.classList.add('theme-flux');
+      localStorage.setItem('designTheme', name);
+    }
+    function getDesignTheme() {
+      return localStorage.getItem('designTheme') || 'glass';
+    }
 
     // ── Topbar Health Indicator ──
     fetch('/api/health-check').then(r=>r.json()).then(d=>{

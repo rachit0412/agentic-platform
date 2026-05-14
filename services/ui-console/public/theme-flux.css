@@ -1,0 +1,1033 @@
+/*
+═══════════════════════════════════════════
+   AGENTIC PLATFORM — Flux Theme
+   Complete visual overhaul
+   Vivid Violet · Electric Glow · Sharp
+   Inspired by DashboardPack Flux
+═══════════════════════════════════════════ */
+
+/* ─── Google Fonts ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ═══════════════════════════════════════════
+   LIGHT MODE TOKENS
+   ═══════════════════════════════════════════ */
+.theme-flux {
+  --bg: #faf9fc;
+  --bg-from: #faf9fc;
+  --bg-mid: #f3f0f9;
+  --bg-to: #faf9fc;
+
+  --glass-bg: rgba(255,255,255,0.88);
+  --glass-hover-bg: rgba(255,255,255,0.96);
+  --glass-border: rgba(139,92,246,0.08);
+  --glass-hover-border: rgba(139,92,246,0.22);
+  --glass-shadow: 0 1px 3px rgba(139,92,246,0.06), 0 6px 20px rgba(139,92,246,0.04);
+  --glass-hover-shadow: 0 12px 40px rgba(139,92,246,0.12), 0 4px 12px rgba(139,92,246,0.06);
+  --glass-inset: none;
+
+  --text-1: #1e1b4b;
+  --text-2: #4c4978;
+  --text-3: #7c7aaa;
+  --text-4: #c4c3d4;
+
+  --input-bg: rgba(255,255,255,0.9);
+  --input-border: rgba(139,92,246,0.15);
+  --input-focus-bg: #ffffff;
+  --input-placeholder: #7c7aaa;
+
+  --rail-bg: linear-gradient(180deg, #312e81 0%, #1e1b4b 100%);
+  --topbar-bg: rgba(255,255,255,0.78);
+  --rail-border: transparent;
+  --topbar-border: rgba(139,92,246,0.08);
+
+  --tooltip-bg: #1e1b4b;
+  --tooltip-border: rgba(139,92,246,0.2);
+  --tooltip-shadow: 0 8px 30px rgba(30,27,75,0.25);
+
+  --ring-inner: #faf9fc;
+  --ring-empty: rgba(139,92,246,0.08);
+
+  --badge-bg: rgba(139,92,246,0.05);
+  --badge-border: rgba(139,92,246,0.12);
+
+  --rail-hover-bg: rgba(255,255,255,0.1);
+  --dot-grid-color: rgba(139,92,246,0.06);
+  --scrollbar-thumb: rgba(139,92,246,0.15);
+  --scrollbar-hover: rgba(139,92,246,0.3);
+  --selection-bg: rgba(139,92,246,0.2);
+  --selection-color: #1e1b4b;
+  --divider: rgba(139,92,246,0.08);
+  --border-base: rgba(139,92,246,0.08);
+  --btn-secondary-hover-bg: rgba(139,92,246,0.05);
+  --btn-secondary-hover-border: rgba(139,92,246,0.15);
+  --btn-ghost-hover-bg: rgba(139,92,246,0.05);
+  --delete-hover-bg: rgba(239,68,68,0.08);
+
+  --accent: #7c3aed;
+  --accent-text: #7c3aed;
+  --accent-glow: rgba(139,92,246,0.25);
+
+  --success: #10b981;
+  --success-bg: rgba(16,185,129,0.08);
+  --success-border: rgba(16,185,129,0.2);
+  --warn: #f59e0b;
+  --warn-bg: rgba(245,158,11,0.08);
+  --warn-border: rgba(245,158,11,0.2);
+  --danger: #ef4444;
+  --danger-bg: rgba(239,68,68,0.08);
+  --danger-border: rgba(239,68,68,0.2);
+
+  /* ── flux-specific tokens ── */
+  --flux-glow: rgba(139,92,246,0.18);
+  --flux-surface: rgba(139,92,246,0.025);
+  --flux-card-radius: 18px;
+  --flux-btn-radius: 10px;
+  --flux-input-radius: 10px;
+
+  color-scheme: light;
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE TOKENS
+   ═══════════════════════════════════════════ */
+.theme-flux.dark {
+  --bg: #0c0a1d;
+  --bg-from: #0c0a1d;
+  --bg-mid: #13112b;
+  --bg-to: #0c0a1d;
+
+  --glass-bg: rgba(139,92,246,0.045);
+  --glass-hover-bg: rgba(139,92,246,0.09);
+  --glass-border: rgba(139,92,246,0.1);
+  --glass-hover-border: rgba(139,92,246,0.22);
+  --glass-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 6px 20px rgba(139,92,246,0.03);
+  --glass-hover-shadow: 0 12px 40px rgba(139,92,246,0.1), 0 0 40px rgba(139,92,246,0.05);
+  --glass-inset: inset 0 1px 0 rgba(139,92,246,0.06);
+
+  --text-1: #e8e5f5;
+  --text-2: #a5a1c2;
+  --text-3: #6b6894;
+  --text-4: #3d3a5e;
+
+  --input-bg: rgba(139,92,246,0.06);
+  --input-border: rgba(139,92,246,0.12);
+  --input-focus-bg: rgba(139,92,246,0.1);
+  --input-placeholder: #6b6894;
+
+  --rail-bg: linear-gradient(180deg, #1e1752 0%, #0c0a1d 100%);
+  --topbar-bg: rgba(12,10,29,0.82);
+  --rail-border: transparent;
+  --topbar-border: rgba(139,92,246,0.08);
+
+  --tooltip-bg: rgba(30,27,75,0.95);
+  --tooltip-border: rgba(139,92,246,0.15);
+  --tooltip-shadow: 0 8px 30px rgba(0,0,0,0.5);
+
+  --ring-inner: #0c0a1d;
+  --ring-empty: rgba(139,92,246,0.08);
+
+  --badge-bg: rgba(139,92,246,0.08);
+  --badge-border: rgba(139,92,246,0.12);
+
+  --rail-hover-bg: rgba(139,92,246,0.08);
+  --dot-grid-color: rgba(139,92,246,0.05);
+  --scrollbar-thumb: rgba(139,92,246,0.12);
+  --scrollbar-hover: rgba(139,92,246,0.22);
+  --selection-bg: rgba(139,92,246,0.3);
+  --selection-color: #e8e5f5;
+  --divider: rgba(139,92,246,0.08);
+  --border-base: rgba(139,92,246,0.08);
+  --btn-secondary-hover-bg: rgba(139,92,246,0.08);
+  --btn-secondary-hover-border: rgba(139,92,246,0.18);
+  --btn-ghost-hover-bg: rgba(139,92,246,0.06);
+  --delete-hover-bg: rgba(239,68,68,0.12);
+
+  --accent: #a78bfa;
+  --accent-text: #a78bfa;
+  --accent-glow: rgba(167,139,250,0.3);
+
+  --success: #34d399;
+  --success-bg: rgba(52,211,153,0.1);
+  --success-border: rgba(52,211,153,0.18);
+  --warn: #fbbf24;
+  --warn-bg: rgba(251,191,36,0.08);
+  --warn-border: rgba(251,191,36,0.15);
+  --danger: #fb7185;
+  --danger-bg: rgba(251,113,133,0.1);
+  --danger-border: rgba(251,113,133,0.15);
+
+  --flux-glow: rgba(167,139,250,0.2);
+  --flux-surface: rgba(139,92,246,0.04);
+
+  color-scheme: dark;
+}
+
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY — Complete font override
+   ═══════════════════════════════════════════ */
+.theme-flux body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
+}
+.theme-flux .font-heading,
+.theme-flux h1,
+.theme-flux h2,
+.theme-flux h3 {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.035em;
+}
+.theme-flux h1 {
+  font-weight: 800;
+  font-size: 1.75rem;
+  background: linear-gradient(135deg, var(--text-1) 0%, var(--accent-text) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.theme-flux h2 {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.theme-flux h3 {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.theme-flux .font-mono,
+.theme-flux .mono,
+.theme-flux .topbar-section,
+.theme-flux .topbar-status-text,
+.theme-flux .topbar-version {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.theme-flux .stat-number {
+  font-family: 'Inter', system-ui;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.theme-flux .stat-label {
+  font-family: 'Inter', system-ui;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+
+/* ═══════════════════════════════════════════
+   BODY & BACKGROUND — Dot grid
+   ═══════════════════════════════════════════ */
+.theme-flux .main-content {
+  background-image:
+    radial-gradient(circle, var(--dot-grid-color) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+
+/* ═══════════════════════════════════════════
+   GLASS SURFACES — Sharper, violet-tinted
+   ═══════════════════════════════════════════ */
+.theme-flux .glass,
+.theme-flux .glass-hover {
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-radius: var(--flux-card-radius);
+}
+.theme-flux .glass-hover:hover {
+  transform: translateY(-3px);
+}
+
+
+/* ═══════════════════════════════════════════
+   CARDS — Accent-top-line, elevated hover
+   ═══════════════════════════════════════════ */
+.theme-flux .card,
+.theme-flux .card-hover {
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-radius: var(--flux-card-radius);
+  position: relative;
+  overflow: hidden;
+}
+.theme-flux .card::before,
+.theme-flux .card-hover::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 40%, #c084fc 70%, transparent 100%);
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+.theme-flux .card:hover::before,
+.theme-flux .card-hover:hover::before {
+  opacity: 0.75;
+}
+.theme-flux .card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-hover-shadow);
+}
+
+
+/* ═══════════════════════════════════════════
+   STAT CARDS — Left accent bar, lifted hover
+   ═══════════════════════════════════════════ */
+.theme-flux .stat-card {
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-radius: var(--flux-card-radius);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* left accent bar instead of top line */
+.theme-flux .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 12px; bottom: 12px; left: 0;
+  width: 4px;
+  height: auto;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #c4b5fd, #7c3aed, #5b21b6);
+  opacity: 0.45;
+  transition: opacity 0.3s ease, box-shadow 0.3s ease;
+}
+.theme-flux .stat-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--glass-hover-shadow);
+}
+.theme-flux .stat-card:hover::before {
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(139,92,246,0.4);
+}
+
+/* ── stat icons — gradient bg, glow ── */
+.theme-flux .stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+.theme-flux .stat-icon svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+.theme-flux .stat-icon-cyan {
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(129,140,248,0.08));
+  color: #818cf8;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.1);
+}
+.theme-flux .stat-icon-violet {
+  background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(167,139,250,0.08));
+  color: #a78bfa;
+  box-shadow: 0 4px 14px rgba(139,92,246,0.1);
+}
+.theme-flux .stat-icon-emerald {
+  background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(16,185,129,0.08));
+  color: #34d399;
+  box-shadow: 0 4px 14px rgba(52,211,153,0.1);
+}
+.theme-flux .stat-icon-amber {
+  background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.08));
+  color: #fbbf24;
+  box-shadow: 0 4px 14px rgba(251,191,36,0.1);
+}
+.theme-flux.dark .stat-icon-cyan  { box-shadow: 0 4px 18px rgba(99,102,241,0.16), 0 0 28px rgba(99,102,241,0.06); }
+.theme-flux.dark .stat-icon-violet { box-shadow: 0 4px 18px rgba(139,92,246,0.16), 0 0 28px rgba(139,92,246,0.06); }
+.theme-flux.dark .stat-icon-emerald { box-shadow: 0 4px 18px rgba(52,211,153,0.14), 0 0 28px rgba(52,211,153,0.06); }
+.theme-flux.dark .stat-icon-amber { box-shadow: 0 4px 18px rgba(251,191,36,0.14), 0 0 28px rgba(251,191,36,0.06); }
+
+/* icon pulses on hover */
+@keyframes fluxIconPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--flux-glow); }
+  50% { box-shadow: 0 0 0 8px rgba(139,92,246,0); }
+}
+.theme-flux .stat-card:hover .stat-icon {
+  animation: fluxIconPulse 2s ease-in-out infinite;
+}
+
+
+/* ═══════════════════════════════════════════
+   SIDEBAR — Deep indigo, glass items, glow bar
+   ═══════════════════════════════════════════ */
+.theme-flux .icon-rail {
+  background: var(--rail-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-right: none;
+  box-shadow: 4px 0 30px rgba(139,92,246,0.06);
+}
+
+.theme-flux .rail-logo-icon {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #6d28d9 100%) !important;
+  box-shadow: 0 0 30px rgba(139,92,246,0.4), 0 0 10px rgba(109,40,217,0.25);
+  border-radius: 14px;
+  transition: all 0.3s ease;
+}
+.theme-flux .rail-logo-icon:hover {
+  box-shadow: 0 0 45px rgba(139,92,246,0.55), 0 0 16px rgba(109,40,217,0.35);
+  transform: scale(1.06);
+}
+
+.theme-flux .rail-item {
+  border-radius: 10px;
+  color: rgba(167,139,250,0.45);
+  transition: all 0.2s ease;
+}
+.theme-flux .rail-item:hover {
+  color: rgba(167,139,250,0.9);
+  background: rgba(139,92,246,0.1);
+}
+.theme-flux .rail-item.active {
+  color: #e8e5f5;
+  background: rgba(139,92,246,0.18);
+  box-shadow: 0 0 24px rgba(139,92,246,0.15), inset 0 0 16px rgba(139,92,246,0.06);
+}
+.theme-flux .rail-item.active::before {
+  background: linear-gradient(180deg, #c4b5fd, #a78bfa, #7c3aed);
+  box-shadow: 0 0 18px rgba(139,92,246,0.7);
+  width: 3px;
+  height: 22px;
+}
+.theme-flux .rail-divider {
+  background: rgba(139,92,246,0.12);
+}
+
+
+/* ═══════════════════════════════════════════
+   TOP BAR — Frosted glass
+   ═══════════════════════════════════════════ */
+.theme-flux .topbar {
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+}
+.theme-flux .topbar-page {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.theme-flux .topbar-section {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+
+/* ═══════════════════════════════════════════
+   BUTTONS — Gradient glow, animated
+   ═══════════════════════════════════════════ */
+.theme-flux .btn {
+  border-radius: var(--flux-btn-radius);
+  font-family: 'Inter', system-ui;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.theme-flux .btn-primary {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #6d28d9 100%);
+  background-size: 200% 100%;
+  background-position: 0% 0%;
+  box-shadow: 0 4px 18px rgba(139,92,246,0.3), 0 0 24px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.theme-flux .btn-primary:hover {
+  background-position: 100% 0%;
+  box-shadow: 0 8px 30px rgba(139,92,246,0.4), 0 0 40px rgba(139,92,246,0.12), inset 0 1px 0 rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
+.theme-flux .btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.theme-flux .btn-secondary {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--flux-btn-radius);
+  border: 1px solid var(--glass-border);
+  font-weight: 600;
+}
+.theme-flux .btn-secondary:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--flux-glow);
+  color: var(--accent-text);
+}
+
+.theme-flux .btn-sm {
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+}
+
+.theme-flux .btn-ghost:hover {
+  background: rgba(139,92,246,0.06);
+  color: var(--accent-text);
+}
+
+.theme-flux .btn-danger {
+  background: linear-gradient(135deg, #fb7185 0%, #ef4444 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(239,68,68,0.25);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.theme-flux .btn-danger:hover {
+  box-shadow: 0 6px 24px rgba(239,68,68,0.35);
+  transform: translateY(-2px);
+}
+
+
+/* ═══════════════════════════════════════════
+   INPUTS — Violet glow, clean borders
+   ═══════════════════════════════════════════ */
+.theme-flux input,
+.theme-flux textarea,
+.theme-flux select {
+  border-radius: var(--flux-input-radius);
+  font-family: 'Inter', system-ui;
+  font-size: 0.85rem;
+  padding: 0.65rem 0.9rem;
+  transition: all 0.2s ease;
+}
+.theme-flux input:focus,
+.theme-flux textarea:focus,
+.theme-flux select:focus {
+  border-color: rgba(139,92,246,0.5);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.12), 0 0 24px rgba(139,92,246,0.06);
+}
+.theme-flux select {
+  background-color: var(--input-bg);
+  color: var(--text-1);
+}
+.theme-flux select option {
+  background-color: var(--input-bg);
+  color: var(--text-1);
+}
+.theme-flux.dark select {
+  background-color: rgba(30,27,75,0.8);
+}
+.theme-flux.dark select option {
+  background-color: #1e1b4b;
+}
+
+
+/* ═══════════════════════════════════════════
+   BADGES — Pill, uppercase, gradient fill
+   ═══════════════════════════════════════════ */
+.theme-flux .badge {
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.65rem;
+  padding: 3px 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.theme-flux .badge-success,
+.theme-flux .badge.healthy {
+  background: linear-gradient(135deg, rgba(52,211,153,0.14), rgba(16,185,129,0.08));
+  border-color: rgba(52,211,153,0.25);
+}
+.theme-flux .badge-error,
+.theme-flux .badge.unhealthy,
+.theme-flux .badge.unreachable {
+  background: linear-gradient(135deg, rgba(251,113,133,0.14), rgba(239,68,68,0.08));
+  border-color: rgba(251,113,133,0.25);
+}
+.theme-flux .badge-warning,
+.theme-flux .badge.pending {
+  background: linear-gradient(135deg, rgba(251,191,36,0.14), rgba(245,158,11,0.08));
+  border-color: rgba(251,191,36,0.25);
+}
+.theme-flux .badge-info {
+  color: var(--accent-text);
+  background: linear-gradient(135deg, rgba(139,92,246,0.14), rgba(167,139,250,0.06));
+  border: 1px solid rgba(139,92,246,0.22);
+}
+.theme-flux.dark .badge-success,
+.theme-flux.dark .badge.healthy { box-shadow: 0 0 14px rgba(52,211,153,0.12); }
+.theme-flux.dark .badge-error,
+.theme-flux.dark .badge.unhealthy { box-shadow: 0 0 14px rgba(251,113,133,0.12); }
+.theme-flux.dark .badge-warning,
+.theme-flux.dark .badge.pending { box-shadow: 0 0 14px rgba(251,191,36,0.1); }
+.theme-flux.dark .badge-info { box-shadow: 0 0 14px rgba(139,92,246,0.1); }
+
+
+/* ═══════════════════════════════════════════
+   ARCHITECTURE PILLS — Capsule shaped
+   ═══════════════════════════════════════════ */
+.theme-flux .arch-pill {
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 5px 14px;
+  letter-spacing: 0.02em;
+}
+.theme-flux .arch-pill-active {
+  background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(52,211,153,0.06));
+  border: 1px solid rgba(52,211,153,0.3);
+}
+.theme-flux.dark .arch-pill-active { box-shadow: 0 0 10px rgba(52,211,153,0.08); }
+.theme-flux .arch-pill-warn {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(251,191,36,0.04));
+  border: 1px dashed rgba(245,158,11,0.4);
+}
+.theme-flux.dark .arch-pill-warn { box-shadow: 0 0 10px rgba(245,158,11,0.08); }
+
+
+/* ═══════════════════════════════════════════
+   TABLES — Bordered, striped, rounded
+   ═══════════════════════════════════════════ */
+.theme-flux table {
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  overflow: hidden;
+  border-spacing: 0;
+}
+.theme-flux th {
+  background: var(--flux-surface);
+  font-family: 'Inter', system-ui;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--divider);
+  padding: 0.85rem 1rem;
+  color: var(--text-3);
+}
+.theme-flux td {
+  padding: 0.8rem 1rem;
+  font-size: 0.84rem;
+  transition: background 0.15s ease;
+}
+.theme-flux tbody tr:nth-child(even) td {
+  background: var(--flux-surface);
+}
+.theme-flux tbody tr:hover td {
+  background: rgba(139,92,246,0.04) !important;
+}
+.theme-flux.dark tbody tr:hover td {
+  background: rgba(139,92,246,0.06) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   HEALTH ITEMS — Left accent, glow hover
+   ═══════════════════════════════════════════ */
+.theme-flux .health-item {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.theme-flux .health-item::before {
+  content: '';
+  position: absolute;
+  top: 8px; bottom: 8px; left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--success);
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+.theme-flux .health-item:hover {
+  transform: translateX(3px);
+  box-shadow: var(--glass-hover-shadow);
+}
+.theme-flux .health-item:hover::before {
+  opacity: 1;
+}
+
+
+/* ═══════════════════════════════════════════
+   QUICK LINKS — Top-line, lifted hover
+   ═══════════════════════════════════════════ */
+.theme-flux .quick-link {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--flux-card-radius);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+.theme-flux .quick-link::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.theme-flux .quick-link:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--glass-hover-shadow);
+  border-color: rgba(139,92,246,0.2);
+}
+.theme-flux .quick-link:hover::before {
+  opacity: 0.6;
+}
+.theme-flux .quick-link-icon {
+  border-radius: 12px;
+}
+.theme-flux .quick-link strong {
+  font-family: 'Inter', system-ui;
+  font-weight: 700;
+}
+
+
+/* ═══════════════════════════════════════════
+   PULSE DOTS — Violet primary
+   ═══════════════════════════════════════════ */
+.theme-flux .pulse-dot-cyan {
+  background: #818cf8;
+  box-shadow: 0 0 12px rgba(129,140,248,0.55);
+}
+.theme-flux .pulse-dot-emerald {
+  background: #34d399;
+  box-shadow: 0 0 12px rgba(52,211,153,0.55);
+}
+.theme-flux .pulse-dot-rose {
+  background: #fb7185;
+  box-shadow: 0 0 12px rgba(251,113,133,0.55);
+}
+
+
+/* ═══════════════════════════════════════════
+   THEME TOGGLE
+   ═══════════════════════════════════════════ */
+.theme-flux .theme-toggle {
+  border-radius: 10px;
+  font-family: 'Inter', system-ui;
+  font-weight: 600;
+  border-color: var(--glass-border);
+  background: var(--glass-bg);
+}
+.theme-flux .theme-toggle:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px var(--flux-glow);
+}
+
+
+/* ═══════════════════════════════════════════
+   TOOLTIPS & SUBMENUS
+   ═══════════════════════════════════════════ */
+.theme-flux .rail-tooltip {
+  border-radius: 10px;
+  font-family: 'Inter', system-ui;
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+.theme-flux .rail-submenu {
+  background: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 14px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.theme-flux .rail-submenu-title {
+  color: #a78bfa;
+  font-family: 'Inter', system-ui;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+.theme-flux .rail-submenu a {
+  font-family: 'Inter', system-ui;
+  font-weight: 500;
+  font-size: 0.76rem;
+  border-radius: 8px;
+  margin: 0 0.3rem;
+  transition: all 0.15s ease;
+}
+.theme-flux .rail-submenu a:hover {
+  background: rgba(139,92,246,0.12);
+  color: #e8e5f5;
+}
+.theme-flux .rail-submenu a.sub-active {
+  color: #a78bfa;
+  background: rgba(139,92,246,0.08);
+}
+
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════════════ */
+.theme-flux .empty-state-icon {
+  background: linear-gradient(135deg, rgba(167,139,250,0.18), rgba(109,40,217,0.12));
+  color: var(--accent-text);
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(139,92,246,0.1);
+}
+.theme-flux.dark .empty-state-icon {
+  box-shadow: 0 4px 24px rgba(139,92,246,0.15), 0 0 30px rgba(139,92,246,0.06);
+}
+
+
+/* ═══════════════════════════════════════════
+   STEP SPINNER
+   ═══════════════════════════════════════════ */
+.theme-flux .step-spinner {
+  border-color: var(--text-4);
+  border-top-color: var(--accent);
+}
+
+
+/* ═══════════════════════════════════════════
+   GET STARTED STEPS
+   ═══════════════════════════════════════════ */
+.theme-flux .get-started-step:hover {
+  background: rgba(139,92,246,0.04) !important;
+  border-color: rgba(139,92,246,0.12) !important;
+}
+.theme-flux .get-started-step:hover strong {
+  color: var(--accent-text) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   TEXT UTILITIES
+   ═══════════════════════════════════════════ */
+.theme-flux .text-glow-cyan {
+  text-shadow: 0 0 24px rgba(139,92,246,0.35);
+  color: var(--accent-text);
+}
+.theme-flux .text-accent {
+  color: var(--accent-text);
+}
+
+
+/* ═══════════════════════════════════════════
+   SCROLLBARS
+   ═══════════════════════════════════════════ */
+.theme-flux ::-webkit-scrollbar { width: 5px; height: 5px; }
+.theme-flux ::-webkit-scrollbar-thumb { border-radius: 10px; }
+
+
+/* ═══════════════════════════════════════════
+   IFRAMES
+   ═══════════════════════════════════════════ */
+.theme-flux iframe {
+  border-radius: 16px;
+  border: 1px solid var(--divider);
+}
+
+
+/* ═══════════════════════════════════════════
+   ADMIN PLANE — Tabs, grids, sections
+   ═══════════════════════════════════════════ */
+.theme-flux .admin-tab {
+  border-radius: 10px !important;
+  font-family: 'Inter', system-ui !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.01em !important;
+  transition: all 0.2s ease !important;
+}
+.theme-flux .admin-tab:hover {
+  background: rgba(139,92,246,0.04) !important;
+}
+.theme-flux .admin-tab.active {
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(167,139,250,0.06)) !important;
+  color: var(--accent-text) !important;
+  border-color: rgba(139,92,246,0.2) !important;
+  box-shadow: 0 0 18px rgba(139,92,246,0.08) !important;
+}
+
+/* admin progress bars — violet gradient */
+.theme-flux .admin-tab-content div[style*="background:var(--glass-border)"] div,
+.theme-flux div[style*="height:5px"] div[style*="transition:width"] {
+  background: linear-gradient(90deg, #a78bfa, #7c3aed) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   GUARDRAILS — Toggle, cards, severity
+   ═══════════════════════════════════════════ */
+.theme-flux .gr-toggle input:checked + .gr-slider {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed) !important;
+  box-shadow: 0 0 16px rgba(139,92,246,0.3);
+}
+.theme-flux .gr-slider {
+  border-radius: 24px !important;
+}
+.theme-flux .gr-slider::before {
+  border-radius: 50% !important;
+}
+
+.theme-flux .cat-filter {
+  border-radius: 20px !important;
+  font-family: 'Inter', system-ui !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.02em !important;
+  transition: all 0.2s ease !important;
+}
+.theme-flux .cat-filter:hover {
+  border-color: rgba(139,92,246,0.2) !important;
+  background: rgba(139,92,246,0.04) !important;
+}
+.theme-flux .cat-filter.active {
+  background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(167,139,250,0.06)) !important;
+  color: var(--accent-text) !important;
+  border-color: rgba(139,92,246,0.25) !important;
+  box-shadow: 0 0 14px rgba(139,92,246,0.08) !important;
+}
+
+.theme-flux .severity-badge {
+  border-radius: 20px !important;
+  font-weight: 700 !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
+}
+.theme-flux .severity-critical { box-shadow: 0 0 10px rgba(239,68,68,0.12) !important; }
+.theme-flux .severity-high { box-shadow: 0 0 10px rgba(245,158,11,0.1) !important; }
+.theme-flux .severity-medium { box-shadow: 0 0 10px rgba(251,191,36,0.08) !important; }
+.theme-flux .severity-low { box-shadow: 0 0 10px rgba(99,102,241,0.08) !important; }
+
+.theme-flux .gr-card {
+  border-radius: var(--flux-card-radius) !important;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+.theme-flux .gr-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--glass-hover-shadow) !important;
+}
+.theme-flux .cat-icon {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+
+/* ═══════════════════════════════════════════
+   DOCUMENTS / DATA INGESTION
+   ═══════════════════════════════════════════ */
+.theme-flux .file-drop-zone {
+  border-radius: 16px !important;
+  border-color: rgba(139,92,246,0.25) !important;
+  background: rgba(139,92,246,0.02) !important;
+  transition: all 0.2s ease !important;
+}
+.theme-flux .file-drop-zone:hover {
+  border-color: rgba(139,92,246,0.4) !important;
+  background: rgba(139,92,246,0.05) !important;
+  box-shadow: 0 0 24px rgba(139,92,246,0.06) !important;
+}
+.theme-flux .importer-tab {
+  font-family: 'Inter', system-ui !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+.theme-flux .importer-tab.active {
+  border-bottom-color: var(--accent) !important;
+  color: var(--accent-text) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   RUN AGENT / CHAT
+   ═══════════════════════════════════════════ */
+.theme-flux input[type="checkbox"] {
+  accent-color: #7c3aed !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   TOPOLOGY — Service architecture diagram
+   ═══════════════════════════════════════════ */
+.theme-flux .topo-canvas {
+  border-radius: 18px;
+}
+.theme-flux .topo-node {
+  border-radius: 12px !important;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.theme-flux .topo-node:hover {
+  transform: translateY(-3px) scale(1.04) !important;
+  box-shadow: 0 8px 30px rgba(139,92,246,0.15) !important;
+}
+.theme-flux .topo-band {
+  border-radius: 14px;
+}
+.theme-flux .tn-pulse.live {
+  box-shadow: 0 0 8px rgba(139,92,246,0.4) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   INLINE STYLE OVERRIDES
+   Catch hardcoded colors used in EJS templates
+   ═══════════════════════════════════════════ */
+
+/* stat cards with inline border-left */
+.theme-flux .stat-card[style*="border-left"] {
+  border-left-color: rgba(139,92,246,0.4) !important;
+}
+.theme-flux a[style*="border-left:3px solid"] .stat-card,
+.theme-flux a[style*="border-left:3px solid"] {
+  border-left-color: rgba(139,92,246,0.4) !important;
+}
+
+/* Inline progress bars */
+.theme-flux div[style*="transition:width 0.6s"] {
+  background: linear-gradient(90deg, #a78bfa, #7c3aed) !important;
+}
+
+/* Focus outlines → violet */
+.theme-flux *:focus-visible {
+  outline-color: rgba(139,92,246,0.5);
+}
+
+/* Override inline cyan accents to violet */
+.theme-flux div[style*="color:#06b6d4"],
+.theme-flux span[style*="color:#06b6d4"] {
+  color: var(--accent-text) !important;
+}
+
+/* Architecture layer boxes — violet-tint all */
+.theme-flux div[style*="border:2px solid rgba(6,182,212"] {
+  border-color: rgba(129,140,248,0.3) !important;
+  background: linear-gradient(135deg, rgba(129,140,248,0.04), rgba(129,140,248,0.01)) !important;
+}
+.theme-flux div[style*="border:2px solid rgba(139,92,246"] {
+  border-color: rgba(139,92,246,0.3) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   SECTION DIVIDER
+   ═══════════════════════════════════════════ */
+.theme-flux .section-header h3 {
+  font-family: 'Inter', system-ui;
+  font-weight: 700;
+}
+
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE OVERRIDES
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .theme-flux .stat-card,
+  .theme-flux .card,
+  .theme-flux .card-hover {
+    border-radius: 14px;
+  }
+  .theme-flux h1 {
+    font-size: 1.4rem;
+  }
+  .theme-flux .icon-rail.mobile-open {
+    box-shadow: 6px 0 40px rgba(139,92,246,0.15);
+  }
+}

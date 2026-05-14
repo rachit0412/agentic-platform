@@ -1,7 +1,7 @@
 <%- include('layout', { title: 'Admin Plane', page: 'admin', body: `
 
 <!-- ── Auth Overlay ── -->
-<div id="admin-auth-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.92);backdrop-filter:blur(12px)">
+<div id="admin-auth-overlay" style="position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.92);backdrop-filter:blur(12px)">
   <div style="width:360px;padding:2rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">
     <div style="text-align:center;margin-bottom:1.5rem">
       <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(244,63,94,0.2),rgba(139,92,246,0.2));display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.75rem">
@@ -360,6 +360,92 @@
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="tab-config" class="admin-tab-content" style="display:none">
 
+  <!-- Design Theme -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Design Theme</h3>
+      <span style="font-size:0.72rem;color:var(--text-3)">Choose a visual style for the platform</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+      <!-- Glass Theme Card -->
+      <div id="theme-card-glass" onclick="applyDesignTheme('glass')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#7c3aed);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Glass Morphism</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">Default</div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Frosted glass surfaces, blur effects, cyan-violet gradients, rounded corners. Modern and visually rich.</p>
+        <div style="display:flex;gap:6px;margin-top:0.75rem">
+          <span style="width:16px;height:16px;border-radius:50%;background:#06b6d4;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#7c3aed;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#0f172a;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#e2e8f0;border:2px solid var(--glass-border)"></span>
+        </div>
+      </div>
+      <!-- Enterprise Theme Card -->
+      <div id="theme-card-enterprise" onclick="applyDesignTheme('enterprise')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1e40af,#2563eb);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Enterprise</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">Corporate</div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Clean flat surfaces, blue accent, Inter font, sharp borders, striped tables. Corporate and minimal.</p>
+        <div style="display:flex;gap:6px;margin-top:0.75rem">
+          <span style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#1e40af;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#111827;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#f9fafb;border:2px solid var(--glass-border)"></span>
+        </div>
+      </div>
+      <!-- shadcn Theme Card -->
+      <div id="theme-card-softui" onclick="applyDesignTheme('softui')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <div style="width:36px;height:36px;border-radius:8px;background:#18181b;display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fafafa" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">shadcn</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">Minimal</div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Clean borders, neutral palette, precise typography. Inspired by shadcn/ui design system.</p>
+        <div style="display:flex;gap:6px;margin-top:0.75rem">
+          <span style="width:16px;height:16px;border-radius:50%;background:#18181b;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#71717a;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#e4e4e7;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#fafafa;border:2px solid var(--glass-border)"></span>
+        </div>
+      </div>
+      <!-- Flux Theme Card -->
+      <div id="theme-card-flux" onclick="applyDesignTheme('flux')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <div style="width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#a78bfa,#7c3aed,#6d28d9);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Flux</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">Vivid</div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Vivid violet, gradient glow effects, electric buttons, dot-grid background. Bold and dynamic startup style.</p>
+        <div style="display:flex;gap:6px;margin-top:0.75rem">
+          <span style="width:16px;height:16px;border-radius:50%;background:#a78bfa;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#7c3aed;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#1e1b4b;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#e8e5f5;border:2px solid var(--glass-border)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Global Constraints -->
   <div class="card animate-fade-up" style="margin-bottom:1.5rem">
     <div class="section-header">
@@ -488,7 +574,7 @@ function adminLogin() {
   var errEl = document.getElementById('admin-auth-error');
   if (!user || !pass) { errEl.style.display = 'block'; errEl.textContent = 'Please enter username and password'; return; }
   if (ADMIN_CREDS[user] && ADMIN_CREDS[user] === pass) {
-    sessionStorage.setItem('admin_auth', JSON.stringify({user: user, ts: Date.now()}));
+    localStorage.setItem('admin_auth', JSON.stringify({user: user, ts: Date.now()}));
     showAdminContent(user);
   } else {
     errEl.style.display = 'block';
@@ -499,7 +585,7 @@ function adminLogin() {
 }
 
 function adminLogout() {
-  sessionStorage.removeItem('admin_auth');
+  localStorage.removeItem('admin_auth');
   document.getElementById('admin-content').style.display = 'none';
   document.getElementById('admin-auth-overlay').style.display = 'flex';
   document.getElementById('admin-pass').value = '';
@@ -510,18 +596,21 @@ function adminLogout() {
 function showAdminContent(user) {
   document.getElementById('admin-auth-overlay').style.display = 'none';
   document.getElementById('admin-content').style.display = 'block';
-  document.getElementById('admin-session-user').innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + escapeHtml(user);
+  var userEl = document.getElementById('admin-session-user');
+  userEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  var span = document.createElement('span');
+  span.textContent = user;
+  userEl.appendChild(span);
   adminLoadAll();
 }
 
 function adminCheckSession() {
-  try {
-    var s = JSON.parse(sessionStorage.getItem('admin_auth') || 'null');
-    if (s && s.user && (Date.now() - s.ts) < 3600000) {
-      showAdminContent(s.user);
-      return;
-    }
-  } catch(e) {}
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem('admin_auth') || 'null'); } catch(e) {}
+  if (s && s.user && (Date.now() - s.ts) < 3600000) {
+    showAdminContent(s.user);
+    return;
+  }
   document.getElementById('admin-auth-overlay').style.display = 'flex';
   document.getElementById('admin-user').focus();
 }
@@ -539,8 +628,29 @@ function switchTab(tab) {
   if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
   if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
-  if (tab === 'config') { loadGlobalConstraints(); loadGuardrails(); loadN8nWorkflows(); }
+  if (tab === 'config') { loadGlobalConstraints(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
   if (tab === 'audit') loadAuditLog();
+}
+
+/* ═══ DESIGN THEME ═══ */
+function applyDesignTheme(name) {
+  if (typeof setDesignTheme === 'function') setDesignTheme(name);
+  highlightThemeCard();
+}
+function highlightThemeCard() {
+  var current = (typeof getDesignTheme === 'function') ? getDesignTheme() : 'glass';
+  var themes = ['glass', 'enterprise', 'softui', 'flux'];
+  for (var i = 0; i < themes.length; i++) {
+    var el = document.getElementById('theme-card-' + themes[i]);
+    if (!el) continue;
+    if (themes[i] === current) {
+      el.style.borderColor = 'var(--accent)';
+      el.style.boxShadow = '0 0 0 1px var(--accent)';
+    } else {
+      el.style.borderColor = 'var(--glass-border)';
+      el.style.boxShadow = 'none';
+    }
+  }
 }
 
 /* ═══ LOAD ALL ═══ */

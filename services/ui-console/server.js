@@ -1218,7 +1218,11 @@ app.get("/api/admin/overview", async (req, res) => {
     try {
       const r = await fetch(ep.url, { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
-      counts[ep.key] = Array.isArray(d) ? d.length : (d.items?.length || d.tools?.length || d.peers?.length || d.servers?.length || d.connectors?.length || 0);
+      if (Array.isArray(d)) { counts[ep.key] = d.length; }
+      else {
+        const arr = Object.values(d).find(v => Array.isArray(v));
+        counts[ep.key] = arr ? arr.length : 0;
+      }
     } catch { counts[ep.key] = 0; }
   }));
   res.json(counts);
