@@ -15,9 +15,33 @@ Provides:
 """
 
 import os
+import json
 import logging
 
 logger = logging.getLogger("agent-service.llm")
+
+# ── Persistent config (survives container restarts) ─────────────────────────
+_CONFIG_PATH = os.path.join(os.getenv("MEMORY_DIR", "/data"), "llm-config.json")
+
+
+def _load_persisted_config() -> dict:
+    """Load saved provider/model from disk, if present."""
+    try:
+        with open(_CONFIG_PATH) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_persisted_config(provider: str, model: str) -> None:
+    """Write active provider/model to disk so restarts keep the selection."""
+    try:
+        os.makedirs(os.path.dirname(_CONFIG_PATH), exist_ok=True)
+        with open(_CONFIG_PATH, "w") as f:
+            json.dump({"provider": provider, "model": model}, f)
+    except OSError as exc:
+        logger.warning("Could not persist LLM config: %s", exc)
+
 
 # ── Ollama config ───────────────────────────────────────────────────────────
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
@@ -64,10 +88,13 @@ def _is_real_key(value: str) -> bool:
 
 
 # ── Active model state ──────────────────────────────────────────────────────
-_active_provider = os.getenv(
-    "LLM_PROVIDER", "ollama"
+# Persisted config (written by set_active_model) takes precedence over env vars.
+_persisted = _load_persisted_config()
+_active_provider = _persisted.get(
+    "provider",
+    os.getenv("LLM_PROVIDER", "ollama"),
 )  # "ollama" | "azure-openai" | "openai" | "azure-foundry"
-_active_model = (
+_env_default_model = (
     AZURE_OPENAI_DEPLOYMENT
     if _active_provider == "azure-openai"
     else (
@@ -78,6 +105,7 @@ _active_model = (
         )
     )
 )
+_active_model = _persisted.get("model", _env_default_model)
 _llm = None
 _embeddings = None
 _embedding_provider = None  # tracks which provider the current embeddings use
@@ -514,6 +542,8 @@ def set_active_model(
         top_p=top_p,
         max_completion_tokens=max_completion_tokens,
     )
+    # Persist so the choice survives container restarts
+    _save_persisted_config(_active_provider, _active_model)
     # Reset embeddings if provider changed and no explicit EMBEDDING_PROVIDER override
     global _embeddings, _embedding_provider
     if (
