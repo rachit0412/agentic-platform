@@ -33,8 +33,6 @@ def test_connector(connector_type: str, config: dict) -> dict:
         return test_google_drive(config)
     elif connector_type == "sharepoint":
         return test_sharepoint(config)
-    elif connector_type == "airbyte":
-        return _test_airbyte(config)
     else:
         return {"ok": False, "message": f"Unknown connector type: {connector_type}"}
 
@@ -54,41 +52,5 @@ def run_sync(connector_type: str, config: dict) -> list[dict]:
         return pull_google_drive(config)
     elif connector_type == "sharepoint":
         return pull_sharepoint(config)
-    elif connector_type == "airbyte":
-        return _run_airbyte_sync(config)
     else:
         raise ValueError(f"Unknown connector type: {connector_type}")
-
-
-def _test_airbyte(config: dict) -> dict:
-    """Test Airbyte sidecar connectivity."""
-    try:
-        import httpx
-        url = config.get("airbyte_url", "http://airbyte:8000")
-        r = httpx.get(f"{url}/api/v1/health", timeout=5)
-        if r.status_code == 200:
-            return {"ok": True, "message": "Airbyte is healthy"}
-        return {"ok": False, "message": f"Airbyte returned HTTP {r.status_code}"}
-    except Exception as e:
-        return {"ok": False, "message": f"Cannot reach Airbyte: {e}"}
-
-
-def _run_airbyte_sync(config: dict) -> list[dict]:
-    """Trigger an Airbyte sync and wait for results."""
-    import httpx
-    url = config.get("airbyte_url", "http://airbyte:8000")
-    connection_id = config["connection_id"]
-
-    # Trigger sync
-    r = httpx.post(
-        f"{url}/api/v1/connections/sync",
-        json={"connectionId": connection_id},
-        timeout=300,
-    )
-    r.raise_for_status()
-
-    # Airbyte writes to a destination; we read from the configured output path
-    # For the hybrid approach, Airbyte should write to a local filesystem destination
-    # that maps to our filestore directory
-    logger.info(f"Airbyte sync triggered for connection {connection_id}")
-    return []  # Airbyte writes directly to destination; files picked up by filestore scan

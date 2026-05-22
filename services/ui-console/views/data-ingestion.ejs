@@ -1,20 +1,20 @@
 <%- include('layout', { title: 'Data Ingestion', page: 'data-ingestion', body: `
 
 <h1 class="text-glow-cyan">Data Ingestion</h1>
-<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Connect to <strong style="color:#8b5cf6">external data sources</strong>, configure sync schedules, and ingest enterprise data into your <strong style="color:#06b6d4">knowledge base</strong> automatically.</p>
-<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Supports <strong style="color:#10b981">6 connector types</strong>: Database (PostgreSQL/MySQL/MSSQL), Cloud Storage (S3/Azure Blob/GCS), REST API, Google Drive, SharePoint, and <strong style="color:#f59e0b">Airbyte (300+ sources)</strong>.</p>
+<p class="subtitle" style="color:var(--text-3);margin-bottom:0.75rem">Enterprise <strong style="color:#8b5cf6">ETL pipeline</strong> — extract data from external sources, transform it into embeddings, and load into your <strong style="color:#06b6d4">knowledge base</strong> for agent retrieval.</p>
+<p style="color:var(--text-3);font-size:0.78rem;margin-bottom:1.5rem;line-height:1.5">Supports <strong style="color:#10b981">5 connector types</strong>: Database (PostgreSQL/MySQL/MSSQL), Cloud Storage (S3/Azure Blob/GCS), REST API, Google Drive, and SharePoint.</p>
 
 <!-- Stats Row -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
-  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('connectors-grid').scrollIntoView({behavior:'smooth',block:'start'})">
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('extract-section').scrollIntoView({behavior:'smooth',block:'start'})">
     <div style="font-size:1.75rem;font-weight:700;color:var(--cyan)" id="stat-total">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Connectors</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('connectors-grid').scrollIntoView({behavior:'smooth',block:'start'})">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('extract-section').scrollIntoView({behavior:'smooth',block:'start'})">
     <div style="font-size:1.75rem;font-weight:700;color:#10b981" id="stat-active">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Active / Healthy</div>
   </div>
-  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('jobs-section').scrollIntoView({behavior:'smooth',block:'start'})">
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('load-section').scrollIntoView({behavior:'smooth',block:'start'})">
     <div style="font-size:1.75rem;font-weight:700;color:#8b5cf6" id="stat-syncs">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Total Syncs</div>
   </div>
@@ -22,48 +22,262 @@
     <div style="font-size:1.75rem;font-weight:700;color:#f59e0b" id="stat-docs">0</div>
     <div style="font-size:0.75rem;color:var(--text-3)">Docs Ingested</div>
   </div>
-</div>
-
-<!-- Action Bar -->
-<div class="flex-between mb-2">
-  <div style="display:flex;gap:0.5rem;align-items:center">
-    <span id="connector-count" class="badge" style="font-size:0.78rem">0 connectors</span>
-  </div>
-  <div style="display:flex;gap:0.5rem">
-    <button class="btn btn-primary" onclick="showCreateModal()">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      New Connector
-    </button>
-    <button class="btn" onclick="loadConnectors()">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Refresh
-    </button>
+  <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('load-section').scrollIntoView({behavior:'smooth',block:'start'})">
+    <div style="font-size:1.75rem;font-weight:700;color:#06b6d4" id="stat-chunks">0</div>
+    <div style="font-size:0.75rem;color:var(--text-3)">Chunks Stored</div>
   </div>
 </div>
 
-<!-- Connector Catalog (Type Selector) -->
-<div class="card" style="margin-bottom:1.5rem" id="catalog-section">
-  <h3 style="margin-bottom:1rem;font-size:0.9rem">Connector Catalog</h3>
-  <div id="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem">
-    <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Loading catalog...</div>
+
+<!-- ════════ ETL Pipeline Banner ════════ -->
+<div class="card" style="margin-bottom:1.5rem;border:1px solid rgba(139,92,246,0.15);background:linear-gradient(135deg,rgba(139,92,246,0.03),rgba(6,182,212,0.03),rgba(16,185,129,0.03))">
+  <h3 style="margin-bottom:0.75rem;font-size:0.9rem">ETL Pipeline</h3>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:center">
+    <!-- Extract -->
+    <a href="#extract-section" style="text-decoration:none;color:inherit;padding:1rem;border-radius:12px;text-align:center;border:1.5px solid rgba(139,92,246,0.25);background:rgba(139,92,246,0.04);transition:all 0.2s;cursor:pointer" onmouseenter="this.style.borderColor='rgba(139,92,246,0.5)'" onmouseleave="this.style.borderColor='rgba(139,92,246,0.25)'">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div style="font-size:0.92rem;font-weight:700;color:#8b5cf6">Extract</div>
+      <div style="font-size:0.7rem;color:var(--text-3);margin-top:0.2rem">Pull from 5 source types</div>
+    </a>
+    <!-- Arrow 1 -->
+    <div style="display:flex;align-items:center;justify-content:center;padding:0 0.25rem">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--text-3)" stroke-width="1.5" style="opacity:0.4"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    </div>
+    <!-- Transform -->
+    <a href="#transform-section" style="text-decoration:none;color:inherit;padding:1rem;border-radius:12px;text-align:center;border:1.5px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.04);transition:all 0.2s;cursor:pointer" onmouseenter="this.style.borderColor='rgba(245,158,11,0.5)'" onmouseleave="this.style.borderColor='rgba(245,158,11,0.25)'">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+      </div>
+      <div style="font-size:0.92rem;font-weight:700;color:#f59e0b">Transform</div>
+      <div style="font-size:0.7rem;color:var(--text-3);margin-top:0.2rem">Chunk, embed, enrich</div>
+    </a>
+    <!-- Arrow 2 -->
+    <div style="display:flex;align-items:center;justify-content:center;padding:0 0.25rem">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--text-3)" stroke-width="1.5" style="opacity:0.4"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    </div>
+    <!-- Load -->
+    <a href="#load-section" style="text-decoration:none;color:inherit;padding:1rem;border-radius:12px;text-align:center;border:1.5px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.04);transition:all 0.2s;cursor:pointer" onmouseenter="this.style.borderColor='rgba(16,185,129,0.5)'" onmouseleave="this.style.borderColor='rgba(16,185,129,0.25)'">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 0.5rem">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#10b981" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <div style="font-size:0.92rem;font-weight:700;color:#10b981">Load</div>
+      <div style="font-size:0.7rem;color:var(--text-3);margin-top:0.2rem">Index into ChromaDB</div>
+    </a>
   </div>
 </div>
 
-<!-- Connectors List -->
-<div class="card" style="margin-bottom:1.5rem" id="connectors-grid">
-  <h3 style="margin-bottom:1rem;font-size:0.9rem">Configured Connectors</h3>
-  <div id="connectors-list" style="display:flex;flex-direction:column;gap:0.75rem">
-    <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Loading...</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ═══ PHASE 1: EXTRACT ═══ -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="extract-section" style="margin-bottom:1.5rem">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:32px;height:32px;border-radius:8px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </div>
+    <div>
+      <h2 style="margin:0;font-size:1.1rem;color:#8b5cf6">Extract</h2>
+      <p style="margin:0;font-size:0.72rem;color:var(--text-3)">Connect to external data sources and pull raw documents</p>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="flex-between mb-2">
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <span id="connector-count" class="badge" style="font-size:0.78rem">0 connectors</span>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-primary" onclick="showCreateModal()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Connector
+      </button>
+      <button class="btn" onclick="loadConnectors()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Connector Catalog (Source Types) -->
+  <div class="card" style="margin-bottom:1rem" id="catalog-section">
+    <h3 style="margin-bottom:0.75rem;font-size:0.9rem">Source Catalog</h3>
+    <p style="color:var(--text-3);font-size:0.75rem;margin-bottom:0.75rem">Click a source type to create a new connector</p>
+    <div id="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem">
+      <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Loading catalog...</div>
+    </div>
+  </div>
+
+  <!-- Configured Connectors -->
+  <div class="card" id="connectors-grid">
+    <h3 style="margin-bottom:0.75rem;font-size:0.9rem">Configured Connectors</h3>
+    <div id="connectors-list" style="display:flex;flex-direction:column;gap:0.75rem">
+      <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Loading...</div>
+    </div>
   </div>
 </div>
 
-<!-- Recent Sync Jobs -->
-<div class="card" id="jobs-section">
-  <h3 style="margin-bottom:1rem;font-size:0.9rem">Recent Sync Jobs</h3>
-  <div id="jobs-list" style="max-height:300px;overflow-y:auto">
-    <div style="color:var(--text-3);font-size:0.8rem;padding:1rem">Select a connector to view sync history</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ═══ PHASE 2: TRANSFORM ═══ -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="transform-section" style="margin-bottom:1.5rem">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:32px;height:32px;border-radius:8px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+    </div>
+    <div>
+      <h2 style="margin:0;font-size:1.1rem;color:#f59e0b">Transform</h2>
+      <p style="margin:0;font-size:0.72rem;color:var(--text-3)">How extracted data is processed before loading into the knowledge base</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+
+    <!-- Chunking -->
+    <div class="card" style="border:1px solid rgba(245,158,11,0.15)">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-1)">Chunking</div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text-2);line-height:1.5;margin-bottom:0.75rem">Documents are split into overlapping chunks for optimal retrieval.</div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Strategy</span>
+          <span style="color:#f59e0b;font-weight:600">RecursiveCharacterTextSplitter</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Chunk Size</span>
+          <span style="color:var(--text-1);font-weight:600">500 characters</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Overlap</span>
+          <span style="color:var(--text-1);font-weight:600">50 characters</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Embedding -->
+    <div class="card" style="border:1px solid rgba(6,182,212,0.15)">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(6,182,212,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
+        </div>
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-1)">Embedding</div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text-2);line-height:1.5;margin-bottom:0.75rem">Each chunk is converted into a dense vector for semantic search.</div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Model</span>
+          <span style="color:#06b6d4;font-weight:600">nomic-embed-text</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Provider</span>
+          <span style="color:var(--text-1);font-weight:600">Ollama (local)</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Dimensions</span>
+          <span style="color:var(--text-1);font-weight:600">768</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="card" style="border:1px solid rgba(139,92,246,0.15)">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-1)">Metadata</div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text-2);line-height:1.5;margin-bottom:0.75rem">Each chunk is enriched with metadata for filtering and tracing.</div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Source</span>
+          <span style="color:var(--text-1);font-weight:600">filename, connector, URL</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Timestamps</span>
+          <span style="color:var(--text-1);font-weight:600">ingested_at, synced_at</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Index</span>
+          <span style="color:var(--text-1);font-weight:600">chunk_index, total_chunks</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
+
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ═══ PHASE 3: LOAD ═══ -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="load-section" style="margin-bottom:1.5rem">
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+    <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    </div>
+    <div>
+      <h2 style="margin:0;font-size:1.1rem;color:#10b981">Load</h2>
+      <p style="margin:0;font-size:0.72rem;color:var(--text-3)">Indexed chunks stored in ChromaDB for agent retrieval at runtime</p>
+    </div>
+  </div>
+
+  <!-- Destination + Recent Jobs -->
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:1rem">
+
+    <!-- Destination Info -->
+    <div class="card" style="border:1px solid rgba(16,185,129,0.15)">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#10b981" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-1)">Destination</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Vector Store</span>
+          <span style="color:#10b981;font-weight:600">ChromaDB</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Port</span>
+          <span style="color:var(--text-1);font-weight:600">8200</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Strategy</span>
+          <span style="color:var(--text-1);font-weight:600">Collection per agent</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Distance</span>
+          <span style="color:var(--text-1);font-weight:600">Cosine similarity</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.35rem 0.6rem;border-radius:6px;background:var(--input-bg);font-size:0.72rem">
+          <span style="color:var(--text-3)">Persistence</span>
+          <span style="color:var(--text-1);font-weight:600">Docker volume</span>
+        </div>
+      </div>
+      <div style="margin-top:0.75rem;padding:0.6rem;border-radius:8px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);text-align:center">
+        <div style="font-size:0.65rem;color:var(--text-3);margin-bottom:0.2rem">Total Docs Indexed</div>
+        <div style="font-size:1.25rem;font-weight:700;color:#10b981" id="load-total-docs">-</div>
+      </div>
+    </div>
+
+    <!-- Recent Sync Jobs -->
+    <div class="card" id="jobs-section">
+      <h3 style="margin-bottom:0.75rem;font-size:0.9rem">Recent Sync Jobs</h3>
+      <div id="jobs-list" style="max-height:300px;overflow-y:auto">
+        <div style="color:var(--text-3);font-size:0.8rem;padding:1rem;text-align:center">Select a connector to view sync history</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 
 <!-- Create/Edit Modal -->
 <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this)closeModal()">
@@ -114,16 +328,24 @@ async function loadCatalog() {
 
 function renderCatalog() {
   const grid = document.getElementById('catalog-grid');
-  const icons = { database: '\u{1F5C4}', cloud: '\u2601\uFE0F', api: '\u{1F310}', drive: '\u{1F4C1}', sharepoint: '\u{1F4CE}', airbyte: '\u26A1' };
+  const icons = {
+    database: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#06b6d4" stroke-width="1.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+    api: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f59e0b" stroke-width="1.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    drive: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#10b981" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+    sharepoint: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f43f5e" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+  };
+  const colors = { database: '#8b5cf6', cloud: '#06b6d4', api: '#f59e0b', drive: '#10b981', sharepoint: '#f43f5e' };
   grid.innerHTML = Object.entries(catalog).map(([key, c]) => {
-    return '<div style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s;background:var(--bg-2)" onclick="showCreateModal(\\'' + key + '\\')" onmouseover="this.style.borderColor=\\'var(--cyan)\\'" onmouseout="this.style.borderColor=\\'var(--glass-border)\\'"><div style="font-size:1.25rem;margin-bottom:0.3rem">' + (icons[c.icon] || '\u{1F50C}') + '</div><div style="font-size:0.82rem;font-weight:600;color:var(--text-1)">' + c.name + '</div><div style="font-size:0.7rem;color:var(--text-3);margin-top:0.2rem;line-height:1.3">' + c.description + '</div></div>';
+    var clr = colors[c.icon] || '#8b5cf6';
+    return '<div style="padding:0.85rem;border:1.5px solid ' + clr + '20;border-radius:10px;cursor:pointer;transition:all 0.2s;background:' + clr + '04" onclick="showCreateModal(\\'' + key + '\\')" onmouseover="this.style.borderColor=\\'' + clr + '60\\';this.style.transform=\\'translateY(-2px)\\'" onmouseout="this.style.borderColor=\\'' + clr + '20\\';this.style.transform=\\'\\'"><div style="margin-bottom:0.5rem">' + (icons[c.icon] || icons.api) + '</div><div style="font-size:0.82rem;font-weight:600;color:var(--text-1)">' + escapeHtml(c.name) + '</div><div style="font-size:0.7rem;color:var(--text-3);margin-top:0.2rem;line-height:1.4">' + escapeHtml(c.description) + '</div></div>';
   }).join('');
 }
 
 function populateTypeSelect() {
   const sel = document.getElementById('f-type');
   sel.innerHTML = '<option value="">Select a type...</option>' + Object.entries(catalog).map(([key, c]) =>
-    '<option value="' + key + '">' + c.name + '</option>'
+    '<option value="' + key + '">' + escapeHtml(c.name) + '</option>'
   ).join('');
 }
 
@@ -140,15 +362,15 @@ async function loadConnectors() {
 function renderConnectors() {
   const el = document.getElementById('connectors-list');
   if (!connectors.length) {
-    el.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem;padding:1rem;text-align:center">No connectors configured yet. Click <strong>New Connector</strong> to get started.</div>';
+    el.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem;padding:1rem;text-align:center">No connectors configured yet. Click <strong>New Connector</strong> or select a source type above to get started.</div>';
     return;
   }
-  const icons = { database: '\u{1F5C4}', cloud_storage: '\u2601\uFE0F', api: '\u{1F310}', google_drive: '\u{1F4C1}', sharepoint: '\u{1F4CE}', airbyte: '\u26A1' };
+  const colors = { database: '#8b5cf6', cloud_storage: '#06b6d4', api: '#f59e0b', google_drive: '#10b981', sharepoint: '#f43f5e' };
   const statusColors = { completed: '#10b981', failed: '#ef4444', pending: '#f59e0b', running: '#3b82f6' };
   el.innerHTML = connectors.map(c => {
+    const clr = colors[c.connector_type] || '#8b5cf6';
     const statusColor = statusColors[c.last_status] || 'var(--text-3)';
-    const icon = icons[c.connector_type] || '\u{1F50C}';
-    return '<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--bg-2);transition:all 0.2s" onmouseover="this.style.borderColor=\\'var(--cyan)\\'" onmouseout="this.style.borderColor=\\'var(--glass-border)\\'"><div style="font-size:1.5rem">' + icon + '</div><div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600;color:var(--text-1)">' + c.name + '</div><div style="font-size:0.72rem;color:var(--text-3)">' + (catalog[c.connector_type]?.name || c.connector_type) + ' &bull; ' + (c.doc_count || 0) + ' docs &bull; Last: ' + (c.last_sync ? new Date(c.last_sync).toLocaleString() : 'Never') + '</div></div><div style="display:flex;gap:0.3rem;align-items:center"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span><span style="font-size:0.72rem;color:' + statusColor + '">' + (c.last_status || 'new') + '</span></div><div style="display:flex;gap:0.3rem"><button class="btn btn-sm" onclick="syncConnector(\\'' + c.id + '\\')" title="Sync now" style="padding:0.25rem 0.5rem;font-size:0.7rem">\u{1F504} Sync</button><button class="btn btn-sm" onclick="viewJobs(\\'' + c.id + '\\')" title="View jobs" style="padding:0.25rem 0.5rem;font-size:0.7rem">\u{1F4CB}</button><button class="btn btn-sm" onclick="deleteConnector(\\'' + c.id + '\\')" title="Delete" style="padding:0.25rem 0.5rem;font-size:0.7rem;color:#ef4444">\u{1F5D1}</button></div></div>';
+    return '<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--bg-2);transition:all 0.2s" onmouseover="this.style.borderColor=\\'' + clr + '44\\'" onmouseout="this.style.borderColor=\\'var(--glass-border)\\'"><div style="width:8px;height:36px;border-radius:4px;background:' + clr + ';flex-shrink:0;opacity:0.6"></div><div style="flex:1;min-width:0"><div style="font-size:0.85rem;font-weight:600;color:var(--text-1)">' + escapeHtml(c.name) + '</div><div style="font-size:0.72rem;color:var(--text-3)">' + escapeHtml(catalog[c.connector_type]?.name || c.connector_type) + ' &bull; ' + (c.doc_count || 0) + ' docs &bull; Last: ' + (c.last_sync ? new Date(c.last_sync).toLocaleString() : 'Never') + '</div></div><div style="display:flex;gap:0.3rem;align-items:center"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span><span style="font-size:0.72rem;color:' + statusColor + '">' + (c.last_status || 'new') + '</span></div><div style="display:flex;gap:0.3rem"><button class="btn btn-sm" onclick="syncConnector(\\'' + c.id + '\\')" title="Run sync" style="padding:0.25rem 0.5rem;font-size:0.7rem"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Sync</button><button class="btn btn-sm" onclick="viewJobs(\\'' + c.id + '\\')" title="View jobs" style="padding:0.25rem 0.5rem;font-size:0.7rem"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Jobs</button><button class="btn btn-sm" onclick="deleteConnector(\\'' + c.id + '\\')" title="Delete" style="padding:0.25rem 0.5rem;font-size:0.7rem;color:#ef4444"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>';
   }).join('');
 }
 
@@ -158,6 +380,18 @@ function updateStats() {
   const totalDocs = connectors.reduce((s, c) => s + (c.doc_count || 0), 0);
   document.getElementById('stat-docs').textContent = totalDocs;
   document.getElementById('connector-count').textContent = connectors.length + ' connector' + (connectors.length !== 1 ? 's' : '');
+}
+
+async function loadKbStats() {
+  try {
+    const r = await fetch('/api/memory/stats', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    document.getElementById('stat-chunks').textContent = d.knowledge_base?.total_chunks || 0;
+    document.getElementById('load-total-docs').textContent = d.knowledge_base?.unique_documents || 0;
+  } catch(e) {
+    document.getElementById('stat-chunks').textContent = '0';
+    document.getElementById('load-total-docs').textContent = '0';
+  }
 }
 
 function showCreateModal(type) {
@@ -225,14 +459,14 @@ async function testConnection() {
     const data = await res.json();
     if (data.success) {
       statusEl.style.color = '#10b981';
-      statusEl.textContent = '\u2713 Connection successful' + (data.message ? ': ' + data.message : '');
+      statusEl.textContent = '\\u2713 Connection successful' + (data.message ? ': ' + data.message : '');
     } else {
       statusEl.style.color = '#ef4444';
-      statusEl.textContent = '\u2717 Connection failed: ' + (data.error || 'Unknown error');
+      statusEl.textContent = '\\u2717 Connection failed: ' + (data.error || 'Unknown error');
     }
   } catch(e) {
     statusEl.style.color = '#ef4444';
-    statusEl.textContent = '\u2717 Test failed: ' + e.message;
+    statusEl.textContent = '\\u2717 Test failed: ' + e.message;
   }
 }
 
@@ -256,22 +490,23 @@ async function handleSubmit(e) {
     const data = await res.json();
     if (data.error) {
       statusEl.style.color = '#ef4444';
-      statusEl.textContent = '\u2717 ' + data.error;
+      statusEl.textContent = '\\u2717 ' + data.error;
     } else {
       statusEl.style.color = '#10b981';
-      statusEl.textContent = '\u2713 Connector saved!';
+      statusEl.textContent = '\\u2713 Connector saved!';
       setTimeout(() => { closeModal(); loadConnectors(); }, 800);
     }
   } catch(e) {
     statusEl.style.color = '#ef4444';
-    statusEl.textContent = '\u2717 ' + e.message;
+    statusEl.textContent = '\\u2717 ' + e.message;
   }
 }
 
 async function syncConnector(id) {
-  const btn = event.target;
+  const btn = event.target.closest('button');
   btn.disabled = true;
-  btn.textContent = '\u23F3';
+  var origHTML = btn.innerHTML;
+  btn.textContent = 'Syncing...';
   try {
     const res = await fetch('/api/connectors/' + id + '/sync', {
       method: 'POST',
@@ -280,25 +515,26 @@ async function syncConnector(id) {
     });
     const data = await res.json();
     if (data.status === 'completed') {
-      btn.textContent = '\u2713 ' + data.docs_pulled + ' docs';
+      btn.textContent = '\\u2713 ' + data.docs_pulled + ' docs';
       btn.style.color = '#10b981';
     } else {
-      btn.textContent = '\u2717 ' + (data.error || 'Failed');
+      btn.textContent = '\\u2717 ' + (data.error || 'Failed');
       btn.style.color = '#ef4444';
     }
     loadConnectors();
-    setTimeout(() => { btn.textContent = '\u{1F504} Sync'; btn.style.color = ''; btn.disabled = false; }, 3000);
+    loadKbStats();
+    setTimeout(() => { btn.innerHTML = origHTML; btn.style.color = ''; btn.disabled = false; }, 3000);
   } catch(e) {
-    btn.textContent = '\u2717 Error';
+    btn.textContent = '\\u2717 Error';
     btn.style.color = '#ef4444';
-    setTimeout(() => { btn.textContent = '\u{1F504} Sync'; btn.style.color = ''; btn.disabled = false; }, 3000);
+    setTimeout(() => { btn.innerHTML = origHTML; btn.style.color = ''; btn.disabled = false; }, 3000);
   }
 }
 
 async function viewJobs(id) {
   const el = document.getElementById('jobs-list');
   el.innerHTML = '<div style="color:var(--text-3);font-size:0.8rem;padding:0.5rem">Loading jobs...</div>';
-  document.getElementById('jobs-section').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('load-section').scrollIntoView({behavior:'smooth',block:'start'});
   try {
     const res = await fetch('/api/connectors/' + id + '/jobs');
     const data = await res.json();
@@ -310,10 +546,10 @@ async function viewJobs(id) {
     }
     const statusColors = { completed: '#10b981', failed: '#ef4444', pending: '#f59e0b', running: '#3b82f6' };
     el.innerHTML = '<table style="width:100%;font-size:0.78rem;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--glass-border);color:var(--text-3)"><th style="text-align:left;padding:0.4rem">Job ID</th><th style="text-align:left;padding:0.4rem">Status</th><th style="text-align:left;padding:0.4rem">Docs Pulled</th><th style="text-align:left;padding:0.4rem">Indexed</th><th style="text-align:left;padding:0.4rem">Started</th></tr></thead><tbody>' +
-      jobs.map(j => '<tr style="border-bottom:1px solid var(--glass-border)"><td style="padding:0.4rem;font-family:monospace;font-size:0.7rem">' + j.id + '</td><td style="padding:0.4rem"><span style="color:' + (statusColors[j.status] || 'var(--text-3)') + ';font-weight:600">' + j.status + '</span></td><td style="padding:0.4rem">' + (j.docs_pulled || 0) + '</td><td style="padding:0.4rem">' + (j.docs_indexed || 0) + '</td><td style="padding:0.4rem">' + (j.started_at ? new Date(j.started_at).toLocaleString() : '-') + '</td></tr>').join('') +
+      jobs.map(j => '<tr style="border-bottom:1px solid var(--glass-border)"><td style="padding:0.4rem;font-family:monospace;font-size:0.7rem">' + escapeHtml(j.id) + '</td><td style="padding:0.4rem"><span style="color:' + (statusColors[j.status] || 'var(--text-3)') + ';font-weight:600">' + escapeHtml(j.status) + '</span></td><td style="padding:0.4rem">' + (j.docs_pulled || 0) + '</td><td style="padding:0.4rem">' + (j.docs_indexed || 0) + '</td><td style="padding:0.4rem">' + (j.started_at ? new Date(j.started_at).toLocaleString() : '-') + '</td></tr>').join('') +
       '</tbody></table>';
   } catch(e) {
-    el.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:0.5rem">Failed to load jobs: ' + e.message + '</div>';
+    el.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:0.5rem">Failed to load jobs: ' + escapeHtml(e.message) + '</div>';
   }
 }
 
@@ -328,6 +564,7 @@ async function deleteConnector(id) {
 // Init
 loadCatalog();
 loadConnectors();
-</script>
+loadKbStats();
+<\/script>
 
 ` }) %>

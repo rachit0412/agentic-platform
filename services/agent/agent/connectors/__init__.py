@@ -2,7 +2,7 @@
 Data Connectors — Enterprise data ingestion framework.
 
 Supports built-in connectors (databases, cloud storage, APIs, drives)
-and optional Airbyte sidecar for 300+ exotic sources.
+for pulling enterprise data into the knowledge base.
 
 Pipeline: Source → Pull → Filestore (staging) → Index to ChromaDB
 """
@@ -23,7 +23,6 @@ class ConnectorType(str, Enum):
     API = "api"
     GOOGLE_DRIVE = "google_drive"
     SHAREPOINT = "sharepoint"
-    AIRBYTE = "airbyte"
 
 
 class SyncStatus(str, Enum):
@@ -97,15 +96,6 @@ CONNECTOR_CATALOG = {
             "client_secret": {"type": "password", "required": True},
             "tenant_id": {"type": "string", "required": True},
             "library": {"type": "string", "placeholder": "Shared Documents", "required": False},
-        },
-    },
-    "airbyte": {
-        "name": "Airbyte (300+ Sources)",
-        "description": "Use Airbyte OSS for advanced/exotic data sources",
-        "icon": "airbyte",
-        "config_schema": {
-            "airbyte_url": {"type": "string", "required": True, "placeholder": "http://airbyte:8000"},
-            "connection_id": {"type": "string", "required": True, "placeholder": "Airbyte connection UUID"},
         },
     },
 }

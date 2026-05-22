@@ -10,7 +10,7 @@
 [![Ollama](https://img.shields.io/badge/Ollama-Local%20LLMs-000000?logo=ollama&logoColor=white)](#the-stack--why-every-piece-matters)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**One `docker compose up` → 13 containers → your own AI agent factory, running locally, with zero API costs.**
+**One `docker compose up` → 14 containers → your own AI agent factory, running locally, with zero API costs.**
 
 [Quick Start](#-quick-start) · [Why Fork This](#-why-fork-this) · [The Stack](#the-stack--why-every-piece-matters) · [Architecture](docs/ARCHITECTURE.md) · [Install Guide](INSTALL.md)
 
@@ -47,7 +47,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **MCP Registry**              | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime                                                                    |
 | **Full Traceability**         | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                                                                                      |
 | **Responsible AI**            | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                       |
-| **22-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                      |
+| **25-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                      |
 | **One-command setup**         | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                                              |
 
 <details>
@@ -57,14 +57,14 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Conversation Memory** — SQLite-backed session summaries for rolling context across messages
 - **LangGraph ReAct Agent** — State graph: retrieve context → reason → execute tools → respond
 - **Skill Files** — Attach scripts, reference docs, and template assets to any skill — files are per-skill isolated and auto-injected into agent context
-- **9 Built-in Tools** — Math, HTTP fetch, file I/O, datetime, web search, code execution, vector search & ingest
+- **9 Built-in Tools** — Math, HTTP fetch, file I/O, datetime, web search, code execution, text transforms, JSON/CSV/YAML ops, regex, hashing, vector search & ingest
 - **Multi-Agent Delegation** — Orchestrator agents delegate to sub-agents via `delegate_to_agent` tool; LLM decides routing
 - **Per-Agent Knowledge Base** — Each agent gets its own isolated ChromaDB collection; documents don't cross-contaminate
 - **Evaluation Matrix** — Quality scoring (faithfulness, relevance, coherence) across models and agents
 - **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion, multi-agent pipelines
 - **Full Observability** — Prometheus + Grafana dashboards + Loki logs + OpenTelemetry pipeline
 - **Security Hardening** — XSS protection, input validation, SSRF protection, path traversal prevention
-- **Data Connectors** — Hybrid ingestion framework: built-in connectors (Database, REST API, Cloud Storage, Google Drive, SharePoint) + Airbyte for 300+ sources
+- **Data Connectors** — Hybrid ingestion framework: built-in connectors (Database, REST API, Cloud Storage, Google Drive, SharePoint) with full ETL pipeline visualization
 - **Marketplace** — Browse and install agent/skill/workflow templates
 - **GPU Support** — Uncomment one block in docker-compose.yml for NVIDIA GPU acceleration
 
@@ -79,14 +79,14 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  🖥️  UI Console (Express.js + EJS)                :3000        │
-│  24 pages — build, run, evaluate, trace agents from the browser│
+│  25 pages — build, run, evaluate, trace agents from the browser│
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
-│  ReAct agent loop, skill/agent registry, auto-RAG, memory      │
+│  ReAct agent loop, 108 endpoints, skill/agent registry, auto-RAG│
 ├──────────────────────┬──────────────────────────────────────────┤
 │  🔧 Tools Service    │  📚 ChromaDB        │  💾 SQLite         │
 │  :8011               │  :8200              │  (embedded)        │
-│  9 tool endpoints    │  Vector store / RAG │  Memory & registry │
+│  33 tool endpoints   │  Vector store / RAG │  Memory & registry │
 ├──────────────────────┴──────────────────────┴───────────────────┤
 │  🤖 LLM Layer                                                  │
 │  Ollama (local) · OpenAI · Azure OpenAI · Azure AI Foundry     │
@@ -112,7 +112,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 | **Tracing**       | Langfuse                        | See every LLM call: prompt, response, cost, latency. Non-negotiable for production        |
 | **Observability** | Prometheus + Grafana + Loki     | Industry-standard monitoring. Not a toy dashboard — real SRE tooling                      |
 | **Workflows**     | n8n                             | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks                |
-| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 24 pages for full platform control                  |
+| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 25 pages for full platform control                  |
 
 ---
 
@@ -150,13 +150,13 @@ curl -X POST http://localhost:8010/run \
 
 ## 🗺️ What's Inside
 
-### Services (13 containers)
+### Services (14 containers)
 
 | Service            | Port    | Purpose                                                                           |
 | ------------------ | ------- | --------------------------------------------------------------------------------- |
-| **ui-console**     | `3000`  | Platform dashboard — 24 pages for building, running, monitoring agents            |
-| **agent-service**  | `8010`  | FastAPI + LangGraph — the brain: ReAct agent, registry, auto-RAG, memory          |
-| **tools-service**  | `8011`  | Math, HTTP, file I/O, datetime, web search, code exec, vector ops                 |
+| **ui-console**     | `3000`  | Platform dashboard — 25 pages for building, running, monitoring agents            |
+| **agent-service**  | `8010`  | FastAPI + LangGraph — 108 endpoints: ReAct agent, registry, auto-RAG, memory      |
+| **tools-service**  | `8011`  | 33 endpoints: web search, code exec, HTTP fetch, file I/O, text transforms, more  |
 | **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more                    |
 | **chromadb**       | `8200`  | Vector store for knowledge base and RAG retrieval                                 |
 | **n8n**            | `5678`  | Workflow orchestration, webhooks, multi-agent pipelines, and scheduled automation |
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8010/run \
 | **otel-collector** | `4317`  | OpenTelemetry pipeline — traces, metrics, logs routing                            |
 | **langfuse-db**    | —       | PostgreSQL backend for Langfuse (internal)                                        |
 
-### Dashboard Pages (22)
+### Dashboard Pages (25)
 
 | Page             | What you do there                                                                                                                                                                         |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -185,12 +185,14 @@ curl -X POST http://localhost:8010/run \
 | Workflows        | n8n workflow monitoring                                                                                                                                                                   |
 | A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                           |
 | MCP Registry     | Connect and manage external tool servers                                                                                                                                                  |
-| REST Console     | Interactive API console — test all 69 endpoints                                                                                                                                           |
+| REST Console     | Interactive API console — test all 108 endpoints                                                                                                                                          |
 | Intelligence Hub | Operational intelligence overview                                                                                                                                                         |
 | Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                     |
 | Evaluation       | Agent quality scoring and model comparison                                                                                                                                                |
 | Observability    | Stack health — Prometheus, Grafana, Loki status                                                                                                                                           |
 | Guardrails       | Runtime safety controls and policy enforcement                                                                                                                                            |
+| Data Ingestion   | ETL pipeline — Extract (5 connectors), Transform (chunking, embedding), Load (ChromaDB)                                                                                                  |
+| LLM Activity     | Token usage tracking, cost analysis, per-model breakdown                                                                                                                                  |
 | Marketplace      | Browse and install templates                                                                                                                                                              |
 | Admin            | 6-tab admin plane — service health, platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Hash-based tab navigation for deep linking |
 | Documentation    | Auto-generated API & architecture docs                                                                                                                                                    |
@@ -280,16 +282,16 @@ k6 run tests/load/load-test.js
 
 ```
 agentic-platform/
-├── docker-compose.yml           # All 13 containers — one command to rule them all
+├── docker-compose.yml           # All 14 containers — one command to rule them all
 ├── README.md                    # You are here
 ├── INSTALL.md                   # Detailed install guide (Windows/Mac/Linux/GPU)
 ├── CONTRIBUTING.md              # Contribution guidelines
 ├── docs/ARCHITECTURE.md         # Deep-dive architecture & protocols
 ├── services/
-│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (69 API endpoints)
-│   │   └── agent/connectors/    # 🔌 Data connectors (DB, API, Cloud, Drives, Airbyte)
-│   ├── tools/                   # 🔧 FastAPI tool endpoints (9 tools)
-│   ├── ui-console/              # 🖥️  Express.js dashboard (24 pages)
+│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (108 API endpoints)
+│   │   └── agent/connectors/    # 🔌 Data connectors (DB, API, Cloud, Drives)
+│   ├── tools/                   # 🔧 FastAPI tool endpoints (33 endpoints)
+│   ├── ui-console/              # 🖥️  Express.js dashboard (25 pages)
 │   └── otel/                    # 📡 OpenTelemetry collector config
 ├── n8n/workflows/               # ⚡ Pre-built n8n workflow templates (incl. multi-agent orchestration)
 ├── observability/               # 📊 Grafana dashboards, Prometheus, Loki config

@@ -233,15 +233,14 @@ Closes #123
 agentic-platform/
 ├── services/
 │   ├── agent/               # FastAPI + LangGraph agent (port 8010)
-│   │   ├── main.py          # 69 REST endpoints
+│   │   ├── main.py          # 108 REST endpoints
 │   │   └── agent/           # graph, llm, memory, tools, vectorstore, observability
 │   ├── tools/               # FastAPI tool endpoints (port 8011)
-│   │   └── main.py          # math, fetch, file-read/write, search, code-execute
+│   │   └── main.py          # 33 endpoints: math, fetch, file ops, search, code exec, text transforms, more
 │   ├── ui-console/          # Express.js + EJS dashboard (port 3000)
 │   │   ├── server.js        # Routes + API proxy
-│   │   ├── views/           # 22 EJS page templates (includes REST Console)
+│   │   ├── views/           # 25 EJS page templates
 │   │   └── public/          # Static assets
-│   ├── ui/                  # Legacy static UI
 │   └── otel/                # OpenTelemetry Collector config
 ├── data/                    # SQLite DB + notes files (bind-mounted)
 ├── n8n/workflows/           # 5 workflow templates
@@ -249,7 +248,7 @@ agentic-platform/
 ├── tests/                   # unit, integration, contract, e2e, load, smoke
 ├── scripts/                 # health-check.sh
 ├── docs/                    # ARCHITECTURE.md, API reference
-├── docker-compose.yml       # 12 services on platform-net
+├── docker-compose.yml       # 14 services on platform-net
 ├── .env.example             # Environment variable template
 └── pyproject.toml           # Python project metadata
 ```

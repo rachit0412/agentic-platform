@@ -7,7 +7,7 @@
 | [README](../README.md)                | Project overview, quick start, configuration    |
 | [Architecture](ARCHITECTURE.md)       | System overview, data flows, services           |
 | [Principles](PRINCIPLES.md)           | 18 architecture principles with maturity levels |
-| [Building Blocks](BUILDING-BLOCKS.md) | 15 ABBs/SBBs with traceability                  |
+| [Building Blocks](BUILDING-BLOCKS.md) | 16 ABBs/SBBs with traceability                  |
 | [Decisions](DECISIONS.md)             | 22 Architecture Decision Records                |
 | [Installation](../INSTALL.md)         | Prerequisites, setup, GPU configuration         |
 | [Contributing](../CONTRIBUTING.md)    | Code style, PR process, commit conventions      |
@@ -16,8 +16,8 @@
 
 | Service       | URL                        | Description                       |
 | ------------- | -------------------------- | --------------------------------- |
-| Agent Service | http://localhost:8010/docs | FastAPI auto-docs (69+ endpoints) |
-| Tools Service | http://localhost:8011/docs | FastAPI auto-docs (35 endpoints)  |
+| Agent Service | http://localhost:8010/docs | FastAPI auto-docs (108 endpoints) |
+| Tools Service | http://localhost:8011/docs | FastAPI auto-docs (33 endpoints)  |
 | REST Console  | http://localhost:3000/rest | Interactive API testing UI        |
 
 ## API Quick Reference

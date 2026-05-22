@@ -20,7 +20,7 @@ flowchart TD
     LLM --> Foundry[Azure AI Foundry]
 
     Agent --> Tools[🔧 Tools Service<br/>FastAPI :8011]
-    Tools --> BuiltIn[35 Built-in Tools]
+    Tools --> BuiltIn[33 Tool Endpoints]
 
     Agent --> MCP[MCP Servers<br/>External Tools]
     Agent --> A2A[A2A Peers<br/>Agent Delegation]
@@ -54,7 +54,7 @@ flowchart TD
 
 | Layer         | Components                                | Purpose                        |
 | ------------- | ----------------------------------------- | ------------------------------ |
-| Frontend      | Express.js + EJS (24 pages)               | Dashboard & API proxy          |
+| Frontend      | Express.js + EJS (25 pages)               | Dashboard & API proxy          |
 | Orchestrator  | FastAPI + LangGraph                       | ReAct loop, routing, state     |
 | LLM           | Ollama, Azure OpenAI, OpenAI, Foundry     | Multi-provider inference       |
 | RAG           | ChromaDB + LlamaIndex                     | Retrieval-augmented generation |

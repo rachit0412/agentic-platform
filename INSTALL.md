@@ -40,7 +40,7 @@ cd agentic-platform
 # 2. (Optional) Copy and customise environment
 cp .env.example .env
 
-# 3. Start all 13 containers
+# 3. Start all 14 containers
 docker compose up -d --build
 
 # 4. Pull a model (first time only — ~4 GB)
@@ -212,7 +212,7 @@ Copy `.env.example` to `.env` and edit as needed. Key variables:
 | `TOOLS_PORT`                | `8011`               | Tools Service host port                       |
 | `OLLAMA_PORT`               | `11436`              | Ollama host port                              |
 | `OLLAMA_MODEL`              | `llama3`             | Default Ollama model                          |
-| `LLM_PROVIDER`              | `ollama`             | Default provider (`ollama` or `azure-openai`) |
+| `LLM_PROVIDER`              | `ollama`             | Default provider (`ollama`, `azure-openai`, `openai`, `azure-foundry`) |
 | `AZURE_OPENAI_API_KEY`      | _(empty)_            | Azure OpenAI API key                          |
 | `AZURE_OPENAI_ENDPOINT`     | _(empty)_            | Azure OpenAI endpoint URL                     |
 | `AZURE_OPENAI_DEPLOYMENT`   | `gpt-4o-mini`        | Azure OpenAI deployment name                  |
@@ -330,7 +330,7 @@ After successful installation:
 5. Pull additional models: `docker exec ollama ollama pull mistral`
 6. Ingest documents into the knowledge base
 7. Explore API docs at http://localhost:8010/docs
-8. Use the **REST Console** at http://localhost:3000/rest to test all 69 endpoints
+8. Use the **REST Console** at http://localhost:3000/rest to test all 108 endpoints
 9. Create workflows in n8n at http://localhost:5678
 10. Review LLM traces in Langfuse at http://localhost:3012
 11. Monitor platform health in Grafana at http://localhost:3013

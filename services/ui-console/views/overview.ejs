@@ -34,7 +34,7 @@
     <div class="stat-label">Models</div>
     <div class="stat-number" id="stat-models">-</div>
   </a>
-  <a href="/run-agent" class="stat-card animate-fade-up delay-200" style="text-decoration:none;color:inherit;cursor:pointer">
+  <a href="/tools" class="stat-card animate-fade-up delay-200" style="text-decoration:none;color:inherit;cursor:pointer">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     </div>
@@ -453,13 +453,13 @@
   var topoAnimate = true;
   var TOPO_TIPS = {
     user:      { t:'User / Webhook', d:'Entry point — browser UI, REST API, or n8n webhook trigger.', m:'HTTP / SSE' },
-    ui:        { t:'UI Console', d:'Express.js + EJS platform dashboard. 24 pages, 70+ API proxy routes to agent-service.', m:'Port 3000' },
+    ui:        { t:'UI Console', d:'Express.js + EJS platform dashboard. 25 pages, 115+ API proxy routes to agent-service.', m:'Port 3000' },
     n8nproxy:  { t:'n8n Proxy', d:'Nginx reverse proxy for embedding n8n inside the platform dashboard via iframe.', m:'Port 5679' },
-    agent:     { t:'Agent Service', d:'Core runtime — FastAPI + LangGraph ReAct loop. 69+ REST endpoints, agent/skill/A2A/MCP registry, RAG pipeline, guardrails.', m:'Port 8010' },
-    tools:     { t:'Tools Service', d:'Sandboxed tool execution — web_search, code_execute, http_fetch, file I/O, datetime.', m:'Port 8011' },
+    agent:     { t:'Agent Service', d:'Core runtime — FastAPI + LangGraph ReAct loop. 107+ REST endpoints, agent/skill/A2A/MCP registry, RAG pipeline, guardrails.', m:'Port 8010' },
+    tools:     { t:'Tools Service', d:'Sandboxed tool execution — 31 endpoints: web search, code execute, HTTP fetch, file I/O, text transforms, JSON/CSV/YAML ops, regex, hashing, and more.', m:'Port 8011' },
     ollama:    { t:'Ollama', d:'Local LLM inference server. Runs Llama 3, Mistral, and other open models. Runtime-switchable.', m:'Port 11436' },
     chroma:    { t:'ChromaDB', d:'Vector store for embeddings and RAG retrieval. Stores document chunks for semantic search.', m:'Port 8200' },
-    sqlite:    { t:'SQLite', d:'Embedded platform database — conversations, memory (STM/LTM), agent configs, skills, audit log. 13 tables.', m:'Embedded file' },
+    sqlite:    { t:'SQLite', d:'Embedded platform database — conversations, memory (STM/LTM), agent configs, skills, guardrails, custom tools, audit log. 16 tables.', m:'Embedded file' },
     postgres:  { t:'PostgreSQL (Datastore)', d:'Document registry with JSONB columns. Stores ingestion metadata, connector configs, structured data.', m:'Port 5433' },
     n8n:       { t:'n8n Workflow Engine', d:'Visual workflow automation — scheduled agent runs, webhook triggers, multi-step pipelines, RAG ingest.', m:'Port 5678' },
     otel:      { t:'OTel Collector', d:'OpenTelemetry Collector — receives OTLP traces from agent-service, routes metrics to Prometheus and logs to Loki.', m:'Port 4317/4318' },

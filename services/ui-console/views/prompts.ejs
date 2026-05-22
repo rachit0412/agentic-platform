@@ -2,8 +2,8 @@
 
 <style>
 .score-tip{position:relative}
-.score-tip::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);right:0;background:var(--tooltip-bg,#1e293b);color:var(--text-1,#e2e8f0);border:1px solid var(--tooltip-border,#334155);border-radius:8px;padding:0.5rem 0.65rem;font-size:0.72rem;line-height:1.5;white-space:pre-line;min-width:200px;max-width:300px;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 0.15s ease,visibility 0.15s ease;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.3);backdrop-filter:blur(12px)}
-.score-tip:hover::after{opacity:1;visibility:visible}
+.score-tip-popup{position:fixed;z-index:9999;background:var(--tooltip-bg,#1e293b);color:#e2e8f0;border:1px solid var(--tooltip-border,#334155);border-radius:8px;padding:0.5rem 0.65rem;font-size:0.72rem;line-height:1.5;white-space:pre-line;min-width:200px;max-width:300px;pointer-events:none;opacity:0;transition:opacity 0.15s ease;box-shadow:0 4px 12px rgba(0,0,0,0.3);backdrop-filter:blur(12px)}
+.score-tip-popup.visible{opacity:1}
 </style>
 
 <h1 class="text-glow-cyan">Prompt Library</h1>
@@ -606,6 +606,32 @@
   }
 
   loadPrompts();
+
+  // Score-tip: fixed-position tooltip (escapes card stacking context)
+  var _scoreTip = null;
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('.score-tip[data-tip]');
+    if (!el) return;
+    if (_scoreTip) _scoreTip.remove();
+    var tip = document.createElement('div');
+    tip.className = 'score-tip-popup';
+    tip.textContent = el.dataset.tip;
+    document.body.appendChild(tip);
+    var r = el.getBoundingClientRect();
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var x = Math.min(r.right - tw, window.innerWidth - tw - 8);
+    if (x < 8) x = 8;
+    var y = r.top - th - 6;
+    if (y < 4) y = r.bottom + 6;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+    _scoreTip = tip;
+    requestAnimationFrame(function(){ tip.classList.add('visible'); });
+  });
+  document.addEventListener('mouseout', function(e) {
+    var el = e.target.closest('.score-tip[data-tip]');
+    if (el && _scoreTip) { _scoreTip.classList.remove('visible'); setTimeout(function(){ if(_scoreTip){_scoreTip.remove();_scoreTip=null;} },150); }
+  });
 <\/script>
 
 ` }) %>

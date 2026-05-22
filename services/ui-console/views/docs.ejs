@@ -616,7 +616,7 @@ node server.js</code></pre>
       (function() {
         var ARCH_TIPS = {
           user:   { t:'User / Webhook', d:'Entry point for browser, REST API, or n8n webhook triggers.' },
-          ui:     { t:'UI Console', d:'Express.js + EJS dashboard. 24 pages, 70+ API proxy routes to agent-service.', m:':3001 \\u2192 :3000' },
+          ui:     { t:'UI Console', d:'Express.js + EJS dashboard. 25 pages, 144 API proxy routes to agent-service.', m:':3001 \\u2192 :3000' },
           n8p:    { t:'n8n Proxy', d:'Nginx reverse proxy embedding n8n inside the dashboard via iframe.', m:':8080 \\u2192 :5679' },
           agent:  { t:'Agent Service', d:'Core runtime \\u2014 FastAPI + LangGraph ReAct. 69+ endpoints, agent/skill/A2A/MCP registry, RAG pipeline, guardrails.', m:':8000 \\u2192 :8010' },
           tools:  { t:'Tools Service', d:'Sandboxed tool execution: web_search, code_execute, http_fetch, file I/O.', m:':8001 \\u2192 :8011' },

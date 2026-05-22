@@ -583,56 +583,215 @@
   }
 
   // ── Render Control Matrix (Post-Run Quality Scores) ──
+  var _cmDetails = {};
+
+  function _showCmDetail(key) {
+    var d = _cmDetails[key];
+    if (!d) return;
+    var color = _scoreColor(d.score);
+    var rating = d.score >= 80 ? 'Good' : d.score >= 60 ? 'Fair' : 'Low';
+    var evidenceHtml = d.evidence.map(function(e) {
+      return '<div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--divider)">' +
+        '<span style="color:' + (e.positive ? '#10b981' : '#f59e0b') + ';flex-shrink:0;margin-top:1px">' +
+          (e.positive ? '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>'
+                      : '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>') +
+        '</span>' +
+        '<span style="font-size:0.78rem;color:var(--text-2)">' + escapeHtml(e.text) + '</span></div>';
+    }).join('');
+    var breakdownHtml = d.breakdown.map(function(b) {
+      return '<div style="display:flex;justify-content:space-between;padding:0.3rem 0;font-size:0.75rem">' +
+        '<span style="color:var(--text-3)">' + escapeHtml(b.label) + '</span>' +
+        '<span style="font-weight:600;color:' + (b.value >= 0 ? '#10b981' : '#f43f5e') + '">' + (b.value >= 0 ? '+' : '') + b.value + '</span></div>';
+    }).join('');
+    var html =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
+        '<div style="display:flex;align-items:center;gap:0.75rem">' +
+          '<div style="position:relative;width:56px;height:56px">' +
+            '<svg viewBox="0 0 36 36" style="width:56px;height:56px;transform:rotate(-90deg)">' +
+              '<circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>' +
+              '<circle cx="18" cy="18" r="15.9" fill="none" stroke="' + color + '" stroke-width="3" stroke-dasharray="' + d.score + ' ' + (100 - d.score) + '" stroke-linecap="round"/>' +
+            '</svg>' +
+            '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.95rem;font-weight:700;color:' + color + '">' + d.score + '</div>' +
+          '</div>' +
+          '<div><div style="font-size:1rem;font-weight:700;color:var(--text-1)">' + escapeHtml(d.label) + '</div>' +
+            '<div style="font-size:0.72rem;color:' + color + ';font-weight:600">' + rating + '</div></div>' +
+        '</div>' +
+        '<button onclick="document.getElementById(\\\'cm-detail-modal\\\').style.display=\\\'none\\\'" style="background:none;border:none;color:var(--text-3);cursor:pointer;padding:0.25rem">' +
+          '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+      '</div>' +
+      '<div style="font-size:0.82rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">' + escapeHtml(d.description) + '</div>' +
+      '<div style="margin-bottom:1rem">' +
+        '<div style="font-size:0.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Methodology</div>' +
+        '<div style="font-size:0.78rem;color:var(--text-2);line-height:1.6;padding:0.6rem 0.75rem;border-radius:8px;background:var(--input-bg)">' + escapeHtml(d.methodology) + '</div>' +
+      '</div>' +
+      '<div style="margin-bottom:1rem">' +
+        '<div style="font-size:0.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Score Breakdown</div>' +
+        '<div style="padding:0.5rem 0.75rem;border-radius:8px;background:var(--input-bg)">' + breakdownHtml + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:0.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Evidence (' + d.evidence.length + ' signals)</div>' +
+        '<div style="padding:0.5rem 0.75rem;border-radius:8px;background:var(--input-bg);max-height:180px;overflow-y:auto">' + evidenceHtml + '</div>' +
+      '</div>';
+    var modal = document.getElementById('cm-detail-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'cm-detail-modal';
+      modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center';
+      modal.addEventListener('click', function(e) { if (e.target === modal) modal.style.display = 'none'; });
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div style="background:var(--bg);border:1px solid var(--glass-border);border-radius:16px;padding:1.25rem 1.5rem;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,0.3)">' + html + '</div>';
+    modal.style.display = 'flex';
+  }
+
+  function _scoreColor(score) {
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    return '#f43f5e';
+  }
+
   function _renderControlMatrix(response, usage, tools, grData) {
     var card = document.getElementById('control-matrix-card');
     var body = document.getElementById('control-matrix-body');
     if (!response) { card.style.display = 'none'; return; }
     card.style.display = 'block';
+    _cmDetails = {};
 
-    // Heuristic scoring
+    // ── 1. Hallucination ──
+    var hedgeWords = ['I think', 'probably', 'might be', 'I believe', 'not sure', 'may not be accurate'];
+    var hedgesFound = [];
+    hedgeWords.forEach(function(w) { if (response.toLowerCase().indexOf(w.toLowerCase()) !== -1) hedgesFound.push(w); });
+    var citationPattern = /\\[.*?\\]|according to|source:|based on/gi;
+    var citationsFound = response.match(citationPattern) || [];
+    var halBase = 85;
+    var halHedgePenalty = hedgesFound.length * 15;
+    var halCiteBonus = citationsFound.length * 10;
+    var hallucinationScore = Math.max(0, Math.min(100, halBase - halHedgePenalty + halCiteBonus));
+    var halEvidence = [];
+    if (hedgesFound.length === 0) halEvidence.push({ positive: true, text: 'No hedging language detected (e.g. "I think", "probably")' });
+    else hedgesFound.forEach(function(w) { halEvidence.push({ positive: false, text: 'Hedging phrase found: "' + w + '" (-15 points)' }); });
+    if (citationsFound.length > 0) halEvidence.push({ positive: true, text: citationsFound.length + ' citation/reference pattern(s) found (+' + halCiteBonus + ' points)' });
+    else halEvidence.push({ positive: false, text: 'No citations or source references detected' });
+    _cmDetails.hallucination = {
+      label: 'Hallucination', score: hallucinationScore,
+      description: 'Estimates likelihood the response is factually grounded vs fabricated. Higher score = more likely grounded. This is a heuristic — it detects hedging language (uncertainty markers) and citation patterns, not factual accuracy.',
+      methodology: 'Start at base score 85. Subtract 15 for each hedging phrase found (e.g. "I think", "probably", "might be"). Add 10 for each citation pattern (e.g. "[source]", "according to"). Clamped to 0-100.',
+      breakdown: [{ label: 'Base score', value: halBase }, { label: 'Hedging penalty (' + hedgesFound.length + ' found)', value: -halHedgePenalty }, { label: 'Citation bonus (' + citationsFound.length + ' found)', value: halCiteBonus }],
+      evidence: halEvidence
+    };
+
+    // ── 2. Groundedness ──
+    var hasToolResults = tools && tools.length > 0;
+    var grndBase = hasToolResults ? 80 : (citationsFound.length > 0 ? 75 : 55);
+    var grndCiteBonus = citationsFound.length * 5;
+    var groundedness = Math.min(100, grndBase + grndCiteBonus);
+    var grndEvidence = [];
+    if (hasToolResults) {
+      grndEvidence.push({ positive: true, text: tools.length + ' tool(s) invoked — response backed by external data (base 80)' });
+      tools.forEach(function(t) { grndEvidence.push({ positive: true, text: 'Tool used: ' + (t.name || t.tool || t) }); });
+    } else {
+      grndEvidence.push({ positive: false, text: 'No tools invoked — response relies on model knowledge only (base ' + grndBase + ')' });
+    }
+    if (citationsFound.length > 0) grndEvidence.push({ positive: true, text: citationsFound.length + ' citation(s) add grounding (+' + grndCiteBonus + ')' });
+    else grndEvidence.push({ positive: false, text: 'No citations detected in response' });
+    _cmDetails.groundedness = {
+      label: 'Groundedness', score: groundedness,
+      description: 'Measures how well the response is supported by retrieved context, tool results, and verifiable references rather than pure model generation.',
+      methodology: 'Base score: 80 if tools were used, 75 if citations exist, 55 otherwise. Add 5 per citation pattern detected. Clamped to 100.',
+      breakdown: [{ label: 'Base (tools: ' + (hasToolResults ? 'yes' : 'no') + ')', value: grndBase }, { label: 'Citation bonus (' + citationsFound.length + ')', value: grndCiteBonus }],
+      evidence: grndEvidence
+    };
+
+    // ── 3. Drift ──
+    var promptText = (document.getElementById('prompt').value || '').trim();
+    var promptWords = promptText.toLowerCase().split(/\\s+/).filter(function(w) { return w.length > 3; });
+    var responseWords = response.toLowerCase();
+    var matchedKeywords = promptWords.filter(function(w) { return responseWords.indexOf(w) !== -1; });
+    var keywordOverlap = promptWords.length > 0 ? Math.round((matchedKeywords.length / promptWords.length) * 100) : 100;
+    var driftScore = Math.max(40, Math.min(100, Math.round(keywordOverlap * 0.4 + 60)));
+    var driftEvidence = [];
+    if (promptWords.length === 0) {
+      driftEvidence.push({ positive: true, text: 'Prompt too short for keyword analysis — default high coherence' });
+    } else {
+      driftEvidence.push({ positive: matchedKeywords.length > 0, text: matchedKeywords.length + '/' + promptWords.length + ' prompt keywords found in response (' + keywordOverlap + '% overlap)' });
+      if (matchedKeywords.length > 0) driftEvidence.push({ positive: true, text: 'Matched: ' + matchedKeywords.slice(0, 8).join(', ') + (matchedKeywords.length > 8 ? '...' : '') });
+      var missed = promptWords.filter(function(w) { return responseWords.indexOf(w) === -1; });
+      if (missed.length > 0) driftEvidence.push({ positive: false, text: 'Missing from response: ' + missed.slice(0, 8).join(', ') + (missed.length > 8 ? '...' : '') });
+    }
+    _cmDetails.drift = {
+      label: 'Drift', score: driftScore,
+      description: 'Measures whether the response stays on topic relative to the prompt by checking keyword overlap between your question and the answer.',
+      methodology: 'Extract significant words (>3 chars) from the prompt, check how many appear in the response. Keyword overlap % is scaled: score = overlap * 0.4 + 60, clamped to 40-100.',
+      breakdown: [{ label: 'Base score', value: 60 }, { label: 'Keyword overlap bonus (' + keywordOverlap + '%)', value: driftScore - 60 }],
+      evidence: driftEvidence
+    };
+
+    // ── 4. Safety ──
     var allGr = (grData.input || []).concat(grData.output || []);
     var grPassed = allGr.filter(function(g) { return g.status === 'passed'; }).length;
     var grTotal = allGr.length || 1;
-
-    // Hallucination score: based on presence of hedging language and citation patterns
-    var hedgeWords = ['I think', 'probably', 'might be', 'I believe', 'not sure', 'may not be accurate'];
-    var hedgeCount = 0;
-    hedgeWords.forEach(function(w) { if (response.toLowerCase().indexOf(w.toLowerCase()) !== -1) hedgeCount++; });
-    var citationPattern = /\\[.*?\\]|according to|source:|based on/gi;
-    var citations = (response.match(citationPattern) || []).length;
-    var hallucinationScore = Math.max(0, Math.min(100, 85 - (hedgeCount * 15) + (citations * 10)));
-
-    // Groundedness score: based on whether KB was used and response has concrete refs
-    var hasToolResults = tools && tools.length > 0;
-    var groundedness = hasToolResults ? 80 : (citations > 0 ? 75 : 55);
-    groundedness = Math.min(100, groundedness + (citations * 5));
-
-    // Drift score: for a single-turn, measure topic coherence (simplified)
-    var driftScore = 90; // Base high for single-turn
-
-    // Safety score: based on guardrail results
     var safetyScore = Math.round((grPassed / grTotal) * 100);
+    var safetyEvidence = [];
+    if (allGr.length === 0) {
+      safetyEvidence.push({ positive: true, text: 'No guardrails configured — defaulting to 100%' });
+    } else {
+      allGr.forEach(function(g) {
+        safetyEvidence.push({ positive: g.status === 'passed', text: (g.name || g.id || 'Guardrail') + ': ' + g.status + (g.message ? ' — ' + g.message : '') });
+      });
+    }
+    _cmDetails.safety = {
+      label: 'Safety', score: safetyScore,
+      description: 'Guardrail compliance score based on the percentage of configured safety checks that passed. Covers PII detection, toxicity filtering, prompt injection guards, and more.',
+      methodology: 'Score = (guardrails passed / total guardrails) * 100. Each guardrail runs at input and/or output phase and returns pass/fail.',
+      breakdown: [{ label: 'Guardrails passed', value: grPassed }, { label: 'Guardrails total', value: grTotal }],
+      evidence: safetyEvidence
+    };
 
-    // Completeness: based on response length and structure
+    // ── 5. Completeness ──
     var wordCount = response.split(/\\s+/).length;
-    var completeness = wordCount < 10 ? 40 : (wordCount < 30 ? 60 : (wordCount < 100 ? 80 : 90));
-    if (response.indexOf('\\n') !== -1) completeness = Math.min(100, completeness + 5);
+    var hasStructure = response.indexOf('\\n') !== -1;
+    var hasList = /[\\-\\*]\\s|\\d+\\.\\s/.test(response);
+    var compBase = wordCount < 10 ? 40 : (wordCount < 30 ? 60 : (wordCount < 100 ? 80 : 90));
+    var compStructureBonus = hasStructure ? 5 : 0;
+    var compListBonus = hasList ? 5 : 0;
+    var completeness = Math.min(100, compBase + compStructureBonus + compListBonus);
+    var compEvidence = [];
+    compEvidence.push({ positive: wordCount >= 30, text: 'Response length: ' + wordCount + ' words' + (wordCount < 30 ? ' (short)' : wordCount < 100 ? ' (moderate)' : ' (detailed)') });
+    compEvidence.push({ positive: hasStructure, text: hasStructure ? 'Response uses multi-line structure' : 'Response is a single block of text' });
+    compEvidence.push({ positive: hasList, text: hasList ? 'Response contains lists or numbered items' : 'No structured lists detected' });
+    _cmDetails.completeness = {
+      label: 'Completeness', score: completeness,
+      description: 'Estimates how thoroughly the response addresses the prompt based on response length, formatting structure, and use of lists.',
+      methodology: 'Base: 40 (<10 words), 60 (<30), 80 (<100), 90 (100+). +5 if multi-line structure. +5 if lists/bullets detected. Clamped to 100.',
+      breakdown: [{ label: 'Length base (' + wordCount + ' words)', value: compBase }, { label: 'Structure bonus', value: compStructureBonus }, { label: 'List bonus', value: compListBonus }],
+      evidence: compEvidence
+    };
 
-    // Token efficiency
+    // ── 6. Efficiency ──
     var tokenEfficiency = 85;
+    var effEvidence = [];
+    var effBase = 85;
     if (usage && usage.total_tokens) {
-      tokenEfficiency = usage.completion_tokens < 500 ? 95 : (usage.completion_tokens < 1500 ? 85 : 70);
+      effBase = usage.completion_tokens < 500 ? 95 : (usage.completion_tokens < 1500 ? 85 : 70);
+      tokenEfficiency = effBase;
+      effEvidence.push({ positive: true, text: 'Prompt tokens: ' + (usage.prompt_tokens || 'N/A') });
+      effEvidence.push({ positive: true, text: 'Completion tokens: ' + (usage.completion_tokens || 'N/A') });
+      effEvidence.push({ positive: true, text: 'Total tokens: ' + usage.total_tokens });
+      effEvidence.push({ positive: usage.completion_tokens < 1500, text: usage.completion_tokens < 500 ? 'Concise response — excellent token efficiency' : usage.completion_tokens < 1500 ? 'Moderate token usage' : 'High token usage — response may be verbose' });
+    } else {
+      effEvidence.push({ positive: false, text: 'Token usage data not available — using default score' });
     }
+    _cmDetails.efficiency = {
+      label: 'Efficiency', score: tokenEfficiency,
+      description: 'Measures token usage efficiency. A good response that uses fewer tokens scores higher, encouraging concise and relevant answers.',
+      methodology: 'Score based on completion tokens: <500 = 95, <1500 = 85, 1500+ = 70. Token data comes from the LLM usage report.',
+      breakdown: [{ label: 'Token tier score', value: effBase }],
+      evidence: effEvidence
+    };
 
-    function _scoreColor(score) {
-      if (score >= 80) return '#10b981';
-      if (score >= 60) return '#f59e0b';
-      return '#f43f5e';
-    }
-
-    function _scoreTile(label, score, description) {
+    function _scoreTile(key, label, score) {
       var color = _scoreColor(score);
-      return '<div style="padding:0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);text-align:center" title="' + escapeHtml(description) + '">' +
+      return '<div onclick="_showCmDetail(\\'' + key + '\\')" style="padding:0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);text-align:center;cursor:pointer;transition:all 0.15s" onmouseenter="this.style.borderColor=\\'' + color + '44\\';this.style.transform=\\'translateY(-2px)\\'" onmouseleave="this.style.borderColor=\\'\\';this.style.transform=\\'\\'"> ' +
         '<div style="font-size:0.68rem;color:var(--text-3);margin-bottom:0.35rem">' + label + '</div>' +
         '<div style="position:relative;width:50px;height:50px;margin:0 auto 0.35rem">' +
           '<svg viewBox="0 0 36 36" style="width:50px;height:50px;transform:rotate(-90deg)">' +
@@ -642,16 +801,17 @@
           '</svg>' +
           '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.85rem;font-weight:700;color:' + color + '">' + score + '</div>' +
         '</div>' +
-        '<div style="font-size:0.6rem;color:var(--text-3)">' + (score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Low') + '</div></div>';
+        '<div style="font-size:0.6rem;color:var(--text-3)">' + (score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Low') + '</div>' +
+        '<div style="font-size:0.55rem;color:var(--text-3);margin-top:0.2rem;opacity:0.7">click for details</div></div>';
     }
 
     body.innerHTML =
-      _scoreTile('Hallucination', hallucinationScore, 'Likelihood the response is factually grounded vs fabricated. Higher = better.') +
-      _scoreTile('Groundedness', groundedness, 'How well the response is supported by retrieved context and tool results.') +
-      _scoreTile('Drift', driftScore, 'Whether the response stays on topic relative to the prompt.') +
-      _scoreTile('Safety', safetyScore, 'Guardrail compliance score. Percentage of guardrail checks passed.') +
-      _scoreTile('Completeness', completeness, 'How thoroughly the response addresses the prompt.') +
-      _scoreTile('Efficiency', tokenEfficiency, 'Token usage efficiency. Lower token count for good answers = higher score.');
+      _scoreTile('hallucination', 'Hallucination', hallucinationScore) +
+      _scoreTile('groundedness', 'Groundedness', groundedness) +
+      _scoreTile('drift', 'Drift', driftScore) +
+      _scoreTile('safety', 'Safety', safetyScore) +
+      _scoreTile('completeness', 'Completeness', completeness) +
+      _scoreTile('efficiency', 'Efficiency', tokenEfficiency);
   }
 
   function handleSSEEvent(type, raw, stepElements, callbacks) {

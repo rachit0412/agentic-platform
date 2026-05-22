@@ -354,7 +354,6 @@ class TestConnectors:
         assert "api" in CONNECTOR_CATALOG
         assert "google_drive" in CONNECTOR_CATALOG
         assert "sharepoint" in CONNECTOR_CATALOG
-        assert "airbyte" in CONNECTOR_CATALOG
 
     def test_connector_catalog_has_config_schema(self):
         """Each catalog entry has a config_schema."""

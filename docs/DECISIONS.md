@@ -110,7 +110,7 @@
 
 ## ADR-007 · EJS + CSS Custom Properties
 
-**Context**: 24 pages, light/dark theme, fast SSR, zero build step needed.
+**Context**: 25 pages, light/dark theme, fast SSR, zero build step needed.
 
 **Decision**: Express.js + EJS + CSS custom properties. Theme via `.dark` class toggle.
 
@@ -182,9 +182,9 @@
 
 **Context**: Agents need knowledge from databases, APIs, cloud storage — not just uploaded files.
 
-**Decision**: Six connector types (database, API, cloud storage, Google Drive, SharePoint, Airbyte) with test + sync lifecycle.
+**Decision**: Five connector types (database, API, cloud storage, Google Drive, SharePoint) with test + sync lifecycle.
 
-**Consequence**: Unified ingestion interface. Airbyte optional (300+ sources). All feed into ChromaDB pipeline.
+**Consequence**: Unified ingestion interface. All feed into ChromaDB pipeline.
 
 ---
 

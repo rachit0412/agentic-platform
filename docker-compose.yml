@@ -370,23 +370,6 @@ services:
       timeout: 5s
       retries: 3
 
-  # ── Airbyte (Optional — uncomment to enable 300+ connector sources) ───────
-  # airbyte-server:
-  #   image: airbyte/airbyte:latest
-  #   container_name: airbyte
-  #   ports:
-  #     - "${AIRBYTE_PORT:-8020}:8000"
-  #   environment:
-  #     - DATABASE_URL=postgresql://agentic:agentic@postgres:5432/airbyte
-  #     - TRACKING_STRATEGY=segment
-  #   volumes:
-  #     - airbyte-data:/tmp/airbyte_local
-  #     - ./data/filestore:/data/filestore  # Shared with agent filestore
-  #   networks:
-  #     - platform-net
-  #   depends_on:
-  #     - postgres
-
 volumes:
   n8n-data:
   ollama-data:
@@ -396,7 +379,6 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
-  # airbyte-data:  # Uncomment when enabling Airbyte
 
 networks:
   platform-net:
