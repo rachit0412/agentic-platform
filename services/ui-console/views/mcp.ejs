@@ -29,10 +29,16 @@
   <div style="display:flex;gap:0.5rem;align-items:center">
     <span id="server-count" class="badge" style="font-size:0.78rem">0 servers</span>
   </div>
-  <button class="btn btn-primary" onclick="showServerForm()">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Register Server
-  </button>
+  <div style="display:flex;gap:0.5rem">
+    <button class="btn btn-primary" onclick="showServerForm()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Register Server
+    </button>
+    <button class="btn" onclick="showManagedForm()" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      Create Managed Server
+    </button>
+  </div>
 </div>
 
 <!-- Create / Edit Form -->
@@ -69,7 +75,70 @@
   </div>
 </div>
 
-<!-- Servers Grid -->
+<!-- Managed Server Creation Form -->
+<div class="card animate-fade-up" id="managed-form" style="display:none;margin-bottom:1.5rem;border-left:3px solid #8b5cf6">
+  <h3 style="color:#8b5cf6">Create Managed MCP Server</h3>
+  <p style="font-size:0.78rem;color:var(--text-3);margin-bottom:1rem">Deploy an MCP server as a managed container on the platform. Choose <strong>Config</strong> for no-code HTTP proxies or <strong>Code</strong> for custom Python tools.</p>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:0;margin-bottom:1rem;border-bottom:1px solid var(--border)">
+    <button class="btn" id="tab-config" onclick="switchManagedTab('config')" style="border-radius:8px 8px 0 0;border-bottom:2px solid #8b5cf6;font-size:0.82rem;color:#8b5cf6">Config Mode</button>
+    <button class="btn" id="tab-code" onclick="switchManagedTab('code')" style="border-radius:8px 8px 0 0;font-size:0.82rem;color:var(--text-3)">Code Mode</button>
+  </div>
+
+  <!-- Shared fields -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div>
+      <label class="field-label">Server Name</label>
+      <input type="text" id="managed-name" class="input" placeholder="e.g. Weather API" maxlength="100">
+    </div>
+    <div>
+      <label class="field-label">Description</label>
+      <input type="text" id="managed-desc" class="input" placeholder="What does this server do?" maxlength="500">
+    </div>
+  </div>
+
+  <!-- Config Tab Content -->
+  <div id="managed-config-tab" style="margin-top:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <label class="field-label" style="margin:0">Tool Definitions</label>
+      <button class="btn" onclick="addToolDef()" style="font-size:0.72rem">+ Add Tool</button>
+    </div>
+    <div id="tool-defs-container"></div>
+  </div>
+
+  <!-- Code Tab Content -->
+  <div id="managed-code-tab" style="display:none;margin-top:1rem">
+    <label class="field-label">Python Code</label>
+    <textarea id="managed-code" class="input" style="font-family:var(--mono);font-size:0.8rem;min-height:220px;resize:vertical;white-space:pre;tab-size:4" placeholder="def get_weather(city: str, units: str = &quot;celsius&quot;) -> str:
+    &quot;&quot;&quot;Get current weather for a city.&quot;&quot;&quot;
+    return f&quot;Weather in {city}: 22°, sunny&quot;
+
+def add_numbers(a: float, b: float) -> float:
+    &quot;&quot;&quot;Add two numbers together.&quot;&quot;&quot;
+    return a + b"></textarea>
+    <p style="font-size:0.72rem;color:var(--text-3);margin-top:0.5rem">Each public function (not starting with _) becomes a tool. Use type hints for parameters. Docstrings become tool descriptions.</p>
+  </div>
+
+  <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+    <button class="btn btn-primary" onclick="saveManagedServer()" style="background:#8b5cf6">Create &amp; Deploy</button>
+    <button class="btn" onclick="hideManagedForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- Logs Modal -->
+<div id="logs-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;width:90%;max-width:800px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--border)">
+      <h3 style="margin:0;font-size:0.95rem" id="logs-modal-title">Container Logs</h3>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <button class="btn" onclick="refreshLogs()" style="font-size:0.72rem">Refresh</button>
+        <button class="btn" onclick="closeLogsModal()" style="font-size:0.72rem;color:#ef4444">Close</button>
+      </div>
+    </div>
+    <pre id="logs-modal-content" style="flex:1;overflow:auto;padding:1rem;margin:0;font-size:0.75rem;font-family:var(--mono);color:var(--text-2);white-space:pre-wrap;word-break:break-all;background:var(--input-bg)">Loading...</pre>
+  </div>
+</div>
 <div id="servers-grid" style="display:grid;grid-template-columns:1fr;gap:1rem"></div>
 <div id="servers-empty" class="card" style="display:none;text-align:center;padding:3rem;color:var(--text-3)">
   <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" style="margin:0 auto 1rem;opacity:0.3"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
@@ -105,9 +174,13 @@
 
 <script>
 let servers = [];
+let currentManagedTab = 'config';
+let toolDefCount = 0;
+let logsServerId = '';
 
 async function init() {
   await loadServers();
+  addToolDef();
 }
 
 async function loadServers() {
@@ -129,7 +202,7 @@ async function loadServers() {
 
 function updateStats() {
   document.getElementById('stat-servers').textContent = servers.length;
-  document.getElementById('stat-connected').textContent = servers.filter(s => s.status === 'connected').length;
+  document.getElementById('stat-connected').textContent = servers.filter(s => s.status === 'connected' || s.container_status === 'running').length;
   const totalTools = servers.reduce((sum, s) => sum + (s.tools?.length || 0), 0);
   document.getElementById('stat-tools').textContent = totalTools;
   document.getElementById('stat-enabled').textContent = servers.filter(s => s.enabled).length;
@@ -168,12 +241,37 @@ function renderServers() {
   empty.style.display = 'none';
 
   grid.innerHTML = servers.map(s => {
-    const statusColor = s.status === 'connected' ? '#10b981' : s.status === 'disconnected' ? '#ef4444' : '#f59e0b';
-    const statusDot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>';
+    const isManaged = s.managed === 1 || s.managed === true;
+    const cStatus = s.container_status || '';
+
+    let statusColor = s.status === 'connected' ? '#10b981' : s.status === 'disconnected' ? '#ef4444' : '#f59e0b';
+    if (isManaged) {
+      if (cStatus === 'running') statusColor = '#10b981';
+      else if (cStatus === 'creating') statusColor = '#f59e0b';
+      else if (cStatus === 'error') statusColor = '#ef4444';
+      else if (cStatus === 'stopped') statusColor = '#6b7280';
+    }
+
+    const statusDot = cStatus === 'creating'
+      ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:6px;animation:pulse 1.5s infinite"></span>'
+      : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>';
+
     const transportBadge = '<span class="badge" style="font-size:0.7rem;background:rgba(139,92,246,0.15);color:#8b5cf6">' + escapeHtml(s.transport) + '</span>';
     const enabledBadge = s.enabled
       ? '<span class="badge" style="font-size:0.7rem;background:rgba(16,185,129,0.15);color:#10b981">Enabled</span>'
       : '<span class="badge" style="font-size:0.7rem;background:rgba(239,68,68,0.15);color:#ef4444">Disabled</span>';
+
+    let extraBadges = '';
+    if (isManaged) {
+      extraBadges += '<span class="badge" style="font-size:0.7rem;background:rgba(139,92,246,0.25);color:#c084fc;font-weight:600">Managed</span>';
+      const stLabel = s.server_type === 'code' ? 'Code' : 'Config';
+      extraBadges += '<span class="badge" style="font-size:0.7rem;background:rgba(245,158,11,0.15);color:#f59e0b">' + stLabel + '</span>';
+      if (cStatus) {
+        const csColor = cStatus === 'running' ? '#10b981' : cStatus === 'creating' ? '#f59e0b' : cStatus === 'error' ? '#ef4444' : '#6b7280';
+        extraBadges += '<span class="badge" style="font-size:0.7rem;background:rgba(100,100,100,0.15);color:' + csColor + '">' + escapeHtml(cStatus) + '</span>';
+      }
+    }
+
     const toolCount = s.tools?.length || 0;
     const toolsList = toolCount > 0
       ? '<div style="margin-top:0.75rem"><div style="font-size:0.75rem;color:var(--text-3);margin-bottom:0.5rem">Discovered Tools (' + toolCount + '):</div><div style="display:flex;flex-wrap:wrap;gap:4px">' +
@@ -184,22 +282,46 @@ function renderServers() {
       : '<div style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-3)">No tools discovered yet — click Discover to scan</div>';
     const lastSeen = s.last_seen ? new Date(s.last_seen).toLocaleString() : 'Never';
 
+    let errorRow = '';
+    if (s.error_message) {
+      errorRow = '<div style="margin-top:0.5rem;padding:0.5rem;background:rgba(239,68,68,0.1);border-radius:6px;font-size:0.75rem;color:#ef4444">' + escapeHtml(s.error_message) + '</div>';
+    }
+
+    let actionButtons = '';
+    if (isManaged) {
+      actionButtons =
+        '<button class="btn" onclick="discoverTools(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem" title="Discover tools">Discover</button>' +
+        (cStatus === 'running'
+          ? '<button class="btn" onclick="containerAction(\\'' + escapeHtml(s.id) + '\\', \\'stop\\')" style="font-size:0.72rem">Stop</button>' +
+            '<button class="btn" onclick="containerAction(\\'' + escapeHtml(s.id) + '\\', \\'restart\\')" style="font-size:0.72rem">Restart</button>'
+          : cStatus === 'stopped' || cStatus === 'error'
+            ? '<button class="btn" onclick="containerAction(\\'' + escapeHtml(s.id) + '\\', \\'start\\')" style="font-size:0.72rem;color:#10b981">Start</button>' +
+              '<button class="btn" onclick="reprovision(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem;color:#f59e0b">Re-provision</button>'
+            : '') +
+        '<button class="btn" onclick="showLogs(\\'' + escapeHtml(s.id) + '\\', \\'' + escapeHtml(s.name) + '\\')" style="font-size:0.72rem">Logs</button>' +
+        '<button class="btn" onclick="deleteServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem;color:#ef4444">Destroy</button>';
+    } else {
+      actionButtons =
+        '<button class="btn" onclick="discoverTools(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem" title="Discover available tools">Discover</button>' +
+        '<button class="btn" onclick="toggleServer(\\'' + escapeHtml(s.id) + '\\', ' + !s.enabled + ')" style="font-size:0.72rem">' + (s.enabled ? 'Disable' : 'Enable') + '</button>' +
+        '<button class="btn" onclick="editServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem">Edit</button>' +
+        '<button class="btn" onclick="deleteServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>';
+    }
+
     return '<div class="card animate-fade-up" style="border-left:3px solid ' + statusColor + '">' +
       '<div class="flex-between">' +
         '<div>' +
           '<h3 style="margin:0;font-size:0.95rem">' + statusDot + escapeHtml(s.name) + '</h3>' +
-          '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px;display:flex;gap:0.5rem;align-items:center">' +
-            '<span>' + escapeHtml(s.url) + '</span>' + transportBadge + enabledBadge +
+          '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">' +
+            '<span>' + escapeHtml(s.url) + '</span>' + transportBadge + enabledBadge + extraBadges +
           '</div>' +
         '</div>' +
-        '<div style="display:flex;gap:0.5rem">' +
-          '<button class="btn" onclick="discoverTools(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem" title="Discover available tools">Discover</button>' +
-          '<button class="btn" onclick="toggleServer(\\'' + escapeHtml(s.id) + '\\', ' + !s.enabled + ')" style="font-size:0.72rem">' + (s.enabled ? 'Disable' : 'Enable') + '</button>' +
-          '<button class="btn" onclick="editServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem">Edit</button>' +
-          '<button class="btn" onclick="deleteServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' +
+          actionButtons +
         '</div>' +
       '</div>' +
       '<p style="font-size:0.8rem;color:var(--text-3);margin:0.5rem 0">' + escapeHtml(s.description || 'No description') + '</p>' +
+      errorRow +
       toolsList +
       '<div style="font-size:0.72rem;color:var(--text-3);margin-top:0.5rem">Last seen: ' + lastSeen + '</div>' +
     '</div>';
@@ -208,6 +330,7 @@ function renderServers() {
 
 function showServerForm() {
   document.getElementById('server-form').style.display = 'block';
+  document.getElementById('managed-form').style.display = 'none';
   document.getElementById('form-title').textContent = 'Register MCP Server';
   document.getElementById('edit-id').value = '';
   document.getElementById('server-name').value = '';
@@ -224,6 +347,7 @@ function editServer(id) {
   const s = servers.find(x => x.id === id);
   if (!s) return;
   document.getElementById('server-form').style.display = 'block';
+  document.getElementById('managed-form').style.display = 'none';
   document.getElementById('form-title').textContent = 'Edit Server Registration';
   document.getElementById('edit-id').value = s.id;
   document.getElementById('server-name').value = s.name;
@@ -257,7 +381,12 @@ async function saveServer() {
 }
 
 async function deleteServer(id) {
-  if (!confirm('Remove this server from the registry?')) return;
+  const s = servers.find(x => x.id === id);
+  const isManaged = s && (s.managed === 1 || s.managed === true);
+  const msg = isManaged
+    ? 'This will destroy the managed container and remove the server. Continue?'
+    : 'Remove this server from the registry?';
+  if (!confirm(msg)) return;
   try {
     const res = await fetch('/api/mcp/servers/' + id, { method: 'DELETE' });
     if (!res.ok) { showToast('Delete failed: ' + res.statusText, 'error'); return; }
@@ -321,7 +450,238 @@ async function invokeTool() {
   }
 }
 
+// ── Managed Server Functions ─────────────────────────────
+
+function showManagedForm() {
+  document.getElementById('managed-form').style.display = 'block';
+  document.getElementById('server-form').style.display = 'none';
+  document.getElementById('managed-name').value = '';
+  document.getElementById('managed-desc').value = '';
+  document.getElementById('managed-code').value = '';
+  toolDefCount = 0;
+  document.getElementById('tool-defs-container').innerHTML = '';
+  addToolDef();
+  switchManagedTab('config');
+}
+
+function hideManagedForm() {
+  document.getElementById('managed-form').style.display = 'none';
+}
+
+function switchManagedTab(tab) {
+  currentManagedTab = tab;
+  document.getElementById('managed-config-tab').style.display = tab === 'config' ? 'block' : 'none';
+  document.getElementById('managed-code-tab').style.display = tab === 'code' ? 'block' : 'none';
+  document.getElementById('tab-config').style.borderBottom = tab === 'config' ? '2px solid #8b5cf6' : 'none';
+  document.getElementById('tab-config').style.color = tab === 'config' ? '#8b5cf6' : 'var(--text-3)';
+  document.getElementById('tab-code').style.borderBottom = tab === 'code' ? '2px solid #8b5cf6' : 'none';
+  document.getElementById('tab-code').style.color = tab === 'code' ? '#8b5cf6' : 'var(--text-3)';
+}
+
+function addToolDef() {
+  const idx = toolDefCount++;
+  const container = document.getElementById('tool-defs-container');
+  const div = document.createElement('div');
+  div.id = 'tool-def-' + idx;
+  div.style.cssText = 'background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:0.75rem';
+  div.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">' +
+      '<span style="font-size:0.82rem;font-weight:600;color:var(--text-2)">Tool #' + (idx + 1) + '</span>' +
+      '<button class="btn" onclick="removeToolDef(' + idx + ')" style="font-size:0.7rem;color:#ef4444;padding:2px 8px">Remove</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">' +
+      '<div><label class="field-label" style="font-size:0.72rem">Tool Name</label>' +
+        '<input type="text" class="input" id="td-name-' + idx + '" placeholder="e.g. get_weather"></div>' +
+      '<div><label class="field-label" style="font-size:0.72rem">Description</label>' +
+        '<input type="text" class="input" id="td-desc-' + idx + '" placeholder="What does this tool do?"></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;margin-top:0.75rem">' +
+      '<div><label class="field-label" style="font-size:0.72rem">Endpoint URL</label>' +
+        '<input type="text" class="input" id="td-url-' + idx + '" placeholder="https://api.example.com/weather"></div>' +
+      '<div><label class="field-label" style="font-size:0.72rem">HTTP Method</label>' +
+        '<select class="input" id="td-method-' + idx + '"><option value="GET">GET</option><option value="POST" selected>POST</option><option value="PUT">PUT</option><option value="DELETE">DELETE</option></select></div>' +
+    '</div>' +
+    '<div style="margin-top:0.75rem">' +
+      '<label class="field-label" style="font-size:0.72rem">Headers (JSON, optional)</label>' +
+      '<input type="text" class="input" id="td-headers-' + idx + '" placeholder=\'{"Authorization": "Bearer ..."}\' style="font-family:var(--mono);font-size:0.78rem">' +
+    '</div>' +
+    '<div style="margin-top:0.75rem">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">' +
+        '<label class="field-label" style="font-size:0.72rem;margin:0">Parameters</label>' +
+        '<button class="btn" onclick="addParam(' + idx + ')" style="font-size:0.68rem;padding:2px 8px">+ Param</button>' +
+      '</div>' +
+      '<div id="td-params-' + idx + '"></div>' +
+    '</div>';
+  container.appendChild(div);
+}
+
+function removeToolDef(idx) {
+  const el = document.getElementById('tool-def-' + idx);
+  if (el) el.remove();
+}
+
+function addParam(toolIdx) {
+  const container = document.getElementById('td-params-' + toolIdx);
+  const pIdx = container.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 0.75fr 0.5fr 1fr auto;gap:0.5rem;margin-bottom:0.5rem;align-items:end';
+  div.innerHTML =
+    '<div><label class="field-label" style="font-size:0.68rem">Name</label><input type="text" class="input" style="font-size:0.78rem" data-param-name="' + toolIdx + '"></div>' +
+    '<div><label class="field-label" style="font-size:0.68rem">Type</label><select class="input" style="font-size:0.78rem" data-param-type="' + toolIdx + '"><option>string</option><option>number</option><option>boolean</option><option>object</option></select></div>' +
+    '<div><label class="field-label" style="font-size:0.68rem">Required</label><select class="input" style="font-size:0.78rem" data-param-req="' + toolIdx + '"><option value="true">Yes</option><option value="false">No</option></select></div>' +
+    '<div><label class="field-label" style="font-size:0.68rem">Description</label><input type="text" class="input" style="font-size:0.78rem" data-param-desc="' + toolIdx + '"></div>' +
+    '<button class="btn" onclick="this.parentElement.remove()" style="font-size:0.68rem;color:#ef4444;padding:2px 6px;margin-bottom:2px">×</button>';
+  container.appendChild(div);
+}
+
+function collectToolDefs() {
+  const tools = [];
+  for (let i = 0; i < toolDefCount; i++) {
+    const nameEl = document.getElementById('td-name-' + i);
+    if (!nameEl) continue;
+    const name = nameEl.value.trim();
+    if (!name) continue;
+    const desc = document.getElementById('td-desc-' + i).value.trim();
+    const url = document.getElementById('td-url-' + i).value.trim();
+    const method = document.getElementById('td-method-' + i).value;
+    const headersStr = document.getElementById('td-headers-' + i).value.trim();
+    let headers = {};
+    if (headersStr) {
+      try { headers = JSON.parse(headersStr); } catch(e) { alert('Invalid JSON headers for tool ' + name); return null; }
+    }
+    const paramEls = document.querySelectorAll('[data-param-name="' + i + '"]');
+    const parameters = [];
+    paramEls.forEach((pn, pi) => {
+      const pName = pn.value.trim();
+      if (!pName) return;
+      const pType = document.querySelectorAll('[data-param-type="' + i + '"]')[pi].value;
+      const pReq = document.querySelectorAll('[data-param-req="' + i + '"]')[pi].value === 'true';
+      const pDesc = document.querySelectorAll('[data-param-desc="' + i + '"]')[pi].value.trim();
+      parameters.push({ name: pName, type: pType, required: pReq, description: pDesc });
+    });
+    tools.push({ name, description: desc, endpoint_url: url, http_method: method, headers, parameters });
+  }
+  return tools;
+}
+
+async function saveManagedServer() {
+  const name = document.getElementById('managed-name').value.trim();
+  const desc = document.getElementById('managed-desc').value.trim();
+  if (!name) return alert('Server name is required');
+
+  let endpoint, body;
+  if (currentManagedTab === 'config') {
+    const tools = collectToolDefs();
+    if (tools === null) return;
+    if (tools.length === 0) return alert('Add at least one tool definition');
+    endpoint = '/api/mcp/servers/managed/config';
+    body = { name, description: desc, tools };
+  } else {
+    const code = document.getElementById('managed-code').value;
+    if (!code.trim()) return alert('Write at least one Python function');
+    endpoint = '/api/mcp/servers/managed/code';
+    body = { name, description: desc, code };
+  }
+
+  try {
+    showToast('Creating managed server...', 'info');
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showToast('Create failed: ' + (data.detail || data.error || resp.statusText), 'error');
+      return;
+    }
+    showToast('Server created! Container is provisioning...', 'success');
+    hideManagedForm();
+    await loadServers();
+    startStatusPoll(data.id || data.server?.id);
+  } catch(e) {
+    showToast('Failed: ' + e.message, 'error');
+  }
+}
+
+function startStatusPoll(serverId) {
+  if (!serverId) return;
+  let attempts = 0;
+  const poll = setInterval(async () => {
+    attempts++;
+    if (attempts > 30) { clearInterval(poll); return; }
+    try {
+      const resp = await fetch('/api/mcp/servers/' + serverId + '/container/status');
+      const data = await resp.json();
+      await loadServers();
+      if (data.status === 'running' || data.status === 'error' || data.status === 'stopped') {
+        clearInterval(poll);
+        if (data.status === 'running') showToast('Container is running!', 'success');
+        else if (data.status === 'error') showToast('Container failed to start', 'error');
+      }
+    } catch(e) { /* keep polling */ }
+  }, 2000);
+}
+
+async function containerAction(serverId, action) {
+  try {
+    showToast(action.charAt(0).toUpperCase() + action.slice(1) + 'ping container...', 'info');
+    const resp = await fetch('/api/mcp/servers/' + serverId + '/container/' + action, { method: 'POST' });
+    const data = await resp.json();
+    if (resp.ok && !data.error) {
+      showToast('Container ' + action + ' successful', 'success');
+    } else {
+      showToast(action + ' failed: ' + (data.error || 'unknown'), 'error');
+    }
+    await loadServers();
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+async function reprovision(serverId) {
+  try {
+    showToast('Re-provisioning container...', 'info');
+    const resp = await fetch('/api/mcp/servers/' + serverId + '/provision', { method: 'POST' });
+    const data = await resp.json();
+    showToast('Provisioning started', 'success');
+    await loadServers();
+    startStatusPoll(serverId);
+  } catch(e) { showToast('Failed: ' + e.message, 'error'); }
+}
+
+function showLogs(serverId, serverName) {
+  logsServerId = serverId;
+  document.getElementById('logs-modal-title').textContent = 'Logs — ' + serverName;
+  document.getElementById('logs-modal-content').textContent = 'Loading...';
+  document.getElementById('logs-modal').style.display = 'flex';
+  refreshLogs();
+}
+
+async function refreshLogs() {
+  if (!logsServerId) return;
+  try {
+    const resp = await fetch('/api/mcp/servers/' + logsServerId + '/container/logs');
+    const data = await resp.json();
+    document.getElementById('logs-modal-content').textContent = data.logs || 'No logs available';
+    const pre = document.getElementById('logs-modal-content');
+    pre.scrollTop = pre.scrollHeight;
+  } catch(e) {
+    document.getElementById('logs-modal-content').textContent = 'Failed to fetch logs: ' + e.message;
+  }
+}
+
+function closeLogsModal() {
+  document.getElementById('logs-modal').style.display = 'none';
+  logsServerId = '';
+}
+
 init();
 <\/script>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>
 
 ` }) %>

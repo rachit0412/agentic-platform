@@ -531,9 +531,9 @@ Give a concise, helpful answer using the information above. No filler."""
 # ── Agent skill/tool helpers ────────────────────────────────────────────────
 
 
-def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str, list]:
-    """Build tools text, skills section, tools section, agent constraints, and extra system parts.
-    Returns (tools_text, skills_section, tools_section, agent_constraints, extra_system_parts).
+def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str, list, list]:
+    """Build tools text, skills section, tools section, agent constraints, extra system parts, and MCP tools.
+    Returns (tools_text, skills_section, tools_section, agent_constraints, extra_system_parts, mcp_tools).
     """
     extra_system_parts: list[str] = []
     skills_section = ""
@@ -715,7 +715,16 @@ def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str,
                     "Use delegate_to_agent when a sub-agent is better suited for a specific part of the task."
                 )
 
-    tools_text = catalogue_as_text_filtered(tool_ids)
+    # Resolve MCP tools for this agent
+    mcp_tools = []
+    if agent_config:
+        mcp_server_ids = agent_config.get("mcp_server_ids", [])
+        if mcp_server_ids:
+            from agent.tools import get_mcp_tools
+
+            mcp_tools = get_mcp_tools(mcp_server_ids)
+
+    tools_text = catalogue_as_text_filtered(tool_ids, extra_tools=mcp_tools)
 
     # Build tools_section with call instructions (only if there are tools)
     if tools_text.strip():
@@ -735,6 +744,7 @@ def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str,
         tools_section,
         agent_constraints,
         extra_system_parts,
+        mcp_tools,
     )
 
 
@@ -753,6 +763,7 @@ class AgentState(TypedDict):
     response: str
     tools_used: list[str]
     iteration: int
+    mcp_tools: list
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -978,6 +989,7 @@ async def reason(state: AgentState) -> dict:
         tools_section,
         agent_constraints_section,
         extra_system_parts,
+        mcp_tools,
     ) = _build_agent_context(agent_config)
 
     system = SYSTEM_PROMPT.format(
@@ -997,7 +1009,6 @@ async def reason(state: AgentState) -> dict:
         messages.append(msg)
     messages.append({"role": "user", "content": state["prompt"]})
 
-    # Append prior tool results if this is a subsequent iteration
     existing_calls = state.get("tool_calls", [])
     if existing_calls:
         results_text = "\n".join(
@@ -1030,17 +1041,19 @@ async def reason(state: AgentState) -> dict:
         "tools_used": state.get("tools_used", [])
         + [tc["name"] for tc in new_tool_calls],
         "iteration": iteration + 1,
+        "mcp_tools": mcp_tools,
     }
 
 
 async def execute_tools(state: AgentState) -> dict:
     """Execute only the tool calls that don't have results yet."""
     tool_calls = state.get("tool_calls", [])
+    mcp_tools = state.get("mcp_tools", [])
     for tc in tool_calls:
         if tc.get("result") is not None:
             continue  # Already executed
         tool_call_counter.labels(tool_name=tc["name"]).inc()
-        result = await call_tool(tc["name"], tc["arguments"])
+        result = await call_tool(tc["name"], tc["arguments"], extra_tools=mcp_tools)
         tc["result"] = result
         logger.info(
             "req=%s tool=%s result=%s",
@@ -1190,6 +1203,7 @@ async def run_agent(
         "tools_used": [],
         "iteration": 0,
         "agent_config": agent_config,
+        "mcp_tools": [],
     }
 
     try:
@@ -1308,6 +1322,7 @@ async def run_agent_stream(
         tools_section,
         agent_constraints_section,
         extra_system_parts,
+        mcp_tools,
     ) = _build_agent_context(agent_config)
 
     agent_extra_prompt = "\n\n".join(extra_system_parts) if extra_system_parts else ""
@@ -1548,7 +1563,7 @@ async def run_agent_stream(
             lf_tool_span = lf_trace.span(
                 name=f"tool:{tc['name']}", input=tc["arguments"]
             )
-            result = await call_tool(tc["name"], tc["arguments"])
+            result = await call_tool(tc["name"], tc["arguments"], extra_tools=mcp_tools)
             tc["result"] = result
             logger.info(
                 "req=%s tool=%s result=%s", request_id, tc["name"], str(result)[:200]

@@ -632,7 +632,7 @@ var abCurrentStep = 1;
 var abEditingId = '';
 var abData = {
   skills: [], prompts: [], tools: [], collections: [], guardrails: [], mcpServers: [], agents: [],
-  selectedSkills: [], selectedTools: [], selectedGuardrails: [], selectedSubAgents: []
+  selectedSkills: [], selectedTools: [], selectedGuardrails: [], selectedSubAgents: [], selectedMcpServers: []
 };
 
 /* ═══ INIT ═══ */
@@ -1143,17 +1143,31 @@ function abRenderMCP() {
     el.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem">No MCP servers registered. <a href="/mcp" style="color:#8b5cf6">Add one</a></p>';
     return;
   }
-  el.innerHTML = abData.mcpServers.map(function(s) {
-    var statusColor = s.status === 'connected' ? '#10b981' : '#f59e0b';
+  var enabledServers = abData.mcpServers.filter(function(s) { return s.enabled; });
+  if (enabledServers.length === 0) {
+    el.innerHTML = '<p style="color:var(--text-3);font-size:0.78rem">No enabled MCP servers. <a href="/mcp" style="color:#8b5cf6">Enable one</a></p>';
+    return;
+  }
+  el.innerHTML = enabledServers.map(function(s) {
+    var sel = abData.selectedMcpServers.indexOf(s.id) >= 0;
     var toolCount = (s.tools || []).length;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.35rem 0">' +
-      '<div style="display:flex;align-items:center;gap:0.4rem">' +
-        '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + '"></span>' +
-        '<span style="font-size:0.78rem;color:var(--text-1)">' + escapeHtml(s.name) + '</span>' +
+    return '<label class="ab-select-card' + (sel ? ' selected' : '') + '" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border:1px solid ' + (sel ? '#8b5cf6' : 'var(--glass-border)') + ';border-radius:8px;margin-bottom:0.35rem;background:' + (sel ? 'rgba(139,92,246,0.08)' : 'transparent') + '">' +
+      '<input type="checkbox" value="' + escapeHtml(s.id) + '"' + (sel ? ' checked' : '') + ' onchange="abToggleMCP(\\'' + escapeHtml(s.id) + '\\')" style="accent-color:#8b5cf6">' +
+      '<div style="flex:1">' +
+        '<div style="font-size:0.82rem;font-weight:600;color:var(--text-1)">🔌 ' + escapeHtml(s.name) + '</div>' +
+        '<div style="font-size:0.68rem;color:var(--text-3)">' + escapeHtml(s.description || s.url) + '</div>' +
       '</div>' +
-      '<span class="badge" style="font-size:0.6rem">' + toolCount + ' tools</span>' +
-    '</div>';
+      '<span class="badge" style="font-size:0.6rem;background:rgba(139,92,246,0.15);color:#8b5cf6">' + toolCount + ' tools</span>' +
+    '</label>';
   }).join('');
+}
+
+function abToggleMCP(id) {
+  var idx = abData.selectedMcpServers.indexOf(id);
+  if (idx >= 0) abData.selectedMcpServers.splice(idx, 1);
+  else abData.selectedMcpServers.push(id);
+  abRenderMCP();
+  abUpdateStepBadges();
 }
 
 /* ═══ GUARDRAILS ═══ */
@@ -1244,6 +1258,7 @@ function abLoadExisting() {
   abData.selectedSkills = (agent.skill_ids || []).slice();
   abData.selectedTools = (agent.tool_ids || []).slice();
   abData.selectedSubAgents = (agent.sub_agent_ids || []).slice();
+  abData.selectedMcpServers = (agent.mcp_server_ids || []).slice();
 
   document.getElementById('ab-provider').value = agent.provider || 'azure-foundry';
   abProviderChanged();
@@ -1304,6 +1319,7 @@ function abReset() {
   abData.selectedSkills = [];
   abData.selectedTools = [];
   abData.selectedSubAgents = [];
+  abData.selectedMcpServers = [];
   document.getElementById('ab-provider').value = 'azure-foundry';
   abProviderChanged();
   document.getElementById('ab-model').value = 'gpt-5-nano';
@@ -1374,6 +1390,7 @@ function abBuildReview() {
     { label: 'Prompt', value: cfg.system_prompt ? cfg.system_prompt.length + ' chars' : 'None', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
     { label: 'Skills', value: cfg.skill_ids.length + ' attached', color: '#f59e0b', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' },
     { label: 'Tools', value: cfg.tool_ids.length === 0 ? 'All (' + abData.tools.length + ')' : cfg.tool_ids.length + ' selected', color: '#10b981', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' },
+    { label: 'MCP Servers', value: cfg.mcp_server_ids.length === 0 ? 'None' : cfg.mcp_server_ids.length + ' bound', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>' },
     { label: 'Knowledge Base', value: cfg.kb_collection, color: '#06b6d4', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
     { label: 'Workflow', value: cfg.skill_ids.length >= 2 ? (cfg.workflow_mode === 'router' ? 'Router' : 'Sequential') : 'N/A', color: '#f59e0b', icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg>' }
   ].map(function(item) {
@@ -1409,6 +1426,7 @@ function abGetConfig() {
     skill_ids: abData.selectedSkills.slice(),
     tool_ids: abData.selectedTools.slice(),
     sub_agent_ids: subAgentIds,
+    mcp_server_ids: abData.selectedMcpServers.slice(),
     constraints: document.getElementById('ab-constraints').value.split(',').map(function(s){return s.trim()}).filter(Boolean),
     kb_collection: newCol || document.getElementById('ab-kb-collection').value || abGetAgentCollectionName() || 'agentic_docs',
     max_iterations: parseInt(document.getElementById('ab-max-iter').value) || 5,

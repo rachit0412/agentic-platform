@@ -16,7 +16,7 @@
 
 | Service       | URL                        | Description                       |
 | ------------- | -------------------------- | --------------------------------- |
-| Agent Service | http://localhost:8010/docs | FastAPI auto-docs (108 endpoints) |
+| Agent Service | http://localhost:8010/docs | FastAPI auto-docs (117 endpoints) |
 | Tools Service | http://localhost:8011/docs | FastAPI auto-docs (33 endpoints)  |
 | REST Console  | http://localhost:3000/rest | Interactive API testing UI        |
 
@@ -46,6 +46,7 @@ POST /agent-run/stream    # Run agent with SSE streaming
 | -------- | --------------------------------------------------------------------------------------- |
 | A2A      | `CRUD /a2a/peers`, `POST /a2a/send`, `GET /a2a/card`                                    |
 | MCP      | `CRUD /mcp/servers`, `POST /mcp/servers/{id}/discover`, `POST /mcp/servers/{id}/invoke` |
+| MCP Managed | `POST /mcp/servers/managed/config`, `POST /mcp/servers/managed/code`, `POST /mcp/servers/{id}/provision`, container lifecycle (`stop`, `start`, `restart`, `logs`, `status`, `DELETE`) |
 
 ### Knowledge Base
 

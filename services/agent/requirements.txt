@@ -32,3 +32,5 @@ llama-index-postprocessor-cohere-rerank==0.3.0
 llama-index-readers-database==0.3.0
 # ── PostgreSQL (datastore) ──────────────────────────────────────────────
 psycopg2-binary>=2.9.0
+# ── Docker (managed MCP server provisioning) ───────────────────────────
+docker>=7.0.0

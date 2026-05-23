@@ -525,6 +525,84 @@ def _make_custom_tool(ct: dict):
     )
 
 
+def _make_mcp_tool(server_config: dict, tool_def: dict):
+    """Build a LangChain StructuredTool that calls an MCP server's tool via JSON-RPC."""
+    server_name = server_config["name"].replace("-", "_").replace(" ", "_").lower()
+    tool_name_raw = tool_def.get("name", "unknown")
+    name = f"mcp_{server_name}_{tool_name_raw}"
+    description = tool_def.get("description", f"MCP tool: {tool_name_raw}")
+    server_url = server_config["url"].rstrip("/")
+
+    async def _invoke(**kwargs) -> str:
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {"name": tool_name_raw, "arguments": kwargs},
+            "id": 1,
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            try:
+                resp = await client.post(server_url, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+                if "result" in data:
+                    content = data["result"].get("content", [])
+                    texts = [c.get("text", str(c)) for c in content if isinstance(c, dict)]
+                    return "\n".join(texts) if texts else json.dumps(data["result"])
+                if "error" in data:
+                    return json.dumps({"error": data["error"]})
+                return json.dumps(data)
+            except httpx.HTTPStatusError as exc:
+                return json.dumps({"error": f"HTTP {exc.response.status_code}"})
+            except httpx.RequestError as exc:
+                return json.dumps({"error": f"MCP request failed: {exc}"})
+
+    input_schema = tool_def.get("inputSchema", {})
+    properties = input_schema.get("properties", {})
+    required_fields = set(input_schema.get("required", []))
+
+    from pydantic import create_model
+
+    fields = {}
+    type_map = {"string": str, "integer": int, "number": float, "boolean": bool}
+    for pname, pschema in properties.items():
+        ptype = type_map.get(pschema.get("type", "string"), str)
+        if pname in required_fields:
+            fields[pname] = (ptype, ...)
+        else:
+            fields[pname] = (Optional[ptype], None)
+
+    if not fields:
+        fields["input"] = (Optional[str], None)
+
+    InputModel = create_model(f"{name}_Input", **fields)
+
+    return StructuredTool.from_function(
+        coroutine=_invoke,
+        name=name,
+        description=description,
+        args_schema=InputModel,
+    )
+
+
+def get_mcp_tools(mcp_server_ids: list[str] | None = None) -> list:
+    """Build StructuredTool wrappers for all tools from the given MCP servers."""
+    if not mcp_server_ids:
+        return []
+    from agent.memory import get_mcp_server
+
+    tools = []
+    for sid in mcp_server_ids:
+        server = get_mcp_server(sid)
+        if not server or not server.get("enabled", True):
+            continue
+        for tool_def in server.get("tools", []):
+            t = _make_mcp_tool(server, tool_def)
+            if t:
+                tools.append(t)
+    return tools
+
+
 # ── Legacy compatibility ────────────────────────────────────────────────────
 # These keep the old graph.py imports working during migration.
 
@@ -561,10 +639,12 @@ def catalogue_as_text() -> str:
     return "\n".join(lines)
 
 
-def catalogue_as_text_filtered(tool_ids: list[str] | None = None) -> str:
+def catalogue_as_text_filtered(tool_ids: list[str] | None = None, extra_tools: list | None = None) -> str:
     """Render tool list filtered by tool_ids. If tool_ids is None or empty, return all."""
     _refresh_catalogue()
     all_tools = get_all_tools()
+    if extra_tools:
+        all_tools = all_tools + extra_tools
     if tool_ids:
         id_set = set(tool_ids)
         all_tools = [t for t in all_tools if t.name in id_set]
@@ -574,9 +654,12 @@ def catalogue_as_text_filtered(tool_ids: list[str] | None = None) -> str:
     return "\n".join(lines)
 
 
-async def call_tool(tool_name: str, arguments: dict) -> dict:
+async def call_tool(tool_name: str, arguments: dict, extra_tools: list | None = None) -> dict:
     """Legacy: call a tool by name with arguments dict."""
-    tools_map = {t.name: t for t in get_all_tools()}
+    all_tools = get_all_tools()
+    if extra_tools:
+        all_tools = all_tools + extra_tools
+    tools_map = {t.name: t for t in all_tools}
     t = tools_map.get(tool_name)
     if t is None:
         return {"error": f"Unknown tool: {tool_name}"}

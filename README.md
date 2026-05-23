@@ -44,7 +44,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **4 LLM Providers**           | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                                                                        |
 | **Auto-RAG**                  | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context. Per-agent isolated KB                                                  |
 | **A2A Protocol**              | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                                                                        |
-| **MCP Registry**              | Connect to external tool servers that dynamically expose capabilities — your agents discover tools at runtime                                                                    |
+| **MCP Registry + Managed MCP** | Connect to external tool servers, or **create and host** your own from the UI — config mode (no-code HTTP proxies) or code mode (custom Python functions). Each managed server deploys as an isolated Docker container |
 | **Full Traceability**         | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                                                                                      |
 | **Responsible AI**            | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                       |
 | **25-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                      |
@@ -59,6 +59,8 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Skill Files** — Attach scripts, reference docs, and template assets to any skill — files are per-skill isolated and auto-injected into agent context
 - **9 Built-in Tools** — Math, HTTP fetch, file I/O, datetime, web search, code execution, text transforms, JSON/CSV/YAML ops, regex, hashing, vector search & ingest
 - **Multi-Agent Delegation** — Orchestrator agents delegate to sub-agents via `delegate_to_agent` tool; LLM decides routing
+- **MCP Runtime Integration** — Agents with bound MCP servers see MCP tools in their system prompt and invoke them natively in the ReAct loop — no manual wiring
+- **Managed MCP Servers** — Create and host MCP servers from the UI: config mode (HTTP endpoint proxies) or code mode (Python functions). Each deploys as an isolated Docker container
 - **Per-Agent Knowledge Base** — Each agent gets its own isolated ChromaDB collection; documents don't cross-contaminate
 - **Evaluation Matrix** — Quality scoring (faithfulness, relevance, coherence) across models and agents
 - **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion, multi-agent pipelines
@@ -82,7 +84,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 │  25 pages — build, run, evaluate, trace agents from the browser│
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
-│  ReAct agent loop, 108 endpoints, skill/agent registry, auto-RAG│
+│  ReAct agent loop, 117 endpoints, skill/agent registry, auto-RAG│
 ├──────────────────────┬──────────────────────────────────────────┤
 │  🔧 Tools Service    │  📚 ChromaDB        │  💾 SQLite         │
 │  :8011               │  :8200              │  (embedded)        │
@@ -155,7 +157,7 @@ curl -X POST http://localhost:8010/run \
 | Service            | Port    | Purpose                                                                           |
 | ------------------ | ------- | --------------------------------------------------------------------------------- |
 | **ui-console**     | `3000`  | Platform dashboard — 25 pages for building, running, monitoring agents            |
-| **agent-service**  | `8010`  | FastAPI + LangGraph — 108 endpoints: ReAct agent, registry, auto-RAG, memory      |
+| **agent-service**  | `8010`  | FastAPI + LangGraph — 117 endpoints: ReAct agent, registry, auto-RAG, memory, managed MCP |
 | **tools-service**  | `8011`  | 33 endpoints: web search, code exec, HTTP fetch, file I/O, text transforms, more  |
 | **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more                    |
 | **chromadb**       | `8200`  | Vector store for knowledge base and RAG retrieval                                 |
@@ -184,8 +186,8 @@ curl -X POST http://localhost:8010/run \
 | Knowledge Base   | Upload, search, manage RAG docs                                                                                                                                                           |
 | Workflows        | n8n workflow monitoring                                                                                                                                                                   |
 | A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                           |
-| MCP Registry     | Connect and manage external tool servers                                                                                                                                                  |
-| REST Console     | Interactive API console — test all 108 endpoints                                                                                                                                          |
+| MCP Registry     | Create, host, and manage MCP tool servers — config mode (no-code), code mode (Python), or register external servers                                                                       |
+| REST Console     | Interactive API console — test all 117 endpoints                                                                                                                                          |
 | Intelligence Hub | Operational intelligence overview                                                                                                                                                         |
 | Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                     |
 | Evaluation       | Agent quality scoring and model comparison                                                                                                                                                |
@@ -209,9 +211,11 @@ User Prompt
 │  1. Retrieve context (ChromaDB → RAG)    │
 │  2. Load memory (SQLite → session)       │
 │  3. Inject skills + files + system prompt │
+│  3b. Bind MCP tools (per-agent)          │
 │  4. LLM reasoning (ReAct loop)           │
 │  5. Tool execution (if needed)           │
-│  5b. Delegate to sub-agent (if needed)   │
+│  5b. MCP tool invocation (if needed)     │
+│  5c. Delegate to sub-agent (if needed)   │
 │  6. Generate response                    │
 │  7. Save memory + emit traces            │
 └──────────────────────────────────────────┘
@@ -288,8 +292,9 @@ agentic-platform/
 ├── CONTRIBUTING.md              # Contribution guidelines
 ├── docs/ARCHITECTURE.md         # Deep-dive architecture & protocols
 ├── services/
-│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (108 API endpoints)
+│   ├── agent/                   # 🧠 FastAPI + LangGraph agent (117 API endpoints)
 │   │   └── agent/connectors/    # 🔌 Data connectors (DB, API, Cloud, Drives)
+│   ├── managed-mcp-base/        # 🔗 Generic MCP server runtime (config + code modes)
 │   ├── tools/                   # 🔧 FastAPI tool endpoints (33 endpoints)
 │   ├── ui-console/              # 🖥️  Express.js dashboard (25 pages)
 │   └── otel/                    # 📡 OpenTelemetry collector config

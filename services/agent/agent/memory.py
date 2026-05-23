@@ -177,6 +177,12 @@ def init_db():
         conn.commit()
     except sqlite3.OperationalError:
         pass  # column already exists
+    # ── Migration: add mcp_server_ids column if missing ──
+    try:
+        conn.execute("ALTER TABLE agents ADD COLUMN mcp_server_ids TEXT DEFAULT '[]'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ── Migration: add files column to skills if missing ──
     try:
         conn.execute("ALTER TABLE skills ADD COLUMN files TEXT DEFAULT '[]'")
@@ -226,6 +232,23 @@ def init_db():
             updated_at  TEXT NOT NULL
         )
         """)
+    # ── Migration: add managed MCP server columns if missing ──
+    for col, default in [
+        ("managed", "0"),
+        ("server_type", "'external'"),
+        ("config", "'{}'"),
+        ("container_id", "''"),
+        ("container_name", "''"),
+        ("container_status", "''"),
+        ("error_message", "''"),
+    ]:
+        try:
+            conn.execute(
+                f"ALTER TABLE mcp_servers ADD COLUMN {col} TEXT DEFAULT {default}"
+            )
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
     # ── Prompts Library table ──
     conn.execute("""
         CREATE TABLE IF NOT EXISTS prompts (
@@ -905,6 +928,9 @@ def _row_to_agent(row) -> dict:
         "constraints": (
             json.loads(row["constraints"]) if "constraints" in row.keys() else []
         ),
+        "mcp_server_ids": (
+            json.loads(row["mcp_server_ids"]) if "mcp_server_ids" in row.keys() else []
+        ),
         "kb_collection": row["kb_collection"],
         "max_iterations": row["max_iterations"],
         "memory_enabled": bool(row["memory_enabled"]),
@@ -940,6 +966,7 @@ def create_agent(
     tool_ids: list[str] | None = None,
     sub_agent_ids: list[str] | None = None,
     constraints: list[str] | None = None,
+    mcp_server_ids: list[str] | None = None,
     kb_collection: str = "agentic_docs",
     retrieval_mode: str = "basic",
     max_iterations: int = 5,
@@ -949,7 +976,7 @@ def create_agent(
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, constraints, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, constraints, mcp_server_ids, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             agent_id,
             name,
@@ -963,6 +990,7 @@ def create_agent(
             json.dumps(tool_ids or []),
             json.dumps(sub_agent_ids or []),
             json.dumps(constraints or []),
+            json.dumps(mcp_server_ids or []),
             kb_collection,
             retrieval_mode,
             max_iterations,
@@ -1017,7 +1045,7 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(int(kwargs[key]))
-    for key in ("skill_ids", "tool_ids", "sub_agent_ids", "constraints"):
+    for key in ("skill_ids", "tool_ids", "sub_agent_ids", "constraints", "mcp_server_ids"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))
@@ -1129,7 +1157,7 @@ def delete_a2a_peer(peer_id: str) -> bool:
 
 
 def _row_to_mcp_server(row) -> dict:
-    return {
+    d = {
         "id": row["id"],
         "name": row["name"],
         "url": row["url"],
@@ -1142,6 +1170,19 @@ def _row_to_mcp_server(row) -> dict:
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
+    keys = row.keys()
+    d["managed"] = bool(int(row["managed"])) if "managed" in keys else False
+    d["server_type"] = row["server_type"] if "server_type" in keys else "external"
+    d["config"] = (
+        json.loads(row["config"]) if "config" in keys and row["config"] else {}
+    )
+    d["container_id"] = row["container_id"] if "container_id" in keys else ""
+    d["container_name"] = row["container_name"] if "container_name" in keys else ""
+    d["container_status"] = (
+        row["container_status"] if "container_status" in keys else ""
+    )
+    d["error_message"] = row["error_message"] if "error_message" in keys else ""
+    return d
 
 
 def list_mcp_servers() -> list[dict]:
@@ -1192,15 +1233,19 @@ def update_mcp_server(server_id: str, **kwargs) -> dict | None:
         return None
     fields = []
     values = []
-    for key in ("name", "url", "transport", "description", "status", "last_seen"):
+    for key in (
+        "name", "url", "transport", "description", "status", "last_seen",
+        "server_type", "container_id", "container_name", "container_status",
+        "error_message",
+    ):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
-    for key in ("enabled",):
+    for key in ("enabled", "managed"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(int(kwargs[key]))
-    for key in ("tools",):
+    for key in ("tools", "config"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))

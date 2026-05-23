@@ -22,7 +22,8 @@ flowchart TD
     Agent --> Tools[🔧 Tools Service<br/>FastAPI :8011]
     Tools --> BuiltIn[33 Tool Endpoints]
 
-    Agent --> MCP[MCP Servers<br/>External Tools]
+    Agent --> MCP[MCP Servers<br/>External + Managed Tools]
+    Agent -->|Docker SDK| ManagedMCP[🔗 Managed MCP<br/>Config / Code Containers]
     Agent --> A2A[A2A Peers<br/>Agent Delegation]
     Agent --> N8N[⚡ n8n<br/>Workflows :5678]
 
@@ -47,7 +48,7 @@ flowchart TD
     class LLM,Ollama,AzureOAI,OpenAI,Foundry llm
     class Data,Chroma data
     class OTel,Langfuse,Prom,Loki,Grafana obs
-    class Tools,BuiltIn,MCP tools
+    class Tools,BuiltIn,MCP,ManagedMCP tools
 ```
 
 ## Layer Summary
@@ -58,6 +59,6 @@ flowchart TD
 | Orchestrator  | FastAPI + LangGraph                       | ReAct loop, routing, state     |
 | LLM           | Ollama, Azure OpenAI, OpenAI, Foundry     | Multi-provider inference       |
 | RAG           | ChromaDB + LlamaIndex                     | Retrieval-augmented generation |
-| Tools         | tools-service, MCP, A2A, n8n              | Tool execution & automation    |
+| Tools         | tools-service, MCP (external + managed), A2A, n8n | Tool execution & automation    |
 | Data          | SQLite + PostgreSQL                       | Config, memory, documents      |
 | Observability | OTel, Prometheus, Grafana, Loki, Langfuse | Metrics, logs, LLM traces      |

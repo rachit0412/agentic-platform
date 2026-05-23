@@ -169,6 +169,10 @@
         <select id="agent-tools-list" class="input" multiple style="height:120px;font-size:0.82rem"></select>
       </div>
     </div>
+    <div style="margin-top:0.75rem">
+      <label class="field-label">MCP Servers <span style="color:var(--text-3);font-weight:400">(select multiple — bind external tool servers)</span></label>
+      <select id="agent-mcp-servers" class="input" multiple style="height:80px;font-size:0.82rem"></select>
+    </div>
   </div>
 
   <!-- Knowledge Base & Settings -->
@@ -350,6 +354,30 @@
     return Array.from(document.getElementById('agent-skills-list').selectedOptions).map(o => o.value);
   }
 
+  let allMcpServers = [];
+  async function loadMcpServersList() {
+    try {
+      const r = await fetch('/api/mcp/servers');
+      const d = await r.json();
+      allMcpServers = (d.servers || []).filter(s => s.enabled);
+    } catch(e) { allMcpServers = []; }
+  }
+
+  function renderMcpServerCheckboxes(selectedIds) {
+    const el = document.getElementById('agent-mcp-servers');
+    if (allMcpServers.length === 0) {
+      el.innerHTML = '<option disabled>No MCP servers registered</option>';
+      return;
+    }
+    el.innerHTML = allMcpServers.map(s =>
+      '<option value="' + escapeHtml(s.id) + '"' + ((selectedIds||[]).includes(s.id) ? ' selected' : '') + '>🔌 ' + escapeHtml(s.name) + ' (' + (s.tools||[]).length + ' tools)</option>'
+    ).join('');
+  }
+
+  function getSelectedMcpServerIds() {
+    return Array.from(document.getElementById('agent-mcp-servers').selectedOptions).map(o => o.value);
+  }
+
   async function loadAgents() {
     try {
       const r = await fetch('/api/agents');
@@ -367,6 +395,10 @@
           return '<span class="badge">⚡ ' + escapeHtml(sk ? sk.name : sid) + '</span>';
         }).join(' ');
         const toolBadges = (a.tool_ids||[]).slice(0,3).map(t => '<span class="badge">' + escapeHtml(t) + '</span>').join(' ');
+        const mcpBadges = (a.mcp_server_ids||[]).map(sid => {
+          const srv = allMcpServers.find(s => s.id === sid);
+          return '<span class="badge" style="background:rgba(168,85,247,0.15);color:#a855f7">🔌 ' + escapeHtml(srv ? srv.name : sid) + '</span>';
+        }).join(' ');
         const isDefault = a.is_default ? ' <span class="badge" style="background:rgba(6,182,212,0.15);color:#06b6d4">default</span>' : '';
         return '<div class="card animate-fade-up">' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">' +
@@ -384,7 +416,7 @@
             '<div><strong>Memory:</strong> ' + (a.memory_enabled ? 'On' : 'Off') + '</div>' +
           '</div>' +
           (a.system_prompt ? '<div style="margin-top:0.75rem;background:var(--input-bg);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.72rem;font-family:var(--mono);color:var(--text-2);max-height:50px;overflow:hidden">' + escapeHtml(a.system_prompt.slice(0,200)) + (a.system_prompt.length > 200 ? '...' : '') + '</div>' : '') +
-          '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.75rem">' + skillBadges + ' ' + toolBadges + '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.75rem">' + skillBadges + ' ' + toolBadges + ' ' + mcpBadges + '</div>' +
           '<div style="display:flex;gap:0.5rem;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:0.75rem">' +
             '<button class="btn btn-sm" onclick="showAgentInfo(\\'' + escapeHtml(a.id) + '\\')">ℹ️ Info</button>' +
             '<button class="btn btn-sm" onclick="editAgent(\\'' + escapeHtml(a.id) + '\\')">✏️ Edit</button>' +
@@ -410,6 +442,7 @@
       prompt: document.getElementById('agent-prompt').value,
       tools: Array.from(document.getElementById('agent-tools-list').selectedOptions).map(o => o.value),
       skills: Array.from(document.getElementById('agent-skills-list').selectedOptions).map(o => o.value),
+      mcpServers: Array.from(document.getElementById('agent-mcp-servers').selectedOptions).map(o => o.value),
       kb: document.getElementById('agent-kb').value,
       iterations: document.getElementById('agent-iterations').value,
       memory: document.getElementById('agent-memory').value,
@@ -434,6 +467,7 @@
       document.getElementById('agent-prompt').value = d.prompt || '';
       if (d.tools && d.tools.length) renderToolCheckboxes(d.tools);
       if (d.skills && d.skills.length) renderSkillCheckboxes(d.skills);
+      if (d.mcpServers && d.mcpServers.length) renderMcpServerCheckboxes(d.mcpServers);
       document.getElementById('agent-kb').value = d.kb || 'agentic_docs';
       document.getElementById('agent-iterations').value = d.iterations || '5';
       document.getElementById('agent-memory').value = d.memory || '1';
@@ -448,9 +482,10 @@
   });
   document.getElementById('agent-tools-list').addEventListener('change', saveDraft);
   document.getElementById('agent-skills-list').addEventListener('change', saveDraft);
+  document.getElementById('agent-mcp-servers').addEventListener('change', saveDraft);
 
   async function showAgentForm() {
-    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList(), loadCollections()]);
+    await Promise.all([loadSkillsList(), loadToolsList(), loadMcpServersList(), loadModelsList(), loadCollections()]);
     clearAgentDraft();
     document.getElementById('agent-form-title').textContent = 'Create Agent';
     document.getElementById('agent-edit-id').value = '';
@@ -462,7 +497,7 @@
     document.getElementById('agent-top-p').value = '1';
     document.getElementById('agent-prompt').value = '';
     renderToolCheckboxes([]);
-    // Auto-generate isolated collection name (will be finalized on save)
+    renderMcpServerCheckboxes([]);
     document.getElementById('agent-kb').value = '';
     document.getElementById('agent-iterations').value = '5';
     document.getElementById('agent-memory').value = '1';
@@ -485,7 +520,7 @@
   }
 
   async function editAgent(id) {
-    await Promise.all([loadSkillsList(), loadToolsList(), loadModelsList(), loadCollections()]);
+    await Promise.all([loadSkillsList(), loadToolsList(), loadMcpServersList(), loadModelsList(), loadCollections()]);
     try {
       const r = await fetch('/api/agents/' + id);
       const a = await r.json();
@@ -499,6 +534,7 @@
       document.getElementById('agent-top-p').value = a.top_p != null ? a.top_p : 1;
       document.getElementById('agent-prompt').value = a.system_prompt || '';
       renderToolCheckboxes(a.tool_ids || []);
+      renderMcpServerCheckboxes(a.mcp_server_ids || []);
       document.getElementById('agent-kb').value = a.kb_collection || '';
       document.getElementById('agent-iterations').value = a.max_iterations || 5;
       document.getElementById('agent-memory').value = a.memory_enabled ? '1' : '0';
@@ -539,6 +575,7 @@
       system_prompt: document.getElementById('agent-prompt').value.trim(),
       skill_ids: getSelectedSkillIds(),
       tool_ids: getSelectedToolIds(),
+      mcp_server_ids: getSelectedMcpServerIds(),
       kb_collection: kbVal || (id ? 'agent_' + id + '_kb' : ''),
       retrieval_mode: document.getElementById('agent-retrieval-mode').value,
       max_iterations: parseInt(document.getElementById('agent-iterations').value) || 5,
@@ -783,13 +820,21 @@
         html += '<div style="margin-top:0.5rem"><span style="font-weight:600;color:var(--text-3);font-size:0.78rem">Tools: </span>' +
           toolNames.map(t => '<span class="badge">🔧 ' + escapeHtml(t) + '</span>').join(' ') + '</div>';
       }
+      const mcpNames = (a.mcp_server_ids || []).map(sid => {
+        const srv = allMcpServers.find(s => s.id === sid);
+        return srv ? srv.name : sid;
+      });
+      if (mcpNames.length) {
+        html += '<div style="margin-top:0.5rem"><span style="font-weight:600;color:var(--text-3);font-size:0.78rem">MCP Servers: </span>' +
+          mcpNames.map(n => '<span class="badge" style="background:rgba(168,85,247,0.15);color:#a855f7">🔌 ' + escapeHtml(n) + '</span>').join(' ') + '</div>';
+      }
       showDetailModal('🤖 ' + escapeHtml(a.name), html);
     } catch(e) {
       showToast('Failed to load agent details', 'error');
     }
   }
 
-  Promise.all([loadSkillsList(), loadToolsList(), loadModelsList(), loadCollections()]).then(() => { loadAgents(); restoreAgentDraft(); });
+  Promise.all([loadSkillsList(), loadToolsList(), loadMcpServersList(), loadModelsList(), loadCollections()]).then(() => { loadAgents(); restoreAgentDraft(); });
 <\/script>
 
 ` }) %>

@@ -9,7 +9,7 @@ import json
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi import FastAPI, Request, UploadFile, File, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
@@ -2216,6 +2216,7 @@ class AgentCreate(BaseModel):
     tool_ids: list[str] = Field(default_factory=list)
     sub_agent_ids: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
+    mcp_server_ids: list[str] = Field(default_factory=list)
     kb_collection: str = Field(default="agentic_docs")
     retrieval_mode: str = Field(default="basic")
     max_iterations: int = Field(default=5, ge=1, le=20)
@@ -2234,6 +2235,7 @@ class AgentUpdate(BaseModel):
     tool_ids: list[str] | None = None
     sub_agent_ids: list[str] | None = None
     constraints: list[str] | None = None
+    mcp_server_ids: list[str] | None = None
     kb_collection: str | None = None
     retrieval_mode: str | None = None
     max_iterations: int | None = None
@@ -2259,6 +2261,7 @@ async def agents_create_endpoint(body: AgentCreate):
         tool_ids=body.tool_ids,
         sub_agent_ids=body.sub_agent_ids,
         constraints=body.constraints,
+        mcp_server_ids=body.mcp_server_ids,
         kb_collection=body.kb_collection,
         retrieval_mode=body.retrieval_mode,
         max_iterations=body.max_iterations,
@@ -2540,6 +2543,18 @@ async def mcp_update_server(server_id: str, body: MCPServerUpdate):
 
 @app.delete("/mcp/servers/{server_id}")
 async def mcp_delete_server(server_id: str):
+    server = get_mcp_server(server_id)
+    if not server:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "MCP server not found"})
+    if server.get("managed") and server.get("container_id"):
+        try:
+            from agent.docker_manager import remove_container
+
+            remove_container(server["container_id"])
+        except Exception as e:
+            logger.warning("Failed to remove managed container: %s", e)
     ok = delete_mcp_server(server_id)
     if not ok:
         from fastapi.responses import JSONResponse
@@ -2815,6 +2830,271 @@ async def mcp_invoke_tool(server_id: str, tool_name: str, arguments: dict = {}):
             return {"status": "success", "result": resp.json()}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+
+# ── Managed MCP Server endpoints ──────────────────────────────────────────
+
+
+class ManagedMCPToolParam(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    type: str = Field(default="string", pattern="^(string|integer|number|boolean)$")
+    required: bool = Field(default=False)
+    description: str = Field(default="", max_length=500)
+
+
+class ManagedMCPToolDef(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(default="", max_length=1000)
+    endpoint_url: str = Field(..., min_length=1, max_length=2000)
+    http_method: str = Field(default="POST", pattern="^(GET|POST|PUT|DELETE|PATCH)$")
+    headers: dict[str, str] = Field(default_factory=dict)
+    parameters: list[ManagedMCPToolParam] = Field(default_factory=list)
+
+
+class ManagedMCPCreateConfig(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(default="", max_length=1000)
+    tools: list[ManagedMCPToolDef]
+
+
+class ManagedMCPCreateCode(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(default="", max_length=1000)
+    code: str = Field(..., min_length=1, max_length=100000)
+
+
+async def _provision_managed_server(server_id: str, config: dict):
+    """Background task: provision container, wait for health, auto-discover."""
+    from agent.docker_manager import create_managed_container, wait_for_health
+
+    server = get_mcp_server(server_id)
+    if not server:
+        return
+    try:
+        result = create_managed_container(
+            server_id=server_id,
+            server_name=server["name"],
+            config=config,
+        )
+        update_mcp_server(
+            server_id,
+            container_id=result["container_id"],
+            container_name=result["container_name"],
+            url=result["url"],
+            container_status="starting",
+        )
+        healthy = await wait_for_health(result["url"], timeout=45)
+        if healthy:
+            update_mcp_server(server_id, container_status="running", status="connected")
+            # Auto-discover tools
+            try:
+                import httpx as _httpx
+
+                async with _httpx.AsyncClient(timeout=10.0) as client:
+                    tools_url = result["url"].rstrip("/") + "/tools/list"
+                    resp = await client.post(
+                        tools_url,
+                        json={"jsonrpc": "2.0", "method": "tools/list", "id": 1},
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        tools = data.get("result", {}).get("tools", [])
+                        from datetime import datetime, timezone
+
+                        now = datetime.now(timezone.utc).isoformat()
+                        update_mcp_server(
+                            server_id, tools=tools, last_seen=now
+                        )
+            except Exception as e:
+                logger.warning("Auto-discover failed for %s: %s", server_id, e)
+        else:
+            update_mcp_server(
+                server_id,
+                container_status="error",
+                error_message="Health check timeout after 45s",
+            )
+    except Exception as e:
+        logger.error("Provisioning failed for %s: %s", server_id, e)
+        update_mcp_server(
+            server_id,
+            container_status="error",
+            error_message=str(e),
+        )
+
+
+@app.post("/mcp/servers/managed/config")
+async def mcp_create_managed_config(
+    body: ManagedMCPCreateConfig, background_tasks: BackgroundTasks
+):
+    config = {
+        "mode": "config",
+        "server_name": body.name,
+        "tools": [t.model_dump() for t in body.tools],
+    }
+    server = create_mcp_server(
+        name=body.name,
+        url="pending://provisioning",
+        transport="http",
+        description=body.description,
+    )
+    server_id = server["id"]
+    update_mcp_server(
+        server_id,
+        managed=True,
+        server_type="config",
+        config=config,
+        container_status="creating",
+    )
+    background_tasks.add_task(_provision_managed_server, server_id, config)
+    return {"server": get_mcp_server(server_id), "provisioning": True}
+
+
+@app.post("/mcp/servers/managed/code")
+async def mcp_create_managed_code(
+    body: ManagedMCPCreateCode, background_tasks: BackgroundTasks
+):
+    config = {
+        "mode": "code",
+        "server_name": body.name,
+        "code": body.code,
+    }
+    server = create_mcp_server(
+        name=body.name,
+        url="pending://provisioning",
+        transport="http",
+        description=body.description,
+    )
+    server_id = server["id"]
+    update_mcp_server(
+        server_id,
+        managed=True,
+        server_type="code",
+        config=config,
+        container_status="creating",
+    )
+    background_tasks.add_task(_provision_managed_server, server_id, config)
+    return {"server": get_mcp_server(server_id), "provisioning": True}
+
+
+@app.post("/mcp/servers/{server_id}/provision")
+async def mcp_provision_server(
+    server_id: str, background_tasks: BackgroundTasks
+):
+    server = get_mcp_server(server_id)
+    if not server:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "MCP server not found"})
+    if not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=400, content={"error": "Not a managed server"}
+        )
+    config = server.get("config", {})
+    if server.get("container_id"):
+        from agent.docker_manager import remove_container
+
+        try:
+            remove_container(server["container_id"])
+        except Exception:
+            pass
+    update_mcp_server(server_id, container_status="creating", error_message="")
+    background_tasks.add_task(_provision_managed_server, server_id, config)
+    return {"status": "provisioning"}
+
+
+@app.post("/mcp/servers/{server_id}/container/stop")
+async def mcp_stop_container(server_id: str):
+    server = get_mcp_server(server_id)
+    if not server or not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+    from agent.docker_manager import stop_container
+
+    ok = stop_container(server["container_id"])
+    if ok:
+        update_mcp_server(server_id, container_status="stopped")
+    return {"stopped": ok}
+
+
+@app.post("/mcp/servers/{server_id}/container/start")
+async def mcp_start_container(server_id: str):
+    server = get_mcp_server(server_id)
+    if not server or not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+    from agent.docker_manager import start_container
+
+    ok = start_container(server["container_id"])
+    if ok:
+        update_mcp_server(server_id, container_status="running")
+    return {"started": ok}
+
+
+@app.post("/mcp/servers/{server_id}/container/restart")
+async def mcp_restart_container(server_id: str):
+    server = get_mcp_server(server_id)
+    if not server or not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+    from agent.docker_manager import restart_container
+
+    ok = restart_container(server["container_id"])
+    if ok:
+        update_mcp_server(server_id, container_status="running")
+    return {"restarted": ok}
+
+
+@app.delete("/mcp/servers/{server_id}/container")
+async def mcp_destroy_container(server_id: str):
+    server = get_mcp_server(server_id)
+    if not server or not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+    from agent.docker_manager import remove_container
+
+    ok = remove_container(server["container_id"])
+    update_mcp_server(
+        server_id,
+        container_id="",
+        container_name="",
+        container_status="",
+        url="pending://provisioning",
+        status="disconnected",
+        tools=[],
+    )
+    return {"destroyed": ok}
+
+
+@app.get("/mcp/servers/{server_id}/container/logs")
+async def mcp_container_logs(server_id: str, tail: int = 100):
+    server = get_mcp_server(server_id)
+    if not server or not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+    from agent.docker_manager import get_container_logs
+
+    logs = get_container_logs(server["container_id"], tail=tail)
+    return {"logs": logs}
+
+
+@app.get("/mcp/servers/{server_id}/container/status")
+async def mcp_container_status(server_id: str):
+    server = get_mcp_server(server_id)
+    if not server or not server.get("managed"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+    from agent.docker_manager import get_container_status
+
+    status = get_container_status(server["container_id"])
+    return {"status": status}
 
 
 # ── Guardrails ──────────────────────────────────────────────────────────────

@@ -170,6 +170,8 @@ services:
     volumes:
       - ./services/agent:/app
       - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./services/managed-mcp-base:/managed-mcp-base
     depends_on:
       ollama:
         condition: service_healthy

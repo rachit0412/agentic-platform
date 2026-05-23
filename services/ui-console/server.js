@@ -800,6 +800,62 @@ app.post("/api/mcp/servers/:id/invoke", async (req, res) => {
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// Managed MCP servers — create, provision, lifecycle
+app.post("/api/mcp/servers/managed/config", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/managed/config`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(15000) });
+    res.status(resp.status).json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/mcp/servers/managed/code", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/managed/code`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(15000) });
+    res.status(resp.status).json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/mcp/servers/:id/provision", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/provision`, { method: "POST", signal: AbortSignal.timeout(30000) });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/mcp/servers/:id/container/stop", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/container/stop`, { method: "POST" });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/mcp/servers/:id/container/start", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/container/start`, { method: "POST" });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/mcp/servers/:id/container/restart", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/container/restart`, { method: "POST" });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/mcp/servers/:id/container", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/container`, { method: "DELETE" });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/mcp/servers/:id/container/logs", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/container/logs`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.json({ logs: "", error: e.message }); }
+});
+app.get("/api/mcp/servers/:id/container/status", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/mcp/servers/${req.params.id}/container/status`, { signal: AbortSignal.timeout(5000) });
+    res.json(await resp.json());
+  } catch (e) { res.json({ status: "unknown", error: e.message }); }
+});
+
 // ── API: n8n helpers ──────────────────────────────────
 let n8nSessionCookie = "";
 
