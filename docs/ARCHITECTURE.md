@@ -5,7 +5,6 @@
 ## System Overview
 
 The Agentic Platform is a containerised agent factory built with:
-
 - **Frontend**: Express.js + EJS (ui-console)
 - **Agent Runtime**: FastAPI + LangGraph (agent-service)
 - **Tool Runtime**: FastAPI (tools-service)
@@ -17,55 +16,26 @@ The Agentic Platform is a containerised agent factory built with:
 
 ## Services (6 source directories)
 
-| Directory                   | Description                                                                                                             |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `services/agent`            | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry, managed MCP provisioning                   |
-| `services/managed-mcp-base` | Generic MCP server runtime — config mode (HTTP proxy) and code mode (Python functions), deployed as isolated containers |
-| `services/n8n-proxy`        | Nginx reverse proxy for n8n iframe embedding                                                                            |
-| `services/otel`             | OpenTelemetry Collector configuration                                                                                   |
-| `services/tools`            | FastAPI tools-service — math, HTTP, file, datetime tools                                                                |
-| `services/ui-console`       | Express.js platform dashboard — 25 pages, API proxies                                                                   |
+| Directory | Description |
+| --------- | ----------- |
+| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry |
+| `services/managed-mcp-base` | Service |
+| `services/n8n-proxy` | Service |
+| `services/otel` | OpenTelemetry Collector configuration |
+| `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
+| `services/ui-console` | Express.js platform dashboard — 25 pages, API proxies |
 
 ## Docker Compose Services (14 services)
 
-`agent-service` `chromadb` `datastore-db` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `otel-collector` `prometheus` `tools-service` `ui-console`
+`agent-service` `chromadb` `datastore-db` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `otel-collector` `prometheus` `tools-service` `ui-console` 
 
 ## UI Pages (25 pages)
 
-- a2a
-- admin
-- agent-builder
-- agent-hub
-- agents
-- ai-studio
-- data-ingestion
-- docs
-- documents
-- evaluation
-- guardrails
-- intelligence-hub
-- layout
-- llm-activity
-- marketplace
-- mcp
-- observability
-- overview
-- prompts
-- rest
-- run-agent
-- skills
-- tools
-- traceability
-- workflows
+
 
 ## Test Suites
 
-- `tests/contract/`
-- `tests/e2e/`
-- `tests/integration/`
-- `tests/load/`
-- `tests/smoke/`
-- `tests/unit/`
+
 
 ## Telemetry Pipeline
 
@@ -79,7 +49,4 @@ Grafana ← Prometheus + Loki
 ## Protocols
 
 - **A2A (Agent-to-Agent)**: Peer agents registered by URL; agents delegate sub-tasks via HTTP
-- **MCP (Model Context Protocol)**: External and managed tool servers provide dynamic tool discovery. Agents with bound MCP servers see MCP tools natively in their ReAct loop. Managed MCP servers are provisioned as isolated Docker containers via the Docker SDK, with two creation modes:
-  - **Config mode**: No-code HTTP endpoint proxies defined via forms
-  - **Code mode**: Custom Python functions written in a code editor
-  - Containers run on `platform-net`, auto-discovered via `/tools/list`, and managed (start/stop/restart/logs/destroy) from the UI
+- **MCP (Model Context Protocol)**: External tool servers provide dynamic tool discovery
