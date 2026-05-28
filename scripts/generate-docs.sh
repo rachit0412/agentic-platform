@@ -19,7 +19,6 @@ pages=()
 if [ -d "$ROOT/services/ui-console/views" ]; then
   for f in "$ROOT"/services/ui-console/views/*.ejs; do
     name="$(basename "$f" .ejs)"
-    [ "$name" = "layout" ] && continue
     pages+=("$name")
   done
 fi
@@ -27,7 +26,16 @@ fi
 # ── Discover docker-compose services ─────────────────────
 compose_services=()
 if [ -f "$ROOT/docker-compose.yml" ]; then
-  compose_services=($(grep -E '^\s{2}[a-z]' "$ROOT/docker-compose.yml" | sed 's/://g' | awk '{print $1}' | sort))
+  # Parse YAML via Python to avoid capturing volumes/networks as services.
+  compose_services=($(python - <<'PY'
+import yaml
+from pathlib import Path
+
+doc = yaml.safe_load(Path("docker-compose.yml").read_text(encoding="utf-8")) or {}
+for name in sorted((doc.get("services") or {}).keys()):
+    print(name)
+PY
+))
 fi
 
 # ── Discover tests ────────────────────────────────────────
@@ -78,7 +86,7 @@ done
 
 cat >> "$ROOT/docs/ARCHITECTURE.md" << EOF
 
-## Docker Compose Services (${#compose_services[@]} containers)
+## Docker Compose Services (${#compose_services[@]} services)
 
 $(printf '`%s` ' "${compose_services[@]}")
 

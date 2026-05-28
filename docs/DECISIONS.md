@@ -7,7 +7,7 @@
 ## ADR Index
 
 | ID  | Decision                                 | Principles        | Date    |
-| --- | ---------------------------------------- | ----------------- | ------- | --- | --- | ---------------------- | ---------------- | ------- |
+| --- | ---------------------------------------- | ----------------- | ------- |
 | 001 | LangGraph over AgentExecutor             | AP-7, AP-5        | 2024-10 |
 | 002 | SQLite for Config and Memory             | AP-3, AP-10       | 2024-10 |
 | 003 | Separate Tools Service                   | AP-4, AP-7        | 2024-10 |
@@ -26,7 +26,8 @@
 | 016 | LLM-Based Guardrail Detection            | AP-4, AP-10       | 2025-06 |
 | 017 | LLM Activity Tracking                    | AP-5, AP-1        | 2025-06 |
 | 018 | Dynamic Model Capabilities               | AP-10, AP-9       | 2025-06 |
-| 019 | Clickable Execution Details              | AP-5, AP-1        | 2025-06 |     | 020 | Skill File Attachments | AP-8, AP-4, AP-9 | 2025-05 |
+| 019 | Clickable Execution Details              | AP-5, AP-1        | 2025-06 |
+| 020 | Skill File Attachments                   | AP-8, AP-4, AP-9  | 2025-05 |
 | 021 | Comprehensive Admin Plane                | AP-5, AP-10, AP-1 | 2025-05 |
 | 022 | Admin-Only Editing for Platform Settings | AP-4, AP-10, AP-1 | 2025-05 |
 

@@ -25,7 +25,7 @@
 
 ### AP-1 · API-First Design · 🟡
 
-Every capability exposed as REST before any UI is built. 108 endpoints on agent-service. UI console is a thin proxy with zero business logic.
+Every capability exposed as REST before any UI is built. 116 endpoints on agent-service. UI console is a thin proxy with zero business logic.
 
 **Gap**: No `/v1/` versioning prefix yet.
 

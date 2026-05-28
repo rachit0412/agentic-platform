@@ -343,7 +343,7 @@
         <tr><td>Knowledge</td><td>ChromaDB</td><td>Vector store for RAG</td></tr>
         <tr><td>Observability</td><td>Prometheus, Grafana, Loki, OTel, Langfuse</td><td>Metrics, logs, traces</td></tr>
         <tr><td>Workflows</td><td>n8n</td><td>Visual workflow automation</td></tr>
-        <tr><td>Orchestration</td><td>Docker Compose</td><td>13-service deployment</td></tr>
+        <tr><td>Orchestration</td><td>Docker Compose</td><td>14-service deployment</td></tr>
       </table>
     </div>
 
@@ -429,7 +429,7 @@ node server.js</code></pre>
     <div id="doc-architecture" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
       <h1>System Architecture</h1>
-      <p>The Agentic Platform is a containerised microservices system that runs 13 services on a single Docker bridge network (<code>platform-net</code>). Services are grouped into five architectural layers, each with a distinct responsibility. Every service is independently deployable and communicates over HTTP/gRPC within the internal network.</p>
+      <p>The Agentic Platform is a containerised microservices system that runs 14 services on a single Docker bridge network (<code>platform-net</code>). Services are grouped into five architectural layers, each with a distinct responsibility. Every service is independently deployable and communicates over HTTP/gRPC within the internal network.</p>
 
       <div class="docs-callout info">
         <strong>Design Philosophy:</strong> Local-first, container-native, defence-in-depth. The entire platform boots with a single <code>docker-compose up -d</code> — no cloud accounts, no API keys, no build step. Cloud providers (Azure OpenAI, OpenAI, Azure AI Foundry) are optional drop-in replacements for the local Ollama default.
@@ -741,10 +741,10 @@ node server.js</code></pre>
       <h2>Layer Responsibilities</h2>
       <table class="docs-table">
         <tr><th style="width:180px">Layer</th><th>Services</th><th>Responsibility</th></tr>
-        <tr><td><strong>🖥️ Presentation</strong></td><td>UI Console, n8n Proxy</td><td>User-facing interfaces. UI Console serves 23 EJS pages and proxies API calls to backend services. n8n Proxy strips security headers for iframe embedding.</td></tr>
+        <tr><td><strong>🖥️ Presentation</strong></td><td>UI Console, n8n Proxy</td><td>User-facing interfaces. UI Console serves 25 EJS templates and proxies API calls to backend services. n8n Proxy strips security headers for iframe embedding.</td></tr>
         <tr><td><strong>⚙️ Application</strong></td><td>Agent Service, Tools Service, n8n</td><td>Core business logic. Agent Service runs the LangGraph ReAct loop, manages agents/skills/prompts/guardrails, and orchestrates LLM calls and tool execution. Tools Service provides a sandboxed runtime for untrusted operations. n8n handles visual workflow automation.</td></tr>
         <tr><td><strong>🧠 Intelligence</strong></td><td>Ollama, ChromaDB</td><td>AI inference and knowledge retrieval. Ollama serves local LLM models (llama3, mistral, phi3). ChromaDB stores document embeddings for RAG retrieval with cosine similarity search.</td></tr>
-        <tr><td><strong>💾 Data</strong></td><td>SQLite, PostgreSQL</td><td>Persistent state. SQLite stores all platform configuration (agents, skills, prompts, guardrails, tools, A2A peers, MCP servers) plus conversation history and session summaries. PostgreSQL backs the Langfuse observability database.</td></tr>
+        <tr><td><strong>💾 Data</strong></td><td>SQLite, PostgreSQL</td><td>Persistent state. SQLite stores all platform configuration (agents, skills, prompts, guardrails, tools, A2A peers, MCP servers) plus conversation history and session summaries. PostgreSQL backs both the datastore document registry and the Langfuse observability database.</td></tr>
         <tr><td><strong>📊 Observability</strong></td><td>OTel Collector, Prometheus, Grafana, Loki, Langfuse</td><td>Three-pipeline monitoring. Metrics (Prometheus), logs (Loki), and LLM traces (Langfuse) converge in Grafana dashboards. OTel Collector routes OTLP telemetry to the appropriate backends.</td></tr>
       </table>
 
@@ -802,12 +802,12 @@ sequenceDiagram
 │   │   │   ├── tools.py          # Tool definitions & proxy
 │   │   │   ├── vectorstore.py    # ChromaDB RAG integration
 │   │   │   └── observability.py  # OTel + Langfuse telemetry
-│   │   └── main.py         # FastAPI app, 40+ REST endpoints
+│   │   └── main.py         # FastAPI app, 116 REST endpoints
 │   ├── tools/               # Sandboxed tool execution service
 │   │   └── main.py          # math, HTTP, file, code, search
 │   ├── ui-console/          # Express.js platform dashboard
-│   │   ├── server.js        # 23 routes + API proxies
-│   │   ├── views/           # 23 EJS page templates
+│   │   ├── server.js        # Express routes + API proxies
+│   │   ├── views/           # 25 EJS templates
 │   │   └── public/          # CSS design system
 │   ├── otel/                # OpenTelemetry Collector config
 │   └── n8n-proxy/           # Nginx reverse proxy for n8n
@@ -819,10 +819,10 @@ sequenceDiagram
 ├── tests/                   # Unit, integration, e2e, load, smoke
 ├── docs/                    # Architecture documentation
 │   ├── PRINCIPLES.md        # 18 architecture principles
-│   ├── BUILDING-BLOCKS.md   # 12 ABB/SBB pairs
-│   ├── DECISIONS.md         # 10 ADRs
+│   ├── BUILDING-BLOCKS.md   # 16 ABB/SBB entries
+│   ├── DECISIONS.md         # 22 ADRs
 │   └── ARCHITECTURE.md      # Auto-generated overview
-└── docker-compose.yml       # 13-service orchestration</code></pre>
+└── docker-compose.yml       # 14-service orchestration</code></pre>
       </details>
     </div>
 
@@ -830,7 +830,7 @@ sequenceDiagram
     <div id="doc-network" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Architecture</div>
       <h1>Network Architecture</h1>
-      <p>All 13 services communicate over a single Docker bridge network (<code>platform-net</code>). Services reference each other by container name (DNS). The host machine accesses services through mapped ports. No service is exposed to the public internet by default.</p>
+      <p>All 14 services communicate over a single Docker bridge network (<code>platform-net</code>). Services reference each other by container name (DNS). The host machine accesses services through mapped ports. No service is exposed to the public internet by default.</p>
 
       <h2>Network Topology</h2>
       <div class="docs-diagram docs-diagram-full">
@@ -1589,6 +1589,7 @@ flowchart TB
       <table class="docs-table">
         <tr><th>Workflow</th><th>Trigger</th><th>Description</th></tr>
         <tr><td>Agent Workflow</td><td>Webhook</td><td>Run agent with custom parameters</td></tr>
+        <tr><td>Multi-Agent Orchestration</td><td>Webhook</td><td>Coordinate multi-agent DAG execution for composite tasks</td></tr>
         <tr><td>RAG Ingest</td><td>Manual/Webhook</td><td>Ingest documents into ChromaDB</td></tr>
         <tr><td>Scheduled Summary</td><td>Cron</td><td>Generate daily usage summaries</td></tr>
         <tr><td>Web Research</td><td>Webhook</td><td>Multi-step web research agent</td></tr>
@@ -1604,7 +1605,7 @@ flowchart TB
 
       <h2>Docker Compose (Default)</h2>
       <pre><code>docker-compose up -d</code></pre>
-      <p>This starts all 13 services. Data persists via Docker volumes.</p>
+      <p>This starts all 14 services. Data persists via Docker volumes.</p>
 
       <h2>Environment Variables</h2>
       <table class="docs-table">
@@ -1678,7 +1679,7 @@ data: {"tools_used": ["web_search"], "guardrails": {...}, "usage": {...}}</code>
       <p>All configurable aspects of the platform.</p>
 
       <h2>Docker Compose Services</h2>
-      <p>The <code>docker-compose.yml</code> defines 13 services. Key overrides:</p>
+      <p>The <code>docker-compose.yml</code> defines 14 services. Key overrides:</p>
       <pre><code># Scale a specific service
 docker-compose up -d --scale agent=3
 
@@ -1800,7 +1801,7 @@ docker-compose --profile gpu up -d</code></pre>
       <h3>3. Knowledge Management (RAG)</h3>
       <table class="docs-table">
         <tr><th style="width:140px">Attribute</th><th>ABB (Abstract)</th><th>SBB (Solution)</th></tr>
-        <tr><td>Capability</td><td>Ingest, chunk, embed, search docs</td><td>ChromaDB + SQLite document registry</td></tr>
+        <tr><td>Capability</td><td>Ingest, chunk, embed, search docs</td><td>ChromaDB + PostgreSQL document registry</td></tr>
         <tr><td>Chunking</td><td>Text splitting pipeline</td><td>RecursiveCharacterTextSplitter (1000/200)</td></tr>
         <tr><td>Retrieval</td><td>Semantic similarity search</td><td>Cosine distance, k=5 default, threshold 0.8</td></tr>
       </table>
@@ -1857,7 +1858,7 @@ docker-compose --profile gpu up -d</code></pre>
       <table class="docs-table">
         <tr><th style="width:140px">Block</th><th>Capability</th><th>Implementation</th></tr>
         <tr><td>Workflows</td><td>Visual workflow orchestration</td><td>n8n (port 5678) with 5 pre-built templates</td></tr>
-        <tr><td>Dashboard</td><td>Unified management UI</td><td>Express.js + EJS, 23 views, light/dark theme</td></tr>
+        <tr><td>Dashboard</td><td>Unified management UI</td><td>Express.js + EJS, 25 templates, light/dark theme</td></tr>
       </table>
 
       <h2>Traceability Matrix</h2>
@@ -1960,7 +1961,7 @@ docker-compose --profile gpu up -d</code></pre>
       <h2>ADR-007 · EJS + CSS Custom Properties</h2>
       <table class="docs-table">
         <tr><th style="width:120px">Field</th><th>Detail</th></tr>
-        <tr><td>Context</td><td>UI needs 23 pages with light/dark theme, fast SSR, and zero build step.</td></tr>
+        <tr><td>Context</td><td>UI needs 25 EJS templates (24 pages + layout) with light/dark theme, fast SSR, and zero build step.</td></tr>
         <tr><td>Decision</td><td>Express.js + EJS with CSS custom properties. Theme toggle via <code>.dark</code> class on <code>&lt;html&gt;</code>.</td></tr>
         <tr><td>Alternatives</td><td>(1) React/Next.js — adds build pipeline. (2) HTMX — less ecosystem. (3) Svelte — requires compilation.</td></tr>
         <tr><td>Consequences</td><td>Zero build step. &lt;50ms SSR. Theme tokens enforced via Copilot skill. Trade-off: no component model.</td></tr>

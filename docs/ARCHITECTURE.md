@@ -5,6 +5,7 @@
 ## System Overview
 
 The Agentic Platform is a containerised agent factory built with:
+
 - **Frontend**: Express.js + EJS (ui-console)
 - **Agent Runtime**: FastAPI + LangGraph (agent-service)
 - **Tool Runtime**: FastAPI (tools-service)
@@ -16,26 +17,55 @@ The Agentic Platform is a containerised agent factory built with:
 
 ## Services (6 source directories)
 
-| Directory | Description |
-| --------- | ----------- |
-| `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry, managed MCP provisioning |
+| Directory                   | Description                                                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `services/agent`            | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry, managed MCP provisioning                   |
 | `services/managed-mcp-base` | Generic MCP server runtime — config mode (HTTP proxy) and code mode (Python functions), deployed as isolated containers |
-| `services/n8n-proxy` | Nginx reverse proxy for n8n iframe embedding |
-| `services/otel` | OpenTelemetry Collector configuration |
-| `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
-| `services/ui-console` | Express.js platform dashboard — 25 pages, API proxies |
+| `services/n8n-proxy`        | Nginx reverse proxy for n8n iframe embedding                                                                            |
+| `services/otel`             | OpenTelemetry Collector configuration                                                                                   |
+| `services/tools`            | FastAPI tools-service — math, HTTP, file, datetime tools                                                                |
+| `services/ui-console`       | Express.js platform dashboard — 25 pages, API proxies                                                                   |
 
-## Docker Compose Services (23 containers)
+## Docker Compose Services (14 services)
 
-`agent-service` `chroma-data` `chromadb` `datastore-db` `datastore-db-data` `grafana` `grafana-data` `langfuse` `langfuse-db` `langfuse-db-data` `loki` `loki-data` `n8n` `n8n-data` `n8n-proxy` `ollama` `ollama-data` `otel-collector` `platform-net` `prometheus` `prometheus-data` `tools-service` `ui-console` 
+`agent-service` `chromadb` `datastore-db` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `otel-collector` `prometheus` `tools-service` `ui-console`
 
-## UI Pages (24 pages)
+## UI Pages (25 pages)
 
-
+- a2a
+- admin
+- agent-builder
+- agent-hub
+- agents
+- ai-studio
+- data-ingestion
+- docs
+- documents
+- evaluation
+- guardrails
+- intelligence-hub
+- layout
+- llm-activity
+- marketplace
+- mcp
+- observability
+- overview
+- prompts
+- rest
+- run-agent
+- skills
+- tools
+- traceability
+- workflows
 
 ## Test Suites
 
-
+- `tests/contract/`
+- `tests/e2e/`
+- `tests/integration/`
+- `tests/load/`
+- `tests/smoke/`
+- `tests/unit/`
 
 ## Telemetry Pipeline
 
