@@ -14,20 +14,21 @@ The Agentic Platform is a containerised agent factory built with:
 - **Workflows**: n8n (automation, webhooks)
 - **Observability**: Prometheus + Grafana + Loki + OpenTelemetry + Langfuse
 
-## Services (6 source directories)
+## Services (7 source directories)
 
 | Directory | Description |
 | --------- | ----------- |
 | `services/agent` | FastAPI agent-service — LangGraph ReAct agent, agent/skill/A2A/MCP registry |
 | `services/managed-mcp-base` | Service |
 | `services/n8n-proxy` | Service |
+| `services/open-tools-mcp` | Service |
 | `services/otel` | OpenTelemetry Collector configuration |
 | `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
 | `services/ui-console` | Express.js platform dashboard — 25 pages, API proxies |
 
-## Docker Compose Services (14 services)
+## Docker Compose Services (16 services)
 
-`agent-service` `chromadb` `datastore-db` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `otel-collector` `prometheus` `tools-service` `ui-console` 
+`agent-service` `brave-search-mcp` `chromadb` `datastore-db` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `open-tools-mcp` `otel-collector` `prometheus` `tools-service` `ui-console` 
 
 ## UI Pages (25 pages)
 
