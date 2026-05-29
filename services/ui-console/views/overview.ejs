@@ -270,7 +270,7 @@
       </a>
     </div>
   </div>
-  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">14 containerized services across 5 layers on <code style="font-size:0.75rem">platform-net</code> — hover any node for details, watch the data flow animate.</p>
+  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">16 containerized services across 5 layers on <code style="font-size:0.75rem">platform-net</code> — hover any node for details, watch the data flow animate.</p>
 
   <style>
     .topo-canvas { position:relative; min-height:540px; overflow:hidden; border-radius:14px; background:linear-gradient(180deg, rgba(139,92,246,0.02), rgba(6,182,212,0.02), rgba(16,185,129,0.02)); border:1px solid var(--glass-border); padding:1rem 1.5rem; }
@@ -375,6 +375,18 @@
       <span class="tn-tech">Vector Store (RAG)</span>
       <span class="tn-port">:8200</span>
     </div>
+    <div class="topo-node" style="right:80px;top:200px;min-width:120px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="openmcp">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#10b981">Open Tools MCP</span>
+      <span class="tn-tech">Wiki / Weather / Dict</span>
+      <span class="tn-port">:8080</span>
+    </div>
+    <div class="topo-node" style="right:80px;top:240px;min-width:120px;background:rgba(245,158,11,0.06);border:1.5px dashed rgba(245,158,11,0.3)" data-tip="bravemcp">
+      <span class="tn-pulse live"></span>
+      <span class="tn-name" style="color:#f59e0b">Brave Search MCP</span>
+      <span class="tn-tech">Web Search (key req)</span>
+      <span class="tn-port">:8080</span>
+    </div>
 
     <!-- ═══ LAYER 4: DATA ═══ -->
     <div class="topo-node" style="left:80px;top:298px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="sqlite">
@@ -445,7 +457,7 @@
       <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span> Live</div>
       <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;background:#06b6d4;display:inline-block;border-radius:1px"></span> Data flow</div>
       <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;display:inline-block;border-radius:1px;background-image:repeating-linear-gradient(90deg,#f59e0b 0 3px,transparent 3px 6px)"></span> Async</div>
-      <span>14 containers &middot; 5 layers</span>
+      <span>16 containers &middot; 5 layers</span>
     </div>
   </div>
 
@@ -465,6 +477,8 @@
     otel:      { t:'OTel Collector', d:'OpenTelemetry Collector — receives OTLP traces from agent-service, routes metrics to Prometheus and logs to Loki.', m:'Port 4317/4318' },
     langfuse:  { t:'Langfuse', d:'LLM observability — trace viewer, cost tracking, latency analysis. Captures every LLM call with full context.', m:'Port 3014' },
     langfusedb:{ t:'Langfuse DB', d:'PostgreSQL backend for Langfuse. Stores LLM traces, sessions, and evaluation data.', m:'Internal' },
+    openmcp:   { t:'Open Tools MCP', d:'Pre-configured MCP server — Wikipedia search, weather lookup, dictionary. Zero API keys needed.', m:'Internal :8080' },
+    bravemcp:  { t:'Brave Search MCP', d:'Web search via Brave Search API. Requires BRAVE_API_KEY in .env to activate.', m:'Internal :8080' },
     prometheus:{ t:'Prometheus', d:'Time-series metrics store. Scrapes agent-service and OTel Collector for request counts, latencies, errors.', m:'Port 9090' },
     grafana:   { t:'Grafana', d:'Dashboards and visualization. Pre-configured with platform health dashboard, Prometheus and Loki datasources.', m:'Port 3003' },
     loki:      { t:'Loki', d:'Log aggregation system. Receives structured logs from OTel Collector. Queryable from Grafana.', m:'Port 3100' }
@@ -504,6 +518,8 @@
       { from:'ui', to:'n8nproxy', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
       { from:'n8nproxy', to:'n8n', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
       { from:'n8n', to:'agent', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
+      { from:'agent', to:'openmcp', color:'#10b981', marker:'ta-green', cls:'topo-flow' },
+      { from:'agent', to:'bravemcp', color:'#f59e0b', marker:'ta-amber', cls:'topo-flow-slow' },
       { from:'otel', to:'prometheus', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow' },
       { from:'otel', to:'loki', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow' },
       { from:'prometheus', to:'grafana', color:'#6366f1', marker:'ta-indigo', cls:'topo-flow-slow' },

@@ -12,9 +12,9 @@ Platform.db tables: conversations, session_summaries, agents, skills, prompts,
 Datastore (Postgres) tables: documents.
 """
 
-import os
 import json
 import logging
+import os
 import sqlite3
 import threading
 import uuid
@@ -1045,7 +1045,13 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(int(kwargs[key]))
-    for key in ("skill_ids", "tool_ids", "sub_agent_ids", "constraints", "mcp_server_ids"):
+    for key in (
+        "skill_ids",
+        "tool_ids",
+        "sub_agent_ids",
+        "constraints",
+        "mcp_server_ids",
+    ):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))
@@ -1185,7 +1191,141 @@ def _row_to_mcp_server(row) -> dict:
     return d
 
 
+def _ensure_default_mcp_servers():
+    """Seed pre-configured MCP servers on first run."""
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+
+    # ── Open Tools MCP (zero-config, no API key) ───────────────────────
+    row = conn.execute(
+        "SELECT COUNT(*) as cnt FROM mcp_servers WHERE id = ?", ("mcp-open-tools",)
+    ).fetchone()
+    if row["cnt"] == 0:
+        open_tools = [
+            {
+                "name": "wikipedia_search",
+                "description": "Search Wikipedia and get a concise summary of any topic. No API key required.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Topic to search for on Wikipedia",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+            {
+                "name": "get_weather",
+                "description": "Get current weather conditions for any city worldwide. No API key required.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "City name (e.g. London, New York, Tokyo)",
+                        },
+                    },
+                    "required": ["location"],
+                },
+            },
+            {
+                "name": "dictionary_lookup",
+                "description": "Look up the definition and usage of an English word. No API key required.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "word": {
+                            "type": "string",
+                            "description": "English word to look up",
+                        },
+                    },
+                    "required": ["word"],
+                },
+            },
+        ]
+        conn.execute(
+            "INSERT INTO mcp_servers (id, name, url, transport, description, tools, enabled, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                "mcp-open-tools",
+                "Open Tools (Wikipedia, Weather, Dictionary)",
+                "http://open-tools-mcp:8080",
+                "http",
+                "Zero-config MCP server with Wikipedia search, weather, and dictionary lookup. No API key needed.",
+                json.dumps(open_tools),
+                1,
+                "configured",
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        logger.info("Seeded pre-configured MCP server: Open Tools")
+
+    # ── Brave Search MCP (requires BRAVE_API_KEY) ──────────────────────
+    row = conn.execute(
+        "SELECT COUNT(*) as cnt FROM mcp_servers WHERE id = ?", ("mcp-brave-search",)
+    ).fetchone()
+    if row["cnt"] == 0:
+        brave_tools = [
+            {
+                "name": "brave_web_search",
+                "description": "Search the web using Brave Search API. Returns relevant results with titles, URLs, and descriptions.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "q": {"type": "string", "description": "Search query"},
+                        "count": {
+                            "type": "integer",
+                            "description": "Number of results (default 5, max 20)",
+                        },
+                    },
+                    "required": ["q"],
+                },
+            },
+            {
+                "name": "brave_local_search",
+                "description": "Search for local businesses and places using Brave Search API.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "q": {
+                            "type": "string",
+                            "description": "Local search query (e.g. 'pizza near me')",
+                        },
+                        "count": {
+                            "type": "integer",
+                            "description": "Number of results",
+                        },
+                    },
+                    "required": ["q"],
+                },
+            },
+        ]
+        conn.execute(
+            "INSERT INTO mcp_servers (id, name, url, transport, description, tools, enabled, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                "mcp-brave-search",
+                "Brave Search",
+                "http://brave-search-mcp:8080",
+                "http",
+                "Web search via Brave Search API — requires BRAVE_API_KEY in .env",
+                json.dumps(brave_tools),
+                0,
+                "configured",
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        logger.info(
+            "Seeded pre-configured MCP server: Brave Search (disabled — needs API key)"
+        )
+
+
 def list_mcp_servers() -> list[dict]:
+    _ensure_default_mcp_servers()
     conn = _get_conn()
     rows = conn.execute("SELECT * FROM mcp_servers ORDER BY name").fetchall()
     return [_row_to_mcp_server(r) for r in rows]
@@ -1234,8 +1374,16 @@ def update_mcp_server(server_id: str, **kwargs) -> dict | None:
     fields = []
     values = []
     for key in (
-        "name", "url", "transport", "description", "status", "last_seen",
-        "server_type", "container_id", "container_name", "container_status",
+        "name",
+        "url",
+        "transport",
+        "description",
+        "status",
+        "last_seen",
+        "server_type",
+        "container_id",
+        "container_name",
+        "container_status",
         "error_message",
     ):
         if key in kwargs:

@@ -191,6 +191,40 @@ services:
       start_period: 10s
 
   # ── Tools Service — FastAPI ──────────────────────────────────────────────
+
+  # ── Brave Search MCP Server ──────────────────────────────────────────────
+  brave-search-mcp:
+    build:
+      context: ./services/managed-mcp-base
+      dockerfile: Dockerfile
+    container_name: brave-search-mcp
+    environment:
+      - MCP_CONFIG={"mode":"config","tools":[{"name":"brave_web_search","description":"Search the web using Brave Search API. Returns relevant results with titles, URLs, and descriptions.","endpoint_url":"https://api.search.brave.com/res/v1/web/search","http_method":"GET","headers":{"Accept":"application/json","Accept-Encoding":"gzip","X-Subscription-Token":"${BRAVE_API_KEY:-}"},"parameters":[{"name":"q","type":"string","description":"Search query","required":true},{"name":"count","type":"integer","description":"Number of results (default 5, max 20)","required":false}]},{"name":"brave_local_search","description":"Search for local businesses and places using Brave Search API.","endpoint_url":"https://api.search.brave.com/res/v1/web/search","http_method":"GET","headers":{"Accept":"application/json","Accept-Encoding":"gzip","X-Subscription-Token":"${BRAVE_API_KEY:-}"},"parameters":[{"name":"q","type":"string","description":"Local search query (e.g. 'pizza near me')","required":true},{"name":"count","type":"integer","description":"Number of results","required":false}]}]}
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ── Open Tools MCP Server (no API key needed) ─────────────────────────────
+  open-tools-mcp:
+    build:
+      context: ./services/open-tools-mcp
+      dockerfile: Dockerfile
+    container_name: open-tools-mcp
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ── Tools Service — FastAPI ──────────────────────────────────────────────
   tools-service:
     build:
       context: ./services/tools
