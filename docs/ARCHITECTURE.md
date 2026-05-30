@@ -10,9 +10,7 @@ The Agentic Platform is a containerised agent factory built with:
 - **Tool Runtime**: FastAPI (tools-service)
 - **LLM Providers**: Ollama (local), Azure OpenAI, OpenAI, Azure AI Foundry
 - **Knowledge Base**: ChromaDB (vector store, RAG)
-- **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers, users, workspaces, RBAC)
-- **Authentication**: Session-based (express-session), PBKDF2-HMAC-SHA256 password hashing
-- **Authorization**: Role-based access control (admin/member/viewer), workspace-scoped resources
+- **Memory**: SQLite (conversations, agents, skills, A2A peers, MCP servers)
 - **Workflows**: n8n (automation, webhooks)
 - **Observability**: Prometheus + Grafana + Loki + OpenTelemetry + Langfuse
 
@@ -26,13 +24,13 @@ The Agentic Platform is a containerised agent factory built with:
 | `services/open-tools-mcp` | Service |
 | `services/otel` | OpenTelemetry Collector configuration |
 | `services/tools` | FastAPI tools-service — math, HTTP, file, datetime tools |
-| `services/ui-console` | Express.js platform dashboard — 25 pages, API proxies |
+| `services/ui-console` | Express.js platform dashboard — 26 pages, API proxies |
 
 ## Docker Compose Services (16 services)
 
 `agent-service` `brave-search-mcp` `chromadb` `datastore-db` `grafana` `langfuse` `langfuse-db` `loki` `n8n` `n8n-proxy` `ollama` `open-tools-mcp` `otel-collector` `prometheus` `tools-service` `ui-console` 
 
-## UI Pages (25 pages)
+## UI Pages (26 pages)
 
 
 
