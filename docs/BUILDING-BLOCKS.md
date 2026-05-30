@@ -24,6 +24,8 @@
 | 14  | Data Connectors            | DB, REST API, Cloud Storage, Google Drive, SharePoint                                                                                                                                                             | `connectors/`                                 |
 | 15  | LlamaIndex Integration     | Multi-format parsing, 5 retrieval modes, structured queries                                                                                                                                                       | `llamaindex_loader.py`, `structured_query.py` |
 | 16  | Admin Plane                | 6-tab control centre: service health, LLM management, DB ops, config (security considerations, best practices), audit. Hash-based tab navigation. Platform-wide settings editable here only (read-only elsewhere) | `admin.ejs`, `server.js`                      |
+| 17  | Authentication & IAM       | PBKDF2-SHA256 password hashing, session auth, RBAC (admin/member/viewer), email verification, password reset, workspace scoping                                                                                   | `memory.py`, `main.py`, `server.js`           |
+| 18  | Login UI                   | React 18 + Vite SPA — login, register, email verify, forgot/reset password                                                                                                                                        | `ui-login/`, `public/login-app/`              |
 
 ## Detail: Agent Reasoning Engine
 
@@ -114,4 +116,5 @@ When an agent has 2+ skills attached, the Agent Builder displays a visual workfl
 | Observability   | otel, langfuse, prometheus, loki, grafana | `observability.py`                        |
 | Workflows       | n8n                                       | `n8n/workflows/`                          |
 | Dashboard       | ui-console                                | `server.js`, `views/`                     |
+| Auth & IAM      | agent-service + ui-console + ui-login     | `memory.py`, `main.py`, `server.js`       |
 | Connectors      | agent-service                             | `connectors/`                             |

@@ -5,10 +5,24 @@ Tests the full REST API surface via TestClient (no network required).
 Run with: pytest tests/e2e/test_api_endpoints.py -v
 """
 
+import json
 import os
 import sys
-import json
+
 import pytest
+
+# Check if psycopg2 is available for document registry tests
+try:
+    import psycopg2  # noqa: F401
+
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
+
+needs_postgres = pytest.mark.skipif(
+    not HAS_PSYCOPG2,
+    reason="psycopg2 not installed — document registry needs PostgreSQL",
+)
 
 # Ensure project root is importable
 sys.path.insert(
@@ -29,8 +43,8 @@ def setup_env(tmp_path, monkeypatch):
     monkeypatch.setenv("CHROMADB_HOST", "localhost")
     monkeypatch.setenv("CHROMADB_PORT", "8100")
 
-    import agent.memory as mem
     import agent.filestore as fs
+    import agent.memory as mem
 
     mem._reset_conn()
     monkeypatch.setattr(mem, "MEMORY_DIR", db_dir)
@@ -536,6 +550,7 @@ class TestConnectorsAPI:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+@needs_postgres
 class TestDocumentsAPI:
     def test_list_documents(self, client):
         r = client.get("/documents/registry")

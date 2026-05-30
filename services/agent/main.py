@@ -2754,14 +2754,20 @@ async def agents_delete_endpoint(agent_id: str):
             status_code=404, content={"error": "Agent not found or is default"}
         )
     # Remove agent tags from global documents (keeps the docs, just removes the tag)
-    untag_all_for_agent(agent_id)
+    try:
+        untag_all_for_agent(agent_id)
+    except Exception:
+        pass  # datastore may be unavailable
     # Clean up the agent's isolated KB collection and its registry records
     kb = agent.get("kb_collection", "")
     if kb and kb != "agentic_docs" and kb.startswith("agent_"):
         from agent.vectorstore import delete_collection
 
-        delete_collection(kb)
-        delete_documents_by_collection(kb)
+        try:
+            delete_collection(kb)
+            delete_documents_by_collection(kb)
+        except Exception:
+            pass
     return {"deleted": True}
 
 

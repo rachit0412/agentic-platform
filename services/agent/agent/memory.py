@@ -122,6 +122,10 @@ def init_db():
             tool_ids    TEXT DEFAULT '[]',
             constraints TEXT DEFAULT '[]',
             input_parameters TEXT DEFAULT '[]',
+            files       TEXT DEFAULT '[]',
+            scope       TEXT DEFAULT 'global',
+            workspace_id TEXT DEFAULT 'default',
+            created_by  TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
@@ -139,11 +143,16 @@ def init_db():
             skill_ids       TEXT DEFAULT '[]',
             tool_ids        TEXT DEFAULT '[]',
             sub_agent_ids   TEXT DEFAULT '[]',
+            constraints     TEXT DEFAULT '[]',
+            mcp_server_ids  TEXT DEFAULT '[]',
             kb_collection   TEXT DEFAULT 'agentic_docs',
             retrieval_mode  TEXT DEFAULT 'basic',
             max_iterations  INTEGER DEFAULT 5,
             memory_enabled  INTEGER DEFAULT 1,
             is_default      INTEGER DEFAULT 0,
+            scope           TEXT DEFAULT 'global',
+            workspace_id    TEXT DEFAULT 'default',
+            created_by      TEXT DEFAULT 'system',
             created_at      TEXT NOT NULL,
             updated_at      TEXT NOT NULL
         )
@@ -215,6 +224,9 @@ def init_db():
             capabilities TEXT DEFAULT '[]',
             agent_card  TEXT DEFAULT '{}',
             last_seen   TEXT DEFAULT '',
+            scope       TEXT DEFAULT 'global',
+            workspace_id TEXT DEFAULT 'default',
+            created_by  TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
@@ -231,6 +243,16 @@ def init_db():
             tools       TEXT DEFAULT '[]',
             enabled     INTEGER DEFAULT 1,
             last_seen   TEXT DEFAULT '',
+            managed     TEXT DEFAULT '0',
+            server_type TEXT DEFAULT 'external',
+            config      TEXT DEFAULT '{}',
+            container_id TEXT DEFAULT '',
+            container_name TEXT DEFAULT '',
+            container_status TEXT DEFAULT '',
+            error_message TEXT DEFAULT '',
+            scope       TEXT DEFAULT 'global',
+            workspace_id TEXT DEFAULT 'default',
+            created_by  TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
@@ -261,6 +283,13 @@ def init_db():
             content     TEXT NOT NULL DEFAULT '',
             description TEXT DEFAULT '',
             tags        TEXT DEFAULT '[]',
+            model       TEXT DEFAULT '',
+            validation_score TEXT DEFAULT NULL,
+            validation_details TEXT DEFAULT '{}',
+            validated_at TEXT DEFAULT '',
+            scope       TEXT DEFAULT 'global',
+            workspace_id TEXT DEFAULT 'default',
+            created_by  TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )
@@ -2235,6 +2264,9 @@ def _init_custom_tools_table():
             body_template TEXT DEFAULT '{}',
             parameters  TEXT DEFAULT '[]',
             enabled     INTEGER DEFAULT 1,
+            scope       TEXT DEFAULT 'global',
+            workspace_id TEXT DEFAULT 'default',
+            created_by  TEXT DEFAULT 'system',
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL
         )

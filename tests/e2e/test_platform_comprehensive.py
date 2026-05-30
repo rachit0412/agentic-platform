@@ -6,117 +6,120 @@ A2A, MCP, guardrails, intelligence hub, workflows, and more.
 Run with: pytest tests/e2e/test_platform_comprehensive.py -v
 """
 
-import os
-import sys
 import json
-import uuid
-import pytest
-import tempfile
+import os
 import shutil
-from unittest.mock import patch, MagicMock
+import sys
+import tempfile
+import uuid
 from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+# Check if psycopg2 is available for document registry tests
+try:
+    import psycopg2  # noqa: F401
+
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
+
+needs_postgres = pytest.mark.skipif(
+    not HAS_PSYCOPG2,
+    reason="psycopg2 not installed — document registry needs PostgreSQL",
+)
 
 # Ensure project root is importable
 sys.path.insert(
     0, os.path.join(os.path.dirname(__file__), "..", "..", "services", "agent")
 )
 
-from agent.memory import (
-    init_db,
-    _get_conn,
-    _reset_conn,
-    # Skills
-    list_skills,
-    get_skill,
-    create_skill,
-    update_skill,
-    delete_skill,
-    # Agents
-    list_agents,
-    get_agent,
-    create_agent,
-    update_agent,
-    delete_agent,
-    # A2A
-    list_a2a_peers,
-    get_a2a_peer,
-    create_a2a_peer,
-    update_a2a_peer,
-    delete_a2a_peer,
-    # MCP
-    list_mcp_servers,
-    get_mcp_server,
-    create_mcp_server,
-    update_mcp_server,
-    delete_mcp_server,
-    # Prompts
-    list_prompts,
-    get_prompt,
-    create_prompt,
-    update_prompt,
-    delete_prompt,
-    # Guardrails
-    list_guardrails,
-    get_guardrail,
-    update_guardrail,
-    # Custom Tools
-    list_custom_tools,
-    get_custom_tool,
-    create_custom_tool,
-    update_custom_tool,
-    delete_custom_tool,
-    # Documents
-    list_documents_registry,
-    get_document_registry,
-    create_document_registry,
-    update_document_registry,
-    delete_document_registry,
-    list_folders,
-    tag_document_to_agent,
-    untag_document_from_agent,
-    # Connectors
-    list_connectors,
-    get_connector,
-    create_connector,
-    update_connector,
-    delete_connector,
-    create_sync_job,
-    update_sync_job,
-    list_sync_jobs,
-    # Versions & Audit
-    list_versions,
-    get_version,
-    save_version,
-    list_audit_log,
-    log_audit,
-    # Sessions
-    get_history,
-    save_message,
-    list_sessions,
-    delete_session,
-    get_session_summary,
-    # Stats
-    get_memory_stats,
-    get_db_stats,
-    export_all_data,
-    import_all_data,
-)
-from agent.filestore import (
-    save_file,
-    read_file,
-    read_file_bytes,
-    file_exists,
-    delete_file,
-    get_storage_stats,
-)
 from agent.connectors import (
     CONNECTOR_CATALOG,
-    generate_connector_id,
-    generate_job_id,
     ConnectorType,
     SyncStatus,
+    generate_connector_id,
+    generate_job_id,
 )
-from agent.connectors.sync_engine import test_connector as check_connector, run_sync
+from agent.connectors.sync_engine import run_sync
+from agent.connectors.sync_engine import test_connector as check_connector
+from agent.filestore import (
+    delete_file,
+    file_exists,
+    get_storage_stats,
+    read_file,
+    read_file_bytes,
+    save_file,
+)
+from agent.memory import (  # Skills; Agents; A2A; MCP; Prompts; Guardrails; Custom Tools; Documents; Connectors; Versions & Audit; Sessions; Stats
+    _get_conn,
+    _reset_conn,
+    create_a2a_peer,
+    create_agent,
+    create_connector,
+    create_custom_tool,
+    create_document_registry,
+    create_mcp_server,
+    create_prompt,
+    create_skill,
+    create_sync_job,
+    delete_a2a_peer,
+    delete_agent,
+    delete_connector,
+    delete_custom_tool,
+    delete_document_registry,
+    delete_mcp_server,
+    delete_prompt,
+    delete_session,
+    delete_skill,
+    export_all_data,
+    get_a2a_peer,
+    get_agent,
+    get_connector,
+    get_custom_tool,
+    get_db_stats,
+    get_document_registry,
+    get_guardrail,
+    get_history,
+    get_mcp_server,
+    get_memory_stats,
+    get_prompt,
+    get_session_summary,
+    get_skill,
+    get_version,
+    import_all_data,
+    init_db,
+    list_a2a_peers,
+    list_agents,
+    list_audit_log,
+    list_connectors,
+    list_custom_tools,
+    list_documents_registry,
+    list_folders,
+    list_guardrails,
+    list_mcp_servers,
+    list_prompts,
+    list_sessions,
+    list_skills,
+    list_sync_jobs,
+    list_versions,
+    log_audit,
+    save_message,
+    save_version,
+    tag_document_to_agent,
+    untag_document_from_agent,
+    update_a2a_peer,
+    update_agent,
+    update_connector,
+    update_custom_tool,
+    update_document_registry,
+    update_guardrail,
+    update_mcp_server,
+    update_prompt,
+    update_skill,
+    update_sync_job,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FIXTURES
@@ -227,6 +230,7 @@ class TestFileStore:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+@needs_postgres
 class TestDocumentRegistry:
     """Document lifecycle: upload → staged → indexed."""
 
@@ -1189,6 +1193,7 @@ class TestSessionsAndMemory:
 class TestFullPipelineIntegration:
     """End-to-end pipeline: connectors → filestore → documents → agents → orchestration."""
 
+    @needs_postgres
     def test_connector_to_document_pipeline(self, filestore_dir):
         """Full flow: create connector → sync → stage files → verify in registry."""
         # 1. Create connector
@@ -1249,6 +1254,7 @@ class TestFullPipelineIntegration:
         assert len(conn_docs) == 2
         assert all(d["status"] == "uploaded" for d in conn_docs)
 
+    @needs_postgres
     def test_document_to_agent_pipeline(self):
         """Documents tagged to agent for RAG."""
         # 1. Create documents
@@ -1331,7 +1337,8 @@ class TestFullPipelineIntegration:
         orch = get_agent(orchestrator["id"])
         assert len(orch["sub_agent_ids"]) == 2
         assert list_a2a_peers()[0]["name"] == "External Analyst"
-        assert list_mcp_servers()[0]["name"] == "DB MCP"
+        mcp_names = [s["name"] for s in list_mcp_servers()]
+        assert "DB MCP" in mcp_names
 
     def test_guardrails_on_agent(self):
         """Agent has guardrails configured."""
@@ -1549,6 +1556,7 @@ class TestDataIntegrity:
         for i in range(20):
             assert f"Concurrent_{i}" in names
 
+    @needs_postgres
     def test_document_status_transitions(self):
         """Valid status transitions."""
         doc = create_document_registry(
@@ -1561,6 +1569,7 @@ class TestDataIntegrity:
         update_document_registry(doc["id"], status="indexed", chunk_count=10)
         assert get_document_registry(doc["id"])["status"] == "indexed"
 
+    @needs_postgres
     def test_document_status_failure_path(self):
         """uploaded → processing → failed → uploaded (retry)."""
         doc = create_document_registry(

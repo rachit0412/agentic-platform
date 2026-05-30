@@ -30,6 +30,9 @@
 | 020 | Skill File Attachments                   | AP-8, AP-4, AP-9  | 2025-05 |
 | 021 | Comprehensive Admin Plane                | AP-5, AP-10, AP-1 | 2025-05 |
 | 022 | Admin-Only Editing for Platform Settings | AP-4, AP-10, AP-1 | 2025-05 |
+| 023 | Session Auth with PBKDF2 + RBAC          | AP-11, AP-4       | 2025-05 |
+| 024 | React Login SPA                          | AP-11, AP-7       | 2025-05 |
+| 025 | Workspace-Scoped Multi-Tenancy           | AP-11, AP-7, AP-4 | 2025-05 |
 
 ---
 
@@ -301,3 +304,57 @@ Added 9 new server-side API endpoints (`/api/admin/*`) to aggregate data from ag
 - Separate settings service — overkill for single-node deployment
 
 **Consequence**: Single source of truth for governance content. All users see the same security/best-practices text. Changes are auditable. Skills page consumers cannot accidentally modify platform policy.
+
+---
+
+## ADR-023 · Session Auth with PBKDF2 + RBAC
+
+**Context**: All API endpoints were public (AP-11 gap). Need authentication without external IdP dependency for local-first platform.
+
+**Decision**: PBKDF2-SHA256 with 600 000 iterations and `os.urandom(32)` salt. Express-session with `agentic.sid` cookie (HttpOnly, SameSite=Strict). Three roles: `admin`, `member`, `viewer`. In-memory rate limiter (5 attempts per 5-minute window per IP).
+
+**Key changes**:
+
+- `memory.py`: `create_user()`, `authenticate_user()`, `reset_user_password()`, `verify_user_email()`, `_hash_password()`, `_verify_password()`
+- `main.py`: `/auth/login`, `/auth/register`, `/auth/verify-email`, `/auth/resend-code`, `/auth/forgot-password`, `/auth/reset-password`, `/users` CRUD (7 endpoints)
+- `server.js`: `requireAuth` and `requireAdmin` middleware, session-backed route protection
+- Pydantic models enforce input validation (min_length, max_length, pattern) at API boundary
+
+**Why not alternatives**:
+
+- JWT — stateless but harder to revoke; session store is simpler for server-rendered UI
+- bcrypt — requires C extension (`bcrypt`); PBKDF2 is stdlib (`hashlib`)
+- OAuth2/OIDC — requires external IdP; violates local-first principle (AP-2)
+- Argon2 — best-in-class but requires `argon2-cffi` C dep
+
+**Consequence**: Zero external dependencies for auth. All users stored in SQLite `users` table. Admin user seeded on first `init_db()`. Password stored as `algorithm$iterations$salt$hash`. Rate limiting prevents brute force. Admin cannot be deleted (403).
+
+---
+
+## ADR-024 · React Login SPA
+
+**Context**: Login, registration, email verification, and password reset need interactive forms with real-time validation. EJS server-rendered pages are too static for this UX.
+
+**Decision**: React 18 + Vite SPA in `services/ui-login/`. Builds to `services/ui-console/public/login-app/`. Served at `/login` path. Multi-step flows: login → register → verify email → forgot password → reset password.
+
+**Why not alternatives**:
+
+- EJS form — no client-side validation, page reloads on every step
+- Full SPA — overkill; only auth flows need interactivity
+
+**Consequence**: Fast iteration on auth UX. Build step required (`npm run build`). Output committed to `public/login-app/` for zero-build deployment. Rest of UI stays EJS.
+
+---
+
+## ADR-025 · Workspace-Scoped Multi-Tenancy
+
+**Context**: All entities (agents, skills, prompts, tools) were globally visible. Multi-team usage requires isolation.
+
+**Decision**: `ContextVar`-based scoping in `workspace.py`. Each request sets `workspace_id` and `user_id`. All entities have `workspace_id`, `created_by`, and `scope` columns. Default workspace pre-created and non-deletable.
+
+**Why not alternatives**:
+
+- Schema-per-tenant — too heavyweight for SQLite
+- Row-level security — SQLite has no RLS; manual WHERE clause filtering
+
+**Consequence**: Queries filter by workspace. Scope column allows `global` entities visible to all workspaces. ContextVar is thread-safe for async FastAPI.
