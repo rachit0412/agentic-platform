@@ -431,6 +431,7 @@
         + '<div id="pw-error" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger);font-size:0.75rem;"></div>'
         + '<div id="pw-success" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success);font-size:0.75rem;"></div>'
         + '<form onsubmit="handleChangePassword(event)" style="display:grid;gap:14px;">'
+        + '<div><label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3);margin-bottom:6px;">Current Password</label><input type="password" id="pw-current" required placeholder="Enter current password" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--modal-border);background:var(--modal-field-bg);color:var(--text-1);font-size:0.82rem;box-sizing:border-box;" /></div>'
         + '<div><label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3);margin-bottom:6px;">New Password</label><input type="password" id="pw-new" required minlength="8" placeholder="Min. 8 characters" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--modal-border);background:var(--modal-field-bg);color:var(--text-1);font-size:0.82rem;box-sizing:border-box;" /></div>'
         + '<div><label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3);margin-bottom:6px;">Confirm Password</label><input type="password" id="pw-confirm" required minlength="8" placeholder="Re-enter password" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--modal-border);background:var(--modal-field-bg);color:var(--text-1);font-size:0.82rem;box-sizing:border-box;" /></div>'
         + '<button type="submit" class="btn btn-primary" style="padding:11px;border-radius:10px;font-size:0.78rem;font-weight:600;cursor:pointer;margin-top:4px;">Update Password</button>'
@@ -445,14 +446,17 @@
       succEl.style.display = 'none';
       var np = document.getElementById('pw-new').value;
       var cp = document.getElementById('pw-confirm').value;
+      var cur = document.getElementById('pw-current').value;
+      if (!cur) { errEl.textContent = 'Current password is required.'; errEl.style.display = 'block'; return; }
       if (np.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
       if (np !== cp) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
       try {
-        var r = await fetch('/api/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ new_password: np }) });
+        var r = await fetch('/api/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: cur, new_password: np }) });
         var d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Failed');
         succEl.textContent = 'Password updated successfully!';
         succEl.style.display = 'block';
+        document.getElementById('pw-current').value = '';
         document.getElementById('pw-new').value = '';
         document.getElementById('pw-confirm').value = '';
         setTimeout(function() { var m = document.getElementById('password-modal'); if (m) m.remove(); }, 1500);

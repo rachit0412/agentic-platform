@@ -253,15 +253,15 @@ curl http://localhost:3000/api/health-check
 
 ### Access Services
 
-| Service        | URL                        | Credentials                |
-| -------------- | -------------------------- | -------------------------- |
-| UI Console     | http://localhost:3000      | —                          |
-| Agent API Docs | http://localhost:8010/docs | —                          |
-| Tools API Docs | http://localhost:8011/docs | —                          |
-| n8n            | http://localhost:5678      | admin / changeme           |
-| Langfuse       | http://localhost:3012      | admin@local.dev / changeme |
-| Grafana        | http://localhost:3013      | admin / admin              |
-| Prometheus     | http://localhost:9090      | —                          |
+| Service        | URL                        | Credentials                     |
+| -------------- | -------------------------- | ------------------------------- |
+| UI Console     | http://localhost:3000      | admin / Admin@Platform2026!     |
+| Agent API Docs | http://localhost:8010/docs | —                               |
+| Tools API Docs | http://localhost:8011/docs | —                               |
+| n8n            | http://localhost:5678      | admin / changeme                |
+| Langfuse       | http://localhost:3012      | admin@local.dev / changeme      |
+| Grafana        | http://localhost:3013      | admin / admin                   |
+| Prometheus     | http://localhost:9090      | —                               |
 
 ### Test Agent
 

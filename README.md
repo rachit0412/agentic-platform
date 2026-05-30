@@ -49,7 +49,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **Responsible AI**             | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                                                             |
 | **25-page Dashboard**          | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                                                            |
 | **One-command setup**          | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                                                                                    |
-| **Enterprise IAM**             | Session-based authentication, role-based access control (admin/member/viewer), per-user workspace isolation, user management from the admin UI                                                                         |
+| **Enterprise IAM**             | Session-based authentication with email verification, role-based access control (admin/member/viewer), per-user workspace isolation, change password with current-password verification, editable user profile, admin user management panel |
 
 <details>
 <summary><b>📋 Full feature list</b></summary>
@@ -67,8 +67,8 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion, multi-agent pipelines
 - **Full Observability** — Prometheus + Grafana dashboards + Loki logs + OpenTelemetry pipeline
 - **Security Hardening** — XSS protection, input validation, SSRF protection, path traversal prevention
-- **Enterprise Authentication** — Login page, session-based auth (express-session), PBKDF2 password hashing, role-based access control (admin/member/viewer), user management UI in admin panel
-- **Workspace & RBAC** — Multi-tenant workspace isolation, scope-aware resources (global vs workspace), role-gated admin access, per-user default workspace
+- **Enterprise Authentication** — Login page with gate animation, session-based auth (express-session), PBKDF2 password hashing, email verification with 6-digit codes, role-based access control (admin/member/viewer), user management UI in admin panel, editable profile with display name, change password with current-password verification
+- **Workspace & RBAC** — Multi-tenant workspace isolation, scope-aware resources (global vs workspace), role-gated admin access, per-user default workspace, admin-created users are pre-verified
 - **Data Connectors** — Hybrid ingestion framework: built-in connectors (Database, REST API, Cloud Storage, Google Drive, SharePoint) with full ETL pipeline visualization
 - **Marketplace** — Browse and install agent/skill/workflow templates
 - **GPU Support** — Uncomment one block in docker-compose.yml for NVIDIA GPU acceleration
@@ -136,6 +136,20 @@ Open **http://localhost:3000** — you're running a full agent factory.
 
 > 📖 **Detailed installation** (Windows/Mac/Linux, GPU setup, troubleshooting): **[INSTALL.md](INSTALL.md)**
 
+### Authentication
+
+The platform ships with enterprise-grade authentication out of the box:
+
+| Feature | Details |
+|---|---|
+| **Login** | Session-based auth with PBKDF2 password hashing, dramatic gate animation on sign-in |
+| **Registration** | Self-service with 6-digit email verification code |
+| **User Roles** | `admin`, `member`, `viewer` — admin-only pages are role-gated |
+| **Profile** | Editable display name from the user dropdown menu |
+| **Change Password** | Requires current password verification before allowing change |
+| **Admin Panel** | Full user management — create, edit, delete, verify, enable/disable users |
+| **Default Credentials** | `admin` / `Admin@Platform2026!` |
+
 ### Your first agent in 60 seconds
 
 1. **Skills** → Create a skill (name it, write a prompt, pick tools, optionally upload scripts/references/assets)
@@ -199,7 +213,7 @@ curl -X POST http://localhost:8010/run \
 | Data Ingestion   | ETL pipeline — Extract (5 connectors), Transform (chunking, embedding), Load (ChromaDB)                                                                                                                              |
 | LLM Activity     | Token usage tracking, cost analysis, per-model breakdown                                                                                                                                                             |
 | Marketplace      | Browse and install templates                                                                                                                                                                                         |
-| Admin            | 7-tab admin plane — service health, **user & access management**, platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Role-gated: only admin users can access |
+| Admin            | 7-tab admin plane — service health, **user & access management** (create/edit/delete/verify/enable/disable users, role assignment, status badges), platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Role-gated: only admin users can access |
 | Documentation    | Auto-generated API & architecture docs                                                                                                                                                                               |
 
 ---

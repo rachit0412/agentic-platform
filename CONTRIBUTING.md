@@ -107,6 +107,8 @@ def create_agent(model: str, temperature: float = 0.7) -> Agent:
 - Consistent indentation (2 spaces)
 - Clear variable names
 - XSS protection: always use `escapeHtml()` for user-generated content in EJS templates
+- EJS template literal escaping: use `&#39;` (not `\'`) in onclick handlers inside `body: \`...\`` template literals — backslashes are consumed as escape characters
+- Authentication: all API routes require session auth; admin routes require `requireAdmin` middleware
 
 ### Docker
 

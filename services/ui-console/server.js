@@ -125,11 +125,25 @@ app.use(requireAuth);
 // ── Change password (for logged-in user) ───────────────
 app.post("/api/change-password", async (req, res) => {
   const userId = req.session.user.id;
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: "Current and new password are required" });
+  }
   try {
+    // Verify current password first
+    const authR = await fetch(`${AGENT_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: req.session.user.username, password: current_password }),
+    });
+    if (!authR.ok) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+    // Now update to new password
     const r = await fetch(`${AGENT_URL}/users/${userId}`, {
       method: "PUT",
       headers: { ...wsHeaders(req), "Content-Type": "application/json" },
-      body: JSON.stringify({ password: req.body.new_password }),
+      body: JSON.stringify({ password: new_password }),
     });
     const data = await r.json();
     return res.status(r.status).json(data);
