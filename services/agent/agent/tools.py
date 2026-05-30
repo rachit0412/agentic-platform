@@ -586,15 +586,26 @@ def _make_mcp_tool(server_config: dict, tool_def: dict):
 
 
 def get_mcp_tools(mcp_server_ids: list[str] | None = None) -> list:
-    """Build StructuredTool wrappers for all tools from the given MCP servers."""
-    if not mcp_server_ids:
-        return []
-    from agent.memory import get_mcp_server
+    """Build StructuredTool wrappers for MCP server tools.
+
+    If *mcp_server_ids* is provided, only those servers are loaded.
+    If empty/None, **all enabled** MCP servers are auto-discovered —
+    the agent decides which tools to call at runtime (agentic behaviour).
+    """
+    from agent.memory import get_mcp_server, list_mcp_servers
+
+    if mcp_server_ids:
+        servers = []
+        for sid in mcp_server_ids:
+            s = get_mcp_server(sid)
+            if s:
+                servers.append(s)
+    else:
+        servers = list_mcp_servers()
 
     tools = []
-    for sid in mcp_server_ids:
-        server = get_mcp_server(sid)
-        if not server or not server.get("enabled", True):
+    for server in servers:
+        if not server.get("enabled", True):
             continue
         for tool_def in server.get("tools", []):
             t = _make_mcp_tool(server, tool_def)

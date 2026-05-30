@@ -715,14 +715,11 @@ def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str,
                     "Use delegate_to_agent when a sub-agent is better suited for a specific part of the task."
                 )
 
-    # Resolve MCP tools for this agent
+    # Resolve MCP tools — auto-discover all enabled servers unless agent restricts to specific ones
     mcp_tools = []
-    if agent_config:
-        mcp_server_ids = agent_config.get("mcp_server_ids", [])
-        if mcp_server_ids:
-            from agent.tools import get_mcp_tools
-
-            mcp_tools = get_mcp_tools(mcp_server_ids)
+    mcp_server_ids = agent_config.get("mcp_server_ids", []) if agent_config else []
+    from agent.tools import get_mcp_tools
+    mcp_tools = get_mcp_tools(mcp_server_ids if mcp_server_ids else None)
 
     tools_text = catalogue_as_text_filtered(tool_ids, extra_tools=mcp_tools)
 
