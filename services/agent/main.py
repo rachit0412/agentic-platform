@@ -208,12 +208,40 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=128)
 
 
+# ── Login Rate Limiting (in-memory, per-IP) ─────────────────────────────────
+import time as _time
+_login_attempts: dict[str, list[float]] = {}
+_LOGIN_WINDOW = 300        # 5-minute window
+_LOGIN_MAX_ATTEMPTS = 5    # max 5 attempts per window
+
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """Return True if the client has exceeded login attempt limits."""
+    now = _time.time()
+    attempts = _login_attempts.get(client_ip, [])
+    # Prune old entries
+    attempts = [t for t in attempts if now - t < _LOGIN_WINDOW]
+    _login_attempts[client_ip] = attempts
+    return len(attempts) >= _LOGIN_MAX_ATTEMPTS
+
+
+def _record_attempt(client_ip: str):
+    _login_attempts.setdefault(client_ip, []).append(_time.time())
+
+
 @app.post("/auth/login")
-async def auth_login(body: LoginRequest):
+async def auth_login(body: LoginRequest, request: Request):
+    from fastapi.responses import JSONResponse
+    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown").split(",")[0].strip()
+    if _check_rate_limit(client_ip):
+        return JSONResponse(status_code=429, content={"error": "Too many login attempts. Try again in 5 minutes."})
     user = authenticate_user(body.username, body.password)
     if not user:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=401, content={"error": "Invalid credentials"})
+        _record_attempt(client_ip)
+        remaining = _LOGIN_MAX_ATTEMPTS - len(_login_attempts.get(client_ip, []))
+        return JSONResponse(status_code=401, content={"error": "Invalid credentials", "remaining_attempts": max(remaining, 0)})
+    # Clear attempts on successful login
+    _login_attempts.pop(client_ip, None)
     return user
 
 

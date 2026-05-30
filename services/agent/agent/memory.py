@@ -12,7 +12,7 @@ Platform.db tables: conversations, session_summaries, agents, skills, prompts,
 Datastore (Postgres) tables: documents.
 """
 
-import hashlib
+import bcrypt
 import json
 import logging
 import os
@@ -397,12 +397,12 @@ def init_db():
             updated_at      TEXT NOT NULL
         )
     """)
-    # Seed default users if table is empty
+    # Seed default users if table is empty — passwords read from env vars
     if not conn.execute("SELECT id FROM users LIMIT 1").fetchone():
         now = datetime.now(timezone.utc).isoformat()
         _seed_users = [
-            ("admin", "admin", "admin", "Platform Administrator", "admin@agentic.local"),
-            ("rachit", "rachit123", "member", "Rachit Gupta", "rachit@agentic.local"),
+            ("admin", os.environ.get("ADMIN_SEED_PASSWORD", "admin"), "admin", "Platform Administrator", "admin@agentic.local"),
+            ("rachit", os.environ.get("RACHIT_SEED_PASSWORD", "rachit123"), "member", "Rachit Gupta", "rachit@agentic.local"),
         ]
         for uname, pwd, role, display, email in _seed_users:
             uid = uname  # use username as id for seed users
@@ -424,25 +424,17 @@ def init_db():
     conn.commit()
 
 
-# ── Password Hashing (PBKDF2-SHA256, no extra deps) ──────────────────────
+# ── Password Hashing (bcrypt — enterprise standard) ──────────────────────
 
 def _hash_password(password: str) -> str:
-    """Hash password using PBKDF2-HMAC-SHA256 with random salt."""
-    salt = secrets.token_hex(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
-    return f"pbkdf2:sha256:260000${salt}${dk.hex()}"
+    """Hash password using bcrypt with auto-generated salt (cost factor 12)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
 
 
 def _verify_password(password: str, password_hash: str) -> bool:
-    """Verify password against stored PBKDF2 hash."""
+    """Verify password against stored bcrypt hash (constant-time comparison)."""
     try:
-        parts = password_hash.split("$")
-        if len(parts) != 3:
-            return False
-        salt = parts[1]
-        stored_dk = parts[2]
-        dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
-        return secrets.compare_digest(dk.hex(), stored_dk)
+        return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
     except Exception:
         return False
 

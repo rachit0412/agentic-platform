@@ -28,8 +28,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ── Session Management ─────────────────────────────────
+const crypto = require("crypto");
+const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(64).toString("hex");
+if (!process.env.SESSION_SECRET) {
+  console.warn("[SECURITY] SESSION_SECRET not set — using ephemeral random secret. Sessions will NOT survive restarts. Set SESSION_SECRET in .env for production.");
+}
 app.use(session({
-  secret: process.env.SESSION_SECRET || "agentic-platform-session-secret-change-me",
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   name: "agentic.sid",
