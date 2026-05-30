@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Agentic Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%);
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+    /* Animated background orbs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #ec4899, transparent);
+      top: -200px; left: -100px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #06b6d4, transparent);
+      bottom: -150px; right: -100px;
+      animation-delay: -10s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+    }
+    .login-card {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-logo svg { margin-bottom: 1rem; }
+    .login-logo h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f472b6, #c084fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.35rem;
+    }
+    .login-logo p {
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.4rem;
+    }
+    .form-input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus {
+      border-color: rgba(139, 92, 246, 0.5);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    .form-input::placeholder {
+      color: #475569;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .login-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+    }
+    .login-btn:active { transform: translateY(0); }
+    .login-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .login-error {
+      display: none;
+      padding: 0.6rem 0.85rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 0.8rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .login-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.68rem;
+      color: #475569;
+    }
+    .login-footer span {
+      color: #64748b;
+    }
+    /* Spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg viewBox="0 0 48 48" width="56" height="56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f472b6"/><stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient>
+            <linearGradient id="lg2" x1="48" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+            <linearGradient id="lg3" x1="24" y1="48" x2="24" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0ea5e9"/>
+            </linearGradient>
+            <linearGradient id="lg4" x1="0" y1="48" x2="48" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+            <linearGradient id="lg5" x1="0" y1="24" x2="48" y2="24" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+          </defs>
+          <g>
+            <path d="M23 2 L14 22 L24 20 Z" fill="url(#lg1)" opacity="0.9" transform="translate(-1,-0.5)"/>
+            <path d="M25 2 L44 44 L25 22 Z" fill="url(#lg2)" opacity="0.85" transform="translate(1,0)"/>
+            <path d="M13 23 L4 44 L24 34 Z" fill="url(#lg3)" opacity="0.8" transform="translate(-1,1)"/>
+            <path d="M25 23 L44 44 L25 34 Z" fill="url(#lg4)" opacity="0.75" transform="translate(0.5,1)"/>
+            <path d="M5 44 L43 44 L24 35 Z" fill="url(#lg5)" opacity="0.6" transform="translate(0,1.5)"/>
+            <circle cx="24" cy="24" r="2" fill="white" opacity="0.5"/>
+          </g>
+        </svg>
+        <h1>Agentic Platform</h1>
+        <p>Enterprise AI Agent Factory</p>
+      </div>
+
+      <div class="login-error" id="login-error"></div>
+
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input type="text" id="username" class="form-input" placeholder="Enter your username" autocomplete="username" autofocus required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="login-btn" id="login-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span id="btn-text">Sign In</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <span>Secured by Agentic Platform IAM</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const spinner = document.getElementById('spinner');
+      const btnText = document.getElementById('btn-text');
+      const errEl = document.getElementById('login-error');
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        errEl.textContent = 'Please enter both username and password';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btnText.textContent = 'Signing in...';
+      spinner.style.display = 'block';
+      errEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+          window.location.href = '/';
+        } else {
+          errEl.textContent = data.error || 'Invalid username or password';
+          errEl.style.display = 'block';
+        }
+      } catch (err) {
+        errEl.textContent = 'Unable to connect to authentication service';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Sign In';
+        spinner.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

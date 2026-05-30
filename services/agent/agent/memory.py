@@ -12,9 +12,11 @@ Platform.db tables: conversations, session_summaries, agents, skills, prompts,
 Datastore (Postgres) tables: documents.
 """
 
+import hashlib
 import json
 import logging
 import os
+import secrets
 import sqlite3
 import threading
 import uuid
@@ -333,7 +335,213 @@ def init_db():
                 now,
             ),
         )
+
+    # ── Workspaces & RBAC ──────────────────────────────────────────────────
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS workspaces (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE,
+            description TEXT DEFAULT '',
+            created_by  TEXT DEFAULT 'system',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS workspace_members (
+            workspace_id TEXT NOT NULL,
+            user_id      TEXT NOT NULL,
+            role         TEXT NOT NULL DEFAULT 'member',
+            added_at     TEXT NOT NULL,
+            PRIMARY KEY (workspace_id, user_id)
+        )
+    """)
+    # Seed default workspace
+    if not conn.execute("SELECT id FROM workspaces WHERE id = 'default'").fetchone():
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "INSERT INTO workspaces (id, name, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            ("default", "Default", "Default workspace — shared by all users", "system", now, now),
+        )
+        conn.execute(
+            "INSERT INTO workspace_members (workspace_id, user_id, role, added_at) VALUES (?, ?, ?, ?)",
+            ("default", "system", "admin", now),
+        )
+
+    # ── Migration: add scope/workspace_id/created_by to resource tables ──
+    _SCOPED_TABLES = ["agents", "skills", "prompts", "mcp_servers", "custom_tools", "a2a_peers"]
+    for tbl in _SCOPED_TABLES:
+        for col, default_val in [
+            ("scope", "'global'"),
+            ("workspace_id", "'default'"),
+            ("created_by", "'system'"),
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} TEXT DEFAULT {default_val}")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass  # column already exists
+
+    # ── Users & Authentication ─────────────────────────────────────────────
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id              TEXT PRIMARY KEY,
+            username        TEXT NOT NULL UNIQUE,
+            password_hash   TEXT NOT NULL,
+            display_name    TEXT DEFAULT '',
+            email           TEXT DEFAULT '',
+            role            TEXT NOT NULL DEFAULT 'member',
+            default_workspace TEXT DEFAULT 'default',
+            is_active       INTEGER DEFAULT 1,
+            created_at      TEXT NOT NULL,
+            updated_at      TEXT NOT NULL
+        )
+    """)
+    # Seed default users if table is empty
+    if not conn.execute("SELECT id FROM users LIMIT 1").fetchone():
+        now = datetime.now(timezone.utc).isoformat()
+        _seed_users = [
+            ("admin", "admin", "admin", "Platform Administrator", "admin@agentic.local"),
+            ("rachit", "rachit123", "member", "Rachit Gupta", "rachit@agentic.local"),
+        ]
+        for uname, pwd, role, display, email in _seed_users:
+            uid = uname  # use username as id for seed users
+            phash = _hash_password(pwd)
+            conn.execute(
+                "INSERT INTO users (id, username, password_hash, display_name, email, role, default_workspace, is_active, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+                (uid, uname, phash, display, email, role, "default", now, now),
+            )
+            # Also add seed users as members of default workspace
+            try:
+                conn.execute(
+                    "INSERT INTO workspace_members (workspace_id, user_id, role, added_at) VALUES (?, ?, ?, ?)",
+                    ("default", uname, role, now),
+                )
+            except sqlite3.IntegrityError:
+                pass  # already exists
+
     conn.commit()
+
+
+# ── Password Hashing (PBKDF2-SHA256, no extra deps) ──────────────────────
+
+def _hash_password(password: str) -> str:
+    """Hash password using PBKDF2-HMAC-SHA256 with random salt."""
+    salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
+    return f"pbkdf2:sha256:260000${salt}${dk.hex()}"
+
+
+def _verify_password(password: str, password_hash: str) -> bool:
+    """Verify password against stored PBKDF2 hash."""
+    try:
+        parts = password_hash.split("$")
+        if len(parts) != 3:
+            return False
+        salt = parts[1]
+        stored_dk = parts[2]
+        dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
+        return secrets.compare_digest(dk.hex(), stored_dk)
+    except Exception:
+        return False
+
+
+# ── User CRUD ─────────────────────────────────────────────────────────────
+
+def authenticate_user(username: str, password: str) -> dict | None:
+    """Verify credentials and return user dict (without password_hash) or None."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT * FROM users WHERE username = ? AND is_active = 1", (username,)
+    ).fetchone()
+    if not row:
+        return None
+    if not _verify_password(password, row["password_hash"]):
+        return None
+    return _row_to_user(row)
+
+
+def _row_to_user(row) -> dict:
+    """Convert a SQLite Row to a user dict (excluding password_hash)."""
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "display_name": row["display_name"],
+        "email": row["email"],
+        "role": row["role"],
+        "default_workspace": row["default_workspace"],
+        "is_active": bool(row["is_active"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def get_user(user_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    return _row_to_user(row) if row else None
+
+
+def get_user_by_username(username: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    return _row_to_user(row) if row else None
+
+
+def list_users() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM users ORDER BY created_at").fetchall()
+    return [_row_to_user(r) for r in rows]
+
+
+def create_user(username: str, password: str, display_name: str = "",
+                email: str = "", role: str = "member",
+                default_workspace: str = "default") -> dict:
+    conn = _get_conn()
+    uid = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    phash = _hash_password(password)
+    conn.execute(
+        "INSERT INTO users (id, username, password_hash, display_name, email, role, default_workspace, is_active, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+        (uid, username, phash, display_name, email, role, default_workspace, now, now),
+    )
+    conn.commit()
+    return get_user(uid)
+
+
+def update_user(user_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        return None
+    allowed = {"display_name", "email", "role", "default_workspace", "is_active"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed}
+    # Handle password change separately
+    if "password" in kwargs and kwargs["password"]:
+        updates["password_hash"] = _hash_password(kwargs["password"])
+    if not updates:
+        return _row_to_user(row)
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    conn.execute(
+        f"UPDATE users SET {set_clause} WHERE id = ?",
+        (*updates.values(), user_id),
+    )
+    conn.commit()
+    return get_user(user_id)
+
+
+def delete_user(user_id: str) -> bool:
+    """Delete a user. Cannot delete the admin seed user."""
+    if user_id == "admin":
+        return False
+    conn = _get_conn()
+    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.execute("DELETE FROM workspace_members WHERE user_id = ?", (user_id,))
+    conn.commit()
+    return True
 
 
 def get_history(session_id: str, limit: int = 20) -> list[dict]:
@@ -565,6 +773,16 @@ def get_relevant_context(query: str, k: int = 3) -> list[dict]:
 # ── Skills CRUD ────────────────────────────────────────────────────────────
 
 
+def _scope_fields(row) -> dict:
+    """Extract scope/workspace/created_by from a row, with safe defaults for old DBs."""
+    keys = row.keys() if hasattr(row, 'keys') else []
+    return {
+        "scope": row["scope"] if "scope" in keys else "global",
+        "workspace_id": row["workspace_id"] if "workspace_id" in keys else "default",
+        "created_by": row["created_by"] if "created_by" in keys else "system",
+    }
+
+
 def _row_to_skill(row) -> dict:
     return {
         "id": row["id"],
@@ -577,12 +795,17 @@ def _row_to_skill(row) -> dict:
         "files": json.loads(row["files"]) if "files" in row.keys() else [],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        **_scope_fields(row),
     }
 
 
 def list_skills() -> list[dict]:
+    from agent.workspace import visibility_filter_sql, visibility_params
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM skills ORDER BY name").fetchall()
+    rows = conn.execute(
+        f"SELECT * FROM skills WHERE {visibility_filter_sql()} ORDER BY name",
+        visibility_params(),
+    ).fetchall()
     return [_row_to_skill(r) for r in rows]
 
 
@@ -599,12 +822,14 @@ def create_skill(
     tool_ids: list[str] | None = None,
     constraints: list[str] | None = None,
     input_parameters: list[dict] | None = None,
+    scope: str = "workspace",
 ) -> dict:
+    from agent.workspace import effective_scope, get_workspace_id, get_user_id
     conn = _get_conn()
     skill_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO skills (id, name, description, system_prompt, tool_ids, constraints, input_parameters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO skills (id, name, description, system_prompt, tool_ids, constraints, input_parameters, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             skill_id,
             name,
@@ -613,6 +838,9 @@ def create_skill(
             json.dumps(tool_ids or []),
             json.dumps(constraints or []),
             json.dumps(input_parameters or []),
+            effective_scope(scope),
+            get_workspace_id(),
+            get_user_id(),
             now,
             now,
         ),
@@ -937,13 +1165,16 @@ def _row_to_agent(row) -> dict:
         "is_default": bool(row["is_default"]),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        **_scope_fields(row),
     }
 
 
 def list_agents() -> list[dict]:
+    from agent.workspace import visibility_filter_sql, visibility_params
     conn = _get_conn()
     rows = conn.execute(
-        "SELECT * FROM agents ORDER BY is_default DESC, name"
+        f"SELECT * FROM agents WHERE {visibility_filter_sql()} ORDER BY is_default DESC, name",
+        visibility_params(),
     ).fetchall()
     return [_row_to_agent(r) for r in rows]
 
@@ -971,12 +1202,14 @@ def create_agent(
     retrieval_mode: str = "basic",
     max_iterations: int = 5,
     memory_enabled: bool = True,
+    scope: str = "workspace",
 ) -> dict:
+    from agent.workspace import effective_scope, get_workspace_id, get_user_id
     conn = _get_conn()
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, constraints, mcp_server_ids, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO agents (id, name, description, provider, model, temperature, top_p, system_prompt, skill_ids, tool_ids, sub_agent_ids, constraints, mcp_server_ids, kb_collection, retrieval_mode, max_iterations, memory_enabled, is_default, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             agent_id,
             name,
@@ -996,6 +1229,9 @@ def create_agent(
             max_iterations,
             int(memory_enabled),
             0,
+            effective_scope(scope),
+            get_workspace_id(),
+            get_user_id(),
             now,
             now,
         ),
@@ -1095,12 +1331,17 @@ def _row_to_a2a_peer(row) -> dict:
         "last_seen": row["last_seen"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        **_scope_fields(row),
     }
 
 
 def list_a2a_peers() -> list[dict]:
+    from agent.workspace import visibility_filter_sql, visibility_params
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM a2a_peers ORDER BY name").fetchall()
+    rows = conn.execute(
+        f"SELECT * FROM a2a_peers WHERE {visibility_filter_sql()} ORDER BY name",
+        visibility_params(),
+    ).fetchall()
     return [_row_to_a2a_peer(r) for r in rows]
 
 
@@ -1111,14 +1352,16 @@ def get_a2a_peer(peer_id: str) -> dict | None:
 
 
 def create_a2a_peer(
-    name: str, url: str, description: str = "", capabilities: list[str] | None = None
+    name: str, url: str, description: str = "", capabilities: list[str] | None = None,
+    scope: str = "workspace",
 ) -> dict:
+    from agent.workspace import effective_scope, get_workspace_id, get_user_id
     conn = _get_conn()
     peer_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO a2a_peers (id, name, url, description, capabilities, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (peer_id, name, url, description, json.dumps(capabilities or []), now, now),
+        "INSERT INTO a2a_peers (id, name, url, description, capabilities, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (peer_id, name, url, description, json.dumps(capabilities or []), effective_scope(scope), get_workspace_id(), get_user_id(), now, now),
     )
     conn.commit()
     return get_a2a_peer(peer_id)
@@ -1188,6 +1431,7 @@ def _row_to_mcp_server(row) -> dict:
         row["container_status"] if "container_status" in keys else ""
     )
     d["error_message"] = row["error_message"] if "error_message" in keys else ""
+    d.update(_scope_fields(row))
     return d
 
 
@@ -1326,8 +1570,12 @@ def _ensure_default_mcp_servers():
 
 def list_mcp_servers() -> list[dict]:
     _ensure_default_mcp_servers()
+    from agent.workspace import visibility_filter_sql, visibility_params
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM mcp_servers ORDER BY name").fetchall()
+    rows = conn.execute(
+        f"SELECT * FROM mcp_servers WHERE {visibility_filter_sql()} ORDER BY name",
+        visibility_params(),
+    ).fetchall()
     return [_row_to_mcp_server(r) for r in rows]
 
 
@@ -1345,12 +1593,14 @@ def create_mcp_server(
     transport: str = "stdio",
     description: str = "",
     tools: list[dict] | None = None,
+    scope: str = "workspace",
 ) -> dict:
+    from agent.workspace import effective_scope, get_workspace_id, get_user_id
     conn = _get_conn()
     server_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO mcp_servers (id, name, url, transport, description, tools, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO mcp_servers (id, name, url, transport, description, tools, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             server_id,
             name,
@@ -1358,6 +1608,9 @@ def create_mcp_server(
             transport,
             description,
             json.dumps(tools or []),
+            effective_scope(scope),
+            get_workspace_id(),
+            get_user_id(),
             now,
             now,
         ),
@@ -1446,12 +1699,17 @@ def _row_to_prompt(row) -> dict:
         d["validated_at"] = row["validated_at"] or None
     except (IndexError, KeyError):
         d["validated_at"] = None
+    d.update(_scope_fields(row))
     return d
 
 
 def list_prompts() -> list[dict]:
+    from agent.workspace import visibility_filter_sql, visibility_params
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM prompts ORDER BY name").fetchall()
+    rows = conn.execute(
+        f"SELECT * FROM prompts WHERE {visibility_filter_sql()} ORDER BY name",
+        visibility_params(),
+    ).fetchall()
     return [_row_to_prompt(r) for r in rows]
 
 
@@ -1468,12 +1726,14 @@ def create_prompt(
     description: str = "",
     tags: list[str] | None = None,
     model: str = "",
+    scope: str = "workspace",
 ) -> dict:
+    from agent.workspace import effective_scope, get_workspace_id, get_user_id
     conn = _get_conn()
     prompt_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO prompts (id, name, category, content, description, tags, model, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO prompts (id, name, category, content, description, tags, model, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             prompt_id,
             name,
@@ -1482,6 +1742,9 @@ def create_prompt(
             description,
             json.dumps(tags or []),
             model,
+            effective_scope(scope),
+            get_workspace_id(),
+            get_user_id(),
             now,
             now,
         ),
@@ -1807,13 +2070,18 @@ def _row_to_custom_tool(row) -> dict:
         "enabled": bool(row["enabled"]),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        **_scope_fields(row),
     }
 
 
 def list_custom_tools() -> list[dict]:
     _init_custom_tools_table()
+    from agent.workspace import visibility_filter_sql, visibility_params
     conn = _get_conn()
-    rows = conn.execute("SELECT * FROM custom_tools ORDER BY name").fetchall()
+    rows = conn.execute(
+        f"SELECT * FROM custom_tools WHERE {visibility_filter_sql()} ORDER BY name",
+        visibility_params(),
+    ).fetchall()
     return [_row_to_custom_tool(r) for r in rows]
 
 
@@ -1833,13 +2101,15 @@ def create_custom_tool(
     headers: dict | None = None,
     body_template: dict | None = None,
     parameters: list[dict] | None = None,
+    scope: str = "workspace",
 ) -> dict:
+    from agent.workspace import effective_scope, get_workspace_id, get_user_id
     _init_custom_tools_table()
     conn = _get_conn()
     tool_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO custom_tools (id, name, description, category, endpoint, method, headers, body_template, parameters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO custom_tools (id, name, description, category, endpoint, method, headers, body_template, parameters, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             tool_id,
             name,
@@ -1850,6 +2120,9 @@ def create_custom_tool(
             json.dumps(headers or {}),
             json.dumps(body_template or {}),
             json.dumps(parameters or []),
+            effective_scope(scope),
+            get_workspace_id(),
+            get_user_id(),
             now,
             now,
         ),
@@ -1892,6 +2165,98 @@ def delete_custom_tool(tool_id: str) -> bool:
     _init_custom_tools_table()
     conn = _get_conn()
     cursor = conn.execute("DELETE FROM custom_tools WHERE id = ?", (tool_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+# ── Workspace CRUD ─────────────────────────────────────────────────────────
+
+def list_workspaces() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM workspaces ORDER BY name").fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_workspace(workspace_id: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM workspaces WHERE id = ?", (workspace_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_workspace(name: str, description: str = "") -> dict:
+    from agent.workspace import get_user_id
+    conn = _get_conn()
+    workspace_id = str(uuid.uuid4())[:8]
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO workspaces (id, name, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (workspace_id, name, description, get_user_id(), now, now),
+    )
+    # Creator becomes admin
+    conn.execute(
+        "INSERT INTO workspace_members (workspace_id, user_id, role, added_at) VALUES (?, ?, ?, ?)",
+        (workspace_id, get_user_id(), "admin", now),
+    )
+    conn.commit()
+    return get_workspace(workspace_id)
+
+
+def update_workspace(workspace_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    existing = get_workspace(workspace_id)
+    if not existing:
+        return None
+    fields = []
+    values = []
+    for key in ("name", "description"):
+        if key in kwargs:
+            fields.append(f"{key} = ?")
+            values.append(kwargs[key])
+    if fields:
+        fields.append("updated_at = ?")
+        values.append(datetime.now(timezone.utc).isoformat())
+        values.append(workspace_id)
+        conn.execute(f"UPDATE workspaces SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    return get_workspace(workspace_id)
+
+
+def delete_workspace(workspace_id: str) -> bool:
+    if workspace_id == "default":
+        return False  # Cannot delete default workspace
+    conn = _get_conn()
+    conn.execute("DELETE FROM workspace_members WHERE workspace_id = ?", (workspace_id,))
+    cursor = conn.execute("DELETE FROM workspaces WHERE id = ?", (workspace_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
+
+def list_workspace_members(workspace_id: str) -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT * FROM workspace_members WHERE workspace_id = ? ORDER BY role, user_id",
+        (workspace_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_workspace_member(workspace_id: str, user_id: str, role: str = "member") -> dict:
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT OR REPLACE INTO workspace_members (workspace_id, user_id, role, added_at) VALUES (?, ?, ?, ?)",
+        (workspace_id, user_id, role, now),
+    )
+    conn.commit()
+    return {"workspace_id": workspace_id, "user_id": user_id, "role": role, "added_at": now}
+
+
+def remove_workspace_member(workspace_id: str, user_id: str) -> bool:
+    conn = _get_conn()
+    cursor = conn.execute(
+        "DELETE FROM workspace_members WHERE workspace_id = ? AND user_id = ?",
+        (workspace_id, user_id),
+    )
     conn.commit()
     return cursor.rowcount > 0
 

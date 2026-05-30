@@ -40,6 +40,22 @@ POST /agent-run/stream    # Run agent with SSE streaming
 | Guardrails   | `GET/POST /guardrails`, `GET/PUT/DELETE /guardrails/{id}`                                         |
 | Custom Tools | `GET/POST /custom-tools`, `GET/PUT/DELETE /custom-tools/{id}`                                     |
 
+### Authentication & Users
+
+```
+POST /auth/login          # Authenticate (returns user + session)
+GET  /auth/me             # Current user from session
+GET  /users               # List all users (admin only)
+POST /users               # Create user (admin only)
+GET  /users/{id}          # Get user (admin only)
+PUT  /users/{id}          # Update user (admin only)
+DELETE /users/{id}        # Delete user (admin only, admin protected)
+```
+
+**Default credentials:**
+- `admin` / `admin` — Full admin access
+- `rachit` / `rachit123` — Member role (workspace-scoped)
+
 ### Protocols
 
 | Protocol | Endpoints                                                                               |

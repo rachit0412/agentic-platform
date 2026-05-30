@@ -49,6 +49,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **Responsible AI**            | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                       |
 | **25-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                      |
 | **One-command setup**         | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                                              |
+| **Enterprise IAM**            | Session-based authentication, role-based access control (admin/member/viewer), per-user workspace isolation, user management from the admin UI                                    |
 
 <details>
 <summary><b>📋 Full feature list</b></summary>
@@ -66,6 +67,8 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion, multi-agent pipelines
 - **Full Observability** — Prometheus + Grafana dashboards + Loki logs + OpenTelemetry pipeline
 - **Security Hardening** — XSS protection, input validation, SSRF protection, path traversal prevention
+- **Enterprise Authentication** — Login page, session-based auth (express-session), PBKDF2 password hashing, role-based access control (admin/member/viewer), user management UI in admin panel
+- **Workspace & RBAC** — Multi-tenant workspace isolation, scope-aware resources (global vs workspace), role-gated admin access, per-user default workspace
 - **Data Connectors** — Hybrid ingestion framework: built-in connectors (Database, REST API, Cloud Storage, Google Drive, SharePoint) with full ETL pipeline visualization
 - **Marketplace** — Browse and install agent/skill/workflow templates
 - **GPU Support** — Uncomment one block in docker-compose.yml for NVIDIA GPU acceleration
@@ -196,7 +199,7 @@ curl -X POST http://localhost:8010/run \
 | Data Ingestion   | ETL pipeline — Extract (5 connectors), Transform (chunking, embedding), Load (ChromaDB)                                                                                                  |
 | LLM Activity     | Token usage tracking, cost analysis, per-model breakdown                                                                                                                                  |
 | Marketplace      | Browse and install templates                                                                                                                                                              |
-| Admin            | 6-tab admin plane — service health, platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Hash-based tab navigation for deep linking |
+| Admin            | 7-tab admin plane — service health, **user & access management**, platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Role-gated: only admin users can access |
 | Documentation    | Auto-generated API & architecture docs                                                                                                                                                    |
 
 ---

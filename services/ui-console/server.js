@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const session = require("express-session");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,6 +26,76 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+// ── Session Management ─────────────────────────────────
+app.use(session({
+  secret: process.env.SESSION_SECRET || "agentic-platform-session-secret-change-me",
+  resave: false,
+  saveUninitialized: false,
+  name: "agentic.sid",
+  cookie: {
+    httpOnly: true,
+    secure: false,      // set true behind HTTPS reverse proxy
+    maxAge: 24 * 60 * 60 * 1000,  // 24 hours
+    sameSite: "lax",
+  },
+}));
+
+// ── Auth Routes (before auth middleware) ────────────────
+app.get("/login", (req, res) => {
+  if (req.session && req.session.user) return res.redirect("/");
+  res.render("login");
+});
+
+app.post("/auth/login", async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required" });
+  }
+  try {
+    const r = await fetch(`${AGENT_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await r.json();
+    if (r.ok && data.id) {
+      req.session.user = data;
+      return res.json(data);
+    }
+    return res.status(401).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: "Auth service unavailable" });
+  }
+});
+
+app.post("/auth/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("agentic.sid");
+    res.json({ ok: true });
+  });
+});
+
+app.get("/auth/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("agentic.sid");
+    res.redirect("/login");
+  });
+});
+
+// ── Auth Middleware (protects all routes below) ────────
+function requireAuth(req, res, next) {
+  // Allow health endpoint without auth
+  if (req.path === "/health") return next();
+  if (!req.session || !req.session.user) {
+    if (req.path.startsWith("/api/")) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    return res.redirect("/login");
+  }
+  next();
+}
+app.use(requireAuth);
 
 // ── Health ──────────────────────────────────────────────
 app.get("/health", (req, res) => {
@@ -54,6 +125,85 @@ app.get("/api/health-check", async (req, res) => {
   res.json({ services: results });
 });
 
+// ── Workspace header forwarding helper ─────────────────
+function wsHeaders(req, extra) {
+  const h = { ...extra };
+  const user = req.session && req.session.user;
+  // Use session user context; fall back to request headers for API-only calls
+  h['x-user-id'] = (user && user.username) || req.headers['x-user-id'] || 'system';
+  h['x-user-role'] = (user && user.role) || req.headers['x-user-role'] || 'admin';
+  // Workspace from header (set by frontend fetch override) or session default
+  h['x-workspace-id'] = req.headers['x-workspace-id']
+    || (user && user.default_workspace)
+    || 'default';
+  return h;
+}
+
+// ── API: Workspaces CRUD ───────────────────────────────
+app.get("/api/workspaces", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/workspaces", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/workspaces/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/workspaces/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/workspaces/:id/members", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}/members`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/workspaces/:id/members", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}/members`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/workspaces/:id/members/:userId", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}/members/${req.params.userId}`, { method: "DELETE", headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: User Management (admin-only) ──────────────────
+function requireAdmin(req, res, next) {
+  const user = req.session && req.session.user;
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+}
+
+app.get("/api/users", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/users/:id", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/users", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/users/:id", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/users/:id", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Current session info ──────────────────────────
+app.get("/api/auth/me", (req, res) => {
+  res.json(req.session.user || { error: "Not authenticated" });
+});
+
 // ── API: DB Stats, Export, Import ──────────────────────
 app.get("/api/db-stats", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/db-stats`); res.json(await r.json()); }
@@ -70,11 +220,11 @@ app.post("/api/import", async (req, res) => {
 
 // ── API: Skills CRUD proxy ─────────────────────────────
 app.get("/api/skills", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills`); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills`, { headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/skills/:id", async (req, res) => {
@@ -130,11 +280,11 @@ app.post("/api/skills/decompose", async (req, res) => {
 
 // ── API: Prompts CRUD proxy ────────────────────────────
 app.get("/api/prompts", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts`); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts`, { headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/prompts/:id", async (req, res) => {
@@ -160,11 +310,11 @@ app.post("/api/prompts/generate", async (req, res) => {
 
 // ── API: Agents CRUD proxy ─────────────────────────────
 app.get("/api/agents", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents`); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents`, { headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/agents", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/agents/:id", async (req, res) => {
@@ -387,14 +537,14 @@ app.get("/api/tools", async (req, res) => {
 // ── API: Custom Tools CRUD (proxy to agent) ───────────
 app.get("/api/custom-tools", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/custom-tools`, { signal: AbortSignal.timeout(5000) });
+    const resp = await fetch(`${AGENT_URL}/custom-tools`, { headers: wsHeaders(req), signal: AbortSignal.timeout(5000) });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/custom-tools", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/custom-tools`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }),
       body: JSON.stringify(req.body), signal: AbortSignal.timeout(10000),
     });
     res.status(resp.status).json(await resp.json());
@@ -764,13 +914,13 @@ app.get("/api/tools-health", async (req, res) => {
 // MCP servers CRUD
 app.get("/api/mcp/servers", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/mcp/servers`, { signal: AbortSignal.timeout(5000) });
+    const resp = await fetch(`${AGENT_URL}/mcp/servers`, { headers: wsHeaders(req), signal: AbortSignal.timeout(5000) });
     res.json(await resp.json());
   } catch (e) { res.json({ servers: [], error: e.message }); }
 });
 app.post("/api/mcp/servers", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/mcp/servers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) });
+    const resp = await fetch(`${AGENT_URL}/mcp/servers`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
@@ -1327,30 +1477,41 @@ const externalUrls = {
   agent: AGENT_EXTERNAL,
 };
 
-app.get("/", (req, res) => res.render("overview", { urls: externalUrls }));
-app.get("/run-agent", (req, res) => res.render("run-agent", { urls: externalUrls }));
-app.get("/agent-builder", (req, res) => res.render("agent-builder", { urls: externalUrls }));
-app.get("/ai-studio", (req, res) => res.render("ai-studio", { urls: externalUrls }));
-app.get("/documents", (req, res) => res.render("documents", { urls: externalUrls }));
-app.get("/workflows", (req, res) => res.render("workflows", { urls: externalUrls }));
-app.get("/skills", (req, res) => res.render("skills", { urls: externalUrls }));
-app.get("/prompts", (req, res) => res.render("prompts", { urls: externalUrls }));
-app.get("/agents", (req, res) => res.render("agents", { urls: externalUrls }));
-app.get("/tools", (req, res) => res.render("tools", { urls: externalUrls }));
-app.get("/guardrails", (req, res) => res.render("guardrails", { urls: externalUrls }));
-app.get("/a2a", (req, res) => res.render("a2a", { urls: externalUrls }));
-app.get("/mcp", (req, res) => res.render("mcp", { urls: externalUrls }));
-app.get("/rest", (req, res) => res.render("rest", { urls: externalUrls }));
-app.get("/intelligence-hub", (req, res) => res.render("intelligence-hub", { urls: externalUrls }));
-app.get("/agent-hub", (req, res) => res.render("agent-hub", { urls: externalUrls }));
-app.get("/data-ingestion", (req, res) => res.render("data-ingestion", { urls: externalUrls }));
-app.get("/llm-activity", (req, res) => res.render("llm-activity", { urls: externalUrls }));
-app.get("/traceability", (req, res) => res.render("traceability", { urls: externalUrls }));
-app.get("/evaluation", (req, res) => res.render("evaluation", { urls: externalUrls }));
-app.get("/observability", (req, res) => res.render("observability", { urls: externalUrls }));
-app.get("/marketplace", (req, res) => res.render("marketplace", { urls: externalUrls }));
-app.get("/admin", (req, res) => res.render("admin", { urls: externalUrls }));
-app.get("/docs", (req, res) => res.render("docs", { urls: externalUrls }));
+// Helper: render with user context
+function renderPage(view) {
+  return (req, res) => {
+    res.render(view, { urls: externalUrls, user: req.session.user || {} });
+  };
+}
+
+app.get("/", renderPage("overview"));
+app.get("/run-agent", renderPage("run-agent"));
+app.get("/agent-builder", renderPage("agent-builder"));
+app.get("/ai-studio", renderPage("ai-studio"));
+app.get("/documents", renderPage("documents"));
+app.get("/workflows", renderPage("workflows"));
+app.get("/skills", renderPage("skills"));
+app.get("/prompts", renderPage("prompts"));
+app.get("/agents", renderPage("agents"));
+app.get("/tools", renderPage("tools"));
+app.get("/guardrails", renderPage("guardrails"));
+app.get("/a2a", renderPage("a2a"));
+app.get("/mcp", renderPage("mcp"));
+app.get("/rest", renderPage("rest"));
+app.get("/intelligence-hub", renderPage("intelligence-hub"));
+app.get("/agent-hub", renderPage("agent-hub"));
+app.get("/data-ingestion", renderPage("data-ingestion"));
+app.get("/llm-activity", renderPage("llm-activity"));
+app.get("/traceability", renderPage("traceability"));
+app.get("/evaluation", renderPage("evaluation"));
+app.get("/observability", renderPage("observability"));
+app.get("/marketplace", renderPage("marketplace"));
+app.get("/admin", (req, res) => {
+  const user = req.session.user || {};
+  if (user.role !== "admin") return res.redirect("/");
+  res.render("admin", { urls: externalUrls, user });
+});
+app.get("/docs", renderPage("docs"));
 app.get("/docs/architecture-diagram", (req, res) => {
   res.sendFile(path.join(__dirname, "docs-static", "architecture-diagram.html"));
 });

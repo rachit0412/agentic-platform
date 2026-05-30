@@ -84,11 +84,27 @@ from agent.memory import (
     create_sync_job,
     update_sync_job,
     list_sync_jobs,
+    list_workspaces,
+    get_workspace,
+    create_workspace,
+    update_workspace,
+    delete_workspace,
+    list_workspace_members,
+    add_workspace_member,
+    remove_workspace_member,
+    authenticate_user,
+    get_user,
+    get_user_by_username,
+    list_users,
+    create_user,
+    update_user,
+    delete_user,
 )
 from agent.llm import list_available_models, get_active_model, set_active_model
 from agent.observability import setup_otel
 from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
 from agent.connectors.sync_engine import test_connector, run_sync
+from agent.workspace import current_workspace_id, current_user_id, current_user_role
 
 logging.basicConfig(
     level=logging.INFO,
@@ -123,6 +139,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def workspace_middleware(request: Request, call_next):
+    """Extract workspace context from request headers for multi-tenant scoping."""
+    ws_id = request.headers.get("x-workspace-id", "default")
+    user_id = request.headers.get("x-user-id", "system")
+    user_role = request.headers.get("x-user-role", "admin")
+    ws_token = current_workspace_id.set(ws_id)
+    uid_token = current_user_id.set(user_id)
+    role_token = current_user_role.set(user_role)
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        current_workspace_id.reset(ws_token)
+        current_user_id.reset(uid_token)
+        current_user_role.reset(role_token)
 
 # Wire observability
 setup_otel(app)
@@ -166,6 +200,161 @@ class RunResponse(BaseModel):
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "agent-service"}
+
+
+# ── Authentication ──────────────────────────────────────────────────────────
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=64)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+@app.post("/auth/login")
+async def auth_login(body: LoginRequest):
+    user = authenticate_user(body.username, body.password)
+    if not user:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=401, content={"error": "Invalid credentials"})
+    return user
+
+
+@app.get("/auth/me")
+async def auth_me(request: Request):
+    user_id = request.headers.get("x-user-id", "")
+    if not user_id or user_id == "system":
+        return {"error": "Not authenticated"}
+    user = get_user(user_id)
+    if not user:
+        user = get_user_by_username(user_id)
+    return user if user else {"error": "User not found"}
+
+
+# ── User Management (admin-only enforced by UI) ────────────────────────────
+@app.get("/users")
+async def list_users_endpoint():
+    return {"users": list_users()}
+
+
+@app.get("/users/{user_id}")
+async def get_user_endpoint(user_id: str):
+    user = get_user(user_id)
+    if not user:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    return user
+
+
+class UserCreate(BaseModel):
+    username: str = Field(..., min_length=2, max_length=64)
+    password: str = Field(..., min_length=4, max_length=128)
+    display_name: str = ""
+    email: str = ""
+    role: str = Field(default="member", pattern="^(admin|member|viewer)$")
+    default_workspace: str = "default"
+
+
+@app.post("/users")
+async def create_user_endpoint(body: UserCreate):
+    existing = get_user_by_username(body.username)
+    if existing:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=409, content={"error": "Username already exists"})
+    return create_user(
+        username=body.username,
+        password=body.password,
+        display_name=body.display_name,
+        email=body.email,
+        role=body.role,
+        default_workspace=body.default_workspace,
+    )
+
+
+class UserUpdate(BaseModel):
+    display_name: str | None = None
+    email: str | None = None
+    role: str | None = Field(default=None, pattern="^(admin|member|viewer)$")
+    password: str | None = None
+    is_active: bool | None = None
+    default_workspace: str | None = None
+
+
+@app.put("/users/{user_id}")
+async def update_user_endpoint(user_id: str, body: UserUpdate):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    user = update_user(user_id, **updates)
+    if not user:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    return user
+
+
+@app.delete("/users/{user_id}")
+async def delete_user_endpoint(user_id: str):
+    if user_id == "admin":
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=403, content={"error": "Cannot delete admin user"})
+    ok = delete_user(user_id)
+    return {"deleted": ok}
+
+
+# ── Workspace Management ───────────────────────────────────────────────────
+@app.get("/workspaces")
+async def list_workspaces_endpoint():
+    return list_workspaces()
+
+
+@app.get("/workspaces/{workspace_id}")
+async def get_workspace_endpoint(workspace_id: str):
+    ws = get_workspace(workspace_id)
+    if not ws:
+        return {"error": "Workspace not found"}, 404
+    return ws
+
+
+@app.post("/workspaces")
+async def create_workspace_endpoint(request: Request):
+    body = await request.json()
+    name = body.get("name", "").strip()
+    if not name:
+        return {"error": "name is required"}
+    return create_workspace(name=name, description=body.get("description", ""))
+
+
+@app.put("/workspaces/{workspace_id}")
+async def update_workspace_endpoint(workspace_id: str, request: Request):
+    body = await request.json()
+    ws = update_workspace(workspace_id, **body)
+    if not ws:
+        return {"error": "Workspace not found"}
+    return ws
+
+
+@app.delete("/workspaces/{workspace_id}")
+async def delete_workspace_endpoint(workspace_id: str):
+    if workspace_id == "default":
+        return {"error": "Cannot delete default workspace"}
+    ok = delete_workspace(workspace_id)
+    return {"deleted": ok}
+
+
+@app.get("/workspaces/{workspace_id}/members")
+async def list_members_endpoint(workspace_id: str):
+    return list_workspace_members(workspace_id)
+
+
+@app.post("/workspaces/{workspace_id}/members")
+async def add_member_endpoint(workspace_id: str, request: Request):
+    body = await request.json()
+    user_id = body.get("user_id", "").strip()
+    if not user_id:
+        return {"error": "user_id is required"}
+    role = body.get("role", "member")
+    return add_workspace_member(workspace_id, user_id, role)
+
+
+@app.delete("/workspaces/{workspace_id}/members/{user_id}")
+async def remove_member_endpoint(workspace_id: str, user_id: str):
+    ok = remove_workspace_member(workspace_id, user_id)
+    return {"removed": ok}
 
 
 @app.get("/db-stats")
@@ -1054,6 +1243,7 @@ class CustomToolCreate(BaseModel):
     headers: dict = Field(default_factory=dict)
     body_template: dict = Field(default_factory=dict)
     parameters: list[dict] = Field(default_factory=list)
+    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
 
 class CustomToolUpdate(BaseModel):
@@ -1084,6 +1274,7 @@ async def custom_tools_create_endpoint(body: CustomToolCreate):
         headers=body.headers,
         body_template=body.body_template,
         parameters=body.parameters,
+        scope=body.scope,
     )
     return tool
 
@@ -1178,6 +1369,7 @@ class SkillCreate(BaseModel):
     tool_ids: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
     input_parameters: list[dict] = Field(default_factory=list)
+    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
     @model_validator(mode="after")
     def validate_skill(self):
@@ -1233,6 +1425,7 @@ async def skills_create_endpoint(body: SkillCreate):
         tool_ids=body.tool_ids,
         constraints=body.constraints,
         input_parameters=body.input_parameters,
+        scope=body.scope,
     )
     return skill
 
@@ -1711,6 +1904,7 @@ class PromptCreate(BaseModel):
     description: str = ""
     tags: list[str] = Field(default_factory=list)
     model: str = ""
+    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
 
 class PromptUpdate(BaseModel):
@@ -1736,6 +1930,7 @@ async def prompts_create_endpoint(body: PromptCreate):
         description=body.description,
         tags=body.tags,
         model=body.model,
+        scope=body.scope,
     )
     return prompt
 
@@ -2221,6 +2416,7 @@ class AgentCreate(BaseModel):
     retrieval_mode: str = Field(default="basic")
     max_iterations: int = Field(default=5, ge=1, le=20)
     memory_enabled: bool = Field(default=True)
+    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
 
 class AgentUpdate(BaseModel):
@@ -2266,6 +2462,7 @@ async def agents_create_endpoint(body: AgentCreate):
         retrieval_mode=body.retrieval_mode,
         max_iterations=body.max_iterations,
         memory_enabled=body.memory_enabled,
+        scope=body.scope,
     )
     return agent
 
@@ -2325,6 +2522,7 @@ class A2APeerCreate(BaseModel):
     url: str = Field(..., min_length=1, max_length=500)
     description: str = Field(default="", max_length=1000)
     capabilities: list[str] = Field(default_factory=list)
+    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
 
 class A2APeerUpdate(BaseModel):
@@ -2352,6 +2550,7 @@ async def a2a_create_peer(body: A2APeerCreate):
         url=body.url,
         description=body.description,
         capabilities=body.capabilities,
+        scope=body.scope,
     )
     return peer
 
@@ -2494,6 +2693,7 @@ class MCPServerCreate(BaseModel):
     url: str = Field(..., min_length=1, max_length=500)
     transport: str = Field(default="stdio", pattern="^(stdio|sse|http)$")
     description: str = Field(default="", max_length=1000)
+    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
 
 class MCPServerUpdate(BaseModel):
@@ -2516,6 +2716,7 @@ async def mcp_create_server(body: MCPServerCreate):
         url=body.url,
         transport=body.transport,
         description=body.description,
+        scope=body.scope,
     )
     return server
 

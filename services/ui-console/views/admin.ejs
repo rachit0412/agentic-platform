@@ -1,53 +1,19 @@
 <%- include('layout', { title: 'Admin Plane', page: 'admin', body: `
 
-<!-- ── Auth Overlay ── -->
-<div id="admin-auth-overlay" style="position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.92);backdrop-filter:blur(12px)">
-  <div style="width:360px;padding:2rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">
-    <div style="text-align:center;margin-bottom:1.5rem">
-      <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(244,63,94,0.2),rgba(139,92,246,0.2));display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.75rem">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f43f5e" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      </div>
-      <h2 style="margin:0;font-size:1.25rem;color:var(--text-1)">Admin Plane</h2>
-      <p style="margin:0.35rem 0 0;color:var(--text-3);font-size:0.82rem">Enter credentials to access the admin panel</p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.75rem">
-      <div>
-        <label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Username</label>
-        <input type="text" id="admin-user" class="input" placeholder="admin" autocomplete="username" style="width:100%">
-      </div>
-      <div>
-        <label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Password</label>
-        <input type="password" id="admin-pass" class="input" placeholder="\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022" autocomplete="current-password" style="width:100%" onkeydown="if(event.key==='Enter')adminLogin()">
-      </div>
-      <div id="admin-auth-error" style="display:none;color:#f43f5e;font-size:0.78rem;text-align:center;padding:0.35rem;background:rgba(244,63,94,0.08);border-radius:8px"></div>
-      <button class="btn btn-primary" onclick="adminLogin()" style="width:100%;margin-top:0.25rem">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        Sign In
-      </button>
-      <p style="text-align:center;font-size:0.68rem;color:var(--text-3);margin:0">Default: admin / admin</p>
-    </div>
-  </div>
-</div>
-
 <!-- ── Admin Content ── -->
-<div id="admin-content" style="display:none">
+<div id="admin-content">
 
 <!-- Header -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
   <div>
     <h1 class="text-glow-cyan" style="margin-bottom:0.25rem">Admin Plane</h1>
-    <p style="color:var(--text-3);font-size:0.82rem;margin:0">System health, configuration, services, data management &amp; audit controls</p>
+    <p style="color:var(--text-3);font-size:0.82rem;margin:0">System health, user management, configuration, services &amp; audit controls</p>
   </div>
   <div style="display:flex;gap:0.5rem;align-items:center">
     <span id="admin-last-refresh" style="font-size:0.68rem;color:var(--text-3)"></span>
     <button class="btn btn-sm" onclick="adminLoadAll()" title="Refresh all" style="font-size:0.72rem">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Refresh
-    </button>
-    <span id="admin-session-user" style="font-size:0.78rem;color:var(--text-3)"></span>
-    <button class="btn btn-sm" onclick="adminLogout()" style="font-size:0.72rem">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Sign Out
     </button>
   </div>
 </div>
@@ -57,6 +23,10 @@
   <button class="btn btn-sm admin-tab active" data-tab="health" onclick="switchTab('health')">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     Service Health
+  </button>
+  <button class="btn btn-sm admin-tab" data-tab="users" onclick="switchTab('users')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Users &amp; Access
   </button>
   <button class="btn btn-sm admin-tab" data-tab="overview" onclick="switchTab('overview')">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -78,6 +48,44 @@
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     Audit Log
   </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB: USERS & ACCESS                                    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-users" class="admin-tab-content" style="display:none">
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>User Management</h3>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="loadUsers()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 21 12"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="showCreateUserModal()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add User
+        </button>
+      </div>
+    </div>
+    <div id="users-table-container" style="margin-top:0.75rem">
+      <div style="color:var(--text-3);font-size:0.82rem">Loading users...</div>
+    </div>
+  </div>
+
+  <!-- Workspace Access -->
+  <div class="card animate-fade-up">
+    <div class="section-header">
+      <h3>Workspace Management</h3>
+      <button class="btn btn-primary btn-sm" onclick="showCreateWorkspaceModal()">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Workspace
+      </button>
+    </div>
+    <div id="workspaces-admin-table" style="margin-top:0.75rem">
+      <div style="color:var(--text-3);font-size:0.82rem">Loading workspaces...</div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -602,54 +610,174 @@
 </style>
 
 <script>
-/* ═══ AUTH ═══ */
-var ADMIN_CREDS = { admin: 'admin' };
+/* ═══ INIT ═══ */
+document.getElementById('admin-content').style.display = 'block';
 
-function adminLogin() {
-  var user = document.getElementById('admin-user').value.trim();
-  var pass = document.getElementById('admin-pass').value;
-  var errEl = document.getElementById('admin-auth-error');
-  if (!user || !pass) { errEl.style.display = 'block'; errEl.textContent = 'Please enter username and password'; return; }
-  if (ADMIN_CREDS[user] && ADMIN_CREDS[user] === pass) {
-    localStorage.setItem('admin_auth', JSON.stringify({user: user, ts: Date.now()}));
-    showAdminContent(user);
-  } else {
-    errEl.style.display = 'block';
-    errEl.textContent = 'Invalid credentials. Try again.';
-    document.getElementById('admin-pass').value = '';
-    document.getElementById('admin-pass').focus();
-  }
+/* ═══ USER MANAGEMENT ═══ */
+var _usersCache = [];
+async function loadUsers() {
+  try {
+    var r = await fetch('/api/users');
+    if (r.status === 403) { document.getElementById('users-table-container').innerHTML = '<p style="color:var(--danger)">Access denied. Admin role required.</p>'; return; }
+    var users = await r.json();
+    _usersCache = users;
+    renderUsersTable(users);
+  } catch(e) { document.getElementById('users-table-container').innerHTML = '<p style="color:var(--danger)">Failed to load users: ' + escapeHtml(e.message) + '</p>'; }
 }
 
-function adminLogout() {
-  localStorage.removeItem('admin_auth');
-  document.getElementById('admin-content').style.display = 'none';
-  document.getElementById('admin-auth-overlay').style.display = 'flex';
-  document.getElementById('admin-pass').value = '';
-  document.getElementById('admin-user').value = '';
-  document.getElementById('admin-auth-error').style.display = 'none';
-}
-
-function showAdminContent(user) {
-  document.getElementById('admin-auth-overlay').style.display = 'none';
-  document.getElementById('admin-content').style.display = 'block';
-  var userEl = document.getElementById('admin-session-user');
-  userEl.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  var span = document.createElement('span');
-  span.textContent = user;
-  userEl.appendChild(span);
-  adminLoadAll();
-}
-
-function adminCheckSession() {
-  var s = null;
-  try { s = JSON.parse(localStorage.getItem('admin_auth') || 'null'); } catch(e) {}
-  if (s && s.user && (Date.now() - s.ts) < 3600000) {
-    showAdminContent(s.user);
+function renderUsersTable(users) {
+  if (!users || users.length === 0) {
+    document.getElementById('users-table-container').innerHTML = '<p style="color:var(--text-3)">No users found.</p>';
     return;
   }
-  document.getElementById('admin-auth-overlay').style.display = 'flex';
-  document.getElementById('admin-user').focus();
+  var roleColors = { admin: 'var(--danger)', member: 'var(--info)', viewer: 'var(--text-3)' };
+  var html = '<table><tr><th>User</th><th>Email</th><th>Role</th><th>Workspace</th><th>Status</th><th>Actions</th></tr>';
+  users.forEach(function(u) {
+    var initials = (u.display_name || u.username || '?').split(' ').map(function(w){return w[0]}).join('').substring(0,2).toUpperCase();
+    var roleColor = roleColors[u.role] || 'var(--text-3)';
+    var statusBadge = u.is_active !== false
+      ? '<span class="badge badge-success" style="font-size:0.68rem">Active</span>'
+      : '<span class="badge" style="font-size:0.68rem;color:var(--text-3)">Disabled</span>';
+    html += '<tr>' +
+      '<td style="display:flex;align-items:center;gap:0.5rem"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(139,92,246,0.15));display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--accent-text)">' + escapeHtml(initials) + '</div><div><div style="font-weight:600;font-size:0.82rem">' + escapeHtml(u.display_name || u.username) + '</div><div style="font-size:0.7rem;color:var(--text-3)" class="mono">' + escapeHtml(u.username) + '</div></div></td>' +
+      '<td style="font-size:0.78rem">' + escapeHtml(u.email || String.fromCharCode(0x2014)) + '</td>' +
+      '<td><span style="color:' + roleColor + ';font-weight:600;font-size:0.78rem;text-transform:uppercase">' + escapeHtml(u.role) + '</span></td>' +
+      '<td class="mono" style="font-size:0.75rem">' + escapeHtml(u.default_workspace || 'default') + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td style="white-space:nowrap"><button class="btn btn-sm" onclick="editUser(' + "'" + u.id + "'" + ')" style="font-size:0.68rem;padding:2px 8px" title="Edit">Edit</button>' +
+      (u.username !== 'admin' ? ' <button class="btn btn-sm" onclick="deleteUser(' + "'" + u.id + "','" + escapeHtml(u.username) + "'" + ')" style="font-size:0.68rem;padding:2px 8px;color:var(--danger)" title="Delete">Delete</button>' : '') +
+      '</td></tr>';
+  });
+  html += '</table>';
+  document.getElementById('users-table-container').innerHTML = html;
+}
+
+function showCreateUserModal() {
+  var overlay = document.createElement('div');
+  overlay.id = 'user-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.85);backdrop-filter:blur(8px)';
+  overlay.innerHTML = '<div style="width:420px;padding:1.5rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">' +
+    '<h3 style="margin:0 0 1rem;color:var(--text-1)">Create User</h3>' +
+    '<div style="display:flex;flex-direction:column;gap:0.75rem">' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Username</label><input type="text" id="new-user-username" class="input" placeholder="john.doe" style="width:100%"></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Display Name</label><input type="text" id="new-user-display" class="input" placeholder="John Doe" style="width:100%"></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Email</label><input type="email" id="new-user-email" class="input" placeholder="john@company.com" style="width:100%"></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Password</label><input type="password" id="new-user-password" class="input" placeholder="Min 6 characters" style="width:100%"></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Role</label><select id="new-user-role" class="input" style="width:100%"><option value="member">Member</option><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>' +
+    '<div id="create-user-error" style="display:none;color:#f43f5e;font-size:0.78rem;text-align:center;padding:0.35rem;background:rgba(244,63,94,0.08);border-radius:8px"></div>' +
+    '<div style="display:flex;gap:0.5rem;margin-top:0.5rem"><button class="btn btn-primary" onclick="createUser()" style="flex:1">Create User</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1">Cancel</button></div>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('new-user-username').focus();
+}
+
+async function createUser() {
+  var errEl = document.getElementById('create-user-error');
+  var username = document.getElementById('new-user-username').value.trim();
+  var display_name = document.getElementById('new-user-display').value.trim();
+  var email = document.getElementById('new-user-email').value.trim();
+  var password = document.getElementById('new-user-password').value;
+  var role = document.getElementById('new-user-role').value;
+  if (!username || !password) { errEl.style.display = 'block'; errEl.textContent = 'Username and password are required'; return; }
+  if (password.length < 6) { errEl.style.display = 'block'; errEl.textContent = 'Password must be at least 6 characters'; return; }
+  try {
+    var r = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password, display_name: display_name || username, email: email, role: role })
+    });
+    if (r.status === 409) { errEl.style.display = 'block'; errEl.textContent = 'Username already exists'; return; }
+    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.detail || 'Failed to create user'; return; }
+    closeUserModal();
+    showToast('User "' + username + '" created', 'success');
+    loadUsers();
+  } catch(e) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + e.message; }
+}
+
+function editUser(userId) {
+  var u = _usersCache.find(function(x) { return x.id === userId; });
+  if (!u) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'user-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.85);backdrop-filter:blur(8px)';
+  overlay.innerHTML = '<div style="width:420px;padding:1.5rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">' +
+    '<h3 style="margin:0 0 1rem;color:var(--text-1)">Edit User: ' + escapeHtml(u.username) + '</h3>' +
+    '<div style="display:flex;flex-direction:column;gap:0.75rem">' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Display Name</label><input type="text" id="edit-user-display" class="input" value="' + escapeHtml(u.display_name || '') + '" style="width:100%"></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Email</label><input type="email" id="edit-user-email" class="input" value="' + escapeHtml(u.email || '') + '" style="width:100%"></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Role</label><select id="edit-user-role" class="input" style="width:100%"><option value="member"' + (u.role === 'member' ? ' selected' : '') + '>Member</option><option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option><option value="viewer"' + (u.role === 'viewer' ? ' selected' : '') + '>Viewer</option></select></div>' +
+    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">New Password <span style="font-weight:400;color:var(--text-3)">(leave blank to keep)</span></label><input type="password" id="edit-user-password" class="input" placeholder="Unchanged" style="width:100%"></div>' +
+    '<div id="edit-user-error" style="display:none;color:#f43f5e;font-size:0.78rem;text-align:center;padding:0.35rem;background:rgba(244,63,94,0.08);border-radius:8px"></div>' +
+    '<div style="display:flex;gap:0.5rem;margin-top:0.5rem"><button class="btn btn-primary" onclick="saveUser(' + "'" + userId + "'" + ')" style="flex:1">Save Changes</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1">Cancel</button></div>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+}
+
+async function saveUser(userId) {
+  var errEl = document.getElementById('edit-user-error');
+  var body = {};
+  var display = document.getElementById('edit-user-display').value.trim();
+  var email = document.getElementById('edit-user-email').value.trim();
+  var role = document.getElementById('edit-user-role').value;
+  var password = document.getElementById('edit-user-password').value;
+  if (display) body.display_name = display;
+  if (email) body.email = email;
+  body.role = role;
+  if (password) { if (password.length < 6) { errEl.style.display = 'block'; errEl.textContent = 'Password must be at least 6 characters'; return; } body.password = password; }
+  try {
+    var r = await fetch('/api/users/' + userId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.detail || 'Failed to update user'; return; }
+    closeUserModal();
+    showToast('User updated', 'success');
+    loadUsers();
+  } catch(e) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + e.message; }
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
+  try {
+    var r = await fetch('/api/users/' + userId, { method: 'DELETE' });
+    if (r.status === 403) { showToast('Cannot delete admin user', 'error'); return; }
+    if (!r.ok) { showToast('Failed to delete user', 'error'); return; }
+    showToast('User "' + username + '" deleted', 'success');
+    loadUsers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function closeUserModal() {
+  var overlay = document.getElementById('user-modal-overlay');
+  if (overlay) overlay.remove();
+}
+
+function showCreateWorkspaceModal() {
+  showToast('Workspace creation is available from the workspace selector', 'info');
+}
+
+async function loadWorkspacesAdmin() {
+  try {
+    var r = await fetch('/api/workspaces');
+    var d = await r.json();
+    var items = Array.isArray(d) ? d : (d.workspaces || []);
+    if (items.length === 0) {
+      document.getElementById('workspaces-admin-table').innerHTML = '<p style="color:var(--text-3)">No workspaces configured.</p>';
+      return;
+    }
+    var html = '<table><tr><th>Name</th><th>ID</th><th>Members</th><th>Created</th></tr>';
+    items.forEach(function(w) {
+      var created = w.created_at ? new Date(w.created_at).toLocaleDateString() : String.fromCharCode(0x2014);
+      var members = Array.isArray(w.members) ? w.members.length : (w.member_count || String.fromCharCode(0x2014));
+      html += '<tr><td style="font-weight:600">' + escapeHtml(w.name || w.id) + '</td>' +
+        '<td class="mono" style="font-size:0.75rem">' + escapeHtml(w.id) + '</td>' +
+        '<td>' + members + '</td>' +
+        '<td class="mono" style="font-size:0.75rem">' + created + '</td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('workspaces-admin-table').innerHTML = html;
+  } catch(e) { document.getElementById('workspaces-admin-table').innerHTML = '<p style="color:var(--text-3)">Failed to load workspaces</p>'; }
 }
 
 /* ═══ TABS ═══ */
@@ -663,6 +791,7 @@ function switchTab(tab) {
   history.replaceState(null, '', '#' + tab);
   /* Load data for the active tab */
   if (tab === 'health') loadServiceHealth();
+  if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
   if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
   if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
@@ -695,7 +824,7 @@ function highlightThemeCard() {
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
-  var validTabs = ['health','overview','llm','database','config','audit'];
+  var validTabs = ['health','users','overview','llm','database','config','audit'];
   var startTab = validTabs.indexOf(hash) >= 0 ? hash : 'health';
   switchTab(startTab);
 }
@@ -1178,6 +1307,6 @@ document.getElementById('audit-filter-type').addEventListener('change', loadAudi
 document.getElementById('audit-filter-action').addEventListener('change', loadAuditLog);
 
 /* ═══ INIT ═══ */
-adminCheckSession();
+adminLoadAll();
 <\/script>
 ` }) %>
