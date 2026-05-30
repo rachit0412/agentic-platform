@@ -14,7 +14,9 @@ from contextvars import ContextVar
 
 # ── Request-scoped context ──────────────────────────────────────────────────
 
-current_workspace_id: ContextVar[str] = ContextVar("current_workspace_id", default="default")
+current_workspace_id: ContextVar[str] = ContextVar(
+    "current_workspace_id", default="default"
+)
 current_user_id: ContextVar[str] = ContextVar("current_user_id", default="system")
 current_user_role: ContextVar[str] = ContextVar("current_user_role", default="admin")
 
@@ -66,11 +68,24 @@ def visibility_filter_sql(table_alias: str = "") -> str:
     Returns rows that are either:
       - scope = 'global' (visible everywhere), OR
       - scope = 'workspace' AND workspace_id matches current workspace
+
+    Non-admin users additionally only see their own items (created_by = user)
+    plus global items.
     """
     prefix = f"{table_alias}." if table_alias else ""
-    return f"({prefix}scope = 'global' OR ({prefix}scope = 'workspace' AND {prefix}workspace_id = ?))"
+    role = get_user_role()
+    if role == "admin":
+        return f"({prefix}scope = 'global' OR ({prefix}scope = 'workspace' AND {prefix}workspace_id = ?))"
+    # Non-admin: own items in workspace + global items
+    return (
+        f"({prefix}scope = 'global' OR "
+        f"({prefix}scope = 'workspace' AND {prefix}workspace_id = ? AND {prefix}created_by = ?))"
+    )
 
 
 def visibility_params() -> tuple:
     """Return the parameter tuple for visibility_filter_sql."""
-    return (get_workspace_id(),)
+    role = get_user_role()
+    if role == "admin":
+        return (get_workspace_id(),)
+    return (get_workspace_id(), get_user_id())

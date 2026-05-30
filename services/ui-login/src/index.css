@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ── Neon glow input ring ─────────────────────────────── */
+.neon-ring {
+  position: relative;
+}
+.neon-ring::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: conic-gradient(from 180deg, #6366f1, #06b6d4, #a855f7, #6366f1);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  padding: 1.5px;
+}
+.neon-ring:focus-within::after {
+  opacity: 1;
+}
+
+/* ── Perspective grid ─────────────────────────────────── */
+.perspective-grid {
+  background-image:
+    linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.dark .perspective-grid {
+  background-image:
+    linear-gradient(rgba(99,102,241,0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.12) 1px, transparent 1px);
+}
+
+/* ── Scanning line ────────────────────────────────────── */
+@keyframes scanline {
+  0%   { top: -2px; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Floating particle ────────────────────────────────── */
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+  25%      { transform: translateY(-30vh) translateX(10px); opacity: 0.7; }
+  50%      { transform: translateY(-60vh) translateX(-8px); opacity: 0.5; }
+  75%      { transform: translateY(-80vh) translateX(12px); opacity: 0.2; }
+  100%     { transform: translateY(-100vh) translateX(0); opacity: 0; }
+}
+
+/* ── Orbital ring ─────────────────────────────────────── */
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

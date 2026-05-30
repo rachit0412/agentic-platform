@@ -54,6 +54,28 @@
 <!-- TAB: USERS & ACCESS                                    -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="tab-users" class="admin-tab-content" style="display:none">
+
+  <!-- User Stats Summary -->
+  <div id="user-stats-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--text-1)" id="user-count-total">—</div>
+      <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Total Users</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--success)" id="user-count-active">—</div>
+      <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Active</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--accent-text)" id="user-count-verified">—</div>
+      <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Verified</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--danger)" id="user-count-admins">—</div>
+      <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Admins</div>
+    </div>
+  </div>
+
+  <!-- User Management -->
   <div class="card animate-fade-up" style="margin-bottom:1.5rem">
     <div class="section-header">
       <h3>User Management</h3>
@@ -73,7 +95,7 @@
     </div>
   </div>
 
-  <!-- Workspace Access -->
+  <!-- Workspace Management -->
   <div class="card animate-fade-up">
     <div class="section-header">
       <h3>Workspace Management</h3>
@@ -619,9 +641,19 @@ async function loadUsers() {
   try {
     var r = await fetch('/api/users');
     if (r.status === 403) { document.getElementById('users-table-container').innerHTML = '<p style="color:var(--danger)">Access denied. Admin role required.</p>'; return; }
-    var users = await r.json();
+    var data = await r.json();
+    var users = Array.isArray(data) ? data : (data.users || []);
     _usersCache = users;
     renderUsersTable(users);
+    /* Update stats bar */
+    var total = users.length;
+    var active = users.filter(function(u) { return u.is_active !== false; }).length;
+    var verified = users.filter(function(u) { return u.email_verified; }).length;
+    var admins = users.filter(function(u) { return u.role === 'admin'; }).length;
+    document.getElementById('user-count-total').textContent = total;
+    document.getElementById('user-count-active').textContent = active;
+    document.getElementById('user-count-verified').textContent = verified;
+    document.getElementById('user-count-admins').textContent = admins;
   } catch(e) { document.getElementById('users-table-container').innerHTML = '<p style="color:var(--danger)">Failed to load users: ' + escapeHtml(e.message) + '</p>'; }
 }
 
@@ -630,42 +662,71 @@ function renderUsersTable(users) {
     document.getElementById('users-table-container').innerHTML = '<p style="color:var(--text-3)">No users found.</p>';
     return;
   }
-  var roleColors = { admin: 'var(--danger)', member: 'var(--info)', viewer: 'var(--text-3)' };
-  var html = '<table><tr><th>User</th><th>Email</th><th>Role</th><th>Workspace</th><th>Status</th><th>Actions</th></tr>';
+  var roleColors = { admin: 'var(--danger)', member: 'var(--accent-text)', viewer: 'var(--text-3)' };
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr style="border-bottom:2px solid var(--glass-border)">'
+    + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">User</th>'
+    + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Email</th>'
+    + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Role</th>'
+    + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Workspace</th>'
+    + '<th style="text-align:center;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Status</th>'
+    + '<th style="text-align:center;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Verified</th>'
+    + '<th style="text-align:right;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Actions</th>'
+    + '</tr></thead><tbody>';
   users.forEach(function(u) {
     var initials = (u.display_name || u.username || '?').split(' ').map(function(w){return w[0]}).join('').substring(0,2).toUpperCase();
     var roleColor = roleColors[u.role] || 'var(--text-3)';
-    var statusBadge = u.is_active !== false
-      ? '<span class="badge badge-success" style="font-size:0.68rem">Active</span>'
-      : '<span class="badge" style="font-size:0.68rem;color:var(--text-3)">Disabled</span>';
-    html += '<tr>' +
-      '<td style="display:flex;align-items:center;gap:0.5rem"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(139,92,246,0.15));display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--accent-text)">' + escapeHtml(initials) + '</div><div><div style="font-weight:600;font-size:0.82rem">' + escapeHtml(u.display_name || u.username) + '</div><div style="font-size:0.7rem;color:var(--text-3)" class="mono">' + escapeHtml(u.username) + '</div></div></td>' +
-      '<td style="font-size:0.78rem">' + escapeHtml(u.email || String.fromCharCode(0x2014)) + '</td>' +
-      '<td><span style="color:' + roleColor + ';font-weight:600;font-size:0.78rem;text-transform:uppercase">' + escapeHtml(u.role) + '</span></td>' +
-      '<td class="mono" style="font-size:0.75rem">' + escapeHtml(u.default_workspace || 'default') + '</td>' +
-      '<td>' + statusBadge + '</td>' +
-      '<td style="white-space:nowrap"><button class="btn btn-sm" onclick="editUser(' + "'" + u.id + "'" + ')" style="font-size:0.68rem;padding:2px 8px" title="Edit">Edit</button>' +
-      (u.username !== 'admin' ? ' <button class="btn btn-sm" onclick="deleteUser(' + "'" + u.id + "','" + escapeHtml(u.username) + "'" + ')" style="font-size:0.68rem;padding:2px 8px;color:var(--danger)" title="Delete">Delete</button>' : '') +
-      '</td></tr>';
+    var isActive = u.is_active !== false;
+    var statusBadge = isActive
+      ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.68rem;padding:3px 10px;border-radius:99px;background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Active</span>'
+      : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.68rem;padding:3px 10px;border-radius:99px;background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger-border);font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:var(--danger);display:inline-block"></span>Disabled</span>';
+    var verifiedBadge = u.email_verified
+      ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.68rem;padding:3px 10px;border-radius:99px;background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);font-weight:500"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>'
+      : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.68rem;padding:3px 10px;border-radius:99px;background:var(--warn-bg);color:var(--warning);border:1px solid var(--warn-border);font-weight:500"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Unverified</span>';
+    /* Action buttons */
+    var actions = '<div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:nowrap">';
+    actions += '<button class="btn btn-sm" onclick="editUser(&#39;' + u.id + '&#39;)" style="font-size:0.66rem;padding:3px 8px" title="Edit user">Edit</button>';
+    if (u.username !== 'admin') {
+      if (isActive) {
+        actions += '<button class="btn btn-sm" onclick="toggleUserActive(&#39;' + u.id + '&#39;,false)" style="font-size:0.66rem;padding:3px 8px;color:var(--warn)" title="Disable user">Disable</button>';
+      } else {
+        actions += '<button class="btn btn-sm" onclick="toggleUserActive(&#39;' + u.id + '&#39;,true)" style="font-size:0.66rem;padding:3px 8px;color:var(--success)" title="Enable user">Enable</button>';
+      }
+      if (!u.email_verified) {
+        actions += '<button class="btn btn-sm" onclick="adminVerifyUser(&#39;' + u.id + '&#39;)" style="font-size:0.66rem;padding:3px 8px;color:var(--accent-text)" title="Mark as verified">Verify</button>';
+      }
+      actions += '<button class="btn btn-sm" onclick="deleteUser(&#39;' + u.id + '&#39;,&#39;' + escapeHtml(u.username) + '&#39;)" style="font-size:0.66rem;padding:3px 8px;color:var(--danger)" title="Delete user">Delete</button>';
+    }
+    actions += '</div>';
+    html += '<tr style="border-bottom:1px solid var(--glass-border)">' +
+      '<td style="padding:10px 12px"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),rgba(139,92,246,0.7));display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;flex-shrink:0">' + escapeHtml(initials) + '</div><div><div style="font-weight:600;font-size:0.82rem;color:var(--text-1)">' + escapeHtml(u.display_name || u.username) + '</div><div style="font-size:0.7rem;color:var(--text-3)" class="mono">@' + escapeHtml(u.username) + '</div></div></div></td>' +
+      '<td style="padding:10px 12px;font-size:0.78rem;color:var(--text-2)">' + escapeHtml(u.email || String.fromCharCode(0x2014)) + '</td>' +
+      '<td style="padding:10px 12px"><span style="display:inline-block;padding:3px 10px;border-radius:99px;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:' + roleColor + ';background:' + roleColor + '15;border:1px solid ' + roleColor + '25">' + escapeHtml(u.role) + '</span></td>' +
+      '<td style="padding:10px 12px" class="mono"><span style="font-size:0.75rem;color:var(--text-2)">' + escapeHtml(u.default_workspace || 'default') + '</span></td>' +
+      '<td style="padding:10px 12px;text-align:center">' + statusBadge + '</td>' +
+      '<td style="padding:10px 12px;text-align:center">' + verifiedBadge + '</td>' +
+      '<td style="padding:10px 12px">' + actions + '</td></tr>';
   });
-  html += '</table>';
+  html += '</tbody></table></div>';
   document.getElementById('users-table-container').innerHTML = html;
 }
 
 function showCreateUserModal() {
   var overlay = document.createElement('div');
   overlay.id = 'user-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.85);backdrop-filter:blur(8px)';
-  overlay.innerHTML = '<div style="width:420px;padding:1.5rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">' +
-    '<h3 style="margin:0 0 1rem;color:var(--text-1)">Create User</h3>' +
-    '<div style="display:flex;flex-direction:column;gap:0.75rem">' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Username</label><input type="text" id="new-user-username" class="input" placeholder="john.doe" style="width:100%"></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Display Name</label><input type="text" id="new-user-display" class="input" placeholder="John Doe" style="width:100%"></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Email</label><input type="email" id="new-user-email" class="input" placeholder="john@company.com" style="width:100%"></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Password</label><input type="password" id="new-user-password" class="input" placeholder="Min 6 characters" style="width:100%"></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Role</label><select id="new-user-role" class="input" style="width:100%"><option value="member">Member</option><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>' +
-    '<div id="create-user-error" style="display:none;color:#f43f5e;font-size:0.78rem;text-align:center;padding:0.35rem;background:rgba(244,63,94,0.08);border-radius:8px"></div>' +
-    '<div style="display:flex;gap:0.5rem;margin-top:0.5rem"><button class="btn btn-primary" onclick="createUser()" style="flex:1">Create User</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1">Cancel</button></div>' +
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)';
+  overlay.onclick = function(e) { if (e.target === overlay) closeUserModal(); };
+  overlay.innerHTML = '<div style="width:440px;padding:28px 32px;background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;box-shadow:var(--modal-shadow)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1)">Create User</h3><button onclick="closeUserModal()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px">&times;</button></div>' +
+    '<div style="display:flex;flex-direction:column;gap:14px">' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Username *</label><input type="text" id="new-user-username" class="input" placeholder="john.doe" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Display Name</label><input type="text" id="new-user-display" class="input" placeholder="John Doe" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Email</label><input type="email" id="new-user-email" class="input" placeholder="john@company.com" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Password *</label><input type="password" id="new-user-password" class="input" placeholder="Min 6 characters" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Role</label><select id="new-user-role" class="input" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"><option value="member">Member</option><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>' +
+    '<div style="padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);font-size:0.72rem;color:var(--text-3)"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Admin-created users are automatically verified and can log in immediately.</div>' +
+    '<div id="create-user-error" style="display:none;color:var(--danger);font-size:0.75rem;text-align:center;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-primary" onclick="createUser()" style="flex:1;padding:11px;border-radius:10px;font-weight:600">Create User</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1;padding:11px;border-radius:10px">Cancel</button></div>' +
     '</div></div>';
   document.body.appendChild(overlay);
   document.getElementById('new-user-username').focus();
@@ -686,8 +747,8 @@ async function createUser() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username, password: password, display_name: display_name || username, email: email, role: role })
     });
-    if (r.status === 409) { errEl.style.display = 'block'; errEl.textContent = 'Username already exists'; return; }
-    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.detail || 'Failed to create user'; return; }
+    if (r.status === 409) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || 'Username or email already exists'; return; }
+    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || d.detail || 'Failed to create user'; return; }
     closeUserModal();
     showToast('User "' + username + '" created', 'success');
     loadUsers();
@@ -699,16 +760,26 @@ function editUser(userId) {
   if (!u) return;
   var overlay = document.createElement('div');
   overlay.id = 'user-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.85);backdrop-filter:blur(8px)';
-  overlay.innerHTML = '<div style="width:420px;padding:1.5rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">' +
-    '<h3 style="margin:0 0 1rem;color:var(--text-1)">Edit User: ' + escapeHtml(u.username) + '</h3>' +
-    '<div style="display:flex;flex-direction:column;gap:0.75rem">' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Display Name</label><input type="text" id="edit-user-display" class="input" value="' + escapeHtml(u.display_name || '') + '" style="width:100%"></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Email</label><input type="email" id="edit-user-email" class="input" value="' + escapeHtml(u.email || '') + '" style="width:100%"></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Role</label><select id="edit-user-role" class="input" style="width:100%"><option value="member"' + (u.role === 'member' ? ' selected' : '') + '>Member</option><option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option><option value="viewer"' + (u.role === 'viewer' ? ' selected' : '') + '>Viewer</option></select></div>' +
-    '<div><label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">New Password <span style="font-weight:400;color:var(--text-3)">(leave blank to keep)</span></label><input type="password" id="edit-user-password" class="input" placeholder="Unchanged" style="width:100%"></div>' +
-    '<div id="edit-user-error" style="display:none;color:#f43f5e;font-size:0.78rem;text-align:center;padding:0.35rem;background:rgba(244,63,94,0.08);border-radius:8px"></div>' +
-    '<div style="display:flex;gap:0.5rem;margin-top:0.5rem"><button class="btn btn-primary" onclick="saveUser(' + "'" + userId + "'" + ')" style="flex:1">Save Changes</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1">Cancel</button></div>' +
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)';
+  overlay.onclick = function(e) { if (e.target === overlay) closeUserModal(); };
+  var statusInfo = u.is_active !== false
+    ? '<span style="color:var(--success);font-weight:500">Active</span>'
+    : '<span style="color:var(--danger);font-weight:500">Disabled</span>';
+  var verifiedInfo = u.email_verified
+    ? '<span style="color:var(--success);font-weight:500">Verified</span>'
+    : '<span style="color:var(--warning);font-weight:500">Unverified</span>';
+  overlay.innerHTML = '<div style="width:440px;padding:28px 32px;background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;box-shadow:var(--modal-shadow)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1)">Edit User</h3><button onclick="closeUserModal()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px">&times;</button></div>' +
+    '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--modal-field-bg);margin-bottom:18px">' +
+    '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),rgba(139,92,246,0.7));display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:#fff;flex-shrink:0">' + escapeHtml((u.display_name || u.username || '?').charAt(0).toUpperCase()) + '</div>' +
+    '<div><div style="font-weight:600;font-size:0.82rem;color:var(--text-1)">@' + escapeHtml(u.username) + '</div><div style="font-size:0.68rem;color:var(--text-3)">ID: ' + escapeHtml(u.id) + ' &middot; Status: ' + statusInfo + ' &middot; Email: ' + verifiedInfo + '</div></div></div>' +
+    '<div style="display:flex;flex-direction:column;gap:14px">' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Display Name</label><input type="text" id="edit-user-display" class="input" value="' + escapeHtml(u.display_name || '') + '" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Email</label><input type="email" id="edit-user-email" class="input" value="' + escapeHtml(u.email || '') + '" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Role</label><select id="edit-user-role" class="input" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"><option value="member"' + (u.role === 'member' ? ' selected' : '') + '>Member</option><option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option><option value="viewer"' + (u.role === 'viewer' ? ' selected' : '') + '>Viewer</option></select></div>' +
+    '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">New Password <span style="font-weight:400;color:var(--text-3)">(leave blank to keep)</span></label><input type="password" id="edit-user-password" class="input" placeholder="Unchanged" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
+    '<div id="edit-user-error" style="display:none;color:var(--danger);font-size:0.75rem;text-align:center;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-primary" onclick="saveUser(&#39;' + userId + '&#39;)" style="flex:1;padding:11px;border-radius:10px;font-weight:600">Save Changes</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1;padding:11px;border-radius:10px">Cancel</button></div>' +
     '</div></div>';
   document.body.appendChild(overlay);
 }
@@ -730,7 +801,7 @@ async function saveUser(userId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.detail || 'Failed to update user'; return; }
+    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || d.detail || 'Failed to update user'; return; }
     closeUserModal();
     showToast('User updated', 'success');
     loadUsers();
@@ -751,6 +822,34 @@ async function deleteUser(userId, username) {
 function closeUserModal() {
   var overlay = document.getElementById('user-modal-overlay');
   if (overlay) overlay.remove();
+}
+
+async function toggleUserActive(userId, activate) {
+  var action = activate ? 'enable' : 'disable';
+  if (!confirm('Are you sure you want to ' + action + ' this user?')) return;
+  try {
+    var r = await fetch('/api/users/' + userId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: activate })
+    });
+    if (!r.ok) { showToast('Failed to ' + action + ' user', 'error'); return; }
+    showToast('User ' + action + 'd successfully', 'success');
+    loadUsers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function adminVerifyUser(userId) {
+  if (!confirm('Mark this user as email verified?')) return;
+  try {
+    var r = await fetch('/api/users/' + userId + '/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!r.ok) { showToast('Failed to verify user', 'error'); return; }
+    showToast('User verified successfully', 'success');
+    loadUsers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
 
 function showCreateWorkspaceModal() {

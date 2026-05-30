@@ -255,21 +255,41 @@
         <div class="topbar-divider"></div>
         <span class="badge badge-info" style="font-size:0.62rem;padding:2px 8px">local</span>
         <div class="topbar-divider"></div>
-        <!-- User Profile -->
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,rgba(139,92,246,0.3),rgba(6,182,212,0.3));display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;color:var(--text-1);border:1px solid rgba(148,163,184,0.15);">
-            <%= (typeof user !== 'undefined' && user.display_name ? user.display_name.charAt(0).toUpperCase() : 'U') %>
-          </div>
-          <div style="display:flex;flex-direction:column;line-height:1.15;">
-            <span style="font-size:0.7rem;font-weight:600;color:var(--text-1)"><%= (typeof user !== 'undefined' && user.display_name ? user.display_name : 'User') %></span>
-            <span style="font-size:0.55rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.04em"><%= (typeof user !== 'undefined' && user.role ? user.role : 'member') %></span>
+        <!-- User Profile Dropdown -->
+        <div class="user-menu-wrapper" style="position:relative;">
+          <button onclick="toggleUserMenu()" class="user-menu-trigger" style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;border:none;background:transparent;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='var(--hover-bg,rgba(148,163,184,0.08))'" onmouseout="this.style.background='transparent'">
+            <div class="user-avatar-text" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,rgba(139,92,246,0.3),rgba(6,182,212,0.3));display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--text-1);border:1px solid rgba(148,163,184,0.15);">
+              <%= (typeof user !== 'undefined' && user.display_name ? user.display_name.charAt(0).toUpperCase() : 'U') %>
+            </div>
+            <div style="display:flex;flex-direction:column;line-height:1.15;text-align:left;">
+              <span class="user-display-name" style="font-size:0.7rem;font-weight:600;color:var(--text-1)"><%= (typeof user !== 'undefined' && user.display_name ? user.display_name : 'User') %></span>
+              <span style="font-size:0.55rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.04em"><%= (typeof user !== 'undefined' && user.role ? user.role : 'member') %></span>
+            </div>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4;flex-shrink:0;margin-left:2px;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="user-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:200px;border-radius:10px;border:1px solid var(--border-color);background:var(--card-bg);box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:100;overflow:hidden;backdrop-filter:blur(16px);">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border-color);">
+              <div style="font-size:0.75rem;font-weight:600;color:var(--text-1);"><%= (typeof user !== 'undefined' && user.display_name ? user.display_name : 'User') %></div>
+              <div style="font-size:0.6rem;color:var(--text-3);margin-top:2px;"><%= (typeof user !== 'undefined' && user.email ? user.email : '') %></div>
+            </div>
+            <div style="padding:4px 0;">
+              <button onclick="openProfileModal()" class="user-dropdown-item" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;border:none;background:transparent;color:var(--text-2);font-size:0.7rem;cursor:pointer;transition:background 0.15s,color 0.15s;text-align:left;" onmouseover="this.style.background='var(--hover-bg,rgba(148,163,184,0.08))';this.style.color='var(--text-1)'" onmouseout="this.style.background='transparent';this.style.color='var(--text-2)'">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                My Profile
+              </button>
+              <button onclick="openChangePasswordModal()" class="user-dropdown-item" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;border:none;background:transparent;color:var(--text-2);font-size:0.7rem;cursor:pointer;transition:background 0.15s,color 0.15s;text-align:left;" onmouseover="this.style.background='var(--hover-bg,rgba(148,163,184,0.08))';this.style.color='var(--text-1)'" onmouseout="this.style.background='transparent';this.style.color='var(--text-2)'">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Change Password
+              </button>
+            </div>
+            <div style="border-top:1px solid var(--border-color);padding:4px 0;">
+              <a href="/auth/logout" class="user-dropdown-item" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;border:none;background:transparent;color:var(--text-2);font-size:0.7rem;cursor:pointer;transition:background 0.15s,color 0.15s;text-decoration:none;text-align:left;" onmouseover="this.style.background='rgba(239,68,68,0.08)';this.style.color='#ef4444'" onmouseout="this.style.background='transparent';this.style.color='var(--text-2)'">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out
+              </a>
+            </div>
           </div>
         </div>
-        <div class="topbar-divider"></div>
-        <a href="/auth/logout" class="btn btn-sm" style="font-size:0.62rem;padding:2px 8px;text-decoration:none;display:flex;align-items:center;gap:4px;" title="Sign Out">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Sign Out
-        </a>
         <div class="topbar-divider"></div>
         <div class="topbar-status">
           <span class="pulse-dot-emerald" id="topbar-health-dot"></span>
@@ -338,7 +358,109 @@
     window.__userRole = '<%= (typeof user !== "undefined" && user.role ? user.role : "member") %>';
     window.__userName = '<%= (typeof user !== "undefined" && user.username ? user.username : "") %>';
     window.__userDisplayName = '<%= (typeof user !== "undefined" && user.display_name ? user.display_name : "User") %>';
+    window.__userEmail = '<%= (typeof user !== "undefined" && user.email ? user.email : "") %>';
     document.addEventListener('DOMContentLoaded', loadWorkspaces);
+
+    // ── User Dropdown Menu ──
+    function toggleUserMenu() {
+      var dd = document.getElementById('user-dropdown');
+      dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+    }
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      var wrapper = document.querySelector('.user-menu-wrapper');
+      var dd = document.getElementById('user-dropdown');
+      if (wrapper && dd && !wrapper.contains(e.target)) {
+        dd.style.display = 'none';
+      }
+    });
+
+    // ── Profile Modal ──
+    function openProfileModal() {
+      document.getElementById('user-dropdown').style.display = 'none';
+      var existing = document.getElementById('profile-modal');
+      if (existing) existing.remove();
+      var m = document.createElement('div');
+      m.id = 'profile-modal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px);';
+      m.onclick = function(e) { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div style="background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;padding:28px 32px;min-width:360px;max-width:440px;box-shadow:var(--modal-shadow);">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1);">My Profile</h3><button onclick="document.getElementById(\'profile-modal\').remove()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px;">&times;</button></div>'
+        + '<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px;border-radius:12px;background:var(--modal-field-bg);">'
+        + '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),rgba(139,92,246,0.8));display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#fff;flex-shrink:0;">' + escapeHtml(window.__userDisplayName.charAt(0).toUpperCase()) + '</div>'
+        + '<div><div style="font-size:0.75rem;color:var(--text-3);margin-top:2px;">@' + escapeHtml(window.__userName) + '</div></div></div>'
+        + '<div style="display:grid;gap:14px;">'
+        + '<div><label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3);margin-bottom:6px;">Display Name</label><input type="text" id="profile-display-name" value="' + escapeHtml(window.__userDisplayName) + '" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);font-size:0.82rem;box-sizing:border-box;" /></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);"><span style="font-size:0.75rem;font-weight:500;color:var(--text-3);">Email</span><span style="font-size:0.75rem;color:var(--text-1);">' + escapeHtml(window.__userEmail) + '</span></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);"><span style="font-size:0.75rem;font-weight:500;color:var(--text-3);">Role</span><span style="font-size:0.75rem;color:var(--text-1);text-transform:capitalize;">' + escapeHtml(window.__userRole) + '</span></div>'
+        + '<div id="profile-save-msg" style="display:none;font-size:0.75rem;text-align:center;padding:10px 14px;border-radius:10px;"></div>'
+        + '<button onclick="saveProfileName()" class="btn btn-primary" style="width:100%;padding:11px;border-radius:10px;font-size:0.78rem;font-weight:600;cursor:pointer;margin-top:4px;">Save Changes</button>'
+        + '</div></div>';
+      document.body.appendChild(m);
+      document.getElementById('profile-display-name').focus();
+    }
+    async function saveProfileName() {
+      var nameInput = document.getElementById('profile-display-name');
+      var msgEl = document.getElementById('profile-save-msg');
+      var newName = nameInput.value.trim();
+      if (!newName) { msgEl.style.display = 'block'; msgEl.style.background = 'var(--danger-bg)'; msgEl.style.color = 'var(--danger)'; msgEl.textContent = 'Display name cannot be empty'; return; }
+      try {
+        var r = await fetch('/api/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ display_name: newName }) });
+        if (!r.ok) { var d = await r.json(); throw new Error(d.error || 'Failed'); }
+        window.__userDisplayName = newName;
+        var avatarEl = document.querySelector('.user-menu-wrapper .user-avatar-text');
+        if (avatarEl) avatarEl.textContent = newName.charAt(0).toUpperCase();
+        var nameEl = document.querySelector('.user-menu-wrapper .user-display-name');
+        if (nameEl) nameEl.textContent = newName;
+        msgEl.style.display = 'block'; msgEl.style.background = 'var(--success-bg)'; msgEl.style.color = 'var(--success)'; msgEl.textContent = 'Profile updated!';
+        setTimeout(function() { var m = document.getElementById('profile-modal'); if (m) m.remove(); }, 1200);
+      } catch(err) { msgEl.style.display = 'block'; msgEl.style.background = 'var(--danger-bg)'; msgEl.style.color = 'var(--danger)'; msgEl.textContent = err.message; }
+    }
+
+    // ── Change Password Modal ──
+    function openChangePasswordModal() {
+      document.getElementById('user-dropdown').style.display = 'none';
+      var existing = document.getElementById('password-modal');
+      if (existing) existing.remove();
+      var m = document.createElement('div');
+      m.id = 'password-modal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px);';
+      m.onclick = function(e) { if (e.target === m) m.remove(); };
+      m.innerHTML = '<div style="background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;padding:28px 32px;min-width:360px;max-width:440px;box-shadow:var(--modal-shadow);">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1);">Change Password</h3><button onclick="document.getElementById(\'password-modal\').remove()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px;">&times;</button></div>'
+        + '<div id="pw-error" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger);font-size:0.75rem;"></div>'
+        + '<div id="pw-success" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success);font-size:0.75rem;"></div>'
+        + '<form onsubmit="handleChangePassword(event)" style="display:grid;gap:14px;">'
+        + '<div><label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3);margin-bottom:6px;">New Password</label><input type="password" id="pw-new" required minlength="8" placeholder="Min. 8 characters" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--modal-border);background:var(--modal-field-bg);color:var(--text-1);font-size:0.82rem;box-sizing:border-box;" /></div>'
+        + '<div><label style="display:block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-3);margin-bottom:6px;">Confirm Password</label><input type="password" id="pw-confirm" required minlength="8" placeholder="Re-enter password" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--modal-border);background:var(--modal-field-bg);color:var(--text-1);font-size:0.82rem;box-sizing:border-box;" /></div>'
+        + '<button type="submit" class="btn btn-primary" style="padding:11px;border-radius:10px;font-size:0.78rem;font-weight:600;cursor:pointer;margin-top:4px;">Update Password</button>'
+        + '</form></div>';
+      document.body.appendChild(m);
+    }
+    async function handleChangePassword(e) {
+      e.preventDefault();
+      var errEl = document.getElementById('pw-error');
+      var succEl = document.getElementById('pw-success');
+      errEl.style.display = 'none';
+      succEl.style.display = 'none';
+      var np = document.getElementById('pw-new').value;
+      var cp = document.getElementById('pw-confirm').value;
+      if (np.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+      if (np !== cp) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+      try {
+        var r = await fetch('/api/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ new_password: np }) });
+        var d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Failed');
+        succEl.textContent = 'Password updated successfully!';
+        succEl.style.display = 'block';
+        document.getElementById('pw-new').value = '';
+        document.getElementById('pw-confirm').value = '';
+        setTimeout(function() { var m = document.getElementById('password-modal'); if (m) m.remove(); }, 1500);
+      } catch(err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      }
+    }
 
     // ── Global HTML Escape (XSS Prevention) ──
     function escapeHtml(str) {

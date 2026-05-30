@@ -12,7 +12,6 @@ Platform.db tables: conversations, session_summaries, agents, skills, prompts,
 Datastore (Postgres) tables: documents.
 """
 
-import bcrypt
 import json
 import logging
 import os
@@ -21,6 +20,8 @@ import sqlite3
 import threading
 import uuid
 from datetime import datetime, timezone
+
+import bcrypt
 
 MEMORY_DIR = os.getenv("MEMORY_DIR", "/data")
 DB_PATH = os.path.join(MEMORY_DIR, "platform.db")
@@ -361,7 +362,14 @@ def init_db():
         now = datetime.now(timezone.utc).isoformat()
         conn.execute(
             "INSERT INTO workspaces (id, name, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-            ("default", "Default", "Default workspace — shared by all users", "system", now, now),
+            (
+                "default",
+                "Default",
+                "Default workspace — shared by all users",
+                "system",
+                now,
+                now,
+            ),
         )
         conn.execute(
             "INSERT INTO workspace_members (workspace_id, user_id, role, added_at) VALUES (?, ?, ?, ?)",
@@ -369,7 +377,14 @@ def init_db():
         )
 
     # ── Migration: add scope/workspace_id/created_by to resource tables ──
-    _SCOPED_TABLES = ["agents", "skills", "prompts", "mcp_servers", "custom_tools", "a2a_peers"]
+    _SCOPED_TABLES = [
+        "agents",
+        "skills",
+        "prompts",
+        "mcp_servers",
+        "custom_tools",
+        "a2a_peers",
+    ]
     for tbl in _SCOPED_TABLES:
         for col, default_val in [
             ("scope", "'global'"),
@@ -377,7 +392,9 @@ def init_db():
             ("created_by", "'system'"),
         ]:
             try:
-                conn.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} TEXT DEFAULT {default_val}")
+                conn.execute(
+                    f"ALTER TABLE {tbl} ADD COLUMN {col} TEXT DEFAULT {default_val}"
+                )
                 conn.commit()
             except sqlite3.OperationalError:
                 pass  # column already exists
@@ -393,23 +410,46 @@ def init_db():
             role            TEXT NOT NULL DEFAULT 'member',
             default_workspace TEXT DEFAULT 'default',
             is_active       INTEGER DEFAULT 1,
+            email_verified  INTEGER DEFAULT 0,
+            verification_code TEXT DEFAULT '',
             created_at      TEXT NOT NULL,
             updated_at      TEXT NOT NULL
         )
     """)
+    # Migration: add email_verified / verification_code if missing
+    for col, default_val in [("email_verified", "0"), ("verification_code", "''")]:
+        try:
+            conn.execute(
+                f"ALTER TABLE users ADD COLUMN {col} TEXT DEFAULT {default_val}"
+            )
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
     # Seed default users if table is empty — passwords read from env vars
     if not conn.execute("SELECT id FROM users LIMIT 1").fetchone():
         now = datetime.now(timezone.utc).isoformat()
         _seed_users = [
-            ("admin", os.environ.get("ADMIN_SEED_PASSWORD", "admin"), "admin", "Platform Administrator", "admin@agentic.local"),
-            ("rachit", os.environ.get("RACHIT_SEED_PASSWORD", "rachit123"), "member", "Rachit Gupta", "rachit@agentic.local"),
+            (
+                "admin",
+                os.environ.get("ADMIN_SEED_PASSWORD", "admin"),
+                "admin",
+                "Platform Administrator",
+                "admin@agentic.local",
+            ),
+            (
+                "rachit",
+                os.environ.get("RACHIT_SEED_PASSWORD", "rachit123"),
+                "member",
+                "Rachit Gupta",
+                "rachit@agentic.local",
+            ),
         ]
         for uname, pwd, role, display, email in _seed_users:
             uid = uname  # use username as id for seed users
             phash = _hash_password(pwd)
             conn.execute(
-                "INSERT INTO users (id, username, password_hash, display_name, email, role, default_workspace, is_active, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+                "INSERT INTO users (id, username, password_hash, display_name, email, role, default_workspace, is_active, email_verified, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)",
                 (uid, uname, phash, display, email, role, "default", now, now),
             )
             # Also add seed users as members of default workspace
@@ -426,9 +466,12 @@ def init_db():
 
 # ── Password Hashing (bcrypt — enterprise standard) ──────────────────────
 
+
 def _hash_password(password: str) -> str:
     """Hash password using bcrypt with auto-generated salt (cost factor 12)."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode(
+        "utf-8"
+    )
 
 
 def _verify_password(password: str, password_hash: str) -> bool:
@@ -441,8 +484,11 @@ def _verify_password(password: str, password_hash: str) -> bool:
 
 # ── User CRUD ─────────────────────────────────────────────────────────────
 
+
 def authenticate_user(username: str, password: str) -> dict | None:
-    """Verify credentials and return user dict (without password_hash) or None."""
+    """Verify credentials and return user dict (without password_hash) or None.
+    Returns {"error": "email_not_verified"} if the email is not yet verified
+    (seed/test accounts admin/rachit/Test are exempt)."""
     conn = _get_conn()
     row = conn.execute(
         "SELECT * FROM users WHERE username = ? AND is_active = 1", (username,)
@@ -451,12 +497,28 @@ def authenticate_user(username: str, password: str) -> dict | None:
         return None
     if not _verify_password(password, row["password_hash"]):
         return None
+    # Seed/admin/test accounts bypass verification
+    exempt = (
+        row["id"] in ("admin", "rachit")
+        or row["username"] == "Test"
+        or row["role"] == "admin"
+    )
+    try:
+        verified = bool(int(row["email_verified"]))
+    except (KeyError, IndexError):
+        verified = False
+    if not exempt and not verified:
+        return {
+            "error": "email_not_verified",
+            "user_id": row["id"],
+            "email": row["email"],
+        }
     return _row_to_user(row)
 
 
 def _row_to_user(row) -> dict:
     """Convert a SQLite Row to a user dict (excluding password_hash)."""
-    return {
+    d = {
         "id": row["id"],
         "username": row["username"],
         "display_name": row["display_name"],
@@ -467,6 +529,11 @@ def _row_to_user(row) -> dict:
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
+    try:
+        d["email_verified"] = bool(int(row["email_verified"]))
+    except (KeyError, IndexError):
+        d["email_verified"] = False
+    return d
 
 
 def get_user(user_id: str) -> dict | None:
@@ -481,26 +548,121 @@ def get_user_by_username(username: str) -> dict | None:
     return _row_to_user(row) if row else None
 
 
+def get_user_by_email(email: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    return _row_to_user(row) if row else None
+
+
+def reset_user_password(user_id: str, new_password: str) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        return None
+    phash = _hash_password(new_password)
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
+        (phash, now, user_id),
+    )
+    conn.commit()
+    return get_user(user_id)
+
+
 def list_users() -> list[dict]:
     conn = _get_conn()
     rows = conn.execute("SELECT * FROM users ORDER BY created_at").fetchall()
     return [_row_to_user(r) for r in rows]
 
 
-def create_user(username: str, password: str, display_name: str = "",
-                email: str = "", role: str = "member",
-                default_workspace: str = "default") -> dict:
+def create_user(
+    username: str,
+    password: str,
+    display_name: str = "",
+    email: str = "",
+    role: str = "member",
+    default_workspace: str = "default",
+    pre_verified: bool = False,
+) -> dict:
     conn = _get_conn()
+    # Unique email check (skip empty emails)
+    if email:
+        existing = conn.execute(
+            "SELECT id FROM users WHERE email = ? AND email != ''", (email,)
+        ).fetchone()
+        if existing:
+            return {"error": "email_already_used"}
     uid = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     phash = _hash_password(password)
+    if pre_verified:
+        # Admin-created / seed users: skip verification
+        code = ""
+        verified = 1
+    else:
+        # Self-registered users: require email verification
+        import random
+
+        code = f"{random.randint(100000, 999999)}"
+        verified = 0
     conn.execute(
-        "INSERT INTO users (id, username, password_hash, display_name, email, role, default_workspace, is_active, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
-        (uid, username, phash, display_name, email, role, default_workspace, now, now),
+        "INSERT INTO users (id, username, password_hash, display_name, email, role, default_workspace, is_active, email_verified, verification_code, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)",
+        (
+            uid,
+            username,
+            phash,
+            display_name,
+            email,
+            role,
+            default_workspace,
+            verified,
+            code,
+            now,
+            now,
+        ),
     )
     conn.commit()
-    return get_user(uid)
+    user = get_user(uid)
+    if code:
+        user["verification_code"] = code
+    return user
+
+
+def verify_user_email(user_id: str, code: str) -> dict | None:
+    """Verify a user's email with the 6-digit code. Returns user dict on success."""
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        return None
+    stored_code = row["verification_code"] if "verification_code" in row.keys() else ""
+    if stored_code != code:
+        return {"error": "invalid_code"}
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "UPDATE users SET email_verified = 1, verification_code = '', updated_at = ? WHERE id = ?",
+        (now, user_id),
+    )
+    conn.commit()
+    return get_user(user_id)
+
+
+def resend_verification_code(user_id: str) -> dict | None:
+    """Generate a new 6-digit verification code for the user."""
+    import random
+
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row:
+        return None
+    code = f"{random.randint(100000, 999999)}"
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "UPDATE users SET verification_code = ?, updated_at = ? WHERE id = ?",
+        (code, now, user_id),
+    )
+    conn.commit()
+    return {"user_id": user_id, "verification_code": code, "email": row["email"]}
 
 
 def update_user(user_id: str, **kwargs) -> dict | None:
@@ -513,6 +675,14 @@ def update_user(user_id: str, **kwargs) -> dict | None:
     # Handle password change separately
     if "password" in kwargs and kwargs["password"]:
         updates["password_hash"] = _hash_password(kwargs["password"])
+    # Unique email check when changing email
+    if "email" in updates and updates["email"]:
+        dup = conn.execute(
+            "SELECT id FROM users WHERE email = ? AND email != '' AND id != ?",
+            (updates["email"], user_id),
+        ).fetchone()
+        if dup:
+            return {"error": "email_already_used"}
     if not updates:
         return _row_to_user(row)
     updates["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -767,7 +937,7 @@ def get_relevant_context(query: str, k: int = 3) -> list[dict]:
 
 def _scope_fields(row) -> dict:
     """Extract scope/workspace/created_by from a row, with safe defaults for old DBs."""
-    keys = row.keys() if hasattr(row, 'keys') else []
+    keys = row.keys() if hasattr(row, "keys") else []
     return {
         "scope": row["scope"] if "scope" in keys else "global",
         "workspace_id": row["workspace_id"] if "workspace_id" in keys else "default",
@@ -793,6 +963,7 @@ def _row_to_skill(row) -> dict:
 
 def list_skills() -> list[dict]:
     from agent.workspace import visibility_filter_sql, visibility_params
+
     conn = _get_conn()
     rows = conn.execute(
         f"SELECT * FROM skills WHERE {visibility_filter_sql()} ORDER BY name",
@@ -816,7 +987,8 @@ def create_skill(
     input_parameters: list[dict] | None = None,
     scope: str = "workspace",
 ) -> dict:
-    from agent.workspace import effective_scope, get_workspace_id, get_user_id
+    from agent.workspace import effective_scope, get_user_id, get_workspace_id
+
     conn = _get_conn()
     skill_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
@@ -1163,6 +1335,7 @@ def _row_to_agent(row) -> dict:
 
 def list_agents() -> list[dict]:
     from agent.workspace import visibility_filter_sql, visibility_params
+
     conn = _get_conn()
     rows = conn.execute(
         f"SELECT * FROM agents WHERE {visibility_filter_sql()} ORDER BY is_default DESC, name",
@@ -1196,7 +1369,8 @@ def create_agent(
     memory_enabled: bool = True,
     scope: str = "workspace",
 ) -> dict:
-    from agent.workspace import effective_scope, get_workspace_id, get_user_id
+    from agent.workspace import effective_scope, get_user_id, get_workspace_id
+
     conn = _get_conn()
     agent_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
@@ -1329,6 +1503,7 @@ def _row_to_a2a_peer(row) -> dict:
 
 def list_a2a_peers() -> list[dict]:
     from agent.workspace import visibility_filter_sql, visibility_params
+
     conn = _get_conn()
     rows = conn.execute(
         f"SELECT * FROM a2a_peers WHERE {visibility_filter_sql()} ORDER BY name",
@@ -1344,16 +1519,31 @@ def get_a2a_peer(peer_id: str) -> dict | None:
 
 
 def create_a2a_peer(
-    name: str, url: str, description: str = "", capabilities: list[str] | None = None,
+    name: str,
+    url: str,
+    description: str = "",
+    capabilities: list[str] | None = None,
     scope: str = "workspace",
 ) -> dict:
-    from agent.workspace import effective_scope, get_workspace_id, get_user_id
+    from agent.workspace import effective_scope, get_user_id, get_workspace_id
+
     conn = _get_conn()
     peer_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO a2a_peers (id, name, url, description, capabilities, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (peer_id, name, url, description, json.dumps(capabilities or []), effective_scope(scope), get_workspace_id(), get_user_id(), now, now),
+        (
+            peer_id,
+            name,
+            url,
+            description,
+            json.dumps(capabilities or []),
+            effective_scope(scope),
+            get_workspace_id(),
+            get_user_id(),
+            now,
+            now,
+        ),
     )
     conn.commit()
     return get_a2a_peer(peer_id)
@@ -1563,6 +1753,7 @@ def _ensure_default_mcp_servers():
 def list_mcp_servers() -> list[dict]:
     _ensure_default_mcp_servers()
     from agent.workspace import visibility_filter_sql, visibility_params
+
     conn = _get_conn()
     rows = conn.execute(
         f"SELECT * FROM mcp_servers WHERE {visibility_filter_sql()} ORDER BY name",
@@ -1587,7 +1778,8 @@ def create_mcp_server(
     tools: list[dict] | None = None,
     scope: str = "workspace",
 ) -> dict:
-    from agent.workspace import effective_scope, get_workspace_id, get_user_id
+    from agent.workspace import effective_scope, get_user_id, get_workspace_id
+
     conn = _get_conn()
     server_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
@@ -1697,6 +1889,7 @@ def _row_to_prompt(row) -> dict:
 
 def list_prompts() -> list[dict]:
     from agent.workspace import visibility_filter_sql, visibility_params
+
     conn = _get_conn()
     rows = conn.execute(
         f"SELECT * FROM prompts WHERE {visibility_filter_sql()} ORDER BY name",
@@ -1720,7 +1913,8 @@ def create_prompt(
     model: str = "",
     scope: str = "workspace",
 ) -> dict:
-    from agent.workspace import effective_scope, get_workspace_id, get_user_id
+    from agent.workspace import effective_scope, get_user_id, get_workspace_id
+
     conn = _get_conn()
     prompt_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
@@ -2069,6 +2263,7 @@ def _row_to_custom_tool(row) -> dict:
 def list_custom_tools() -> list[dict]:
     _init_custom_tools_table()
     from agent.workspace import visibility_filter_sql, visibility_params
+
     conn = _get_conn()
     rows = conn.execute(
         f"SELECT * FROM custom_tools WHERE {visibility_filter_sql()} ORDER BY name",
@@ -2095,7 +2290,8 @@ def create_custom_tool(
     parameters: list[dict] | None = None,
     scope: str = "workspace",
 ) -> dict:
-    from agent.workspace import effective_scope, get_workspace_id, get_user_id
+    from agent.workspace import effective_scope, get_user_id, get_workspace_id
+
     _init_custom_tools_table()
     conn = _get_conn()
     tool_id = str(uuid.uuid4())[:8]
@@ -2163,6 +2359,7 @@ def delete_custom_tool(tool_id: str) -> bool:
 
 # ── Workspace CRUD ─────────────────────────────────────────────────────────
 
+
 def list_workspaces() -> list[dict]:
     conn = _get_conn()
     rows = conn.execute("SELECT * FROM workspaces ORDER BY name").fetchall()
@@ -2171,12 +2368,15 @@ def list_workspaces() -> list[dict]:
 
 def get_workspace(workspace_id: str) -> dict | None:
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM workspaces WHERE id = ?", (workspace_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM workspaces WHERE id = ?", (workspace_id,)
+    ).fetchone()
     return dict(row) if row else None
 
 
 def create_workspace(name: str, description: str = "") -> dict:
     from agent.workspace import get_user_id
+
     conn = _get_conn()
     workspace_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
@@ -2217,7 +2417,9 @@ def delete_workspace(workspace_id: str) -> bool:
     if workspace_id == "default":
         return False  # Cannot delete default workspace
     conn = _get_conn()
-    conn.execute("DELETE FROM workspace_members WHERE workspace_id = ?", (workspace_id,))
+    conn.execute(
+        "DELETE FROM workspace_members WHERE workspace_id = ?", (workspace_id,)
+    )
     cursor = conn.execute("DELETE FROM workspaces WHERE id = ?", (workspace_id,))
     conn.commit()
     return cursor.rowcount > 0
@@ -2240,7 +2442,12 @@ def add_workspace_member(workspace_id: str, user_id: str, role: str = "member") 
         (workspace_id, user_id, role, now),
     )
     conn.commit()
-    return {"workspace_id": workspace_id, "user_id": user_id, "role": role, "added_at": now}
+    return {
+        "workspace_id": workspace_id,
+        "user_id": user_id,
+        "role": role,
+        "added_at": now,
+    }
 
 
 def remove_workspace_member(workspace_id: str, user_id: str) -> bool:

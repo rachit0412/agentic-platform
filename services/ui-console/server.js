@@ -49,7 +49,7 @@ app.use(session({
 // ── Auth Routes (before auth middleware) ────────────────
 app.get("/login", (req, res) => {
   if (req.session && req.session.user) return res.redirect("/");
-  res.render("login");
+  res.redirect("/login-app/");
 });
 
 app.post("/auth/login", async (req, res) => {
@@ -68,11 +68,31 @@ app.post("/auth/login", async (req, res) => {
       req.session.user = data;
       return res.json(data);
     }
-    return res.status(401).json(data);
+    return res.status(r.status).json(data);
   } catch (e) {
     return res.status(502).json({ error: "Auth service unavailable" });
   }
 });
+
+// ── Auth proxy routes (register, forgot-password, reset) ─
+async function proxyToAgent(req, res, endpoint) {
+  try {
+    const r = await fetch(`${AGENT_URL}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await r.json();
+    return res.status(r.status).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: "Agent service unavailable" });
+  }
+}
+app.post("/auth/register", (req, res) => proxyToAgent(req, res, "/auth/register"));
+app.post("/auth/forgot-password", (req, res) => proxyToAgent(req, res, "/auth/forgot-password"));
+app.post("/auth/reset-password", (req, res) => proxyToAgent(req, res, "/auth/reset-password"));
+app.post("/auth/verify-email", (req, res) => proxyToAgent(req, res, "/auth/verify-email"));
+app.post("/auth/resend-code", (req, res) => proxyToAgent(req, res, "/auth/resend-code"));
 
 app.post("/auth/logout", (req, res) => {
   req.session.destroy(() => {
@@ -101,6 +121,46 @@ function requireAuth(req, res, next) {
   next();
 }
 app.use(requireAuth);
+
+// ── Change password (for logged-in user) ───────────────
+app.post("/api/change-password", async (req, res) => {
+  const userId = req.session.user.id;
+  try {
+    const r = await fetch(`${AGENT_URL}/users/${userId}`, {
+      method: "PUT",
+      headers: { ...wsHeaders(req), "Content-Type": "application/json" },
+      body: JSON.stringify({ password: req.body.new_password }),
+    });
+    const data = await r.json();
+    return res.status(r.status).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: "Service unavailable" });
+  }
+});
+
+// ── User profile (get current user) ────────────────────
+app.get("/api/me", (req, res) => {
+  res.json(req.session.user);
+});
+
+// ── Update profile (display name) ──────────────────────
+app.post("/api/update-profile", async (req, res) => {
+  const userId = req.session.user.id;
+  try {
+    const r = await fetch(`${AGENT_URL}/users/${userId}`, {
+      method: "PUT",
+      headers: { ...wsHeaders(req), "Content-Type": "application/json" },
+      body: JSON.stringify({ display_name: req.body.display_name }),
+    });
+    const data = await r.json();
+    if (r.ok && data.display_name) {
+      req.session.user.display_name = data.display_name;
+    }
+    return res.status(r.status).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: "Service unavailable" });
+  }
+});
 
 // ── Health ──────────────────────────────────────────────
 app.get("/health", (req, res) => {
@@ -203,6 +263,10 @@ app.delete("/api/users/:id", requireAdmin, async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
+app.post("/api/users/:id/verify", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/verify`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
 
 // ── API: Current session info ──────────────────────────
 app.get("/api/auth/me", (req, res) => {
@@ -225,7 +289,7 @@ app.post("/api/import", async (req, res) => {
 
 // ── API: Skills CRUD proxy ─────────────────────────────
 app.get("/api/skills", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  try { const qs = req.query.created_by ? `?created_by=${encodeURIComponent(req.query.created_by)}` : ''; const r = await fetch(`${AGENT_URL}/skills${qs}`, { headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills", async (req, res) => {
@@ -285,7 +349,7 @@ app.post("/api/skills/decompose", async (req, res) => {
 
 // ── API: Prompts CRUD proxy ────────────────────────────
 app.get("/api/prompts", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  try { const qs = req.query.created_by ? `?created_by=${encodeURIComponent(req.query.created_by)}` : ''; const r = await fetch(`${AGENT_URL}/prompts${qs}`, { headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts", async (req, res) => {
@@ -315,7 +379,7 @@ app.post("/api/prompts/generate", async (req, res) => {
 
 // ── API: Agents CRUD proxy ─────────────────────────────
 app.get("/api/agents", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  try { const qs = req.query.created_by ? `?created_by=${encodeURIComponent(req.query.created_by)}` : ''; const r = await fetch(`${AGENT_URL}/agents${qs}`, { headers: wsHeaders(req) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/agents", async (req, res) => {
@@ -542,7 +606,8 @@ app.get("/api/tools", async (req, res) => {
 // ── API: Custom Tools CRUD (proxy to agent) ───────────
 app.get("/api/custom-tools", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/custom-tools`, { headers: wsHeaders(req), signal: AbortSignal.timeout(5000) });
+    const qs = req.query.created_by ? `?created_by=${encodeURIComponent(req.query.created_by)}` : '';
+    const resp = await fetch(`${AGENT_URL}/custom-tools${qs}`, { headers: wsHeaders(req), signal: AbortSignal.timeout(5000) });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });

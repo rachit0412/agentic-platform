@@ -9,8 +9,12 @@
   },
   "jest": {
     "rootDir": "../..",
-    "testMatch": ["**/tests/unit/test_console.test.js"],
-    "modulePaths": ["<rootDir>/services/ui-console/node_modules"]
+    "testMatch": [
+      "**/tests/unit/test_console.test.js"
+    ],
+    "modulePaths": [
+      "<rootDir>/services/ui-console/node_modules"
+    ]
   },
   "dependencies": {
     "ejs": "^3.1.10",

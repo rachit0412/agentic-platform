@@ -46,6 +46,9 @@
       <option value="builtin">Built-in</option>
       <option value="custom">Custom</option>
     </select>
+    <select id="owner-filter" class="input" style="width:auto;min-width:160px;height:34px;font-size:0.78rem;display:none" onchange="filterTools()">
+      <option value="">All Users</option>
+    </select>
   </div>
   <div style="display:flex;gap:0.5rem">
     <button class="btn btn-primary" onclick="showCreateToolModal()">
@@ -259,6 +262,16 @@ async function loadTools() {
     const r = await fetch('/api/tools');
     const d = await r.json();
     allToolsData = d.tools || [];
+
+    // Populate owner filter for custom tools (admin only)
+    if (window.__userRole === 'admin') {
+      var ownerEl = document.getElementById('owner-filter');
+      ownerEl.style.display = '';
+      var owners = [...new Set(allToolsData.filter(function(t){return t.type==='custom' && t.created_by}).map(function(t){return t.created_by}))].sort();
+      var curVal = ownerEl.value;
+      ownerEl.innerHTML = '<option value="">All Users</option>' + owners.map(function(o){ return '<option value="' + escapeHtml(o) + '"' + (o === curVal ? ' selected' : '') + '>' + escapeHtml(o) + '</option>'; }).join('');
+    }
+
     renderTools(allToolsData);
     updateStats(allToolsData);
     document.getElementById('tool-count').textContent = allToolsData.length + ' tools';
@@ -301,6 +314,10 @@ function renderTools(tools) {
     if (isCustom && !t.enabled) {
       enabledBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:#ef4444">disabled</span>';
     }
+    var ownerBadge = '';
+    if (isCustom && t.created_by) {
+      ownerBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(99,102,241,0.12);color:#818cf8;font-weight:500">' + escapeHtml(t.created_by) + '</span>';
+    }
     var actions = '<button class="btn btn-sm" onclick="showToolDetail(\\'' + escapeHtml(t.name) + '\\')">Details</button>' +
       ' <button class="btn btn-sm btn-secondary" onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">Test</button>';
     if (isCustom) {
@@ -316,6 +333,7 @@ function renderTools(tools) {
             typeBadge +
             '<span class="badge" style="font-size:0.6rem;background:' + catColor + '20;color:' + catColor + ';border:1px solid ' + catColor + '30">' + cat + '</span>' +
             enabledBadge +
+            ownerBadge +
           '</div>' +
           '<p style="margin:0.25rem 0 0;font-size:0.8rem;color:var(--text-3);line-height:1.4">' + escapeHtml(t.description) + '</p>' +
         '</div>' +
@@ -331,10 +349,12 @@ function renderTools(tools) {
 function filterTools() {
   var q = document.getElementById('tool-search').value.toLowerCase();
   var typeFilter = document.getElementById('tool-type-filter').value;
+  var ownerFilter = document.getElementById('owner-filter').value;
   var filtered = allToolsData.filter(function(t) {
     var matchText = t.name.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q);
     var matchType = typeFilter === 'all' || t.type === typeFilter;
-    return matchText && matchType;
+    var matchOwner = !ownerFilter || (t.created_by === ownerFilter);
+    return matchText && matchType && matchOwner;
   });
   renderTools(filtered);
 }

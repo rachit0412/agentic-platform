@@ -93,6 +93,9 @@
 <div class="flex-between mb-2">
   <div style="display:flex;gap:0.5rem;align-items:center">
     <span id="agent-count" class="badge" style="font-size:0.78rem">0 agents</span>
+    <select id="owner-filter" class="input" style="width:auto;min-width:160px;height:34px;font-size:0.78rem;display:none" onchange="loadAgents()">
+      <option value="">All Users</option>
+    </select>
   </div>
   <button class="btn btn-primary" onclick="showAgentForm()">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -380,9 +383,21 @@
 
   async function loadAgents() {
     try {
-      const r = await fetch('/api/agents');
+      var ownerFilter = document.getElementById('owner-filter').value;
+      var qs = ownerFilter ? '?created_by=' + encodeURIComponent(ownerFilter) : '';
+      const r = await fetch('/api/agents' + qs);
       const d = await r.json();
       const agents = d.agents || [];
+
+      // Populate owner filter (admin only)
+      if (window.__userRole === 'admin') {
+        var ownerEl = document.getElementById('owner-filter');
+        ownerEl.style.display = '';
+        var owners = [...new Set(agents.map(function(a){ return a.created_by || 'system'; }))].sort();
+        var curVal = ownerEl.value;
+        ownerEl.innerHTML = '<option value="">All Users</option>' + owners.map(function(o){ return '<option value="' + escapeHtml(o) + '"' + (o === curVal ? ' selected' : '') + '>' + escapeHtml(o) + '</option>'; }).join('');
+      }
+
       document.getElementById('agent-count').textContent = agents.length + ' agent' + (agents.length !== 1 ? 's' : '');
       const grid = document.getElementById('agents-grid');
       if (agents.length === 0) {
@@ -400,9 +415,10 @@
           return '<span class="badge" style="background:rgba(168,85,247,0.15);color:#a855f7">🔌 ' + escapeHtml(srv ? srv.name : sid) + '</span>';
         }).join(' ');
         const isDefault = a.is_default ? ' <span class="badge" style="background:rgba(6,182,212,0.15);color:#06b6d4">default</span>' : '';
+        var ownerBadge = a.created_by ? ' <span class="badge" style="background:rgba(99,102,241,0.12);color:#818cf8;font-size:0.65rem;font-weight:500">' + escapeHtml(a.created_by) + '</span>' : '';
         return '<div class="card animate-fade-up">' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">' +
-            '<h3 style="margin:0;font-size:1.05rem">🤖 ' + escapeHtml(a.name) + isDefault + '</h3>' +
+            '<h3 style="margin:0;font-size:1.05rem">🤖 ' + escapeHtml(a.name) + isDefault + ownerBadge + '</h3>' +
             '<span class="mono" style="font-size:0.68rem;color:var(--text-3)">' + escapeHtml(a.id) + '</span>' +
           '</div>' +
           '<p style="color:var(--text-3);font-size:0.82rem;margin:0 0 0.75rem 0">' + escapeHtml(a.description || 'No description') + '</p>' +

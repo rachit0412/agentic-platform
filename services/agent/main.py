@@ -3,108 +3,112 @@ Agent Service — FastAPI + LangGraph
 Accepts prompts, runs an agent loop (tool-calling + Ollama), returns responses.
 """
 
-import os
-import uuid
 import json
 import logging
+import os
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, UploadFile, File, Form, BackgroundTasks
+from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
+from agent.connectors.sync_engine import run_sync, test_connector
+from agent.graph import run_agent, run_agent_stream
+from agent.llm import get_active_model, list_available_models, set_active_model
+from agent.memory import (
+    _get_conn,
+    add_workspace_member,
+    authenticate_user,
+    create_a2a_peer,
+    create_agent,
+    create_connector,
+    create_custom_tool,
+    create_document_registry,
+    create_mcp_server,
+    create_prompt,
+    create_skill,
+    create_sync_job,
+    create_user,
+    create_workspace,
+    delete_a2a_peer,
+    delete_agent,
+    delete_connector,
+    delete_custom_tool,
+    delete_document_registry,
+    delete_document_registry_by_source,
+    delete_documents_by_collection,
+    delete_mcp_server,
+    delete_prompt,
+    delete_session,
+    delete_skill,
+    delete_user,
+    delete_workspace,
+    export_all_data,
+    get_a2a_peer,
+    get_agent,
+    get_connector,
+    get_custom_tool,
+    get_db_stats,
+    get_document_registry,
+    get_guardrail,
+    get_history,
+    get_llm_usage_summary,
+    get_mcp_server,
+    get_memory_stats,
+    get_prompt,
+    get_session_summary,
+    get_skill,
+    get_user,
+    get_user_by_email,
+    get_user_by_username,
+    get_version,
+    get_workspace,
+    import_all_data,
+    init_db,
+    list_a2a_peers,
+    list_agents,
+    list_audit_log,
+    list_connectors,
+    list_custom_tools,
+    list_documents_registry,
+    list_folders,
+    list_guardrails,
+    list_llm_usage,
+    list_mcp_servers,
+    list_prompts,
+    list_sessions,
+    list_skills,
+    list_sync_jobs,
+    list_users,
+    list_versions,
+    list_workspace_members,
+    list_workspaces,
+    log_audit,
+    remove_workspace_member,
+    resend_verification_code,
+    reset_user_password,
+    save_version,
+    tag_document_to_agent,
+    untag_all_for_agent,
+    untag_document_from_agent,
+    update_a2a_peer,
+    update_agent,
+    update_connector,
+    update_custom_tool,
+    update_document_registry,
+    update_guardrail,
+    update_mcp_server,
+    update_prompt,
+    update_skill,
+    update_sync_job,
+    update_user,
+    update_workspace,
+    verify_user_email,
+)
+from agent.observability import setup_otel
+from agent.workspace import current_user_id, current_user_role, current_workspace_id
+from fastapi import BackgroundTasks, FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
-
-from agent.graph import run_agent, run_agent_stream
-from agent.memory import (
-    init_db,
-    get_history,
-    list_sessions,
-    delete_session,
-    get_session_summary,
-    get_memory_stats,
-    get_db_stats,
-    export_all_data,
-    import_all_data,
-    list_skills,
-    get_skill,
-    create_skill,
-    update_skill,
-    delete_skill,
-    list_agents,
-    get_agent,
-    create_agent,
-    update_agent,
-    delete_agent,
-    list_a2a_peers,
-    get_a2a_peer,
-    create_a2a_peer,
-    update_a2a_peer,
-    delete_a2a_peer,
-    list_mcp_servers,
-    get_mcp_server,
-    create_mcp_server,
-    update_mcp_server,
-    delete_mcp_server,
-    list_prompts,
-    get_prompt,
-    create_prompt,
-    update_prompt,
-    delete_prompt,
-    list_guardrails,
-    get_guardrail,
-    update_guardrail,
-    list_custom_tools,
-    get_custom_tool,
-    create_custom_tool,
-    update_custom_tool,
-    delete_custom_tool,
-    list_documents_registry,
-    get_document_registry,
-    create_document_registry,
-    update_document_registry,
-    delete_document_registry,
-    delete_document_registry_by_source,
-    list_folders,
-    tag_document_to_agent,
-    untag_document_from_agent,
-    untag_all_for_agent,
-    delete_documents_by_collection,
-    list_versions,
-    get_version,
-    save_version,
-    list_audit_log,
-    log_audit,
-    list_llm_usage,
-    get_llm_usage_summary,
-    list_connectors,
-    get_connector,
-    create_connector,
-    update_connector,
-    delete_connector,
-    create_sync_job,
-    update_sync_job,
-    list_sync_jobs,
-    list_workspaces,
-    get_workspace,
-    create_workspace,
-    update_workspace,
-    delete_workspace,
-    list_workspace_members,
-    add_workspace_member,
-    remove_workspace_member,
-    authenticate_user,
-    get_user,
-    get_user_by_username,
-    list_users,
-    create_user,
-    update_user,
-    delete_user,
-)
-from agent.llm import list_available_models, get_active_model, set_active_model
-from agent.observability import setup_otel
-from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
-from agent.connectors.sync_engine import test_connector, run_sync
-from agent.workspace import current_workspace_id, current_user_id, current_user_role
 
 logging.basicConfig(
     level=logging.INFO,
@@ -158,6 +162,7 @@ async def workspace_middleware(request: Request, call_next):
         current_user_id.reset(uid_token)
         current_user_role.reset(role_token)
 
+
 # Wire observability
 setup_otel(app)
 
@@ -210,9 +215,10 @@ class LoginRequest(BaseModel):
 
 # ── Login Rate Limiting (in-memory, per-IP) ─────────────────────────────────
 import time as _time
+
 _login_attempts: dict[str, list[float]] = {}
-_LOGIN_WINDOW = 300        # 5-minute window
-_LOGIN_MAX_ATTEMPTS = 5    # max 5 attempts per window
+_LOGIN_WINDOW = 300  # 5-minute window
+_LOGIN_MAX_ATTEMPTS = 5  # max 5 attempts per window
 
 
 def _check_rate_limit(client_ip: str) -> bool:
@@ -232,14 +238,41 @@ def _record_attempt(client_ip: str):
 @app.post("/auth/login")
 async def auth_login(body: LoginRequest, request: Request):
     from fastapi.responses import JSONResponse
-    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown").split(",")[0].strip()
+
+    client_ip = (
+        request.headers.get(
+            "x-forwarded-for", request.client.host if request.client else "unknown"
+        )
+        .split(",")[0]
+        .strip()
+    )
     if _check_rate_limit(client_ip):
-        return JSONResponse(status_code=429, content={"error": "Too many login attempts. Try again in 5 minutes."})
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Too many login attempts. Try again in 5 minutes."},
+        )
     user = authenticate_user(body.username, body.password)
     if not user:
         _record_attempt(client_ip)
         remaining = _LOGIN_MAX_ATTEMPTS - len(_login_attempts.get(client_ip, []))
-        return JSONResponse(status_code=401, content={"error": "Invalid credentials", "remaining_attempts": max(remaining, 0)})
+        return JSONResponse(
+            status_code=401,
+            content={
+                "error": "Invalid credentials",
+                "remaining_attempts": max(remaining, 0),
+            },
+        )
+    # Check if email verification is required
+    if isinstance(user, dict) and user.get("error") == "email_not_verified":
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": "Email not verified. Please verify your email to continue.",
+                "code": "email_not_verified",
+                "user_id": user.get("user_id", ""),
+                "email": user.get("email", ""),
+            },
+        )
     # Clear attempts on successful login
     _login_attempts.pop(client_ip, None)
     return user
@@ -256,6 +289,123 @@ async def auth_me(request: Request):
     return user if user else {"error": "User not found"}
 
 
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=2, max_length=64)
+    password: str = Field(..., min_length=8, max_length=128)
+    display_name: str = ""
+    email: str = ""
+
+
+@app.post("/auth/register")
+async def auth_register(body: RegisterRequest):
+    from fastapi.responses import JSONResponse
+
+    existing = get_user_by_username(body.username)
+    if existing:
+        return JSONResponse(
+            status_code=409, content={"error": "Username already exists"}
+        )
+    if body.email:
+        existing_email = get_user_by_email(body.email)
+        if existing_email:
+            return JSONResponse(
+                status_code=409,
+                content={"error": "An account with this email already exists"},
+            )
+    user = create_user(
+        username=body.username,
+        password=body.password,
+        display_name=body.display_name or body.username,
+        email=body.email,
+        role="member",
+        default_workspace="default",
+    )
+    if isinstance(user, dict) and user.get("error") == "email_already_used":
+        return JSONResponse(
+            status_code=409,
+            content={"error": "An account with this email already exists"},
+        )
+    # Return user with verification_code so the UI can show the code
+    # (In production, you'd send this via email instead)
+    return user
+
+
+class ForgotPasswordRequest(BaseModel):
+    identifier: str = Field(..., min_length=1, max_length=128)
+
+
+@app.post("/auth/forgot-password")
+async def auth_forgot_password(body: ForgotPasswordRequest):
+    from fastapi.responses import JSONResponse
+
+    user = get_user_by_username(body.identifier)
+    if not user:
+        user = get_user_by_email(body.identifier)
+    if not user:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "No account found with that username or email."},
+        )
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "email": user.get("email", ""),
+    }
+
+
+class ResetPasswordRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=64)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
+@app.post("/auth/reset-password")
+async def auth_reset_password(body: ResetPasswordRequest):
+    from fastapi.responses import JSONResponse
+
+    user = reset_user_password(body.user_id, body.new_password)
+    if not user:
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    return {"success": True, "username": user["username"]}
+
+
+class VerifyEmailRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=64)
+    code: str = Field(..., min_length=6, max_length=6)
+
+
+@app.post("/auth/verify-email")
+async def auth_verify_email(body: VerifyEmailRequest):
+    from fastapi.responses import JSONResponse
+
+    result = verify_user_email(body.user_id, body.code)
+    if not result:
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    if isinstance(result, dict) and result.get("error") == "invalid_code":
+        return JSONResponse(
+            status_code=400, content={"error": "Invalid verification code"}
+        )
+    return {"success": True, "username": result["username"]}
+
+
+class ResendCodeRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, max_length=64)
+
+
+@app.post("/auth/resend-code")
+async def auth_resend_code(body: ResendCodeRequest):
+    from fastapi.responses import JSONResponse
+
+    result = resend_verification_code(body.user_id)
+    if not result:
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    # In production, send the code via email. For now, return it in response.
+    return {
+        "success": True,
+        "verification_code": result["verification_code"],
+        "email": result["email"],
+    }
+
+
 # ── User Management (admin-only enforced by UI) ────────────────────────────
 @app.get("/users")
 async def list_users_endpoint():
@@ -267,6 +417,7 @@ async def get_user_endpoint(user_id: str):
     user = get_user(user_id)
     if not user:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "User not found"})
     return user
 
@@ -282,18 +433,35 @@ class UserCreate(BaseModel):
 
 @app.post("/users")
 async def create_user_endpoint(body: UserCreate):
+    from fastapi.responses import JSONResponse
+
     existing = get_user_by_username(body.username)
     if existing:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=409, content={"error": "Username already exists"})
-    return create_user(
+        return JSONResponse(
+            status_code=409, content={"error": "Username already exists"}
+        )
+    if body.email:
+        existing_email = get_user_by_email(body.email)
+        if existing_email:
+            return JSONResponse(
+                status_code=409,
+                content={"error": "An account with this email already exists"},
+            )
+    user = create_user(
         username=body.username,
         password=body.password,
         display_name=body.display_name,
         email=body.email,
         role=body.role,
         default_workspace=body.default_workspace,
+        pre_verified=True,
     )
+    if isinstance(user, dict) and user.get("error") == "email_already_used":
+        return JSONResponse(
+            status_code=409,
+            content={"error": "An account with this email already exists"},
+        )
+    return user
 
 
 class UserUpdate(BaseModel):
@@ -311,7 +479,15 @@ async def update_user_endpoint(user_id: str, body: UserUpdate):
     user = update_user(user_id, **updates)
     if not user:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(status_code=404, content={"error": "User not found"})
+    if isinstance(user, dict) and user.get("error") == "email_already_used":
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=409,
+            content={"error": "An account with this email already exists"},
+        )
     return user
 
 
@@ -319,9 +495,32 @@ async def update_user_endpoint(user_id: str, body: UserUpdate):
 async def delete_user_endpoint(user_id: str):
     if user_id == "admin":
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=403, content={"error": "Cannot delete admin user"})
+
+        return JSONResponse(
+            status_code=403, content={"error": "Cannot delete admin user"}
+        )
     ok = delete_user(user_id)
     return {"deleted": ok}
+
+
+@app.post("/users/{user_id}/verify")
+async def admin_verify_user_endpoint(user_id: str):
+    """Admin action: mark a user's email as verified."""
+    from fastapi.responses import JSONResponse
+
+    user = get_user(user_id)
+    if not user:
+        return JSONResponse(status_code=404, content={"error": "User not found"})
+    conn = _get_conn()
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "UPDATE users SET email_verified = 1, verification_code = '', updated_at = ? WHERE id = ?",
+        (now, user_id),
+    )
+    conn.commit()
+    return {"success": True, "username": user["username"]}
 
 
 # ── Workspace Management ───────────────────────────────────────────────────
@@ -757,8 +956,9 @@ async def documents_upload(body: DocumentUploadRequest):
 async def documents_connect(body: DocumentConnectRequest):
     """Connect an external URL as a document reference.
     Content is fetched and stored locally but NOT indexed until triggered."""
-    import httpx
     from urllib.parse import urlparse
+
+    import httpx
     from agent.filestore import save_file
 
     parsed = urlparse(body.url)
@@ -861,8 +1061,8 @@ async def documents_shortcut(body: DocumentShortcutRequest):
 async def documents_index(doc_id: str, body: DocumentIndexRequest):
     """Process a staged document and index it into ChromaDB.
     This is the explicit step that moves content from file store → vector DB."""
-    from agent.vectorstore import ingest_document
     from agent.filestore import read_file as fs_read_file
+    from agent.vectorstore import ingest_document
 
     doc = get_document_registry(doc_id)
     if not doc:
@@ -955,8 +1155,8 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
 async def documents_ingest(body: DocumentIngestRequest):
     """Direct ingest into ChromaDB (legacy). For enterprise workflow, use
     POST /documents/upload followed by POST /documents/{id}/index."""
-    from agent.vectorstore import ingest_document
     from agent.filestore import save_file
+    from agent.vectorstore import ingest_document
 
     result = ingest_document(
         text=body.text,
@@ -1007,8 +1207,8 @@ async def documents_list(collection: str | None = None):
 
 @app.get("/documents/stats")
 async def documents_stats():
-    from agent.vectorstore import get_collection_stats
     from agent.filestore import get_storage_stats
+    from agent.vectorstore import get_collection_stats
 
     chroma_stats = get_collection_stats()
     store_stats = get_storage_stats()
@@ -1045,8 +1245,9 @@ class FetchUrlRequest(BaseModel):
 @app.post("/documents/fetch-url")
 async def documents_fetch_url(body: FetchUrlRequest):
     """Fetch text content from a URL for ingestion."""
-    import httpx
     from urllib.parse import urlparse
+
+    import httpx
 
     parsed = urlparse(body.url)
     if parsed.scheme not in ("http", "https"):
@@ -1287,8 +1488,11 @@ class CustomToolUpdate(BaseModel):
 
 
 @app.get("/custom-tools")
-async def custom_tools_list_endpoint():
-    return {"tools": list_custom_tools()}
+async def custom_tools_list_endpoint(created_by: str | None = None):
+    tools = list_custom_tools()
+    if created_by:
+        tools = [t for t in tools if t.get("created_by") == created_by]
+    return {"tools": tools}
 
 
 @app.post("/custom-tools")
@@ -1440,8 +1644,11 @@ class SkillUpdate(BaseModel):
 
 
 @app.get("/skills")
-async def skills_list_endpoint():
-    return {"skills": list_skills()}
+async def skills_list_endpoint(created_by: str | None = None):
+    skills = list_skills()
+    if created_by:
+        skills = [s for s in skills if s.get("created_by") == created_by]
+    return {"skills": skills}
 
 
 @app.post("/skills")
@@ -1673,9 +1880,10 @@ async def skills_enrich_endpoint(request: Request):
             content={"error": "Provide at least a name or description to enrich"},
         )
 
-    from agent.llm import get_llm
-    from langchain_core.messages import SystemMessage, HumanMessage
     import json as _json
+
+    from agent.llm import get_llm
+    from langchain_core.messages import HumanMessage, SystemMessage
 
     system = """\
 You are an expert skill architect for an AI agent platform. Given partial information about a skill, enrich and improve it.
@@ -1805,9 +2013,10 @@ async def skills_decompose_endpoint(request: Request):
             },
         )
 
-    from agent.llm import get_llm
-    from langchain_core.messages import SystemMessage, HumanMessage
     import json as _json
+
+    from agent.llm import get_llm
+    from langchain_core.messages import HumanMessage, SystemMessage
 
     system = f"""\
 You are an expert skill architect for an AI agent platform.
@@ -1945,8 +2154,11 @@ class PromptUpdate(BaseModel):
 
 
 @app.get("/prompts")
-async def prompts_list_endpoint():
-    return {"prompts": list_prompts()}
+async def prompts_list_endpoint(created_by: str | None = None):
+    prompts = list_prompts()
+    if created_by:
+        prompts = [p for p in prompts if p.get("created_by") == created_by]
+    return {"prompts": prompts}
 
 
 @app.post("/prompts")
@@ -1996,7 +2208,8 @@ async def prompts_delete_endpoint(prompt_id: str):
 
 def _extract_json(raw: str):
     """Extract a JSON object from LLM output that may contain extra text."""
-    import json as _json, re as _re
+    import json as _json
+    import re as _re
 
     s = raw.strip()
     if s.startswith("```"):
@@ -2081,9 +2294,10 @@ def _log_ai_usage(
 
 async def _fetch_references(references: list) -> dict:
     """Fetch URL references concurrently. Returns {ref_text, references_used} with status per ref."""
-    import httpx
     import asyncio
     import re as _re
+
+    import httpx
 
     url_pattern = _re.compile(r"^https?://", _re.IGNORECASE)
     urls = [
@@ -2182,7 +2396,8 @@ async def _fetch_references(references: list) -> dict:
 @app.post("/prompts/validate")
 async def prompts_validate_endpoint(request: Request):
     """Validate a prompt using LLM — returns quality score, issues, suggestions."""
-    import json as _json, re as _re
+    import json as _json
+    import re as _re
 
     data = await request.json()
     content = data.get("content", "").strip()
@@ -2192,9 +2407,11 @@ async def prompts_validate_endpoint(request: Request):
 
         return JSONResponse(status_code=400, content={"error": "content is required"})
 
+    import json as _json
+    import re as _re
+
     from agent.llm import get_llm
-    from langchain_core.messages import SystemMessage, HumanMessage
-    import json as _json, re as _re
+    from langchain_core.messages import HumanMessage, SystemMessage
 
     system = (
         """\
@@ -2270,7 +2487,8 @@ Respond ONLY with valid JSON."""
                     # ── persist validation score if prompt_id provided ──
                     prompt_id = data.get("prompt_id")
                     if prompt_id and parsed.get("score"):
-                        from datetime import datetime, timezone as _tz
+                        from datetime import datetime
+                        from datetime import timezone as _tz
 
                         details = {
                             k: parsed.get(k)
@@ -2328,9 +2546,11 @@ async def prompts_generate_endpoint(request: Request):
             status_code=400, content={"error": "description is required"}
         )
 
+    import json as _json
+    import re as _re
+
     from agent.llm import get_llm
-    from langchain_core.messages import SystemMessage, HumanMessage
-    import json as _json, re as _re
+    from langchain_core.messages import HumanMessage, SystemMessage
 
     system = (
         """\
@@ -2467,8 +2687,11 @@ class AgentUpdate(BaseModel):
 
 
 @app.get("/agents")
-async def agents_list_endpoint():
-    return {"agents": list_agents()}
+async def agents_list_endpoint(created_by: str | None = None):
+    agents = list_agents()
+    if created_by:
+        agents = [a for a in agents if a.get("created_by") == created_by]
+    return {"agents": agents}
 
 
 @app.post("/agents")
@@ -3131,9 +3354,7 @@ async def _provision_managed_server(server_id: str, config: dict):
                         from datetime import datetime, timezone
 
                         now = datetime.now(timezone.utc).isoformat()
-                        update_mcp_server(
-                            server_id, tools=tools, last_seen=now
-                        )
+                        update_mcp_server(server_id, tools=tools, last_seen=now)
             except Exception as e:
                 logger.warning("Auto-discover failed for %s: %s", server_id, e)
         else:
@@ -3206,9 +3427,7 @@ async def mcp_create_managed_code(
 
 
 @app.post("/mcp/servers/{server_id}/provision")
-async def mcp_provision_server(
-    server_id: str, background_tasks: BackgroundTasks
-):
+async def mcp_provision_server(server_id: str, background_tasks: BackgroundTasks):
     server = get_mcp_server(server_id)
     if not server:
         from fastapi.responses import JSONResponse
@@ -3217,9 +3436,7 @@ async def mcp_provision_server(
     if not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(
-            status_code=400, content={"error": "Not a managed server"}
-        )
+        return JSONResponse(status_code=400, content={"error": "Not a managed server"})
     config = server.get("config", {})
     if server.get("container_id"):
         from agent.docker_manager import remove_container
@@ -3239,7 +3456,9 @@ async def mcp_stop_container(server_id: str):
     if not server or not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Managed server not found"}
+        )
     from agent.docker_manager import stop_container
 
     ok = stop_container(server["container_id"])
@@ -3254,7 +3473,9 @@ async def mcp_start_container(server_id: str):
     if not server or not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Managed server not found"}
+        )
     from agent.docker_manager import start_container
 
     ok = start_container(server["container_id"])
@@ -3269,7 +3490,9 @@ async def mcp_restart_container(server_id: str):
     if not server or not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Managed server not found"}
+        )
     from agent.docker_manager import restart_container
 
     ok = restart_container(server["container_id"])
@@ -3284,7 +3507,9 @@ async def mcp_destroy_container(server_id: str):
     if not server or not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Managed server not found"}
+        )
     from agent.docker_manager import remove_container
 
     ok = remove_container(server["container_id"])
@@ -3306,7 +3531,9 @@ async def mcp_container_logs(server_id: str, tail: int = 100):
     if not server or not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Managed server not found"}
+        )
     from agent.docker_manager import get_container_logs
 
     logs = get_container_logs(server["container_id"], tail=tail)
@@ -3319,7 +3546,9 @@ async def mcp_container_status(server_id: str):
     if not server or not server.get("managed"):
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(status_code=404, content={"error": "Managed server not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Managed server not found"}
+        )
     from agent.docker_manager import get_container_status
 
     status = get_container_status(server["container_id"])

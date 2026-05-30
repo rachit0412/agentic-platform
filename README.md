@@ -36,20 +36,20 @@ If you're the kind of person who'd rather understand the full picture than glue 
 
 Most agent repos give you a chatbot. This gives you a **factory**.
 
-| What you get                  | Why it matters                                                                                                                                                                   |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent Registry**            | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot                                                         |
-| **Multi-Agent Orchestration** | One orchestrator agent delegates to specialist sub-agents at runtime. LLM decides who handles what. Plus n8n pipelines for sequential/parallel flows                             |
-| **Skills System**             | Package a prompt + tools + constraints + file attachments (scripts, references, assets) into a reusable skill. Input parameters let skills prompt for structured data at runtime |
-| **4 LLM Providers**           | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                                                                        |
-| **Auto-RAG**                  | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context. Per-agent isolated KB                                                  |
-| **A2A Protocol**              | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                                                                        |
+| What you get                   | Why it matters                                                                                                                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Agent Registry**             | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot                                                                                               |
+| **Multi-Agent Orchestration**  | One orchestrator agent delegates to specialist sub-agents at runtime. LLM decides who handles what. Plus n8n pipelines for sequential/parallel flows                                                                   |
+| **Skills System**              | Package a prompt + tools + constraints + file attachments (scripts, references, assets) into a reusable skill. Input parameters let skills prompt for structured data at runtime                                       |
+| **4 LLM Providers**            | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                                                                                                              |
+| **Auto-RAG**                   | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context. Per-agent isolated KB                                                                                        |
+| **A2A Protocol**               | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                                                                                                              |
 | **MCP Registry + Managed MCP** | Connect to external tool servers, or **create and host** your own from the UI — config mode (no-code HTTP proxies) or code mode (custom Python functions). Each managed server deploys as an isolated Docker container |
-| **Full Traceability**         | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                                                                                      |
-| **Responsible AI**            | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                       |
-| **25-page Dashboard**         | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                      |
-| **One-command setup**         | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                                              |
-| **Enterprise IAM**            | Session-based authentication, role-based access control (admin/member/viewer), per-user workspace isolation, user management from the admin UI                                    |
+| **Full Traceability**          | Every LLM call traced in Langfuse — cost, latency, tokens, session grouping. No black boxes                                                                                                                            |
+| **Responsible AI**             | PII detection, toxicity filtering, bias warnings, safety scoring — built in, not bolted on                                                                                                                             |
+| **25-page Dashboard**          | Not a CLI-only project. A real UI for building, running, monitoring, and integrating agents                                                                                                                            |
+| **One-command setup**          | `docker compose up -d` — that's it. No Python version hell, no dependency conflicts                                                                                                                                    |
+| **Enterprise IAM**             | Session-based authentication, role-based access control (admin/member/viewer), per-user workspace isolation, user management from the admin UI                                                                         |
 
 <details>
 <summary><b>📋 Full feature list</b></summary>
@@ -157,50 +157,50 @@ curl -X POST http://localhost:8010/run \
 
 ### Services (14 containers)
 
-| Service            | Port    | Purpose                                                                           |
-| ------------------ | ------- | --------------------------------------------------------------------------------- |
-| **ui-console**     | `3000`  | Platform dashboard — 25 pages for building, running, monitoring agents            |
+| Service            | Port    | Purpose                                                                                   |
+| ------------------ | ------- | ----------------------------------------------------------------------------------------- |
+| **ui-console**     | `3000`  | Platform dashboard — 25 pages for building, running, monitoring agents                    |
 | **agent-service**  | `8010`  | FastAPI + LangGraph — 117 endpoints: ReAct agent, registry, auto-RAG, memory, managed MCP |
-| **tools-service**  | `8011`  | 33 endpoints: web search, code exec, HTTP fetch, file I/O, text transforms, more  |
-| **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more                    |
-| **chromadb**       | `8200`  | Vector store for knowledge base and RAG retrieval                                 |
-| **n8n**            | `5678`  | Workflow orchestration, webhooks, multi-agent pipelines, and scheduled automation |
-| **n8n-proxy**      | `5679`  | Reverse proxy for n8n cross-origin access                                         |
-| **langfuse**       | `3012`  | LLM tracing, cost tracking, evaluation, prompt analytics                          |
-| **grafana**        | `3013`  | Monitoring dashboards (pre-configured with Prometheus + Loki)                     |
-| **prometheus**     | `9090`  | Metrics collection and alerting                                                   |
-| **loki**           | `3100`  | Log aggregation from all services                                                 |
-| **otel-collector** | `4317`  | OpenTelemetry pipeline — traces, metrics, logs routing                            |
-| **langfuse-db**    | —       | PostgreSQL backend for Langfuse (internal)                                        |
+| **tools-service**  | `8011`  | 33 endpoints: web search, code exec, HTTP fetch, file I/O, text transforms, more          |
+| **ollama**         | `11436` | Local LLM runtime — llama3, mistral, phi3, codellama, and more                            |
+| **chromadb**       | `8200`  | Vector store for knowledge base and RAG retrieval                                         |
+| **n8n**            | `5678`  | Workflow orchestration, webhooks, multi-agent pipelines, and scheduled automation         |
+| **n8n-proxy**      | `5679`  | Reverse proxy for n8n cross-origin access                                                 |
+| **langfuse**       | `3012`  | LLM tracing, cost tracking, evaluation, prompt analytics                                  |
+| **grafana**        | `3013`  | Monitoring dashboards (pre-configured with Prometheus + Loki)                             |
+| **prometheus**     | `9090`  | Metrics collection and alerting                                                           |
+| **loki**           | `3100`  | Log aggregation from all services                                                         |
+| **otel-collector** | `4317`  | OpenTelemetry pipeline — traces, metrics, logs routing                                    |
+| **langfuse-db**    | —       | PostgreSQL backend for Langfuse (internal)                                                |
 
 ### Dashboard Pages (25)
 
-| Page             | What you do there                                                                                                                                                                         |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview         | Platform stats, architecture, quick-start guide                                                                                                                                           |
-| Run Agent        | Execute agents, stream responses, browse sessions                                                                                                                                         |
-| Agent Builder    | Visual agent composition with skill workflow orchestration, sub-agents, and live test                                                                                                     |
-| AI Studio        | IDE-style code editor with chat, preview, and projects                                                                                                                                    |
-| Agent Hub        | Agent factory overview dashboard                                                                                                                                                          |
-| Agent Registry   | Create and manage agent definitions                                                                                                                                                       |
-| Skills           | Build reusable skill packages with file attachments (scripts, references, assets). Platform-wide settings (security, best practices) shown read-only                                      |
-| Prompts          | Prompt template library                                                                                                                                                                   |
-| Tools            | Manage agent tools and capabilities                                                                                                                                                       |
-| Knowledge Base   | Upload, search, manage RAG docs                                                                                                                                                           |
-| Workflows        | n8n workflow monitoring                                                                                                                                                                   |
-| A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                           |
-| MCP Registry     | Create, host, and manage MCP tool servers — config mode (no-code), code mode (Python), or register external servers                                                                       |
-| REST Console     | Interactive API console — test all 117 endpoints                                                                                                                                          |
-| Intelligence Hub | Operational intelligence overview                                                                                                                                                         |
-| Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                     |
-| Evaluation       | Agent quality scoring and model comparison                                                                                                                                                |
-| Observability    | Stack health — Prometheus, Grafana, Loki status                                                                                                                                           |
-| Guardrails       | Runtime safety controls and policy enforcement                                                                                                                                            |
-| Data Ingestion   | ETL pipeline — Extract (5 connectors), Transform (chunking, embedding), Load (ChromaDB)                                                                                                  |
-| LLM Activity     | Token usage tracking, cost analysis, per-model breakdown                                                                                                                                  |
-| Marketplace      | Browse and install templates                                                                                                                                                              |
+| Page             | What you do there                                                                                                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview         | Platform stats, architecture, quick-start guide                                                                                                                                                                      |
+| Run Agent        | Execute agents, stream responses, browse sessions                                                                                                                                                                    |
+| Agent Builder    | Visual agent composition with skill workflow orchestration, sub-agents, and live test                                                                                                                                |
+| AI Studio        | IDE-style code editor with chat, preview, and projects                                                                                                                                                               |
+| Agent Hub        | Agent factory overview dashboard                                                                                                                                                                                     |
+| Agent Registry   | Create and manage agent definitions                                                                                                                                                                                  |
+| Skills           | Build reusable skill packages with file attachments (scripts, references, assets). Platform-wide settings (security, best practices) shown read-only                                                                 |
+| Prompts          | Prompt template library                                                                                                                                                                                              |
+| Tools            | Manage agent tools and capabilities                                                                                                                                                                                  |
+| Knowledge Base   | Upload, search, manage RAG docs                                                                                                                                                                                      |
+| Workflows        | n8n workflow monitoring                                                                                                                                                                                              |
+| A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                                                      |
+| MCP Registry     | Create, host, and manage MCP tool servers — config mode (no-code), code mode (Python), or register external servers                                                                                                  |
+| REST Console     | Interactive API console — test all 117 endpoints                                                                                                                                                                     |
+| Intelligence Hub | Operational intelligence overview                                                                                                                                                                                    |
+| Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                                                |
+| Evaluation       | Agent quality scoring and model comparison                                                                                                                                                                           |
+| Observability    | Stack health — Prometheus, Grafana, Loki status                                                                                                                                                                      |
+| Guardrails       | Runtime safety controls and policy enforcement                                                                                                                                                                       |
+| Data Ingestion   | ETL pipeline — Extract (5 connectors), Transform (chunking, embedding), Load (ChromaDB)                                                                                                                              |
+| LLM Activity     | Token usage tracking, cost analysis, per-model breakdown                                                                                                                                                             |
+| Marketplace      | Browse and install templates                                                                                                                                                                                         |
 | Admin            | 7-tab admin plane — service health, **user & access management**, platform overview, LLM management, DB & data, config (security considerations, best practices), audit log. Role-gated: only admin users can access |
-| Documentation    | Auto-generated API & architecture docs                                                                                                                                                    |
+| Documentation    | Auto-generated API & architecture docs                                                                                                                                                                               |
 
 ---
 
