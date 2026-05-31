@@ -308,10 +308,15 @@ function renderServers() {
         '<button class="btn" onclick="deleteServer(\\'' + escapeHtml(s.id) + '\\')" style="font-size:0.72rem;color:#ef4444">Delete</button>';
     }
 
+    var scopeBadge = s.scope === 'global'
+      ? ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600">GLOBAL</span>'
+      : ' <span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.12);color:#f59e0b;font-weight:600">PRIVATE</span>';
+    var ownerBadge = s.created_by ? ' <span class="badge" style="font-size:0.6rem;background:rgba(99,102,241,0.12);color:#818cf8;font-weight:500">' + escapeHtml(s.created_by) + '</span>' : '';
+
     return '<div class="card animate-fade-up" style="border-left:3px solid ' + statusColor + '">' +
       '<div class="flex-between">' +
         '<div>' +
-          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + escapeHtml(s.name) + '</h3>' +
+          '<h3 style="margin:0;font-size:0.95rem">' + statusDot + escapeHtml(s.name) + scopeBadge + ownerBadge + '</h3>' +
           '<div style="font-size:0.75rem;color:var(--text-3);margin-top:4px;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">' +
             '<span>' + escapeHtml(s.url) + '</span>' + transportBadge + enabledBadge + extraBadges +
           '</div>' +

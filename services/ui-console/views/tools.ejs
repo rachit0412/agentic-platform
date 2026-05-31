@@ -318,6 +318,12 @@ function renderTools(tools) {
     if (isCustom && t.created_by) {
       ownerBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(99,102,241,0.12);color:#818cf8;font-weight:500">' + escapeHtml(t.created_by) + '</span>';
     }
+    var scopeBadge = '';
+    if (isCustom) {
+      scopeBadge = t.scope === 'global'
+        ? ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600">GLOBAL</span>'
+        : ' <span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.12);color:#f59e0b;font-weight:600">PRIVATE</span>';
+    }
     var actions = '<button class="btn btn-sm" onclick="showToolDetail(\\'' + escapeHtml(t.name) + '\\')">Details</button>' +
       ' <button class="btn btn-sm btn-secondary" onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">Test</button>';
     if (isCustom) {
@@ -333,6 +339,7 @@ function renderTools(tools) {
             typeBadge +
             '<span class="badge" style="font-size:0.6rem;background:' + catColor + '20;color:' + catColor + ';border:1px solid ' + catColor + '30">' + cat + '</span>' +
             enabledBadge +
+            scopeBadge +
             ownerBadge +
           '</div>' +
           '<p style="margin:0.25rem 0 0;font-size:0.8rem;color:var(--text-3);line-height:1.4">' + escapeHtml(t.description) + '</p>' +

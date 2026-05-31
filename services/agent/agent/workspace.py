@@ -1,13 +1,14 @@
 """
-Workspace & RBAC context for multi-tenant resource isolation.
+Content Isolation & RBAC context for user-scoped resources.
 
-Every request carries a workspace context (via X-Workspace-Id header).
-Resources are scoped: global (visible everywhere) or workspace (team-only).
+Resources are scoped:
+  - global:  visible to all users (admin-created)
+  - private: visible only to the creator
 
 Roles:
-  admin  — full access, can create global resources
-  member — can create/edit workspace-scoped resources
-  viewer — read-only within workspace
+  admin  — full access, can create global resources, sees all items
+  member — can create private resources
+  viewer — read-only (sees global + own private items)
 """
 
 from contextvars import ContextVar
@@ -20,7 +21,7 @@ current_workspace_id: ContextVar[str] = ContextVar(
 current_user_id: ContextVar[str] = ContextVar("current_user_id", default="system")
 current_user_role: ContextVar[str] = ContextVar("current_user_role", default="admin")
 
-VALID_SCOPES = ("global", "workspace")
+VALID_SCOPES = ("global", "private")
 VALID_ROLES = ("admin", "member", "viewer")
 
 
@@ -55,31 +56,28 @@ def effective_scope(requested_scope: str | None) -> str:
     """Determine the actual scope for a new resource.
 
     - If admin requests 'global', grant it.
-    - Otherwise, force 'workspace'.
+    - Otherwise, force 'private'.
     """
     if requested_scope == "global" and can_create_global():
         return "global"
-    return "workspace"
+    return "private"
 
 
 def visibility_filter_sql(table_alias: str = "") -> str:
-    """Return a SQL WHERE clause fragment for workspace-aware visibility.
+    """Return a SQL WHERE clause fragment for content-isolation visibility.
 
-    Returns rows that are either:
-      - scope = 'global' (visible everywhere), OR
-      - scope = 'workspace' AND workspace_id matches current workspace
-
-    Non-admin users additionally only see their own items (created_by = user)
-    plus global items.
+    - Admin: sees ALL resources (global + all private from all users).
+    - Non-admin: sees global resources + own private resources.
     """
     prefix = f"{table_alias}." if table_alias else ""
     role = get_user_role()
     if role == "admin":
-        return f"({prefix}scope = 'global' OR ({prefix}scope = 'workspace' AND {prefix}workspace_id = ?))"
-    # Non-admin: own items in workspace + global items
+        return "1=1"  # admin sees everything
+    # Non-admin: global items + own private items
     return (
         f"({prefix}scope = 'global' OR "
-        f"({prefix}scope = 'workspace' AND {prefix}workspace_id = ? AND {prefix}created_by = ?))"
+        f"({prefix}scope = 'private' AND {prefix}created_by = ?) OR "
+        f"({prefix}scope = 'workspace' AND {prefix}created_by = ?))"
     )
 
 
@@ -87,5 +85,5 @@ def visibility_params() -> tuple:
     """Return the parameter tuple for visibility_filter_sql."""
     role = get_user_role()
     if role == "admin":
-        return (get_workspace_id(),)
-    return (get_workspace_id(), get_user_id())
+        return ()
+    return (get_user_id(), get_user_id())

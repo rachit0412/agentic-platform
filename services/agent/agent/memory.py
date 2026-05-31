@@ -1014,7 +1014,7 @@ def create_skill(
     tool_ids: list[str] | None = None,
     constraints: list[str] | None = None,
     input_parameters: list[dict] | None = None,
-    scope: str = "workspace",
+    scope: str = "private",
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 
@@ -1396,7 +1396,7 @@ def create_agent(
     retrieval_mode: str = "basic",
     max_iterations: int = 5,
     memory_enabled: bool = True,
-    scope: str = "workspace",
+    scope: str = "private",
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 
@@ -1552,7 +1552,7 @@ def create_a2a_peer(
     url: str,
     description: str = "",
     capabilities: list[str] | None = None,
-    scope: str = "workspace",
+    scope: str = "private",
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 
@@ -1805,7 +1805,7 @@ def create_mcp_server(
     transport: str = "stdio",
     description: str = "",
     tools: list[dict] | None = None,
-    scope: str = "workspace",
+    scope: str = "private",
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 
@@ -1940,7 +1940,7 @@ def create_prompt(
     description: str = "",
     tags: list[str] | None = None,
     model: str = "",
-    scope: str = "workspace",
+    scope: str = "private",
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 
@@ -2320,7 +2320,7 @@ def create_custom_tool(
     headers: dict | None = None,
     body_template: dict | None = None,
     parameters: list[dict] | None = None,
-    scope: str = "workspace",
+    scope: str = "private",
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 

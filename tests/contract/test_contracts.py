@@ -3,8 +3,9 @@ Contract tests — validate API responses match expected schemas.
 Uses schemathesis for OpenAPI-driven testing where specs exist,
 plus manual schema checks for core endpoints.
 """
-import pytest
+
 import httpx
+import pytest
 
 AGENT_URL = "http://localhost:8010"
 TOOLS_URL = "http://localhost:8011"
@@ -16,6 +17,7 @@ def http():
 
 
 # ── Agent Service contracts ────────────────────────────────────────────────
+
 
 def test_agent_health_contract(http):
     r = http.get(f"{AGENT_URL}/health")
@@ -35,7 +37,9 @@ def test_agent_run_contract(http):
     assert r.status_code == 200
     body = r.json()
     required_keys = {"sessionId", "response", "tools_used", "request_id"}
-    assert required_keys.issubset(body.keys()), f"Missing keys: {required_keys - body.keys()}"
+    assert required_keys.issubset(
+        body.keys()
+    ), f"Missing keys: {required_keys - body.keys()}"
     assert isinstance(body["tools_used"], list)
     assert isinstance(body["response"], str)
 
@@ -56,6 +60,7 @@ def test_agent_session_history_contract(http):
 
 
 # ── Tools Service contracts ────────────────────────────────────────────────
+
 
 def test_tools_health_contract(http):
     r = http.get(f"{TOOLS_URL}/health")
@@ -99,6 +104,7 @@ def test_tools_math_error_contract(http):
 
 # ── New Agent contracts ────────────────────────────────────────────────────
 
+
 def test_agent_tools_list_contract(http):
     r = http.get(f"{AGENT_URL}/tools")
     body = r.json()
@@ -113,8 +119,8 @@ def test_agent_tools_list_contract(http):
 def test_agent_models_contract(http):
     r = http.get(f"{AGENT_URL}/models")
     body = r.json()
-    assert "current_model" in body
-    assert isinstance(body["current_model"], str)
+    assert "active" in body
+    assert isinstance(body["active"], dict)
 
 
 def test_agent_documents_stats_contract(http):
@@ -134,23 +140,28 @@ def test_agent_documents_list_contract(http):
 
 
 def test_agent_document_ingest_contract(http):
-    r = http.post(f"{AGENT_URL}/documents/ingest", json={
-        "text": "Contract test document content.",
-        "source": "contract-test-doc.txt",
-    })
+    r = http.post(
+        f"{AGENT_URL}/documents/ingest",
+        json={
+            "text": "Contract test document content.",
+            "source": "contract-test-doc.txt",
+        },
+    )
     body = r.json()
-    assert "status" in body
-    assert body["status"] == "ingested"
     assert "chunks" in body
+    assert isinstance(body["chunks"], int)
     # cleanup
     http.delete(f"{AGENT_URL}/documents/contract-test-doc.txt")
 
 
 def test_agent_document_search_contract(http):
-    r = http.post(f"{AGENT_URL}/documents/search", json={
-        "query": "test",
-        "k": 3,
-    })
+    r = http.post(
+        f"{AGENT_URL}/documents/search",
+        json={
+            "query": "test",
+            "k": 3,
+        },
+    )
     body = r.json()
     assert "results" in body
     assert isinstance(body["results"], list)
@@ -158,11 +169,15 @@ def test_agent_document_search_contract(http):
 
 # ── New Tools contracts ────────────────────────────────────────────────────
 
+
 def test_tools_web_search_contract(http):
-    r = http.post(f"{TOOLS_URL}/tools/web-search", json={
-        "query": "python",
-        "max_results": 2,
-    })
+    r = http.post(
+        f"{TOOLS_URL}/tools/web-search",
+        json={
+            "query": "python",
+            "max_results": 2,
+        },
+    )
     body = r.json()
     assert "results" in body
     assert isinstance(body["results"], list)

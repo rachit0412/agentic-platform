@@ -66,7 +66,12 @@ app.post("/auth/login", async (req, res) => {
     const data = await r.json();
     if (r.ok && data.id) {
       req.session.user = data;
-      return res.json(data);
+      // Explicitly save session before responding to avoid race conditions
+      // where the redirect arrives before the session is persisted
+      return req.session.save((err) => {
+        if (err) return res.status(500).json({ error: "Session save failed" });
+        return res.json(data);
+      });
     }
     return res.status(r.status).json(data);
   } catch (e) {
@@ -208,13 +213,10 @@ app.get("/api/health-check", async (req, res) => {
 function wsHeaders(req, extra) {
   const h = { ...extra };
   const user = req.session && req.session.user;
-  // Use session user context; fall back to request headers for API-only calls
+  // Use session user context for content isolation
   h['x-user-id'] = (user && user.username) || req.headers['x-user-id'] || 'system';
   h['x-user-role'] = (user && user.role) || req.headers['x-user-role'] || 'admin';
-  // Workspace from header (set by frontend fetch override) or session default
-  h['x-workspace-id'] = req.headers['x-workspace-id']
-    || (user && user.default_workspace)
-    || 'default';
+  h['x-workspace-id'] = 'default';
   return h;
 }
 
