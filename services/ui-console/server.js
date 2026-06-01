@@ -65,12 +65,14 @@ app.post("/auth/login", async (req, res) => {
     });
     const data = await r.json();
     if (r.ok && data.id) {
-      req.session.user = data;
-      // Explicitly save session before responding to avoid race conditions
-      // where the redirect arrives before the session is persisted
-      return req.session.save((err) => {
-        if (err) return res.status(500).json({ error: "Session save failed" });
-        return res.json(data);
+      // Regenerate session to prevent fixation and guarantee a fresh cookie
+      return req.session.regenerate((err) => {
+        if (err) return res.status(500).json({ error: "Session error" });
+        req.session.user = data;
+        return req.session.save((err) => {
+          if (err) return res.status(500).json({ error: "Session save failed" });
+          return res.json(data);
+        });
       });
     }
     return res.status(r.status).json(data);

@@ -1716,7 +1716,7 @@ docker-compose --profile gpu up -d</code></pre>
       <div style="display:grid;grid-template-columns:1fr;gap:0;margin-bottom:1.5rem">
         <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px 10px 0 0;padding:1rem 1.25rem">
           <strong style="color:#ef4444;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em">🔴 Target State (Production)</strong>
-          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-11 Identity &amp; Access &nbsp;·&nbsp; AP-13 Elastic Scaling &nbsp;·&nbsp; AP-14 Compliance &amp; Governance &nbsp;·&nbsp; AP-15 Disaster Recovery &nbsp;·&nbsp; AP-16 Zero-Trust Networking &nbsp;·&nbsp; AP-17 Agent Lifecycle</p>
+          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-13 Elastic Scaling &nbsp;·&nbsp; AP-14 Compliance &amp; Governance &nbsp;·&nbsp; AP-15 Disaster Recovery &nbsp;·&nbsp; AP-16 Zero-Trust Networking &nbsp;·&nbsp; AP-17 Agent Lifecycle</p>
         </div>
         <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-top:none;padding:1rem 1.25rem">
           <strong style="color:#f59e0b;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em">🟡 Next State (Hardening)</strong>
@@ -1724,7 +1724,7 @@ docker-compose --profile gpu up -d</code></pre>
         </div>
         <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-top:none;border-radius:0 0 10px 10px;padding:1rem 1.25rem">
           <strong style="color:#10b981;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em">🟢 Current State (Foundation)</strong>
-          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-2 Local-First ✅ &nbsp;·&nbsp; AP-3 Container-Native ✅ &nbsp;·&nbsp; AP-4 Defence in Depth ✅ &nbsp;·&nbsp; AP-6 Protocol Extensibility ✅ &nbsp;·&nbsp; AP-8 Knowledge Mgmt ✅ &nbsp;·&nbsp; AP-10 Graceful Degradation ✅</p>
+          <p style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-2)">AP-2 Local-First ✅ &nbsp;·&nbsp; AP-3 Container-Native ✅ &nbsp;·&nbsp; AP-4 Defence in Depth ✅ &nbsp;·&nbsp; AP-6 Protocol Extensibility ✅ &nbsp;·&nbsp; AP-8 Knowledge Mgmt ✅ &nbsp;·&nbsp; AP-10 Graceful Degradation ✅ &nbsp;·&nbsp; AP-11 Identity &amp; Access ✅</p>
         </div>
       </div>
 
@@ -1746,28 +1746,69 @@ docker-compose --profile gpu up -d</code></pre>
       <h2>Enterprise Principles (AP-11 – AP-18)</h2>
       <table class="docs-table">
         <tr><th>ID</th><th>Principle</th><th>Maturity</th><th>Status</th></tr>
-        <tr><td>AP-11</td><td>Identity &amp; Access Control</td><td>🔴 Target</td><td>❌ Not Met — no auth; all endpoints public</td></tr>
+        <tr><td>AP-11</td><td>Identity &amp; Access Control</td><td>� Current</td><td>✅ Session auth + RBAC roles implemented</td></tr>
         <tr><td>AP-12</td><td>Cost Accountability &amp; Metering</td><td>🟡 Next</td><td>⚠️ Partial — token tracking exists; no enforcement</td></tr>
         <tr><td>AP-13</td><td>Elastic Scaling</td><td>🔴 Target</td><td>❌ Not Met — single-writer SQLite; no K8s</td></tr>
         <tr><td>AP-14</td><td>Compliance &amp; Data Governance</td><td>🔴 Target</td><td>❌ Not Met — no data classification; no retention</td></tr>
         <tr><td>AP-15</td><td>Disaster Recovery &amp; Continuity</td><td>🔴 Target</td><td>❌ Not Met — no backups; no RTO/RPO</td></tr>
         <tr><td>AP-16</td><td>Zero-Trust Networking</td><td>🔴 Target</td><td>❌ Not Met — plain HTTP; single flat network</td></tr>
-        <tr><td>AP-17</td><td>Agent Lifecycle Governance</td><td>🔴 Target</td><td>⚠️ Partial — version history exists; no approval gates</td></tr>
+        <tr><td>AP-17</td><td>Agent Lifecycle Governance</td><td>🔴 Target</td><td>❌ Not Met — no approval workflow or A/B testing</td></tr>
         <tr><td>AP-18</td><td>Secret &amp; Key Management</td><td>🟡 Next</td><td>❌ Not Met — secrets in plain text</td></tr>
       </table>
 
       <h2>Priority Roadmap</h2>
       <table class="docs-table">
         <tr><th>Priority</th><th>Action</th><th>Principle</th><th>Effort</th></tr>
-        <tr><td><strong>P1</strong></td><td>Pre-configure OTel endpoint in docker-compose.yml</td><td>AP-5</td><td>Low</td></tr>
-        <tr><td><strong>P1</strong></td><td>Add Loki log panels to Grafana dashboard</td><td>AP-5</td><td>Medium</td></tr>
-        <tr><td><strong>P1</strong></td><td>Move secrets to .env and add vault integration guide</td><td>AP-18</td><td>Medium</td></tr>
-        <tr><td><strong>P2</strong></td><td>Add /v1/ API prefix via FastAPI router</td><td>AP-1</td><td>Medium</td></tr>
-        <tr><td><strong>P2</strong></td><td>Add JWT/OAuth2 middleware with RBAC roles</td><td>AP-11</td><td>High</td></tr>
-        <tr><td><strong>P3</strong></td><td>Agent promotion workflow (draft → staging → prod)</td><td>AP-17</td><td>High</td></tr>
-        <tr><td><strong>P4</strong></td><td>Migrate SQLite → PostgreSQL for multi-writer</td><td>AP-13</td><td>High</td></tr>
-        <tr><td><strong>P4</strong></td><td>Add Kubernetes manifests and Helm charts</td><td>AP-13</td><td>High</td></tr>
+        <tr><td><strong>P1</strong></td><td>Pre-configure OTel endpoint in docker-compose</td><td>AP-5</td><td>Low</td></tr>
+        <tr><td><strong>P1</strong></td><td>Add Loki + Langfuse panels to Grafana</td><td>AP-5</td><td>Medium</td></tr>
+        <tr><td><strong>P1</strong></td><td>Move secrets to vault integration</td><td>AP-18</td><td>Medium</td></tr>
+        <tr><td><strong>P2</strong></td><td>Add /v1/ API prefix</td><td>AP-1</td><td>Medium</td></tr>
+        <tr><td><strong>P2</strong></td><td>Enforce rate limiting from guardrail config</td><td>AP-12</td><td>Medium</td></tr>
+        <tr><td><strong>P3</strong></td><td>Agent lifecycle stages (draft → production)</td><td>AP-17</td><td>High</td></tr>
+        <tr><td><strong>P3</strong></td><td>Migrate SQLite → PostgreSQL for scaling</td><td>AP-13</td><td>High</td></tr>
+        <tr><td><strong>P4</strong></td><td>mTLS via service mesh</td><td>AP-16</td><td>High</td></tr>
+        <tr><td><strong>P4</strong></td><td>Data retention policies + GDPR delete</td><td>AP-14</td><td>High</td></tr>
+        <tr><td><strong>P4</strong></td><td>Automated backup + recovery runbook</td><td>AP-15</td><td>High</td></tr>
       </table>
+
+      <h2>Detail: Identity &amp; Access Control (AP-11) ✅</h2>
+
+      <h3>Authentication Stack</h3>
+      <ul>
+        <li><strong>Password Hashing</strong>: bcrypt with cost factor 12 via <code>bcrypt.gensalt(rounds=12)</code>.</li>
+        <li><strong>Session Management</strong>: Express-session with <code>agentic.sid</code> cookie (HttpOnly, SameSite=Lax). Session pinned to <code>user_id</code>, <code>role</code>, <code>username</code>.</li>
+        <li><strong>Login Flow</strong>: <code>POST /auth/login</code> → password verification → session regeneration → redirect.</li>
+        <li><strong>Registration</strong>: <code>POST /auth/register</code> → Pydantic validation (username ≥ 3 chars, password ≥ 8 chars) → duplicate check → bcrypt hash → 6-digit verification code → user record.</li>
+        <li><strong>Email Verification</strong>: <code>POST /auth/verify-email</code> / <code>POST /auth/resend-code</code>. Verification code stored with user, verified flag gates access.</li>
+        <li><strong>Password Reset</strong>: <code>POST /auth/forgot-password</code> → lookup by username or email → <code>POST /auth/reset-password</code> with new password.</li>
+      </ul>
+
+      <h3>Role-Based Access Control</h3>
+      <table class="docs-table">
+        <tr><th>Role</th><th>Permissions</th></tr>
+        <tr><td>admin</td><td>Full platform access, user management, delete protection</td></tr>
+        <tr><td>member</td><td>Standard access, no user management or admin functions</td></tr>
+        <tr><td>viewer</td><td>Read-only access to platform resources</td></tr>
+      </table>
+      <ul>
+        <li>Admin users cannot be deleted (403 Forbidden).</li>
+        <li>Console middleware enforces <code>requireAuth</code> and <code>requireAdmin</code> on protected routes.</li>
+        <li>API endpoints validate role from session before executing privileged operations.</li>
+      </ul>
+
+      <h3>Content Scoping</h3>
+      <ul>
+        <li>Each entity (agents, skills, prompts, tools, MCP servers) has <code>scope</code> and <code>created_by</code> columns.</li>
+        <li><code>ContextVar</code>-based <code>workspace.py</code> sets scope per-request — <strong>global</strong> (visible to all) or <strong>private</strong> (visible to creator only).</li>
+        <li>Admin users see all global content; members see global + own private content.</li>
+      </ul>
+
+      <h3>UI Integration</h3>
+      <ul>
+        <li>React 18 + Vite login SPA at <code>/login</code> with registration, email verification, and password reset flows.</li>
+        <li>Protected EJS pages redirect to <code>/login</code> when session is absent.</li>
+        <li>Session cookie cleared on logout; Express session store handles expiry.</li>
+      </ul>
 
       <div class="docs-callout tip">
         <strong>Full details:</strong> See <code>docs/PRINCIPLES.md</code> for per-principle validation evidence, code references, and phased implementation roadmaps.

@@ -12,14 +12,14 @@ function IntroGate({ onComplete }) {
     <motion.div
       className="fixed inset-0 z-[100] flex items-center justify-center"
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.3 }}
     >
       {/* Left gate panel */}
       <motion.div
         className="absolute top-0 left-0 w-1/2 h-full bg-gray-950"
         initial={{ x: 0 }}
         animate={{ x: '-100%' }}
-        transition={{ delay: 1.6, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+        transition={{ delay: 0.9, duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
       >
         <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-transparent via-indigo-500/60 to-transparent" />
       </motion.div>
@@ -29,7 +29,7 @@ function IntroGate({ onComplete }) {
         className="absolute top-0 right-0 w-1/2 h-full bg-gray-950"
         initial={{ x: 0 }}
         animate={{ x: '100%' }}
-        transition={{ delay: 1.6, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+        transition={{ delay: 0.9, duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
       >
         <div className="absolute top-0 left-0 w-[1px] h-full bg-gradient-to-b from-transparent via-cyan-500/60 to-transparent" />
       </motion.div>
@@ -39,26 +39,26 @@ function IntroGate({ onComplete }) {
         className="relative z-10 flex flex-col items-center"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
       >
         {/* Animated ring behind logo */}
         <motion.div
           className="absolute w-24 h-24 rounded-full border border-indigo-500/30"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: [0.5, 1.8, 1.8], opacity: [0, 0.5, 0] }}
-          transition={{ duration: 1.5, delay: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.15 }}
         />
         <motion.div
           className="absolute w-24 h-24 rounded-full border border-cyan-500/20"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: [0.5, 2.2, 2.2], opacity: [0, 0.3, 0] }}
-          transition={{ duration: 1.5, delay: 0.5 }}
+          transition={{ duration: 0.8, delay: 0.25 }}
         />
 
         <motion.div
           className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/40 mb-4"
           animate={{ rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
         >
           <Zap className="w-8 h-8 text-white" />
         </motion.div>
@@ -67,7 +67,7 @@ function IntroGate({ onComplete }) {
           className="text-2xl font-bold text-white tracking-tight"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
         >
           Agentic Platform
         </motion.h1>
@@ -76,14 +76,14 @@ function IntroGate({ onComplete }) {
           className="mt-3 flex items-center gap-1.5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.3 }}
+          transition={{ delay: 0.35, duration: 0.2 }}
         >
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
               className="w-1.5 h-1.5 rounded-full bg-indigo-400"
               animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 0.8, delay: 0.8 + i * 0.15, repeat: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 + i * 0.1, repeat: 0 }}
             />
           ))}
           <span className="ml-1 text-xs text-gray-400 font-medium tracking-wider uppercase">
@@ -96,7 +96,7 @@ function IntroGate({ onComplete }) {
       <motion.div
         onAnimationComplete={onComplete}
         animate={{ opacity: 0 }}
-        transition={{ delay: 2.5 }}
+        transition={{ delay: 1.5 }}
       />
     </motion.div>
   );
@@ -108,7 +108,7 @@ export default function App() {
 
   useEffect(() => {
     /* Safety fallback — auto-dismiss after 3s */
-    const t = setTimeout(() => setShowIntro(false), 3000);
+    const t = setTimeout(() => setShowIntro(false), 1800);
     return () => clearTimeout(t);
   }, []);
 
