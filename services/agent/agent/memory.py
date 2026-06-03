@@ -492,6 +492,81 @@ def init_db():
 
     conn.commit()
 
+    # ── Personas (role-based access profiles) ──────────────────────────────
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS personas (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL UNIQUE,
+            description TEXT DEFAULT '',
+            permissions TEXT DEFAULT '{}',
+            is_system   INTEGER DEFAULT 0,
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS user_personas (
+            user_id    TEXT NOT NULL,
+            persona_id TEXT NOT NULL,
+            PRIMARY KEY (user_id, persona_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+        )
+    """)
+    # Seed default personas if table is empty
+    if not conn.execute("SELECT id FROM personas LIMIT 1").fetchone():
+        now = datetime.now(timezone.utc).isoformat()
+        _default_personas = [
+            (
+                "admin",
+                "Admin",
+                "Full platform access — user management, configuration, all features",
+                '{"nav":["overview","run-agent","agent-builder","agent-hub","agents","skills","prompts","tools","ai-studio","documents","data-ingestion","workflows","a2a","mcp","rest","intelligence-hub","llm-activity","traceability","evaluation","observability","guardrails","marketplace","docs","admin"],"actions":["create_agents","run_agents","manage_tools","manage_users","access_admin","view_observability","ingest_data","manage_workflows","access_protocols","manage_guardrails","create_global"]}',
+            ),
+            (
+                "developer",
+                "Developer",
+                "Build and test agents, manage tools and skills, run workflows",
+                '{"nav":["overview","run-agent","agent-builder","agent-hub","agents","skills","prompts","tools","ai-studio","documents","data-ingestion","workflows","a2a","mcp","rest","intelligence-hub","llm-activity","traceability","evaluation","observability","guardrails","marketplace","docs"],"actions":["create_agents","run_agents","manage_tools","ingest_data","manage_workflows","access_protocols","view_observability"]}',
+            ),
+            (
+                "analyst",
+                "Analyst",
+                "Run agents, explore data, view observability and evaluation reports",
+                '{"nav":["overview","run-agent","documents","intelligence-hub","llm-activity","traceability","evaluation","observability","docs"],"actions":["run_agents","view_observability"]}',
+            ),
+            (
+                "viewer",
+                "Viewer",
+                "Read-only access — view dashboards, docs, and reports",
+                '{"nav":["overview","intelligence-hub","llm-activity","observability","docs"],"actions":["view_observability"]}',
+            ),
+        ]
+        for pid, name, desc, perms in _default_personas:
+            conn.execute(
+                "INSERT INTO personas (id, name, description, permissions, is_system, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 1, ?, ?)",
+                (pid, name, desc, perms, now, now),
+            )
+        # Assign personas to seed users
+        conn.execute(
+            "INSERT OR IGNORE INTO user_personas (user_id, persona_id) VALUES (?, ?)",
+            ("admin", "admin"),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO user_personas (user_id, persona_id) VALUES (?, ?)",
+            ("admin", "developer"),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO user_personas (user_id, persona_id) VALUES (?, ?)",
+            ("rachit", "developer"),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO user_personas (user_id, persona_id) VALUES (?, ?)",
+            ("rachit", "analyst"),
+        )
+    conn.commit()
+
 
 # ── Password Hashing (bcrypt — enterprise standard) ──────────────────────
 
@@ -562,6 +637,22 @@ def _row_to_user(row) -> dict:
         d["email_verified"] = bool(int(row["email_verified"]))
     except (KeyError, IndexError):
         d["email_verified"] = False
+    # Attach assigned personas
+    conn = _get_conn()
+    persona_rows = conn.execute(
+        "SELECT p.id, p.name, p.description, p.permissions FROM personas p "
+        "JOIN user_personas up ON up.persona_id = p.id WHERE up.user_id = ?",
+        (row["id"],),
+    ).fetchall()
+    d["personas"] = [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "description": r["description"],
+            "permissions": json.loads(r["permissions"]),
+        }
+        for r in persona_rows
+    ]
     return d
 
 
@@ -731,8 +822,145 @@ def delete_user(user_id: str) -> bool:
     conn = _get_conn()
     conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
     conn.execute("DELETE FROM workspace_members WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM user_personas WHERE user_id = ?", (user_id,))
     conn.commit()
     return True
+
+
+# ── Persona CRUD ───────────────────────────────────────────────────────────
+
+
+def list_personas() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM personas ORDER BY name").fetchall()
+    return [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "description": r["description"],
+            "permissions": json.loads(r["permissions"]),
+            "is_system": bool(r["is_system"]),
+            "created_at": r["created_at"],
+            "updated_at": r["updated_at"],
+        }
+        for r in rows
+    ]
+
+
+def get_persona(persona_id: str) -> dict | None:
+    conn = _get_conn()
+    r = conn.execute("SELECT * FROM personas WHERE id = ?", (persona_id,)).fetchone()
+    if not r:
+        return None
+    return {
+        "id": r["id"],
+        "name": r["name"],
+        "description": r["description"],
+        "permissions": json.loads(r["permissions"]),
+        "is_system": bool(r["is_system"]),
+        "created_at": r["created_at"],
+        "updated_at": r["updated_at"],
+    }
+
+
+def create_persona(
+    name: str, description: str = "", permissions: dict | None = None
+) -> dict:
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    pid = str(uuid4())[:8]
+    perms_json = json.dumps(permissions or {"nav": [], "actions": []})
+    conn.execute(
+        "INSERT INTO personas (id, name, description, permissions, is_system, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, 0, ?, ?)",
+        (pid, name, description, perms_json, now, now),
+    )
+    conn.commit()
+    return get_persona(pid)
+
+
+def update_persona(
+    persona_id: str,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    permissions: dict | None = None,
+) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM personas WHERE id = ?", (persona_id,)).fetchone()
+    if not row:
+        return None
+    updates = {}
+    if name is not None:
+        updates["name"] = name
+    if description is not None:
+        updates["description"] = description
+    if permissions is not None:
+        updates["permissions"] = json.dumps(permissions)
+    if not updates:
+        return get_persona(persona_id)
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    conn.execute(
+        f"UPDATE personas SET {set_clause} WHERE id = ?",
+        (*updates.values(), persona_id),
+    )
+    conn.commit()
+    return get_persona(persona_id)
+
+
+def delete_persona(persona_id: str) -> bool:
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT is_system FROM personas WHERE id = ?", (persona_id,)
+    ).fetchone()
+    if not row or row["is_system"]:
+        return False
+    conn.execute("DELETE FROM user_personas WHERE persona_id = ?", (persona_id,))
+    conn.execute("DELETE FROM personas WHERE id = ?", (persona_id,))
+    conn.commit()
+    return True
+
+
+def get_user_personas(user_id: str) -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT p.id, p.name, p.description, p.permissions FROM personas p "
+        "JOIN user_personas up ON up.persona_id = p.id WHERE up.user_id = ?",
+        (user_id,),
+    ).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "description": r["description"],
+            "permissions": json.loads(r["permissions"]),
+        }
+        for r in rows
+    ]
+
+
+def assign_persona(user_id: str, persona_id: str) -> bool:
+    conn = _get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO user_personas (user_id, persona_id) VALUES (?, ?)",
+            (user_id, persona_id),
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+
+def unassign_persona(user_id: str, persona_id: str) -> bool:
+    conn = _get_conn()
+    cur = conn.execute(
+        "DELETE FROM user_personas WHERE user_id = ? AND persona_id = ?",
+        (user_id, persona_id),
+    )
+    conn.commit()
+    return cur.rowcount > 0
 
 
 def get_history(session_id: str, limit: int = 20) -> list[dict]:

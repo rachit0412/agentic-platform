@@ -14,8 +14,9 @@ from agent.connectors.sync_engine import run_sync, test_connector
 from agent.graph import run_agent, run_agent_stream
 from agent.llm import get_active_model, list_available_models, set_active_model
 from agent.memory import (
-    _get_conn,
+    _get_conn,  # Persona management
     add_workspace_member,
+    assign_persona,
     authenticate_user,
     create_a2a_peer,
     create_agent,
@@ -23,6 +24,7 @@ from agent.memory import (
     create_custom_tool,
     create_document_registry,
     create_mcp_server,
+    create_persona,
     create_prompt,
     create_skill,
     create_sync_job,
@@ -36,6 +38,7 @@ from agent.memory import (
     delete_document_registry_by_source,
     delete_documents_by_collection,
     delete_mcp_server,
+    delete_persona,
     delete_prompt,
     delete_session,
     delete_skill,
@@ -53,12 +56,14 @@ from agent.memory import (
     get_llm_usage_summary,
     get_mcp_server,
     get_memory_stats,
+    get_persona,
     get_prompt,
     get_session_summary,
     get_skill,
     get_user,
     get_user_by_email,
     get_user_by_username,
+    get_user_personas,
     get_version,
     get_workspace,
     import_all_data,
@@ -73,6 +78,7 @@ from agent.memory import (
     list_guardrails,
     list_llm_usage,
     list_mcp_servers,
+    list_personas,
     list_prompts,
     list_sessions,
     list_skills,
@@ -87,6 +93,7 @@ from agent.memory import (
     reset_user_password,
     save_version,
     tag_document_to_agent,
+    unassign_persona,
     untag_all_for_agent,
     untag_document_from_agent,
     update_a2a_peer,
@@ -96,6 +103,7 @@ from agent.memory import (
     update_document_registry,
     update_guardrail,
     update_mcp_server,
+    update_persona,
     update_prompt,
     update_skill,
     update_sync_job,
@@ -521,6 +529,98 @@ async def admin_verify_user_endpoint(user_id: str):
     )
     conn.commit()
     return {"success": True, "username": user["username"]}
+
+
+# ── Persona Management ────────────────────────────────────────────────────
+@app.get("/personas")
+async def list_personas_endpoint():
+    return {"personas": list_personas()}
+
+
+@app.get("/personas/{persona_id}")
+async def get_persona_endpoint(persona_id: str):
+    p = get_persona(persona_id)
+    if not p:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Persona not found"})
+    return p
+
+
+@app.post("/personas")
+async def create_persona_endpoint(request: Request):
+    from fastapi.responses import JSONResponse
+
+    body = await request.json()
+    name = body.get("name", "").strip()
+    if not name:
+        return JSONResponse(status_code=400, content={"error": "name is required"})
+    try:
+        p = create_persona(
+            name=name,
+            description=body.get("description", ""),
+            permissions=body.get("permissions"),
+        )
+        return p
+    except Exception as e:
+        return JSONResponse(status_code=409, content={"error": str(e)})
+
+
+@app.put("/personas/{persona_id}")
+async def update_persona_endpoint(persona_id: str, request: Request):
+    from fastapi.responses import JSONResponse
+
+    body = await request.json()
+    p = update_persona(
+        persona_id,
+        name=body.get("name"),
+        description=body.get("description"),
+        permissions=body.get("permissions"),
+    )
+    if not p:
+        return JSONResponse(status_code=404, content={"error": "Persona not found"})
+    return p
+
+
+@app.delete("/personas/{persona_id}")
+async def delete_persona_endpoint(persona_id: str):
+    from fastapi.responses import JSONResponse
+
+    ok = delete_persona(persona_id)
+    if not ok:
+        return JSONResponse(
+            status_code=400, content={"error": "Cannot delete system persona"}
+        )
+    return {"success": True}
+
+
+@app.get("/users/{user_id}/personas")
+async def get_user_personas_endpoint(user_id: str):
+    return {"personas": get_user_personas(user_id)}
+
+
+@app.post("/users/{user_id}/personas")
+async def assign_persona_endpoint(user_id: str, request: Request):
+    from fastapi.responses import JSONResponse
+
+    body = await request.json()
+    persona_id = body.get("persona_id", "").strip()
+    if not persona_id:
+        return JSONResponse(
+            status_code=400, content={"error": "persona_id is required"}
+        )
+    ok = assign_persona(user_id, persona_id)
+    if not ok:
+        return JSONResponse(
+            status_code=409, content={"error": "Already assigned or invalid"}
+        )
+    return {"success": True}
+
+
+@app.delete("/users/{user_id}/personas/{persona_id}")
+async def unassign_persona_endpoint(user_id: str, persona_id: str):
+    ok = unassign_persona(user_id, persona_id)
+    return {"success": ok}
 
 
 # ── Workspace Management ───────────────────────────────────────────────────

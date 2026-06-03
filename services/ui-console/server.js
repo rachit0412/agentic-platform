@@ -65,6 +65,15 @@ app.post("/auth/login", async (req, res) => {
     });
     const data = await r.json();
     if (r.ok && data.id) {
+      // Load user personas
+      let personas = [];
+      try {
+        const pr = await fetch(`${AGENT_URL}/users/${data.id}/personas`);
+        const pd = await pr.json();
+        personas = pd.personas || [];
+      } catch (_) {}
+      data.personas = personas;
+      data.active_persona = personas.length > 0 ? personas[0] : null;
       // Regenerate session to prevent fixation and guarantee a fresh cookie
       return req.session.regenerate((err) => {
         if (err) return res.status(500).json({ error: "Session error" });
@@ -284,6 +293,66 @@ app.delete("/api/users/:id", requireAdmin, async (req, res) => {
 app.post("/api/users/:id/verify", requireAdmin, async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/verify`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Persona Management (admin-only for CRUD) ──────
+app.get("/api/personas", requireAuth, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/personas`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/personas/:id", requireAuth, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/personas/${req.params.id}`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/personas", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/personas`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/personas/:id", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/personas/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/personas/:id", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/personas/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+// User persona assignments (admin-only)
+app.get("/api/users/:id/personas", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/personas`, { headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/users/:id/personas", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/personas`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/users/:id/personas/:pid", requireAdmin, async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/personas/${req.params.pid}`, { method: "DELETE", headers: wsHeaders(req) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Switch active persona (self-service) ──────────
+app.post("/api/switch-persona", requireAuth, async (req, res) => {
+  const { persona_id } = req.body || {};
+  if (!persona_id) return res.status(400).json({ error: "persona_id is required" });
+  // Fetch user's assigned personas to validate
+  try {
+    const r = await fetch(`${AGENT_URL}/users/${req.session.user.id}/personas`, { headers: wsHeaders(req) });
+    const data = await r.json();
+    const personas = data.personas || [];
+    const match = personas.find(p => p.id === persona_id);
+    if (!match) return res.status(403).json({ error: "Persona not assigned to you" });
+    req.session.user.active_persona = match;
+    res.json({ success: true, active_persona: match });
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Get my personas (self-service) ────────────────
+app.get("/api/my-personas", requireAuth, async (req, res) => {
+  try {
+    const r = await fetch(`${AGENT_URL}/users/${req.session.user.id}/personas`, { headers: wsHeaders(req) });
+    const data = await r.json();
+    res.json({ personas: data.personas || [], active_persona: req.session.user.active_persona || null });
+  } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
 // ── API: Current session info ──────────────────────────

@@ -28,6 +28,10 @@
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Users &amp; Access
   </button>
+  <button class="btn btn-sm admin-tab" data-tab="personas" onclick="switchTab('personas')">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+    Personas
+  </button>
   <button class="btn btn-sm admin-tab" data-tab="overview" onclick="switchTab('overview')">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     Platform Overview
@@ -106,6 +110,44 @@
     </div>
     <div id="workspaces-admin-table" style="margin-top:0.75rem">
       <div style="color:var(--text-3);font-size:0.82rem">Loading workspaces...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB: PERSONAS                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-personas" class="admin-tab-content" style="display:none">
+
+  <!-- Persona Cards -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Persona Definitions</h3>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="loadPersonas()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 21 12"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="showCreatePersonaModal()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Persona
+        </button>
+      </div>
+    </div>
+    <p style="font-size:0.75rem;color:var(--text-3);margin:0.25rem 0 1rem">Define access profiles that control which navigation items and platform capabilities are available. Assign personas to users to enable role-switching.</p>
+    <div id="personas-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem">
+      <div style="color:var(--text-3);font-size:0.82rem">Loading personas...</div>
+    </div>
+  </div>
+
+  <!-- User Persona Assignments -->
+  <div class="card animate-fade-up">
+    <div class="section-header">
+      <h3>User Persona Assignments</h3>
+    </div>
+    <p style="font-size:0.75rem;color:var(--text-3);margin:0.25rem 0 1rem">Assign one or more personas to each user. Users can switch between their assigned personas at any time.</p>
+    <div id="user-persona-assignments">
+      <div style="color:var(--text-3);font-size:0.82rem">Loading...</div>
     </div>
   </div>
 </div>
@@ -891,6 +933,7 @@ function switchTab(tab) {
   /* Load data for the active tab */
   if (tab === 'health') loadServiceHealth();
   if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
+  if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
   if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
   if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
@@ -923,7 +966,7 @@ function highlightThemeCard() {
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
-  var validTabs = ['health','users','overview','llm','database','config','audit'];
+  var validTabs = ['health','users','personas','overview','llm','database','config','audit'];
   var startTab = validTabs.indexOf(hash) >= 0 ? hash : 'health';
   switchTab(startTab);
 }
@@ -1404,6 +1447,227 @@ async function loadAuditLog() {
 
 document.getElementById('audit-filter-type').addEventListener('change', loadAuditLog);
 document.getElementById('audit-filter-action').addEventListener('change', loadAuditLog);
+
+/* ═══ PERSONA MANAGEMENT ═══ */
+var _personasCache = [];
+var _allNavItems = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'run-agent', label: 'Run Agent' },
+  { id: 'agent-builder', label: 'Agent Builder' },
+  { id: 'agent-hub', label: 'Agent Hub' },
+  { id: 'agents', label: 'Agents' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'prompts', label: 'Prompts' },
+  { id: 'tools', label: 'Tools' },
+  { id: 'ai-studio', label: 'AI Studio' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'data-ingestion', label: 'Data Ingestion' },
+  { id: 'workflows', label: 'Workflows' },
+  { id: 'a2a', label: 'A2A Protocol' },
+  { id: 'mcp', label: 'MCP Protocol' },
+  { id: 'rest', label: 'REST Protocol' },
+  { id: 'intelligence-hub', label: 'Intelligence Hub' },
+  { id: 'llm-activity', label: 'LLM Activity' },
+  { id: 'traceability', label: 'Traceability' },
+  { id: 'evaluation', label: 'Evaluation' },
+  { id: 'observability', label: 'Observability' },
+  { id: 'guardrails', label: 'Guardrails' },
+  { id: 'marketplace', label: 'Marketplace' },
+  { id: 'docs', label: 'Docs' },
+  { id: 'admin', label: 'Admin Plane' }
+];
+var _allActions = [
+  { id: 'create_agents', label: 'Create Agents' },
+  { id: 'run_agents', label: 'Run Agents' },
+  { id: 'manage_tools', label: 'Manage Tools' },
+  { id: 'manage_users', label: 'Manage Users' },
+  { id: 'access_admin', label: 'Access Admin' },
+  { id: 'view_observability', label: 'View Observability' },
+  { id: 'ingest_data', label: 'Ingest Data' },
+  { id: 'manage_workflows', label: 'Manage Workflows' },
+  { id: 'access_protocols', label: 'Access Protocols' },
+  { id: 'manage_guardrails', label: 'Manage Guardrails' },
+  { id: 'create_global', label: 'Create Global Resources' }
+];
+
+async function loadPersonas() {
+  try {
+    var r = await fetch('/api/personas');
+    var data = await r.json();
+    _personasCache = data.personas || [];
+    renderPersonasGrid(_personasCache);
+  } catch(e) { document.getElementById('personas-grid').innerHTML = '<p style="color:var(--danger)">Failed to load personas</p>'; }
+}
+
+function renderPersonasGrid(personas) {
+  var grid = document.getElementById('personas-grid');
+  if (!personas.length) { grid.innerHTML = '<p style="color:var(--text-3)">No personas defined.</p>'; return; }
+  grid.innerHTML = personas.map(function(p) {
+    var navCount = (p.permissions && p.permissions.nav) ? p.permissions.nav.length : 0;
+    var actionCount = (p.permissions && p.permissions.actions) ? p.permissions.actions.length : 0;
+    var systemBadge = p.is_system ? '<span style="font-size:0.58rem;padding:2px 6px;border-radius:4px;background:rgba(139,92,246,0.12);color:#a78bfa;font-weight:600;margin-left:6px">SYSTEM</span>' : '';
+    var editBtn = '<button class="btn btn-sm" onclick="showEditPersonaModal(&#39;' + p.id + '&#39;)" style="font-size:0.66rem;padding:3px 8px">Edit</button>';
+    var deleteBtn = p.is_system ? '' : '<button class="btn btn-sm" onclick="deletePersona(&#39;' + p.id + '&#39;,&#39;' + escapeHtml(p.name) + '&#39;)" style="font-size:0.66rem;padding:3px 8px;color:var(--danger)">Delete</button>';
+    var navTags = (p.permissions && p.permissions.nav || []).slice(0, 6).map(function(n) {
+      return '<span style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.6rem;background:rgba(6,182,212,0.08);color:var(--accent-text);border:1px solid rgba(6,182,212,0.15);margin:1px">' + escapeHtml(n) + '</span>';
+    }).join('');
+    var moreNav = navCount > 6 ? '<span style="font-size:0.6rem;color:var(--text-3)">+' + (navCount - 6) + ' more</span>' : '';
+    return '<div style="padding:1rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem">'
+      + '<div><div style="font-weight:700;font-size:0.88rem;color:var(--text-1)">' + escapeHtml(p.name) + systemBadge + '</div>'
+      + '<div style="font-size:0.7rem;color:var(--text-3);margin-top:2px">' + escapeHtml(p.description) + '</div></div>'
+      + '<div style="display:flex;gap:4px">' + editBtn + deleteBtn + '</div></div>'
+      + '<div style="display:flex;gap:1rem;margin:0.5rem 0">'
+      + '<div style="font-size:0.65rem;color:var(--text-3)"><strong style="color:var(--text-2)">' + navCount + '</strong> nav items</div>'
+      + '<div style="font-size:0.65rem;color:var(--text-3)"><strong style="color:var(--text-2)">' + actionCount + '</strong> actions</div></div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:0.4rem">' + navTags + moreNav + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function showCreatePersonaModal() {
+  _showPersonaModal(null);
+}
+function showEditPersonaModal(personaId) {
+  var p = _personasCache.find(function(x) { return x.id === personaId; });
+  if (!p) return;
+  _showPersonaModal(p);
+}
+
+function _showPersonaModal(persona) {
+  var isEdit = !!persona;
+  var title = isEdit ? 'Edit Persona' : 'Create Persona';
+  var currentNav = (persona && persona.permissions && persona.permissions.nav) || [];
+  var currentActions = (persona && persona.permissions && persona.permissions.actions) || [];
+  var overlay = document.createElement('div');
+  overlay.id = 'persona-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  var navChecks = _allNavItems.map(function(n) {
+    var checked = currentNav.indexOf(n.id) >= 0 ? ' checked' : '';
+    return '<label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--text-2);cursor:pointer;padding:3px 0"><input type="checkbox" class="persona-nav-check" value="' + n.id + '"' + checked + ' style="accent-color:var(--accent)"> ' + escapeHtml(n.label) + '</label>';
+  }).join('');
+  var actionChecks = _allActions.map(function(a) {
+    var checked = currentActions.indexOf(a.id) >= 0 ? ' checked' : '';
+    return '<label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--text-2);cursor:pointer;padding:3px 0"><input type="checkbox" class="persona-action-check" value="' + a.id + '"' + checked + ' style="accent-color:var(--accent)"> ' + escapeHtml(a.label) + '</label>';
+  }).join('');
+  overlay.innerHTML = '<div style="width:560px;max-height:85vh;overflow-y:auto;padding:28px 32px;background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;box-shadow:var(--modal-shadow)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1)">' + title + '</h3><button onclick="document.getElementById(&#39;persona-modal-overlay&#39;).remove()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px">&times;</button></div>'
+    + '<div style="display:flex;flex-direction:column;gap:14px">'
+    + '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Name *</label><input type="text" id="persona-name" class="input" value="' + escapeHtml(persona ? persona.name : '') + '" placeholder="e.g. Data Engineer" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>'
+    + '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Description</label><input type="text" id="persona-description" class="input" value="' + escapeHtml(persona ? persona.description : '') + '" placeholder="Brief description of this persona" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>'
+    + '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Navigation Items</label>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px"><button class="btn btn-sm" onclick="toggleAllChecks(&#39;persona-nav-check&#39;,true)" style="font-size:0.62rem;padding:2px 8px">Select All</button><button class="btn btn-sm" onclick="toggleAllChecks(&#39;persona-nav-check&#39;,false)" style="font-size:0.62rem;padding:2px 8px">Clear All</button></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);max-height:200px;overflow-y:auto">' + navChecks + '</div></div>'
+    + '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Allowed Actions</label>'
+    + '<div style="display:flex;gap:6px;margin-bottom:8px"><button class="btn btn-sm" onclick="toggleAllChecks(&#39;persona-action-check&#39;,true)" style="font-size:0.62rem;padding:2px 8px">Select All</button><button class="btn btn-sm" onclick="toggleAllChecks(&#39;persona-action-check&#39;,false)" style="font-size:0.62rem;padding:2px 8px">Clear All</button></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border)">' + actionChecks + '</div></div>'
+    + '<div id="persona-modal-error" style="display:none;color:var(--danger);font-size:0.75rem;text-align:center;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px"></div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-primary" onclick="savePersona(' + (isEdit ? "&#39;" + persona.id + "&#39;" : 'null') + ')" style="flex:1;padding:11px;border-radius:10px;font-weight:600">' + (isEdit ? 'Save Changes' : 'Create Persona') + '</button><button class="btn btn-secondary" onclick="document.getElementById(&#39;persona-modal-overlay&#39;).remove()" style="flex:1;padding:11px;border-radius:10px">Cancel</button></div>'
+    + '</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('persona-name').focus();
+}
+
+function toggleAllChecks(className, checked) {
+  document.querySelectorAll('.' + className).forEach(function(cb) { cb.checked = checked; });
+}
+
+async function savePersona(personaId) {
+  var errEl = document.getElementById('persona-modal-error');
+  var name = document.getElementById('persona-name').value.trim();
+  var description = document.getElementById('persona-description').value.trim();
+  if (!name) { errEl.style.display = 'block'; errEl.textContent = 'Name is required'; return; }
+  var nav = []; document.querySelectorAll('.persona-nav-check:checked').forEach(function(cb) { nav.push(cb.value); });
+  var actions = []; document.querySelectorAll('.persona-action-check:checked').forEach(function(cb) { actions.push(cb.value); });
+  var body = { name: name, description: description, permissions: { nav: nav, actions: actions } };
+  var url = personaId ? '/api/personas/' + personaId : '/api/personas';
+  var method = personaId ? 'PUT' : 'POST';
+  try {
+    var r = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || 'Failed to save persona'; return; }
+    var el = document.getElementById('persona-modal-overlay');
+    if (el) el.remove();
+    showToast(personaId ? 'Persona updated' : 'Persona created', 'success');
+    loadPersonas();
+  } catch(e) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + e.message; }
+}
+
+async function deletePersona(personaId, name) {
+  if (!confirm('Delete persona "' + name + '"? Users with this persona will lose it.')) return;
+  try {
+    var r = await fetch('/api/personas/' + personaId, { method: 'DELETE' });
+    if (!r.ok) { var d = await r.json(); showToast(d.error || 'Cannot delete persona', 'error'); return; }
+    showToast('Persona "' + name + '" deleted', 'success');
+    loadPersonas();
+    loadUserPersonaAssignments();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+/* ═══ USER PERSONA ASSIGNMENTS ═══ */
+async function loadUserPersonaAssignments() {
+  var container = document.getElementById('user-persona-assignments');
+  try {
+    var [ur, pr] = await Promise.all([fetch('/api/users'), fetch('/api/personas')]);
+    var users = (await ur.json()).users || [];
+    var personas = (await pr.json()).personas || [];
+    if (!users.length) { container.innerHTML = '<p style="color:var(--text-3)">No users found.</p>'; return; }
+    var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="border-bottom:2px solid var(--glass-border)">'
+      + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">User</th>'
+      + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Assigned Personas</th>'
+      + '<th style="text-align:right;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Actions</th>'
+      + '</tr></thead><tbody>';
+    users.forEach(function(u) {
+      var userPersonas = u.personas || [];
+      var chips = userPersonas.map(function(p) {
+        return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:0.68rem;font-weight:500;background:rgba(6,182,212,0.08);color:var(--accent-text);border:1px solid rgba(6,182,212,0.15)">'
+          + escapeHtml(p.name)
+          + '<button onclick="removePersonaFromUser(&#39;' + u.id + '&#39;,&#39;' + p.id + '&#39;)" style="border:none;background:none;cursor:pointer;color:var(--text-3);font-size:0.75rem;padding:0 2px;line-height:1" title="Remove">&times;</button>'
+          + '</span>';
+      }).join(' ');
+      if (!chips) chips = '<span style="font-size:0.7rem;color:var(--text-3);opacity:0.5">None</span>';
+      var options = personas.filter(function(p) {
+        return !userPersonas.some(function(up) { return up.id === p.id; });
+      }).map(function(p) {
+        return '<option value="' + p.id + '">' + escapeHtml(p.name) + '</option>';
+      }).join('');
+      var addSelect = options ? '<select id="add-persona-' + u.id + '" class="input" style="font-size:0.72rem;padding:3px 8px;min-width:100px"><option value="">Add...</option>' + options + '</select>'
+        + '<button class="btn btn-sm" onclick="addPersonaToUser(&#39;' + u.id + '&#39;)" style="font-size:0.62rem;padding:3px 6px">+</button>' : '';
+      html += '<tr style="border-bottom:1px solid var(--glass-border)">'
+        + '<td style="padding:10px 12px"><div style="font-weight:600;font-size:0.82rem;color:var(--text-1)">' + escapeHtml(u.display_name || u.username) + '</div><div style="font-size:0.68rem;color:var(--text-3)">@' + escapeHtml(u.username) + '</div></td>'
+        + '<td style="padding:10px 12px"><div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">' + chips + '</div></td>'
+        + '<td style="padding:10px 12px;text-align:right"><div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">' + addSelect + '</div></td>'
+        + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<p style="color:var(--danger)">Failed to load: ' + escapeHtml(e.message) + '</p>'; }
+}
+
+async function addPersonaToUser(userId) {
+  var sel = document.getElementById('add-persona-' + userId);
+  if (!sel || !sel.value) return;
+  try {
+    var r = await fetch('/api/users/' + userId + '/personas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ persona_id: sel.value })
+    });
+    if (!r.ok) { var d = await r.json(); showToast(d.error || 'Failed to assign', 'error'); return; }
+    showToast('Persona assigned', 'success');
+    loadUserPersonaAssignments();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function removePersonaFromUser(userId, personaId) {
+  try {
+    var r = await fetch('/api/users/' + userId + '/personas/' + personaId, { method: 'DELETE' });
+    if (!r.ok) { showToast('Failed to remove persona', 'error'); return; }
+    showToast('Persona removed', 'success');
+    loadUserPersonaAssignments();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
 
 /* ═══ INIT ═══ */
 adminLoadAll();
