@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/theme-midnight.css" />
   <link rel="stylesheet" href="/theme-aurora.css" />
   <link rel="stylesheet" href="/theme-softui.css" />
-  <link rel="stylesheet" href="/theme-flux.css" />
+  <link rel="stylesheet" href="/theme-horizon.css" />
   <script>
     // Apply saved design theme BEFORE render to avoid flash
     (function(){
@@ -19,7 +19,7 @@
       if (dt === 'midnight') document.documentElement.classList.add('theme-midnight');
       else if (dt === 'aurora') document.documentElement.classList.add('theme-aurora');
       else if (dt === 'softui') document.documentElement.classList.add('theme-softui');
-      else if (dt === 'flux') document.documentElement.classList.add('theme-flux');
+      else if (dt === 'horizon') document.documentElement.classList.add('theme-horizon');
       if (localStorage.getItem('sidebarExpanded') === 'true') document.documentElement.classList.add('sidebar-expanded');
     })();
   </script>
@@ -570,11 +570,11 @@
     // ── Design Theme Switcher ──
     function setDesignTheme(name) {
       var html = document.documentElement;
-      html.classList.remove('theme-midnight', 'theme-aurora', 'theme-softui', 'theme-flux');
+      html.classList.remove('theme-midnight', 'theme-aurora', 'theme-softui', 'theme-horizon');
       if (name === 'midnight') html.classList.add('theme-midnight');
       else if (name === 'aurora') html.classList.add('theme-aurora');
       else if (name === 'softui') html.classList.add('theme-softui');
-      else if (name === 'flux') html.classList.add('theme-flux');
+      else if (name === 'horizon') html.classList.add('theme-horizon');
       localStorage.setItem('designTheme', name);
     }
     function getDesignTheme() {
