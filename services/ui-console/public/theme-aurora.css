@@ -1,0 +1,419 @@
+/*
+═══════════════════════════════════════════
+   AGENTIC PLATFORM — Aurora Theme
+   Warm · Gradient · Organic
+═══════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+/* ═══════════════════════════════════════════
+   LIGHT MODE
+   ═══════════════════════════════════════════ */
+.theme-aurora {
+  --bg: #fefcfb;
+  --bg-from: #fefcfb;
+  --bg-mid: #fdf4f0;
+  --bg-to: #fefcfb;
+
+  --glass-bg: rgba(255,255,255,0.85);
+  --glass-hover-bg: rgba(255,255,255,0.95);
+  --glass-border: rgba(217,119,6,0.1);
+  --glass-hover-border: rgba(217,119,6,0.2);
+  --glass-shadow: 0 2px 8px rgba(217,119,6,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --glass-hover-shadow: 0 8px 24px rgba(217,119,6,0.08), 0 2px 8px rgba(0,0,0,0.05);
+  --glass-inset: inset 0 1px 0 0 rgba(255,255,255,0.9);
+
+  --text-1: #1c1917;
+  --text-2: #57534e;
+  --text-3: #a8a29e;
+  --text-4: #d6d3d1;
+
+  --input-bg: rgba(255,247,237,0.5);
+  --input-border: rgba(217,119,6,0.15);
+  --input-focus-bg: #ffffff;
+  --input-placeholder: #a8a29e;
+
+  --rail-bg: #1c1917;
+  --topbar-bg: rgba(254,252,251,0.92);
+  --rail-border: #292524;
+  --topbar-border: rgba(217,119,6,0.1);
+
+  --tooltip-bg: #1c1917;
+  --tooltip-border: #44403c;
+  --tooltip-shadow: 0 4px 16px rgba(0,0,0,0.2);
+
+  --ring-inner: #fefcfb;
+  --ring-empty: rgba(217,119,6,0.1);
+
+  --badge-bg: rgba(217,119,6,0.05);
+  --badge-border: rgba(217,119,6,0.12);
+
+  --rail-hover-bg: rgba(255,255,255,0.1);
+  --dot-grid-color: rgba(217,119,6,0.03);
+  --scrollbar-thumb: rgba(217,119,6,0.15);
+  --scrollbar-hover: rgba(217,119,6,0.3);
+  --selection-bg: rgba(217,119,6,0.12);
+  --selection-color: #1c1917;
+  --divider: rgba(217,119,6,0.08);
+  --border-base: rgba(217,119,6,0.08);
+  --btn-secondary-hover-bg: rgba(217,119,6,0.04);
+  --btn-secondary-hover-border: rgba(217,119,6,0.15);
+  --btn-ghost-hover-bg: rgba(217,119,6,0.04);
+  --delete-hover-bg: rgba(239,68,68,0.06);
+
+  --modal-bg: #ffffff;
+  --modal-border: rgba(217,119,6,0.15);
+  --modal-shadow: 0 20px 60px rgba(217,119,6,0.1), 0 4px 16px rgba(0,0,0,0.08);
+  --modal-overlay: rgba(28,25,23,0.4);
+  --modal-field-bg: #fdf4f0;
+  --warning: #d97706;
+
+  --accent: #d97706;
+  --accent-text: #b45309;
+  --accent-glow: rgba(217,119,6,0.2);
+
+  --success: #059669;
+  --success-bg: rgba(16,185,129,0.08);
+  --success-border: rgba(16,185,129,0.2);
+  --warn: #d97706;
+  --warn-bg: rgba(245,158,11,0.08);
+  --warn-border: rgba(245,158,11,0.15);
+  --danger: #dc2626;
+  --danger-bg: rgba(239,68,68,0.06);
+  --danger-border: rgba(239,68,68,0.15);
+
+  color-scheme: light;
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════ */
+.theme-aurora.dark {
+  --bg: #1a1210;
+  --bg-from: #1a1210;
+  --bg-mid: #231a16;
+  --bg-to: #1a1210;
+
+  --glass-bg: rgba(35,26,22,0.92);
+  --glass-hover-bg: rgba(44,33,28,0.95);
+  --glass-border: rgba(217,119,6,0.12);
+  --glass-hover-border: rgba(217,119,6,0.25);
+  --glass-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 1px rgba(217,119,6,0.1);
+  --glass-hover-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 12px rgba(217,119,6,0.08);
+  --glass-inset: inset 0 1px 0 0 rgba(217,119,6,0.05);
+
+  --text-1: #fef3c7;
+  --text-2: #fbbf24;
+  --text-3: #92400e;
+  --text-4: #451a03;
+
+  --input-bg: rgba(0,0,0,0.3);
+  --input-border: rgba(217,119,6,0.15);
+  --input-focus-bg: rgba(0,0,0,0.4);
+  --input-placeholder: #78350f;
+
+  --rail-bg: #110d0a;
+  --topbar-bg: rgba(26,18,16,0.95);
+  --rail-border: rgba(217,119,6,0.08);
+  --topbar-border: rgba(217,119,6,0.08);
+
+  --tooltip-bg: #231a16;
+  --tooltip-border: rgba(217,119,6,0.25);
+  --tooltip-shadow: 0 4px 16px rgba(0,0,0,0.5);
+
+  --ring-inner: #1a1210;
+  --ring-empty: rgba(217,119,6,0.1);
+
+  --badge-bg: rgba(217,119,6,0.06);
+  --badge-border: rgba(217,119,6,0.15);
+
+  --rail-hover-bg: rgba(217,119,6,0.08);
+  --dot-grid-color: rgba(217,119,6,0.02);
+  --scrollbar-thumb: rgba(217,119,6,0.2);
+  --scrollbar-hover: rgba(217,119,6,0.35);
+  --selection-bg: rgba(217,119,6,0.2);
+  --selection-color: #fef3c7;
+  --divider: rgba(217,119,6,0.1);
+  --border-base: rgba(217,119,6,0.1);
+  --btn-secondary-hover-bg: rgba(217,119,6,0.08);
+  --btn-secondary-hover-border: rgba(217,119,6,0.2);
+  --btn-ghost-hover-bg: rgba(217,119,6,0.06);
+  --delete-hover-bg: rgba(239,68,68,0.12);
+
+  --modal-bg: #231a16;
+  --modal-border: rgba(217,119,6,0.2);
+  --modal-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 20px rgba(217,119,6,0.05);
+  --modal-overlay: rgba(0,0,0,0.6);
+  --modal-field-bg: rgba(0,0,0,0.3);
+
+  --accent: #f59e0b;
+  --accent-text: #fbbf24;
+  --accent-glow: rgba(245,158,11,0.25);
+
+  --success: #34d399;
+  --success-bg: rgba(5,150,105,0.12);
+  --success-border: rgba(52,211,153,0.25);
+  --warn: #fbbf24;
+  --warn-bg: rgba(217,119,6,0.12);
+  --warn-border: rgba(251,191,36,0.2);
+  --danger: #f87171;
+  --danger-bg: rgba(220,38,38,0.12);
+  --danger-border: rgba(248,113,113,0.2);
+
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY — Rounded, warm
+   ═══════════════════════════════════════════ */
+.theme-aurora body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.theme-aurora .font-heading,
+.theme-aurora h1,
+.theme-aurora h2,
+.theme-aurora h3 {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.theme-aurora .font-mono,
+.theme-aurora .mono,
+.theme-aurora th {
+  font-family: 'Fira Code', ui-monospace, monospace;
+}
+
+/* ═══════════════════════════════════════════
+   SURFACES — Soft, rounded, warm glow
+   ═══════════════════════════════════════════ */
+.theme-aurora .glass,
+.theme-aurora .glass-hover {
+  backdrop-filter: blur(12px) saturate(1.3);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3);
+}
+
+.theme-aurora .card,
+.theme-aurora .card-hover,
+.theme-aurora .stat-card {
+  border-radius: 16px;
+}
+.theme-aurora .card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-hover-shadow);
+}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR — Dark warm, amber accents
+   ═══════════════════════════════════════════ */
+.theme-aurora .icon-rail {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--rail-bg);
+  border-right: 1px solid rgba(217,119,6,0.06);
+}
+
+.theme-aurora .rail-item {
+  border-radius: 12px;
+}
+.theme-aurora .rail-item.active {
+  background: rgba(217,119,6,0.12);
+  color: #fbbf24;
+}
+.theme-aurora .rail-item.active::before {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+  box-shadow: 0 0 8px rgba(245,158,11,0.5);
+  border-radius: 3px;
+}
+
+.theme-aurora .rail-submenu a:hover {
+  background: rgba(217,119,6,0.08);
+  color: #fef3c7;
+}
+.theme-aurora .rail-submenu a.sub-active {
+  color: #fbbf24;
+}
+.theme-aurora .rail-submenu-title {
+  color: #f59e0b;
+}
+
+/* ═══════════════════════════════════════════
+   LOGO
+   ═══════════════════════════════════════════ */
+.theme-aurora .rail-logo-icon {
+  background: linear-gradient(135deg, #d97706, #f59e0b) !important;
+  box-shadow: 0 2px 12px rgba(217,119,6,0.3);
+  border-radius: 14px;
+}
+
+/* ═══════════════════════════════════════════
+   TOP BAR — Warm, blurred
+   ═══════════════════════════════════════════ */
+.theme-aurora .topbar {
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+}
+.theme-aurora .topbar-page {
+  color: var(--text-1);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════
+   BUTTONS — Warm gradient, pill-shaped
+   ═══════════════════════════════════════════ */
+.theme-aurora .btn {
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', system-ui;
+  font-weight: 600;
+}
+.theme-aurora .btn-primary {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  background-size: unset;
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(217,119,6,0.25);
+}
+.theme-aurora .btn-primary:hover {
+  background: linear-gradient(135deg, #b45309, #d97706);
+  box-shadow: 0 4px 16px rgba(217,119,6,0.3);
+  transform: translateY(-1px);
+}
+.theme-aurora .btn-secondary {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 10px;
+}
+.theme-aurora .btn-sm {
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════
+   INPUTS — Warm, rounded
+   ═══════════════════════════════════════════ */
+.theme-aurora input,
+.theme-aurora textarea,
+.theme-aurora select {
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', system-ui;
+}
+.theme-aurora input:focus,
+.theme-aurora textarea:focus,
+.theme-aurora select:focus {
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217,119,6,0.1), 0 0 8px rgba(217,119,6,0.06);
+}
+
+/* ═══════════════════════════════════════════
+   BADGES — Pill-shaped, warm
+   ═══════════════════════════════════════════ */
+.theme-aurora .badge {
+  border-radius: 20px;
+  font-weight: 600;
+  padding: 0.15em 0.6em;
+}
+.theme-aurora .badge-success {
+  color: #059669;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.theme-aurora .badge-info {
+  color: #d97706;
+  background: rgba(217,119,6,0.06);
+  border: 1px solid rgba(217,119,6,0.15);
+}
+
+/* ═══════════════════════════════════════════
+   STAT CARDS — Warm accent lines
+   ═══════════════════════════════════════════ */
+.theme-aurora .stat-card::before {
+  background: linear-gradient(90deg, #d97706, #f59e0b, transparent);
+  height: 3px;
+  border-radius: 3px;
+}
+.theme-aurora .stat-card:hover {
+  transform: translateY(-2px);
+}
+.theme-aurora .stat-number {
+  font-family: 'Plus Jakarta Sans', system-ui;
+  font-weight: 700;
+}
+.theme-aurora .stat-icon {
+  border-radius: 12px;
+}
+.theme-aurora .stat-icon-cyan { background: rgba(217,119,6,0.08); color: #d97706; }
+.theme-aurora .stat-icon-violet { background: rgba(168,85,247,0.08); color: #a855f7; }
+.theme-aurora .stat-icon-emerald { background: rgba(16,185,129,0.08); color: #059669; }
+.theme-aurora .stat-icon-amber { background: rgba(217,119,6,0.08); color: #d97706; }
+
+/* ═══════════════════════════════════════════
+   TABLES — Rounded, warm alternating
+   ═══════════════════════════════════════════ */
+.theme-aurora table {
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.theme-aurora th {
+  background: rgba(217,119,6,0.04);
+  font-family: 'Plus Jakarta Sans', system-ui;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--divider);
+}
+.theme-aurora tr:nth-child(even) td {
+  background: rgba(217,119,6,0.02);
+}
+.theme-aurora tr:hover td {
+  background: rgba(217,119,6,0.04);
+}
+
+/* ═══════════════════════════════════════════
+   QUICK LINKS
+   ═══════════════════════════════════════════ */
+.theme-aurora .quick-link {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 14px;
+}
+.theme-aurora .quick-link:hover {
+  transform: translateY(-2px);
+  border-color: #d97706;
+  box-shadow: 0 4px 16px rgba(217,119,6,0.1);
+}
+.theme-aurora .quick-link-icon {
+  border-radius: 12px;
+}
+
+/* ═══════════════════════════════════════════
+   GLOW TEXT — Warm
+   ═══════════════════════════════════════════ */
+.theme-aurora .text-glow-cyan {
+  color: #d97706 !important;
+  text-shadow: 0 0 12px rgba(217,119,6,0.3);
+}
+
+/* ═══════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════ */
+.theme-aurora ::-webkit-scrollbar-thumb {
+  background: rgba(217,119,6,0.15);
+  border-radius: 10px;
+}
+.theme-aurora ::-webkit-scrollbar-thumb:hover {
+  background: rgba(217,119,6,0.3);
+}
+
+/* ═══════════════════════════════════════════
+   HEALTH / EMPTY STATE
+   ═══════════════════════════════════════════ */
+.theme-aurora .health-item {
+  border-radius: 12px;
+}
+.theme-aurora .empty-state-icon {
+  background: rgba(217,119,6,0.06);
+  border-radius: 16px;
+  color: #d97706;
+}

@@ -262,9 +262,20 @@ app.delete("/api/workspaces/:id/members/:userId", async (req, res) => {
 });
 
 // ── API: User Management (admin-only) ──────────────────
+function hasAdminAccess(user) {
+  if (!user || user.role !== "admin") return false;
+  // If a persona is active, it must include admin access
+  const persona = user.active_persona;
+  if (persona && persona.permissions) {
+    const nav = persona.permissions.nav || [];
+    const actions = persona.permissions.actions || [];
+    if (nav.indexOf("admin") === -1 && actions.indexOf("access_admin") === -1) return false;
+  }
+  return true;
+}
 function requireAdmin(req, res, next) {
   const user = req.session && req.session.user;
-  if (!user || user.role !== "admin") {
+  if (!hasAdminAccess(user)) {
     return res.status(403).json({ error: "Admin access required" });
   }
   next();
@@ -486,6 +497,44 @@ app.delete("/api/agents/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// ── API: Pipelines CRUD proxy ──────────────────────────
+app.get("/api/pipelines", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/pipelines", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/pipelines/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}`); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.put("/api/pipelines/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.delete("/api/pipelines/:id", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.post("/api/pipelines/:id/run", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}/run`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(300000) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/pipelines/:id/runs", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}/runs`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/pipeline-runs", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/pipeline-runs`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+app.get("/api/n8n/agent-discovery", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/n8n/agents`); res.json(await r.json()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: Proxy to agent /run ───────────────────────────
 app.post("/api/agent-run", async (req, res) => {
   try {
@@ -667,6 +716,21 @@ app.get("/api/models", async (req, res) => {
 app.post("/api/models/switch", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/models/switch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await resp.json();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/models/embedding", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/models/embedding`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req.body),
@@ -1454,6 +1518,13 @@ app.get("/api/chromadb/stats", async (req, res) => {
   }
 });
 
+// ── Protect all /api/admin/* with persona-aware check ──
+app.use("/api/admin", (req, res, next) => {
+  const user = req.session && req.session.user;
+  if (!hasAdminAccess(user)) return res.status(403).json({ error: "Admin access required" });
+  next();
+});
+
 // ── API: Admin – Full service health (all 10 services) ─
 app.get("/api/admin/services/health", async (req, res) => {
   const services = [
@@ -1647,6 +1718,7 @@ app.get("/agent-builder", renderPage("agent-builder"));
 app.get("/ai-studio", renderPage("ai-studio"));
 app.get("/documents", renderPage("documents"));
 app.get("/workflows", renderPage("workflows"));
+app.get("/pipelines", renderPage("pipelines"));
 app.get("/skills", renderPage("skills"));
 app.get("/prompts", renderPage("prompts"));
 app.get("/agents", renderPage("agents"));
@@ -1665,7 +1737,7 @@ app.get("/observability", renderPage("observability"));
 app.get("/marketplace", renderPage("marketplace"));
 app.get("/admin", (req, res) => {
   const user = req.session.user || {};
-  if (user.role !== "admin") return res.redirect("/");
+  if (!hasAdminAccess(user)) return res.redirect("/");
   res.render("admin", { urls: externalUrls, user });
 });
 app.get("/docs", renderPage("docs"));

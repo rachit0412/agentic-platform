@@ -521,13 +521,13 @@ def init_db():
                 "admin",
                 "Admin",
                 "Full platform access — user management, configuration, all features",
-                '{"nav":["overview","run-agent","agent-builder","agent-hub","agents","skills","prompts","tools","ai-studio","documents","data-ingestion","workflows","a2a","mcp","rest","intelligence-hub","llm-activity","traceability","evaluation","observability","guardrails","marketplace","docs","admin"],"actions":["create_agents","run_agents","manage_tools","manage_users","access_admin","view_observability","ingest_data","manage_workflows","access_protocols","manage_guardrails","create_global"]}',
+                '{"nav":["overview","run-agent","agent-builder","agent-hub","agents","skills","prompts","tools","ai-studio","documents","data-ingestion","workflows","pipelines","a2a","mcp","rest","intelligence-hub","llm-activity","traceability","evaluation","observability","guardrails","marketplace","docs","admin"],"actions":["create_agents","run_agents","manage_tools","manage_users","access_admin","view_observability","ingest_data","manage_workflows","manage_pipelines","access_protocols","manage_guardrails","create_global"]}',
             ),
             (
                 "developer",
                 "Developer",
                 "Build and test agents, manage tools and skills, run workflows",
-                '{"nav":["overview","run-agent","agent-builder","agent-hub","agents","skills","prompts","tools","ai-studio","documents","data-ingestion","workflows","a2a","mcp","rest","intelligence-hub","llm-activity","traceability","evaluation","observability","guardrails","marketplace","docs"],"actions":["create_agents","run_agents","manage_tools","ingest_data","manage_workflows","access_protocols","view_observability"]}',
+                '{"nav":["overview","run-agent","agent-builder","agent-hub","agents","skills","prompts","tools","ai-studio","documents","data-ingestion","workflows","pipelines","a2a","mcp","rest","intelligence-hub","llm-activity","traceability","evaluation","observability","guardrails","marketplace","docs"],"actions":["create_agents","run_agents","manage_tools","ingest_data","manage_workflows","manage_pipelines","access_protocols","view_observability"]}',
             ),
             (
                 "analyst",
@@ -565,6 +565,35 @@ def init_db():
             "INSERT OR IGNORE INTO user_personas (user_id, persona_id) VALUES (?, ?)",
             ("rachit", "analyst"),
         )
+    conn.commit()
+
+    # ── Pipelines (multi-agent workflow pipelines) ─────────────────────────
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS pipelines (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            strategy    TEXT DEFAULT 'sequential',
+            steps       TEXT DEFAULT '[]',
+            status      TEXT DEFAULT 'draft',
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS pipeline_runs (
+            id           TEXT PRIMARY KEY,
+            pipeline_id  TEXT NOT NULL,
+            status       TEXT DEFAULT 'pending',
+            strategy     TEXT DEFAULT 'sequential',
+            steps        TEXT DEFAULT '[]',
+            step_results TEXT DEFAULT '[]',
+            started_at   TEXT DEFAULT '',
+            completed_at TEXT DEFAULT '',
+            created_at   TEXT NOT NULL,
+            FOREIGN KEY (pipeline_id) REFERENCES pipelines(id) ON DELETE CASCADE
+        )
+    """)
     conn.commit()
 
 
@@ -3638,3 +3667,160 @@ def list_sync_jobs(connector_id: str = "", limit: int = 20) -> list[dict]:
         }
         for r in rows
     ]
+
+
+# ── Pipeline CRUD ──────────────────────────────────────────────────────────
+
+
+def list_pipelines() -> list[dict]:
+    conn = _get_conn()
+    rows = conn.execute("SELECT * FROM pipelines ORDER BY updated_at DESC").fetchall()
+    return [_pipeline_row(r) for r in rows]
+
+
+def get_pipeline(pipeline_id: str) -> dict | None:
+    conn = _get_conn()
+    r = conn.execute("SELECT * FROM pipelines WHERE id = ?", (pipeline_id,)).fetchone()
+    if not r:
+        return None
+    return _pipeline_row(r)
+
+
+def create_pipeline(
+    name: str,
+    description: str = "",
+    strategy: str = "sequential",
+    steps: list | None = None,
+) -> dict:
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    pid = str(uuid.uuid4())[:8]
+    steps_json = json.dumps(steps or [])
+    conn.execute(
+        "INSERT INTO pipelines (id, name, description, strategy, steps, status, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)",
+        (pid, name, description, strategy, steps_json, now, now),
+    )
+    conn.commit()
+    return get_pipeline(pid)
+
+
+def update_pipeline(pipeline_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT * FROM pipelines WHERE id = ?", (pipeline_id,)
+    ).fetchone()
+    if not row:
+        return None
+    updates = {}
+    for key in ("name", "description", "strategy", "status"):
+        if key in kwargs and kwargs[key] is not None:
+            updates[key] = kwargs[key]
+    if "steps" in kwargs and kwargs["steps"] is not None:
+        updates["steps"] = json.dumps(kwargs["steps"])
+    if not updates:
+        return get_pipeline(pipeline_id)
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    conn.execute(
+        f"UPDATE pipelines SET {set_clause} WHERE id = ?",
+        (*updates.values(), pipeline_id),
+    )
+    conn.commit()
+    return get_pipeline(pipeline_id)
+
+
+def delete_pipeline(pipeline_id: str) -> bool:
+    conn = _get_conn()
+    cur = conn.execute("DELETE FROM pipelines WHERE id = ?", (pipeline_id,))
+    conn.execute("DELETE FROM pipeline_runs WHERE pipeline_id = ?", (pipeline_id,))
+    conn.commit()
+    return cur.rowcount > 0
+
+
+def create_pipeline_run(pipeline_id: str, strategy: str, steps: list) -> dict:
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    run_id = str(uuid.uuid4())[:8]
+    conn.execute(
+        "INSERT INTO pipeline_runs (id, pipeline_id, status, strategy, steps, step_results, started_at, created_at) "
+        "VALUES (?, ?, 'running', ?, ?, '[]', ?, ?)",
+        (run_id, pipeline_id, strategy, json.dumps(steps), now, now),
+    )
+    conn.commit()
+    return {
+        "id": run_id,
+        "pipeline_id": pipeline_id,
+        "status": "running",
+        "strategy": strategy,
+        "steps": steps,
+        "step_results": [],
+        "started_at": now,
+        "completed_at": "",
+        "created_at": now,
+    }
+
+
+def update_pipeline_run(run_id: str, **kwargs) -> dict | None:
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM pipeline_runs WHERE id = ?", (run_id,)).fetchone()
+    if not row:
+        return None
+    updates = {}
+    for key in ("status", "completed_at"):
+        if key in kwargs and kwargs[key] is not None:
+            updates[key] = kwargs[key]
+    if "step_results" in kwargs:
+        updates["step_results"] = json.dumps(kwargs["step_results"])
+    if updates:
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE pipeline_runs SET {set_clause} WHERE id = ?",
+            (*updates.values(), run_id),
+        )
+        conn.commit()
+    return _pipeline_run_row(
+        conn.execute("SELECT * FROM pipeline_runs WHERE id = ?", (run_id,)).fetchone()
+    )
+
+
+def list_pipeline_runs(pipeline_id: str = "", limit: int = 50) -> list[dict]:
+    conn = _get_conn()
+    if pipeline_id:
+        rows = conn.execute(
+            "SELECT * FROM pipeline_runs WHERE pipeline_id = ? ORDER BY created_at DESC LIMIT ?",
+            (pipeline_id, limit),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM pipeline_runs ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return [_pipeline_run_row(r) for r in rows]
+
+
+def _pipeline_row(r) -> dict:
+    return {
+        "id": r["id"],
+        "name": r["name"],
+        "description": r["description"],
+        "strategy": r["strategy"],
+        "steps": json.loads(r["steps"]),
+        "status": r["status"],
+        "created_at": r["created_at"],
+        "updated_at": r["updated_at"],
+    }
+
+
+def _pipeline_run_row(r) -> dict:
+    return {
+        "id": r["id"],
+        "pipeline_id": r["pipeline_id"],
+        "status": r["status"],
+        "strategy": r["strategy"],
+        "steps": json.loads(r["steps"]),
+        "step_results": json.loads(r["step_results"]),
+        "started_at": r["started_at"] or "",
+        "completed_at": r["completed_at"] or "",
+        "created_at": r["created_at"],
+    }

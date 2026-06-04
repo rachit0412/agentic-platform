@@ -12,9 +12,14 @@ from contextlib import asynccontextmanager
 from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
 from agent.connectors.sync_engine import run_sync, test_connector
 from agent.graph import run_agent, run_agent_stream
-from agent.llm import get_active_model, list_available_models, set_active_model
+from agent.llm import (
+    get_active_model,
+    list_available_embedding_providers,
+    list_available_models,
+    set_active_model,
+)
+from agent.memory import _get_conn  # Persona management
 from agent.memory import (
-    _get_conn,  # Persona management
     add_workspace_member,
     assign_persona,
     authenticate_user,
@@ -25,6 +30,8 @@ from agent.memory import (
     create_document_registry,
     create_mcp_server,
     create_persona,
+    create_pipeline,
+    create_pipeline_run,
     create_prompt,
     create_skill,
     create_sync_job,
@@ -39,6 +46,7 @@ from agent.memory import (
     delete_documents_by_collection,
     delete_mcp_server,
     delete_persona,
+    delete_pipeline,
     delete_prompt,
     delete_session,
     delete_skill,
@@ -57,6 +65,7 @@ from agent.memory import (
     get_mcp_server,
     get_memory_stats,
     get_persona,
+    get_pipeline,
     get_prompt,
     get_session_summary,
     get_skill,
@@ -79,6 +88,8 @@ from agent.memory import (
     list_llm_usage,
     list_mcp_servers,
     list_personas,
+    list_pipeline_runs,
+    list_pipelines,
     list_prompts,
     list_sessions,
     list_skills,
@@ -104,6 +115,8 @@ from agent.memory import (
     update_guardrail,
     update_mcp_server,
     update_persona,
+    update_pipeline,
+    update_pipeline_run,
     update_prompt,
     update_skill,
     update_sync_job,
@@ -891,7 +904,12 @@ async def models_list():
     """List all available models across providers."""
     models = list_available_models()
     active = get_active_model()
-    return {"models": models, "active": active}
+    embed_providers = list_available_embedding_providers()
+    return {
+        "models": models,
+        "active": active,
+        "available_embedding_providers": embed_providers,
+    }
 
 
 class ModelSwitchRequest(BaseModel):
@@ -905,6 +923,21 @@ async def models_switch(body: ModelSwitchRequest):
     """Switch the active LLM provider and model."""
     active = set_active_model(body.provider, body.model, body.temperature)
     logger.info("Model switched to %s/%s", active["provider"], active["model"])
+    return {"status": "switched", "active": active}
+
+
+class EmbeddingSwitchRequest(BaseModel):
+    provider: str
+    model: str
+
+
+@app.post("/models/embedding")
+async def models_embedding_switch(body: EmbeddingSwitchRequest):
+    """Switch the embedding provider and model."""
+    from agent.llm import set_embedding_model
+
+    active = set_embedding_model(body.provider, body.model)
+    logger.info("Embedding switched to %s/%s", body.provider, body.model)
     return {"status": "switched", "active": active}
 
 
@@ -4005,3 +4038,352 @@ async def connectors_jobs(connector_id: str, limit: int = 20):
     """List sync job history for a connector."""
     jobs = list_sync_jobs(connector_id=connector_id, limit=limit)
     return {"jobs": jobs}
+
+
+# ── Pipeline CRUD + Execution ──────────────────────────────────────────────
+
+
+class PipelineCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=2000)
+    strategy: str = Field(
+        default="sequential", pattern="^(sequential|parallel|conditional)$"
+    )
+    steps: list[dict] = Field(default_factory=list)
+
+
+class PipelineUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    strategy: str | None = None
+    steps: list[dict] | None = None
+    status: str | None = None
+
+
+class PipelineRunRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=8192)
+    session_id: str = Field(default="")
+    variables: dict = Field(default_factory=dict)
+
+
+@app.get("/pipelines")
+async def pipelines_list():
+    return {"pipelines": list_pipelines()}
+
+
+@app.post("/pipelines")
+async def pipelines_create(body: PipelineCreate):
+    p = create_pipeline(
+        name=body.name,
+        description=body.description,
+        strategy=body.strategy,
+        steps=body.steps,
+    )
+    return p
+
+
+@app.get("/pipelines/{pipeline_id}")
+async def pipelines_get(pipeline_id: str):
+    p = get_pipeline(pipeline_id)
+    if not p:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Pipeline not found"})
+    return p
+
+
+@app.put("/pipelines/{pipeline_id}")
+async def pipelines_update(pipeline_id: str, body: PipelineUpdate):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    p = update_pipeline(pipeline_id, **updates)
+    if not p:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Pipeline not found"})
+    return p
+
+
+@app.delete("/pipelines/{pipeline_id}")
+async def pipelines_delete(pipeline_id: str):
+    ok = delete_pipeline(pipeline_id)
+    if not ok:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Pipeline not found"})
+    return {"deleted": True}
+
+
+@app.get("/pipelines/{pipeline_id}/runs")
+async def pipelines_runs_list(pipeline_id: str, limit: int = 50):
+    runs = list_pipeline_runs(pipeline_id=pipeline_id, limit=limit)
+    return {"runs": runs}
+
+
+@app.get("/pipeline-runs")
+async def all_pipeline_runs(limit: int = 50):
+    runs = list_pipeline_runs(limit=limit)
+    return {"runs": runs}
+
+
+@app.post("/pipelines/{pipeline_id}/run")
+async def pipelines_execute(pipeline_id: str, body: PipelineRunRequest):
+    """Execute a multi-agent pipeline — sequential, parallel, or conditional."""
+    from datetime import datetime, timezone
+
+    pipeline = get_pipeline(pipeline_id)
+    if not pipeline:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=404, content={"error": "Pipeline not found"})
+
+    steps = pipeline["steps"]
+    if not steps:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=400, content={"error": "Pipeline has no steps"})
+
+    strategy = pipeline["strategy"]
+    session_id = body.session_id or f"pipeline-{pipeline_id}-{str(uuid.uuid4())[:6]}"
+
+    # Create a run record
+    run = create_pipeline_run(pipeline_id, strategy, steps)
+    run_id = run["id"]
+
+    step_results = []
+    prompt = body.prompt
+    overall_status = "completed"
+
+    try:
+        if strategy == "sequential":
+            # Each agent runs in order, output feeds into next
+            for i, step in enumerate(steps):
+                agent_id = step.get("agent_id", "")
+                step_name = step.get("name", f"Step {i+1}")
+                agent = get_agent(agent_id) if agent_id else None
+
+                step_prompt = prompt
+                if i > 0 and step_results:
+                    prev = step_results[-1]
+                    step_prompt = f"Previous step output:\\n{prev.get('response', '')}\\n\\nNow: {prompt}"
+                    if step.get("prompt_template"):
+                        step_prompt = (
+                            step["prompt_template"]
+                            .replace("{{input}}", prompt)
+                            .replace("{{previous}}", prev.get("response", ""))
+                        )
+
+                try:
+                    result = await run_agent(
+                        prompt=step_prompt,
+                        session_id=f"{session_id}-step-{i}",
+                        request_id=f"pipe-{run_id}-{i}",
+                        agent_config=agent or {},
+                    )
+                    step_results.append(
+                        {
+                            "step": i,
+                            "name": step_name,
+                            "agent_id": agent_id,
+                            "agent_name": agent["name"] if agent else "Default",
+                            "status": "completed",
+                            "response": result["response"],
+                            "tools_used": result.get("tools_used", []),
+                        }
+                    )
+                except Exception as e:
+                    step_results.append(
+                        {
+                            "step": i,
+                            "name": step_name,
+                            "agent_id": agent_id,
+                            "agent_name": agent["name"] if agent else "Default",
+                            "status": "failed",
+                            "error": str(e),
+                        }
+                    )
+                    if not step.get("continue_on_error"):
+                        overall_status = "failed"
+                        break
+
+        elif strategy == "parallel":
+            import asyncio
+
+            # All agents run simultaneously
+            async def run_step(i, step):
+                agent_id = step.get("agent_id", "")
+                step_name = step.get("name", f"Step {i+1}")
+                agent = get_agent(agent_id) if agent_id else None
+                step_prompt = (
+                    step.get("prompt_template", prompt).replace("{{input}}", prompt)
+                    if step.get("prompt_template")
+                    else prompt
+                )
+                try:
+                    result = await run_agent(
+                        prompt=step_prompt,
+                        session_id=f"{session_id}-step-{i}",
+                        request_id=f"pipe-{run_id}-{i}",
+                        agent_config=agent or {},
+                    )
+                    return {
+                        "step": i,
+                        "name": step_name,
+                        "agent_id": agent_id,
+                        "agent_name": agent["name"] if agent else "Default",
+                        "status": "completed",
+                        "response": result["response"],
+                        "tools_used": result.get("tools_used", []),
+                    }
+                except Exception as e:
+                    return {
+                        "step": i,
+                        "name": step_name,
+                        "agent_id": agent_id,
+                        "agent_name": agent["name"] if agent else "Default",
+                        "status": "failed",
+                        "error": str(e),
+                    }
+
+            tasks = [run_step(i, step) for i, step in enumerate(steps)]
+            step_results = await asyncio.gather(*tasks)
+            step_results = list(step_results)
+            if any(r["status"] == "failed" for r in step_results):
+                overall_status = "partial"
+
+        elif strategy == "conditional":
+            # First step runs, then condition determines which branch to take
+            for i, step in enumerate(steps):
+                agent_id = step.get("agent_id", "")
+                step_name = step.get("name", f"Step {i+1}")
+                agent = get_agent(agent_id) if agent_id else None
+                condition = step.get("condition", "")
+
+                # Check condition against previous result
+                if condition and step_results:
+                    prev_response = step_results[-1].get("response", "").lower()
+                    if condition.startswith("contains:"):
+                        keyword = condition.split(":", 1)[1].strip().lower()
+                        if keyword not in prev_response:
+                            step_results.append(
+                                {
+                                    "step": i,
+                                    "name": step_name,
+                                    "agent_id": agent_id,
+                                    "agent_name": agent["name"] if agent else "Default",
+                                    "status": "skipped",
+                                    "reason": f"Condition not met: {condition}",
+                                }
+                            )
+                            continue
+                    elif condition == "on_error":
+                        if step_results[-1].get("status") != "failed":
+                            step_results.append(
+                                {
+                                    "step": i,
+                                    "name": step_name,
+                                    "agent_id": agent_id,
+                                    "agent_name": agent["name"] if agent else "Default",
+                                    "status": "skipped",
+                                    "reason": "Previous step did not fail",
+                                }
+                            )
+                            continue
+
+                step_prompt = prompt
+                if i > 0 and step_results:
+                    last_completed = [
+                        r for r in step_results if r["status"] == "completed"
+                    ]
+                    if last_completed:
+                        step_prompt = f"Previous output:\\n{last_completed[-1].get('response', '')}\\n\\nNow: {prompt}"
+
+                try:
+                    result = await run_agent(
+                        prompt=step_prompt,
+                        session_id=f"{session_id}-step-{i}",
+                        request_id=f"pipe-{run_id}-{i}",
+                        agent_config=agent or {},
+                    )
+                    step_results.append(
+                        {
+                            "step": i,
+                            "name": step_name,
+                            "agent_id": agent_id,
+                            "agent_name": agent["name"] if agent else "Default",
+                            "status": "completed",
+                            "response": result["response"],
+                            "tools_used": result.get("tools_used", []),
+                        }
+                    )
+                except Exception as e:
+                    step_results.append(
+                        {
+                            "step": i,
+                            "name": step_name,
+                            "agent_id": agent_id,
+                            "agent_name": agent["name"] if agent else "Default",
+                            "status": "failed",
+                            "error": str(e),
+                        }
+                    )
+
+    except Exception as e:
+        overall_status = "failed"
+        logger.error(f"Pipeline execution error: {e}")
+
+    # Finalize run record
+    now = datetime.now(timezone.utc).isoformat()
+    update_pipeline_run(
+        run_id, status=overall_status, step_results=step_results, completed_at=now
+    )
+
+    return {
+        "run_id": run_id,
+        "pipeline_id": pipeline_id,
+        "status": overall_status,
+        "strategy": strategy,
+        "step_results": step_results,
+    }
+
+
+# ── n8n Agent Discovery ───────────────────────────────────────────────────
+
+
+@app.get("/n8n/agents")
+async def n8n_agent_discovery():
+    """Agent discovery endpoint for n8n — returns agents in a format
+    suitable for dynamic HTTP node usage."""
+    agents = list_agents()
+    return {
+        "agents": [
+            {
+                "id": a["id"],
+                "name": a["name"],
+                "description": a.get("description", ""),
+                "provider": a.get("provider", "ollama"),
+                "model": a.get("model", "llama3"),
+                "run_url": f"http://agent-service:8000/run",
+                "payload_template": {
+                    "prompt": "{{your_prompt}}",
+                    "agent_id": a["id"],
+                    "sessionId": "{{session_id}}",
+                },
+            }
+            for a in agents
+        ],
+        "pipelines": [
+            {
+                "id": p["id"],
+                "name": p["name"],
+                "description": p.get("description", ""),
+                "strategy": p["strategy"],
+                "step_count": len(p.get("steps", [])),
+                "run_url": f"http://agent-service:8000/pipelines/{p['id']}/run",
+                "payload_template": {
+                    "prompt": "{{your_prompt}}",
+                    "session_id": "{{session_id}}",
+                },
+            }
+            for p in list_pipelines()
+        ],
+    }

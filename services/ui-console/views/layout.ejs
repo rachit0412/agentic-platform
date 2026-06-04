@@ -8,14 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
-  <link rel="stylesheet" href="/theme-enterprise.css" />
+  <link rel="stylesheet" href="/theme-midnight.css" />
+  <link rel="stylesheet" href="/theme-aurora.css" />
   <link rel="stylesheet" href="/theme-softui.css" />
   <link rel="stylesheet" href="/theme-flux.css" />
   <script>
     // Apply saved design theme BEFORE render to avoid flash
     (function(){
       var dt = localStorage.getItem('designTheme');
-      if (dt === 'enterprise') document.documentElement.classList.add('theme-enterprise');
+      if (dt === 'midnight') document.documentElement.classList.add('theme-midnight');
+      else if (dt === 'aurora') document.documentElement.classList.add('theme-aurora');
       else if (dt === 'softui') document.documentElement.classList.add('theme-softui');
       else if (dt === 'flux') document.documentElement.classList.add('theme-flux');
       if (localStorage.getItem('sidebarExpanded') === 'true') document.documentElement.classList.add('sidebar-expanded');
@@ -137,6 +139,12 @@
         <a href="/workflows" class="rail-item <%= page === 'workflows' ? 'active' : '' %>">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
           <span class="rail-tooltip">Workflows</span>
+        </a>
+      </li>
+      <li>
+        <a href="/pipelines" class="rail-item <%= page === 'pipelines' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><line x1="5" y1="9" x2="5" y2="12"/><line x1="19" y1="9" x2="19" y2="12"/><path d="M5 12a7 7 0 0 0 7 7"/><path d="M19 12a7 7 0 0 1-7 7"/></svg>
+          <span class="rail-tooltip">Pipelines</span>
         </a>
       </li>
       <!-- ── Protocols ── -->
@@ -368,6 +376,14 @@
           renderPersonaSwitcher(pd.personas || [], data.active_persona);
           applyPersonaNav(data.active_persona);
           showToast('Switched to ' + data.active_persona.name + ' persona', 'success');
+          // Redirect away from admin if persona lacks access
+          if (window.location.pathname === '/admin') {
+            var nav = (data.active_persona.permissions && data.active_persona.permissions.nav) || [];
+            var actions = (data.active_persona.permissions && data.active_persona.permissions.actions) || [];
+            if (nav.indexOf('admin') === -1 && actions.indexOf('access_admin') === -1) {
+              window.location.href = '/';
+            }
+          }
         } else {
           showToast(data.error || 'Failed to switch persona', 'error');
         }
@@ -554,14 +570,15 @@
     // ── Design Theme Switcher ──
     function setDesignTheme(name) {
       var html = document.documentElement;
-      html.classList.remove('theme-enterprise', 'theme-softui', 'theme-flux');
-      if (name === 'enterprise') html.classList.add('theme-enterprise');
+      html.classList.remove('theme-midnight', 'theme-aurora', 'theme-softui', 'theme-flux');
+      if (name === 'midnight') html.classList.add('theme-midnight');
+      else if (name === 'aurora') html.classList.add('theme-aurora');
       else if (name === 'softui') html.classList.add('theme-softui');
       else if (name === 'flux') html.classList.add('theme-flux');
       localStorage.setItem('designTheme', name);
     }
     function getDesignTheme() {
-      return localStorage.getItem('designTheme') || 'glass';
+      return localStorage.getItem('designTheme') || 'midnight';
     }
 
     // ── Topbar Health Indicator ──

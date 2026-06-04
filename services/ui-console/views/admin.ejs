@@ -343,24 +343,70 @@
     <div id="llm-active-config" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
   </div>
 
-  <!-- Model Switcher -->
-  <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
-    <h3>Switch LLM Provider / Model</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;margin-top:0.75rem;align-items:end">
-      <div>
-        <label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Provider</label>
-        <select id="switch-provider" class="input" style="width:100%">
-          <option value="ollama">Ollama (Local)</option>
-          <option value="openai">OpenAI</option>
-          <option value="azure-openai">Azure OpenAI</option>
-          <option value="azure-foundry">Azure Foundry</option>
-        </select>
+  <!-- Embedding Model Selector -->
+  <div class="card animate-fade-up delay-150" style="margin-bottom:1.5rem">
+    <h3>Embedding Model</h3>
+    <p style="font-size:0.78rem;color:var(--text-3);margin:0.25rem 0 0.5rem">Converts documents into vectors for Knowledge Base search (RAG). Changing after indexing requires re-ingesting documents.</p>
+    <p id="embed-provider-hint" style="font-size:0.72rem;color:var(--accent-text);margin:0 0 0.75rem;font-style:italic"></p>
+    <div id="embedding-options" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.75rem">
+      <!-- Ollama local models -->
+      <div class="embed-option" data-provider="ollama" data-model="nomic-embed-text" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">nomic-embed-text</span>
+          <span class="badge" style="font-size:0.65rem">Ollama</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">274 MB &middot; 768 dims &middot; Good general-purpose local embedding. Default choice.</div>
       </div>
-      <div>
-        <label style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.25rem">Model Name</label>
-        <input type="text" id="switch-model" class="input" placeholder="e.g. llama3, gpt-4o" style="width:100%">
+      <div class="embed-option" data-provider="ollama" data-model="mxbai-embed-large" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">mxbai-embed-large</span>
+          <span class="badge" style="font-size:0.65rem">Ollama</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">670 MB &middot; 1024 dims &middot; Higher accuracy, top-ranked on MTEB benchmarks.</div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="switchModel()">Switch</button>
+      <div class="embed-option" data-provider="ollama" data-model="all-minilm" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">all-minilm</span>
+          <span class="badge" style="font-size:0.65rem">Ollama</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">45 MB &middot; 384 dims &middot; Ultra-lightweight and fast. Good for quick prototyping.</div>
+      </div>
+      <div class="embed-option" data-provider="ollama" data-model="snowflake-arctic-embed" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">snowflake-arctic-embed</span>
+          <span class="badge" style="font-size:0.65rem">Ollama</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">669 MB &middot; 1024 dims &middot; Strong retrieval quality, good balance of speed and accuracy.</div>
+      </div>
+      <!-- Cloud models -->
+      <div class="embed-option" data-provider="openai" data-model="text-embedding-3-small" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">text-embedding-3-small</span>
+          <span class="badge" style="font-size:0.65rem;background:rgba(16,163,127,0.15);color:#10a37f">OpenAI</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">Cloud &middot; 1536 dims &middot; $0.02/1M tokens. Fast, cheap, and high quality. Requires API key.</div>
+      </div>
+      <div class="embed-option" data-provider="openai" data-model="text-embedding-3-large" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">text-embedding-3-large</span>
+          <span class="badge" style="font-size:0.65rem;background:rgba(16,163,127,0.15);color:#10a37f">OpenAI</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">Cloud &middot; 3072 dims &middot; $0.13/1M tokens. Best quality OpenAI embedding. Requires API key.</div>
+      </div>
+      <div class="embed-option" data-provider="azure-openai" data-model="text-embedding-ada-002" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">text-embedding-ada-002</span>
+          <span class="badge" style="font-size:0.65rem;background:rgba(0,120,212,0.15);color:#0078d4">Azure OpenAI</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">Cloud &middot; 1536 dims &middot; Azure OpenAI hosted. Requires Azure OpenAI deployment.</div>
+      </div>
+      <div class="embed-option" data-provider="azure-foundry" data-model="text-embedding-ada-002" onclick="selectEmbedding(this)" style="padding:0.75rem;border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;transition:all 0.2s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.85rem;color:var(--text-1)">text-embedding-ada-002</span>
+          <span class="badge" style="font-size:0.65rem;background:rgba(0,120,212,0.15);color:#0078d4">Azure Foundry</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.35rem">Cloud &middot; 1536 dims &middot; Azure AI Foundry hosted embedding. Uses your Foundry endpoint.</div>
+      </div>
     </div>
   </div>
 
@@ -439,42 +485,42 @@
       <span style="font-size:0.72rem;color:var(--text-3)">Choose a visual style for the platform</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
-      <!-- Glass Theme Card -->
-      <div id="theme-card-glass" onclick="applyDesignTheme('glass')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+      <!-- Midnight Theme Card -->
+      <div id="theme-card-midnight" onclick="applyDesignTheme(&apos;midnight&apos;)" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#7c3aed);display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <div style="width:36px;height:36px;border-radius:4px;background:#0a0a0f;display:flex;align-items:center;justify-content:center;border:1px solid rgba(16,185,129,0.3)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#34d399" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           </div>
           <div>
-            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Glass Morphism</div>
+            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Midnight</div>
             <div style="font-size:0.72rem;color:var(--text-3)">Default</div>
           </div>
         </div>
-        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Frosted glass surfaces, blur effects, cyan-violet gradients, rounded corners. Modern and visually rich.</p>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Dark terminal aesthetic, neon emerald accents, monospace type, sharp edges. Hacker-inspired and bold.</p>
         <div style="display:flex;gap:6px;margin-top:0.75rem">
-          <span style="width:16px;height:16px;border-radius:50%;background:#06b6d4;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#7c3aed;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#0f172a;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#e2e8f0;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#10b981;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#34d399;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#0a0a0f;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#d1fae5;border:2px solid var(--glass-border)"></span>
         </div>
       </div>
-      <!-- Enterprise Theme Card -->
-      <div id="theme-card-enterprise" onclick="applyDesignTheme('enterprise')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+      <!-- Aurora Theme Card -->
+      <div id="theme-card-aurora" onclick="applyDesignTheme(&apos;aurora&apos;)" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1e40af,#2563eb);display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <div style="width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#d97706,#f59e0b);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           </div>
           <div>
-            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Enterprise</div>
-            <div style="font-size:0.72rem;color:var(--text-3)">Corporate</div>
+            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Aurora</div>
+            <div style="font-size:0.72rem;color:var(--text-3)">Warm</div>
           </div>
         </div>
-        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Clean flat surfaces, blue accent, Inter font, sharp borders, striped tables. Corporate and minimal.</p>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Warm amber gradients, soft rounded surfaces, organic curves, rose-gold palette. Friendly and elegant.</p>
         <div style="display:flex;gap:6px;margin-top:0.75rem">
-          <span style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#1e40af;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#111827;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#f9fafb;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#d97706;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#f59e0b;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#1c1917;border:2px solid var(--glass-border)"></span>
+          <span style="width:16px;height:16px;border-radius:50%;background:#fef3c7;border:2px solid var(--glass-border)"></span>
         </div>
       </div>
       <!-- shadcn Theme Card -->
@@ -947,8 +993,8 @@ function applyDesignTheme(name) {
   highlightThemeCard();
 }
 function highlightThemeCard() {
-  var current = (typeof getDesignTheme === 'function') ? getDesignTheme() : 'glass';
-  var themes = ['glass', 'enterprise', 'softui', 'flux'];
+  var current = (typeof getDesignTheme === 'function') ? getDesignTheme() : 'midnight';
+  var themes = ['midnight', 'aurora', 'softui', 'flux'];
   for (var i = 0; i < themes.length; i++) {
     var el = document.getElementById('theme-card-' + themes[i]);
     if (!el) continue;
@@ -1083,22 +1129,83 @@ async function loadLlmConfig() {
         '<div style="font-size:1rem;font-weight:600;color:#a78bfa;margin-top:0.25rem">' + escapeHtml(a.embedding_model || 'default') + '</div>' +
       '</div>' +
     '</div>';
-    if (a.provider) {
-      document.getElementById('switch-provider').value = a.provider;
-      document.getElementById('switch-model').value = a.model || '';
-    }
+    filterEmbeddingsByProvider(a.provider, d.available_embedding_providers || []);
+    highlightActiveEmbedding(a.embedding_provider || a.provider, a.embedding_model || 'nomic-embed-text');
   } catch(e) { document.getElementById('llm-active-config').innerHTML = '<p style="color:var(--danger)">Failed to load LLM config</p>'; }
 }
 
-async function switchModel() {
-  var provider = document.getElementById('switch-provider').value;
-  var model = document.getElementById('switch-model').value.trim();
-  if (!model) { showToast('Please enter a model name', 'warning'); return; }
+var _EMBED_COMPAT = {
+  'ollama': ['ollama'],
+  'openai': ['openai'],
+  'azure-openai': ['azure-openai'],
+  'azure-foundry': ['azure-foundry', 'openai']
+};
+
+function filterEmbeddingsByProvider(llmProvider, availableProviders) {
+  var compatible = _EMBED_COMPAT[llmProvider] || ['ollama'];
+  document.querySelectorAll('.embed-option').forEach(function(el) {
+    var p = el.dataset.provider;
+    var isCompat = compatible.indexOf(p) !== -1;
+    var isConfigured = availableProviders.indexOf(p) !== -1;
+    el.style.display = (isCompat && isConfigured) ? '' : 'none';
+  });
+  var hint = document.getElementById('embed-provider-hint');
+  if (hint) hint.textContent = 'Showing embeddings compatible with ' + llmProvider;
+}
+
+function highlightActiveEmbedding(provider, model) {
+  document.querySelectorAll('.embed-option').forEach(function(el) {
+    var isActive = el.dataset.provider === provider && el.dataset.model === model;
+    el.style.borderColor = isActive ? 'var(--accent)' : 'var(--glass-border)';
+    el.style.boxShadow = isActive ? '0 0 0 1px var(--accent)' : 'none';
+    el.style.background = isActive ? 'rgba(6,182,212,0.06)' : 'transparent';
+    var badge = el.querySelector('.badge');
+    if (isActive && badge) {
+      var old = badge.querySelector('.embed-active-dot');
+      if (!old) {
+        var dot = document.createElement('span');
+        dot.className = 'embed-active-dot';
+        dot.style.cssText = 'display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:4px';
+        badge.insertBefore(dot, badge.firstChild);
+      }
+    } else if (badge) {
+      var dot = badge.querySelector('.embed-active-dot');
+      if (dot) dot.remove();
+    }
+  });
+}
+
+async function selectEmbedding(el) {
+  var provider = el.dataset.provider;
+  var model = el.dataset.model;
+  try {
+    var r = await fetch('/api/models/embedding', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ provider: provider, model: model }) });
+    var d = await r.json();
+    if (r.ok) {
+      showToast('Embedding switched to ' + provider + ' / ' + model, 'success');
+      highlightActiveEmbedding(provider, model);
+      loadLlmConfig();
+    } else {
+      showToast('Embedding switch failed: ' + (d.detail || d.error || 'Unknown error'), 'error');
+    }
+  } catch(e) { showToast('Embedding switch failed: ' + e.message, 'error'); }
+}
+
+async function activateModel(provider, model) {
   try {
     var r = await fetch('/api/models/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ provider: provider, model: model }) });
     var d = await r.json();
     if (r.ok) {
       showToast('Switched to ' + provider + ' / ' + model, 'success');
+      // Auto-switch embedding to the best compatible default for this provider
+      var embedDefaults = {
+        'ollama': { provider: 'ollama', model: 'nomic-embed-text' },
+        'openai': { provider: 'openai', model: 'text-embedding-3-small' },
+        'azure-openai': { provider: 'azure-openai', model: 'text-embedding-ada-002' },
+        'azure-foundry': { provider: 'azure-foundry', model: 'text-embedding-ada-002' }
+      };
+      var emb = embedDefaults[provider] || embedDefaults['ollama'];
+      await fetch('/api/models/embedding', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(emb) });
       loadLlmConfig();
       loadModels();
     } else {
@@ -1117,13 +1224,15 @@ async function loadModels() {
       el.innerHTML = '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker exec ollama ollama pull llama3</code></p>';
       return;
     }
-    el.innerHTML = '<table><tr><th>Model</th><th>Provider</th><th>Size</th><th>Status</th></tr>' +
+    el.innerHTML = '<table><tr><th>Model</th><th>Provider</th><th>Size</th><th>Status</th><th style="width:1%"></th></tr>' +
       d.models.map(function(m) {
         var name = escapeHtml(m.full_name || m.model || '');
         var provider = escapeHtml(m.provider || '');
+        var model = escapeHtml(m.model || '');
         var size = m.size ? (m.size / 1e9).toFixed(1) + ' GB' : String.fromCharCode(0x2014);
         var badge = m.active ? '<span class="badge badge-success">active</span>' : '<span class="badge" style="font-size:0.68rem">available</span>';
-        return '<tr><td>' + name + '</td><td class="mono" style="font-size:0.78rem">' + provider + '</td><td class="mono">' + size + '</td><td>' + badge + '</td></tr>';
+        var action = m.active ? '' : '<button class="btn btn-primary btn-sm" style="padding:0.2rem 0.6rem;font-size:0.7rem;white-space:nowrap" onclick="activateModel(&apos;' + provider + '&apos;,&apos;' + model + '&apos;)">Use</button>';
+        return '<tr><td>' + name + '</td><td class="mono" style="font-size:0.78rem">' + provider + '</td><td class="mono">' + size + '</td><td>' + badge + '</td><td>' + action + '</td></tr>';
       }).join('') + '</table>';
   } catch(e) {
     document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';

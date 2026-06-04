@@ -1,0 +1,147 @@
+{
+  "name": "Pipeline Execution with Agent Discovery",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-pipeline",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/n8n/agents",
+        "method": "GET",
+        "options": { "timeout": 10000 }
+      },
+      "id": "discover-agents",
+      "name": "Discover Platform Agents",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$node[\"Webhook Trigger\"].json[\"mode\"]}}",
+              "operation": "equals",
+              "value2": "pipeline"
+            }
+          ]
+        }
+      },
+      "id": "mode-router",
+      "name": "Mode Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "url": "=http://agent-service:8000/pipelines/{{$node[\"Webhook Trigger\"].json[\"pipeline_id\"]}}/run",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "prompt",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"prompt\"]}}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"session_id\"] || 'n8n-pipeline-' + $runIndex}}"
+            }
+          ]
+        },
+        "options": { "timeout": 300000 }
+      },
+      "id": "run-pipeline",
+      "name": "Execute Platform Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1000, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://agent-service:8000/run",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "prompt",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"prompt\"]}}"
+            },
+            {
+              "name": "agent_id",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"agent_id\"]}}"
+            },
+            {
+              "name": "session_id",
+              "value": "={{$node[\"Webhook Trigger\"].json[\"session_id\"] || 'n8n-agent-' + $runIndex}}"
+            }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "run-single-agent",
+      "name": "Run Single Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({ mode: 'pipeline', result: $json })}}"
+      },
+      "id": "respond-pipeline",
+      "name": "Respond Pipeline",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({ mode: 'agent', result: $json })}}"
+      },
+      "id": "respond-agent",
+      "name": "Respond Agent",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Discover Platform Agents", "type": "main", "index": 0 }]
+      ]
+    },
+    "Discover Platform Agents": {
+      "main": [[{ "node": "Mode Router", "type": "main", "index": 0 }]]
+    },
+    "Mode Router": {
+      "main": [
+        [{ "node": "Execute Platform Pipeline", "type": "main", "index": 0 }],
+        [{ "node": "Run Single Agent", "type": "main", "index": 0 }]
+      ]
+    },
+    "Execute Platform Pipeline": {
+      "main": [[{ "node": "Respond Pipeline", "type": "main", "index": 0 }]]
+    },
+    "Run Single Agent": {
+      "main": [[{ "node": "Respond Agent", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "Dynamic agent discovery + pipeline execution. First discovers all platform agents via /n8n/agents, then routes to either a platform pipeline (mode=pipeline, pipeline_id required) or a single agent (mode=agent, agent_id required). POST to /webhook/run-pipeline with body: { mode: 'pipeline'|'agent', prompt: '...', pipeline_id?: '...', agent_id?: '...', session_id?: '...' }"
+  }
+}

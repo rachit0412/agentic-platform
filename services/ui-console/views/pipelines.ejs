@@ -1,0 +1,645 @@
+<%- include('layout', { title: 'Pipeline Builder', page: 'pipelines', body: `
+
+<h1 class="text-glow-cyan">Pipeline Builder</h1>
+
+<!-- Stats Row -->
+<div class="grid-4 mb-2" style="margin-bottom:1.5rem">
+  <div class="stat-card animate-fade-up" style="cursor:pointer" onclick="plSwitchView('list')">
+    <div class="stat-icon stat-icon-cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div class="stat-label">Pipelines</div>
+    <div class="stat-number" id="stat-total">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-100" style="cursor:pointer" onclick="plSwitchView('runs')">
+    <div class="stat-icon stat-icon-emerald">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="stat-label">Total Runs</div>
+    <div class="stat-number" id="stat-runs">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-200">
+    <div class="stat-icon stat-icon-violet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    </div>
+    <div class="stat-label">Available Agents</div>
+    <div class="stat-number" id="stat-agents">-</div>
+  </div>
+  <div class="stat-card animate-fade-up delay-300">
+    <div class="stat-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="stat-label">Avg Duration</div>
+    <div class="stat-number" id="stat-duration">-</div>
+  </div>
+</div>
+
+<!-- View Toggle -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+    <div style="display:flex;gap:0;border:1px solid var(--glass-border);border-radius:10px;overflow:hidden">
+      <button id="btn-list" onclick="plSwitchView('list')" class="pl-tab-btn pl-tab-active">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Pipelines
+      </button>
+      <button id="btn-builder" onclick="plSwitchView('builder')" class="pl-tab-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M3 12h18"/></svg>
+        Builder
+      </button>
+      <button id="btn-runs" onclick="plSwitchView('runs')" class="pl-tab-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Run History
+      </button>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="plShowCreateModal()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Pipeline
+    </button>
+  </div>
+</div>
+
+<!-- ═══════ LIST VIEW ═══════ -->
+<div id="view-list" class="animate-fade-up">
+  <div id="pipeline-grid" class="grid-3" style="gap:1rem">
+    <div style="text-align:center;padding:3rem;color:var(--text-3)">Loading pipelines...</div>
+  </div>
+</div>
+
+<!-- ═══════ BUILDER VIEW ═══════ -->
+<div id="view-builder" style="display:none" class="animate-fade-up">
+  <div class="card" style="margin-bottom:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="margin:0;color:var(--text-1)" id="builder-title">New Pipeline</h3>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="plSwitchView('list')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="plSavePipeline()" id="btn-save-pipeline">Save Pipeline</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 200px;gap:1rem;margin-bottom:1rem">
+      <div>
+        <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Pipeline Name</label>
+        <input type="text" id="pl-name" placeholder="My Agent Pipeline" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+      </div>
+      <div>
+        <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Description</label>
+        <input type="text" id="pl-desc" placeholder="What does this pipeline do?" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+      </div>
+      <div>
+        <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Strategy</label>
+        <select id="pl-strategy" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+          <option value="sequential">Sequential (chain)</option>
+          <option value="parallel">Parallel (fan-out)</option>
+          <option value="conditional">Conditional (branch)</option>
+        </select>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--glass-border);padding-top:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+        <span style="font-weight:600;color:var(--text-1);font-size:0.9rem">Pipeline Steps</span>
+        <button class="btn btn-secondary btn-sm" onclick="plAddStep()">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Step
+        </button>
+      </div>
+      <div id="pl-steps-container">
+        <div id="pl-steps-empty" style="text-align:center;padding:2rem;color:var(--text-3);border:2px dashed var(--glass-border);border-radius:10px">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:0.5rem;opacity:0.4"><path d="M12 3v18"/><path d="M3 12h18"/></svg>
+          <div>Click <b>Add Step</b> to add agents to this pipeline</div>
+        </div>
+        <div id="pl-steps-list" style="display:flex;flex-direction:column;gap:0.5rem"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Strategy Diagram -->
+  <div class="card" style="margin-bottom:1rem">
+    <h4 style="margin:0 0 0.75rem;color:var(--text-1);font-size:0.85rem">Flow Visualization</h4>
+    <div id="pl-flow-viz" style="display:flex;align-items:center;justify-content:center;padding:1.5rem;min-height:80px;overflow-x:auto">
+      <span style="color:var(--text-3);font-size:0.82rem">Add steps to see the flow diagram</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ RUNS VIEW ═══════ -->
+<div id="view-runs" style="display:none" class="animate-fade-up">
+  <div id="runs-container">
+    <div style="text-align:center;padding:3rem;color:var(--text-3)">Loading runs...</div>
+  </div>
+</div>
+
+<!-- ═══════ RUN MODAL ═══════ -->
+<div id="run-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:1000;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--glass-border);border-radius:16px;padding:1.5rem;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,0.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="margin:0;color:var(--text-1)" id="run-modal-title">Run Pipeline</h3>
+      <button onclick="plCloseRunModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem">&times;</button>
+    </div>
+    <input type="hidden" id="run-pipeline-id">
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Prompt</label>
+      <textarea id="run-prompt" rows="4" placeholder="Enter the prompt that will be sent through the pipeline..." style="width:100%;padding:0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem;resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Session ID (optional)</label>
+      <input type="text" id="run-session" placeholder="Auto-generated if empty" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:0.5rem">
+      <button class="btn btn-secondary btn-sm" onclick="plCloseRunModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="btn-execute" onclick="plExecutePipeline()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Execute
+      </button>
+    </div>
+    <!-- Live Results -->
+    <div id="run-results" style="display:none;margin-top:1rem;border-top:1px solid var(--glass-border);padding-top:1rem">
+      <h4 style="margin:0 0 0.75rem;color:var(--text-1);font-size:0.85rem">Execution Results</h4>
+      <div id="run-results-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CREATE MODAL ═══════ -->
+<div id="create-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--glass-border);border-radius:16px;padding:1.5rem;width:90%;max-width:500px;box-shadow:0 25px 50px rgba(0,0,0,0.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="margin:0;color:var(--text-1)">Quick Create Pipeline</h3>
+      <button onclick="plCloseCreateModal()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1.2rem">&times;</button>
+    </div>
+    <div style="margin-bottom:0.75rem">
+      <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Name</label>
+      <input type="text" id="qc-name" placeholder="My Pipeline" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+    </div>
+    <div style="margin-bottom:0.75rem">
+      <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Description</label>
+      <input type="text" id="qc-desc" placeholder="Optional description" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:0.75rem;color:var(--text-3);display:block;margin-bottom:0.3rem">Strategy</label>
+      <select id="qc-strategy" style="width:100%;padding:0.5rem 0.75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-1);font-size:0.85rem">
+        <option value="sequential">Sequential — agents run in order, output chains</option>
+        <option value="parallel">Parallel — all agents run simultaneously</option>
+        <option value="conditional">Conditional — branch based on output</option>
+      </select>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:0.5rem">
+      <button class="btn btn-secondary btn-sm" onclick="plCloseCreateModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="plQuickCreate()">Create &amp; Open Builder</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.pl-tab-btn {
+  padding:0.5rem 1.25rem;font-size:0.82rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:0.4rem;transition:all 0.2s;background:var(--glass);color:var(--text-2);
+}
+.pl-tab-btn:hover { background:var(--glass-hover); }
+.pl-tab-active { background:var(--accent) !important;color:#fff !important; }
+
+.pipeline-card {
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;padding:1.25rem;transition:all 0.2s;cursor:pointer;
+}
+.pipeline-card:hover { border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.15); }
+
+.strategy-badge {
+  display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.7rem;font-weight:600;text-transform:uppercase;
+}
+.strategy-sequential { background:rgba(6,182,212,0.12);color:#06b6d4; }
+.strategy-parallel { background:rgba(168,85,247,0.12);color:#a855f7; }
+.strategy-conditional { background:rgba(245,158,11,0.12);color:#f59e0b; }
+
+.step-card {
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;transition:all 0.2s;
+}
+.step-card:hover { border-color:var(--accent); }
+
+.step-number {
+  width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;flex-shrink:0;
+}
+
+.flow-node {
+  display:inline-flex;align-items:center;padding:0.5rem 1rem;border-radius:8px;font-size:0.78rem;font-weight:600;white-space:nowrap;
+}
+.flow-start { background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3); }
+.flow-agent { background:var(--glass);color:var(--text-1);border:1px solid var(--glass-border); }
+.flow-end { background:rgba(6,182,212,0.15);color:#06b6d4;border:1px solid rgba(6,182,212,0.3); }
+.flow-arrow { color:var(--text-3);font-size:1.2rem;margin:0 0.5rem;flex-shrink:0; }
+.flow-parallel-group { display:flex;flex-direction:column;gap:0.4rem;border:2px dashed rgba(168,85,247,0.3);border-radius:10px;padding:0.5rem 0.75rem; }
+
+.run-card {
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;padding:1rem;margin-bottom:0.5rem;cursor:pointer;transition:all 0.2s;
+}
+.run-card:hover { border-color:var(--accent); }
+
+.status-pill {
+  display:inline-flex;align-items:center;gap:0.3rem;padding:0.15rem 0.5rem;border-radius:20px;font-size:0.7rem;font-weight:600;
+}
+.status-completed { background:rgba(16,185,129,0.12);color:#10b981; }
+.status-running { background:rgba(59,130,246,0.12);color:#3b82f6; }
+.status-failed { background:rgba(244,63,94,0.12);color:#f43f5e; }
+.status-partial { background:rgba(245,158,11,0.12);color:#f59e0b; }
+.status-draft { background:rgba(148,163,184,0.12);color:#94a3b8; }
+.status-skipped { background:rgba(148,163,184,0.12);color:#94a3b8; }
+
+.step-result-card {
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;
+}
+</style>
+
+<script>
+(function(){
+  let allPipelines = [];
+  let allAgents = [];
+  let allRuns = [];
+  let editingPipelineId = null;
+  let builderSteps = [];
+
+  // ── Init ──
+  async function init() {
+    const [pRes, aRes, rRes] = await Promise.all([
+      fetch('/api/pipelines').then(r => r.json()),
+      fetch('/api/agents').then(r => r.json()),
+      fetch('/api/pipeline-runs').then(r => r.json()),
+    ]);
+    allPipelines = pRes.pipelines || [];
+    allAgents = aRes.agents || [];
+    allRuns = rRes.runs || [];
+    updateStats();
+    renderList();
+    renderRuns();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent = allPipelines.length;
+    document.getElementById('stat-runs').textContent = allRuns.length;
+    document.getElementById('stat-agents').textContent = allAgents.length;
+    // Avg duration
+    const completed = allRuns.filter(r => r.started_at && r.completed_at);
+    if (completed.length > 0) {
+      const avg = completed.reduce((sum, r) => {
+        return sum + (new Date(r.completed_at) - new Date(r.started_at));
+      }, 0) / completed.length;
+      document.getElementById('stat-duration').textContent = avg < 1000 ? Math.round(avg) + 'ms' : (avg/1000).toFixed(1) + 's';
+    } else {
+      document.getElementById('stat-duration').textContent = '-';
+    }
+  }
+
+  // ── View Switching ──
+  window.plSwitchView = function(view) {
+    ['list','builder','runs'].forEach(v => {
+      document.getElementById('view-' + v).style.display = v === view ? '' : 'none';
+      const btn = document.getElementById('btn-' + v);
+      if (btn) {
+        btn.classList.toggle('pl-tab-active', v === view);
+        if (v === view) { btn.style.background = ''; btn.style.color = ''; }
+      }
+    });
+    if (view === 'runs') renderRuns();
+  };
+
+  // ── Pipeline List ──
+  function renderList() {
+    const grid = document.getElementById('pipeline-grid');
+    if (!allPipelines.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3)"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3;margin-bottom:0.5rem"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><div style="font-size:0.9rem;margin-bottom:0.5rem">No pipelines yet</div><div style="font-size:0.8rem">Create your first multi-agent pipeline to chain agents together</div></div>';
+      return;
+    }
+    grid.innerHTML = allPipelines.map(p => {
+      const stepCount = (p.steps || []).length;
+      const runs = allRuns.filter(r => r.pipeline_id === p.id);
+      return '<div class="pipeline-card" onclick="plEditPipeline(\\'' + p.id + '\\')">' +
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.75rem">' +
+          '<div><div style="font-weight:600;color:var(--text-1);font-size:0.9rem;margin-bottom:0.25rem">' + esc(p.name) + '</div>' +
+          '<div style="font-size:0.75rem;color:var(--text-3)">' + esc(p.description || 'No description') + '</div></div>' +
+          '<span class="strategy-badge strategy-' + p.strategy + '">' + p.strategy + '</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:1rem;font-size:0.78rem;color:var(--text-2)">' +
+          '<span>' + stepCount + ' step' + (stepCount !== 1 ? 's' : '') + '</span>' +
+          '<span>' + runs.length + ' run' + (runs.length !== 1 ? 's' : '') + '</span>' +
+          '<span style="margin-left:auto;display:flex;gap:0.3rem">' +
+            '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();plOpenRunModal(\\'' + p.id + '\\',\\'' + esc(p.name) + '\\')" style="padding:0.25rem 0.5rem;font-size:0.72rem" title="Run"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>' +
+            '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();plDeletePipeline(\\'' + p.id + '\\')" style="padding:0.25rem 0.5rem;font-size:0.72rem" title="Delete"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ── Builder ──
+  window.plEditPipeline = function(id) {
+    const p = allPipelines.find(x => x.id === id);
+    if (!p) return;
+    editingPipelineId = id;
+    document.getElementById('pl-name').value = p.name;
+    document.getElementById('pl-desc').value = p.description || '';
+    document.getElementById('pl-strategy').value = p.strategy;
+    document.getElementById('builder-title').textContent = 'Edit: ' + p.name;
+    builderSteps = JSON.parse(JSON.stringify(p.steps || []));
+    renderBuilderSteps();
+    plSwitchView('builder');
+  };
+
+  window.plShowCreateModal = function() {
+    document.getElementById('create-modal').style.display = 'flex';
+    document.getElementById('qc-name').value = '';
+    document.getElementById('qc-desc').value = '';
+    document.getElementById('qc-strategy').value = 'sequential';
+    setTimeout(() => document.getElementById('qc-name').focus(), 100);
+  };
+  window.plCloseCreateModal = function() {
+    document.getElementById('create-modal').style.display = 'none';
+  };
+
+  window.plQuickCreate = async function() {
+    const name = document.getElementById('qc-name').value.trim();
+    if (!name) { showToast('Name required', 'error'); return; }
+    const resp = await fetch('/api/pipelines', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: name,
+        description: document.getElementById('qc-desc').value.trim(),
+        strategy: document.getElementById('qc-strategy').value,
+        steps: [],
+      }),
+    });
+    if (!resp.ok) { showToast('Failed to create', 'error'); return; }
+    const p = await resp.json();
+    allPipelines.unshift(p);
+    plCloseCreateModal();
+    plEditPipeline(p.id);
+    showToast('Pipeline created', 'success');
+  };
+
+  window.plAddStep = function() {
+    builderSteps.push({
+      name: 'Step ' + (builderSteps.length + 1),
+      agent_id: allAgents.length ? allAgents[0].id : '',
+      prompt_template: '',
+      condition: '',
+      continue_on_error: false,
+    });
+    renderBuilderSteps();
+  };
+
+  function renderBuilderSteps() {
+    const list = document.getElementById('pl-steps-list');
+    const empty = document.getElementById('pl-steps-empty');
+    if (!builderSteps.length) {
+      empty.style.display = '';
+      list.innerHTML = '';
+      renderFlowViz();
+      return;
+    }
+    empty.style.display = 'none';
+    const strategy = document.getElementById('pl-strategy').value;
+    list.innerHTML = builderSteps.map((s, i) => {
+      const agentOpts = allAgents.map(a =>
+        '<option value="' + a.id + '"' + (a.id === s.agent_id ? ' selected' : '') + '>' + esc(a.name) + ' (' + a.provider + '/' + a.model + ')</option>'
+      ).join('');
+      const conditionField = strategy === 'conditional' ?
+        '<div style="flex:1;min-width:150px"><label style="font-size:0.65rem;color:var(--text-3)">Condition</label><input type="text" value="' + esc(s.condition || '') + '" onchange="plUpdateStep(' + i + ',\\'condition\\',this.value)" placeholder="contains:keyword or on_error" style="width:100%;padding:0.35rem 0.5rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;color:var(--text-1);font-size:0.78rem"></div>' : '';
+      return '<div class="step-card">' +
+        '<div class="step-number">' + (i+1) + '</div>' +
+        '<div style="flex:1;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">' +
+          '<div style="flex:1;min-width:120px"><label style="font-size:0.65rem;color:var(--text-3)">Name</label><input type="text" value="' + esc(s.name) + '" onchange="plUpdateStep(' + i + ',\\'name\\',this.value)" style="width:100%;padding:0.35rem 0.5rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;color:var(--text-1);font-size:0.78rem"></div>' +
+          '<div style="flex:2;min-width:200px"><label style="font-size:0.65rem;color:var(--text-3)">Agent</label><select onchange="plUpdateStep(' + i + ',\\'agent_id\\',this.value)" style="width:100%;padding:0.35rem 0.5rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;color:var(--text-1);font-size:0.78rem">' + agentOpts + '</select></div>' +
+          conditionField +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:0.25rem">' +
+          '<button onclick="plMoveStep(' + i + ',-1)" style="background:none;border:none;cursor:pointer;color:var(--text-3);padding:2px" title="Move up">&uarr;</button>' +
+          '<button onclick="plRemoveStep(' + i + ')" style="background:none;border:none;cursor:pointer;color:#f43f5e;padding:2px;font-size:0.9rem" title="Remove">&times;</button>' +
+          '<button onclick="plMoveStep(' + i + ',1)" style="background:none;border:none;cursor:pointer;color:var(--text-3);padding:2px" title="Move down">&darr;</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    renderFlowViz();
+  }
+
+  window.plUpdateStep = function(i, key, value) {
+    if (builderSteps[i]) builderSteps[i][key] = value;
+    if (key === 'agent_id') renderFlowViz();
+  };
+  window.plRemoveStep = function(i) {
+    builderSteps.splice(i, 1);
+    renderBuilderSteps();
+  };
+  window.plMoveStep = function(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= builderSteps.length) return;
+    [builderSteps[i], builderSteps[j]] = [builderSteps[j], builderSteps[i]];
+    renderBuilderSteps();
+  };
+
+  function renderFlowViz() {
+    const viz = document.getElementById('pl-flow-viz');
+    if (!builderSteps.length) {
+      viz.innerHTML = '<span style="color:var(--text-3);font-size:0.82rem">Add steps to see the flow diagram</span>';
+      return;
+    }
+    const strategy = document.getElementById('pl-strategy').value;
+    const getAgentName = (id) => { const a = allAgents.find(x => x.id === id); return a ? a.name : 'Default'; };
+
+    let html = '<div class="flow-node flow-start">Input</div><span class="flow-arrow">&#10132;</span>';
+    if (strategy === 'parallel') {
+      html += '<div class="flow-parallel-group">';
+      builderSteps.forEach((s, i) => {
+        html += '<div class="flow-node flow-agent">' + esc(s.name || getAgentName(s.agent_id)) + '</div>';
+      });
+      html += '</div>';
+    } else {
+      builderSteps.forEach((s, i) => {
+        if (i > 0) html += '<span class="flow-arrow">&#10132;</span>';
+        const label = s.name || getAgentName(s.agent_id);
+        html += '<div class="flow-node flow-agent">' + esc(label);
+        if (strategy === 'conditional' && s.condition) {
+          html += '<div style="font-size:0.6rem;color:var(--text-3);margin-top:2px">if: ' + esc(s.condition) + '</div>';
+        }
+        html += '</div>';
+      });
+    }
+    html += '<span class="flow-arrow">&#10132;</span><div class="flow-node flow-end">Output</div>';
+    viz.innerHTML = html;
+  }
+
+  // Strategy change re-renders
+  document.getElementById('pl-strategy').addEventListener('change', function() {
+    renderBuilderSteps();
+  });
+
+  window.plSavePipeline = async function() {
+    const name = document.getElementById('pl-name').value.trim();
+    if (!name) { showToast('Pipeline name required', 'error'); return; }
+    const data = {
+      name: name,
+      description: document.getElementById('pl-desc').value.trim(),
+      strategy: document.getElementById('pl-strategy').value,
+      steps: builderSteps,
+    };
+    let resp;
+    if (editingPipelineId) {
+      resp = await fetch('/api/pipelines/' + editingPipelineId, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data),
+      });
+    } else {
+      resp = await fetch('/api/pipelines', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data),
+      });
+    }
+    if (!resp.ok) { showToast('Save failed', 'error'); return; }
+    showToast('Pipeline saved', 'success');
+    editingPipelineId = null;
+    builderSteps = [];
+    await init();
+    plSwitchView('list');
+  };
+
+  window.plDeletePipeline = async function(id) {
+    if (!confirm('Delete this pipeline and all its run history?')) return;
+    await fetch('/api/pipelines/' + id, { method: 'DELETE' });
+    allPipelines = allPipelines.filter(p => p.id !== id);
+    allRuns = allRuns.filter(r => r.pipeline_id !== id);
+    renderList();
+    updateStats();
+    showToast('Pipeline deleted', 'success');
+  };
+
+  // ── Run Modal ──
+  window.plOpenRunModal = function(id, name) {
+    document.getElementById('run-modal').style.display = 'flex';
+    document.getElementById('run-pipeline-id').value = id;
+    document.getElementById('run-modal-title').textContent = 'Run: ' + name;
+    document.getElementById('run-prompt').value = '';
+    document.getElementById('run-session').value = '';
+    document.getElementById('run-results').style.display = 'none';
+    document.getElementById('btn-execute').disabled = false;
+    setTimeout(() => document.getElementById('run-prompt').focus(), 100);
+  };
+  window.plCloseRunModal = function() {
+    document.getElementById('run-modal').style.display = 'none';
+  };
+
+  window.plExecutePipeline = async function() {
+    const id = document.getElementById('run-pipeline-id').value;
+    const prompt = document.getElementById('run-prompt').value.trim();
+    if (!prompt) { showToast('Prompt required', 'error'); return; }
+    const btn = document.getElementById('btn-execute');
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Running...';
+
+    // Show results area
+    const resultsDiv = document.getElementById('run-results');
+    const contentDiv = document.getElementById('run-results-content');
+    resultsDiv.style.display = '';
+    contentDiv.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:1rem"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><div style="margin-top:0.5rem">Executing pipeline...</div></div>';
+
+    try {
+      const resp = await fetch('/api/pipelines/' + id + '/run', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          prompt: prompt,
+          session_id: document.getElementById('run-session').value.trim(),
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        contentDiv.innerHTML = '<div style="color:#f43f5e;padding:0.75rem;background:rgba(244,63,94,0.08);border-radius:8px">' + esc(data.error || 'Execution failed') + '</div>';
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Execute';
+        return;
+      }
+      // Render step results
+      let html = '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem"><span class="status-pill status-' + data.status + '">' + data.status + '</span><span style="font-size:0.75rem;color:var(--text-3)">' + data.strategy + ' &middot; ' + (data.step_results || []).length + ' steps</span></div>';
+      (data.step_results || []).forEach(function(sr) {
+        html += '<div class="step-result-card">' +
+          '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">' +
+            '<span class="step-number" style="width:22px;height:22px;font-size:0.65rem">' + (sr.step + 1) + '</span>' +
+            '<span style="font-weight:600;color:var(--text-1);font-size:0.82rem">' + esc(sr.name || sr.agent_name) + '</span>' +
+            '<span class="status-pill status-' + sr.status + '" style="margin-left:auto">' + sr.status + '</span>' +
+          '</div>';
+        if (sr.response) {
+          html += '<div style="font-size:0.78rem;color:var(--text-2);background:var(--bg-main);border-radius:6px;padding:0.75rem;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-word">' + esc(sr.response) + '</div>';
+        }
+        if (sr.error) {
+          html += '<div style="font-size:0.78rem;color:#f43f5e;background:rgba(244,63,94,0.05);border-radius:6px;padding:0.5rem">' + esc(sr.error) + '</div>';
+        }
+        if (sr.reason) {
+          html += '<div style="font-size:0.75rem;color:var(--text-3);font-style:italic">' + esc(sr.reason) + '</div>';
+        }
+        if (sr.tools_used && sr.tools_used.length) {
+          html += '<div style="font-size:0.7rem;color:var(--text-3);margin-top:0.3rem">Tools: ' + sr.tools_used.join(', ') + '</div>';
+        }
+        html += '</div>';
+      });
+      contentDiv.innerHTML = html;
+      // Refresh runs
+      const rRes = await fetch('/api/pipeline-runs').then(r => r.json());
+      allRuns = rRes.runs || [];
+      updateStats();
+    } catch (e) {
+      contentDiv.innerHTML = '<div style="color:#f43f5e;padding:0.75rem">' + esc(e.message) + '</div>';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Execute Again';
+  };
+
+  // ── Runs View ──
+  function renderRuns() {
+    const container = document.getElementById('runs-container');
+    if (!allRuns.length) {
+      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-3)"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3;margin-bottom:0.5rem"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div>No runs yet</div><div style="font-size:0.8rem;margin-top:0.25rem">Execute a pipeline to see results here</div></div>';
+      return;
+    }
+    container.innerHTML = allRuns.map(function(run) {
+      const pipeline = allPipelines.find(p => p.id === run.pipeline_id);
+      const pName = pipeline ? pipeline.name : run.pipeline_id;
+      const dur = run.started_at && run.completed_at ? ((new Date(run.completed_at) - new Date(run.started_at))/1000).toFixed(1) + 's' : '-';
+      const stepSummary = (run.step_results || []).map(sr =>
+        '<span class="status-pill status-' + sr.status + '" style="font-size:0.6rem;padding:0.1rem 0.3rem">' + esc(sr.name || 'Step ' + (sr.step+1)) + '</span>'
+      ).join(' ');
+      return '<details class="run-card"><summary style="display:flex;align-items:center;gap:0.75rem;list-style:none;cursor:pointer">' +
+        '<span class="status-pill status-' + run.status + '">' + run.status + '</span>' +
+        '<span style="font-weight:600;color:var(--text-1);font-size:0.85rem">' + esc(pName) + '</span>' +
+        '<span class="strategy-badge strategy-' + run.strategy + '" style="font-size:0.6rem">' + run.strategy + '</span>' +
+        '<span style="font-size:0.75rem;color:var(--text-3);margin-left:auto">' + dur + '</span>' +
+        '<span style="font-size:0.7rem;color:var(--text-3)">' + new Date(run.created_at).toLocaleString() + '</span>' +
+      '</summary>' +
+      '<div style="margin-top:0.75rem;padding-left:0.5rem">' +
+        '<div style="margin-bottom:0.5rem">' + stepSummary + '</div>' +
+        (run.step_results || []).map(function(sr) {
+          return '<div class="step-result-card">' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">' +
+              '<span class="step-number" style="width:20px;height:20px;font-size:0.6rem">' + (sr.step+1) + '</span>' +
+              '<span style="font-weight:600;color:var(--text-1);font-size:0.8rem">' + esc(sr.name || sr.agent_name || 'Step') + '</span>' +
+              '<span class="status-pill status-' + sr.status + '">' + sr.status + '</span>' +
+            '</div>' +
+            (sr.response ? '<div style="font-size:0.75rem;color:var(--text-2);max-height:150px;overflow-y:auto;white-space:pre-wrap;background:var(--bg-main);padding:0.5rem;border-radius:6px">' + esc(sr.response) + '</div>' : '') +
+            (sr.error ? '<div style="font-size:0.75rem;color:#f43f5e">' + esc(sr.error) + '</div>' : '') +
+            (sr.reason ? '<div style="font-size:0.7rem;color:var(--text-3);font-style:italic">' + esc(sr.reason) + '</div>' : '') +
+          '</div>';
+        }).join('') +
+      '</div></details>';
+    }).join('');
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  // Toast helper (use global if available)
+  function showToast(msg, type) {
+    if (window.showToast) { window.showToast(msg, type); return; }
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;padding:0.75rem 1.25rem;border-radius:10px;font-size:0.82rem;font-weight:600;z-index:9999;color:#fff;background:' + (type==='error'?'#f43f5e':'#10b981');
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+
+  init();
+})();
+</script>
+
+`}) %>

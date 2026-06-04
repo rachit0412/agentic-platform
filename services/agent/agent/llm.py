@@ -14,9 +14,9 @@ Provides:
   get_active_model()                    → current provider + model + embedding info
 """
 
-import os
 import json
 import logging
+import os
 
 logger = logging.getLogger("agent-service.llm")
 
@@ -347,6 +347,18 @@ def _build_ollama_embeddings():
     return _embeddings
 
 
+def list_available_embedding_providers() -> list[str]:
+    """Return embedding provider names that have valid credentials configured."""
+    available = ["ollama"]  # always available
+    if _is_real_key(OPENAI_API_KEY):
+        available.append("openai")
+    if _is_real_key(AZURE_OPENAI_API_KEY) and AZURE_OPENAI_ENDPOINT:
+        available.append("azure-openai")
+    if _is_real_key(AZURE_FOUNDRY_API_KEY) and AZURE_FOUNDRY_ENDPOINT:
+        available.append("azure-foundry")
+    return available
+
+
 def list_available_models() -> list[dict]:
     """List all available models across all configured providers."""
     models = []
@@ -419,6 +431,23 @@ def list_available_models() -> list[dict]:
             return _OLLAMA_CAPS
         return _DEFAULT_CAPS
 
+    # Known embedding-only model patterns (excluded from LLM list)
+    _EMBEDDING_PATTERNS = {
+        "nomic-embed",
+        "mxbai-embed",
+        "all-minilm",
+        "snowflake-arctic-embed",
+        "bge-",
+        "e5-",
+        "gte-",
+        "embed",
+        "sentence-transformers",
+    }
+
+    def _is_embedding_model(name: str) -> bool:
+        n = name.lower()
+        return any(p in n for p in _EMBEDDING_PATTERNS)
+
     # ── Ollama models ───────────────────────────────────────────────────
     try:
         import httpx
@@ -428,6 +457,8 @@ def list_available_models() -> list[dict]:
             data = resp.json()
             for m in data.get("models", []):
                 name = m.get("name", "").split(":")[0]
+                if _is_embedding_model(name):
+                    continue
                 models.append(
                     {
                         "provider": "ollama",
@@ -556,4 +587,39 @@ def set_active_model(
         logger.info(
             "Embedding provider reset — will follow new LLM provider: %s", provider
         )
+    return get_active_model()
+
+
+def set_embedding_model(provider: str, model: str):
+    """Switch the embedding provider and model independently of the LLM."""
+    global _embeddings, _embedding_provider, OLLAMA_EMBED_MODEL
+    global OPENAI_EMBEDDING_MODEL, AZURE_OPENAI_EMBEDDING_DEPLOYMENT
+    global AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT
+
+    model_map = {
+        "ollama": "OLLAMA_EMBED_MODEL",
+        "openai": "OPENAI_EMBEDDING_MODEL",
+        "azure-openai": "AZURE_OPENAI_EMBEDDING_DEPLOYMENT",
+        "azure-foundry": "AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT",
+    }
+    if provider not in model_map:
+        raise ValueError(f"Unknown embedding provider: {provider}")
+
+    # Update the module-level model variable for the provider
+    if provider == "ollama":
+        OLLAMA_EMBED_MODEL = model
+    elif provider == "openai":
+        OPENAI_EMBEDDING_MODEL = model
+    elif provider == "azure-openai":
+        AZURE_OPENAI_EMBEDDING_DEPLOYMENT = model
+    elif provider == "azure-foundry":
+        AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT = model
+
+    # Force re-initialisation on next call
+    _embeddings = None
+    _embedding_provider = provider
+
+    # Re-init now to validate
+    get_embeddings(provider)
+    logger.info("Embedding switched to %s / %s", provider, model)
     return get_active_model()
