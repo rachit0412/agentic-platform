@@ -984,6 +984,18 @@ app.delete("/api/custom-tools/:id", async (req, res) => {
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+app.put("/api/tools/:name/toggle", async (req, res) => {
+  try {
+    const resp = await fetch(`${AGENT_URL}/tools/${req.params.name}/toggle`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+      signal: AbortSignal.timeout(5000),
+    });
+    res.json(await resp.json());
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── API: Documents / RAG (proxy to agent) ─────────────
 
 // ── API: Guardrails (proxy to agent) ──────────────────

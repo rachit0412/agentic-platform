@@ -43,15 +43,15 @@ import difflib
 import hashlib
 import io
 import json
+import logging
 import operator
 import os
 import re
-import logging
 import uuid as _uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -82,13 +82,13 @@ def _setup_otel(app):
     if otel_endpoint:
         try:
             from opentelemetry import trace
-            from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.trace.export import BatchSpanProcessor
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
                 OTLPSpanExporter,
             )
-            from opentelemetry.sdk.resources import Resource
             from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+            from opentelemetry.sdk.resources import Resource
+            from opentelemetry.sdk.trace import TracerProvider
+            from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
             resource = Resource.create({"service.name": "tools-service"})
             provider = TracerProvider(resource=resource)
@@ -207,7 +207,9 @@ async def tool_http_fetch(body: HttpFetchRequest):
             detail=f"Domain not allowed. Allowed: {', '.join(sorted(ALLOWED_DOMAINS))}",
         )
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, verify=False) as client:
+        async with httpx.AsyncClient(
+            timeout=15.0, follow_redirects=True, verify=False
+        ) as client:
             resp = await client.get(body.url)
             if resp.status_code == 503:
                 raise HTTPException(
@@ -225,7 +227,9 @@ async def tool_http_fetch(body: HttpFetchRequest):
             detail=f"Connection failed — the container cannot reach external URLs. Check network/proxy settings. ({type(exc).__name__})",
         )
     except httpx.RequestError as exc:
-        raise HTTPException(status_code=502, detail=f"Fetch failed: {type(exc).__name__}: {exc}")
+        raise HTTPException(
+            status_code=502, detail=f"Fetch failed: {type(exc).__name__}: {exc}"
+        )
 
 
 # ── File Write ──────────────────────────────────────────────────────────────
@@ -1250,7 +1254,9 @@ async def tool_webpage_extract(body: WebpageExtractRequest):
             detail=f"Connection failed — the container cannot reach external URLs. Check network/proxy settings. ({type(exc).__name__})",
         )
     except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Fetch failed: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=502, detail=f"Fetch failed: {type(e).__name__}: {e}"
+        )
     except httpx.HTTPStatusError as e:
         raise HTTPException(
             status_code=502, detail=f"HTTP {e.response.status_code}: {e}"

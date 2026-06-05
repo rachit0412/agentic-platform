@@ -69,52 +69,52 @@ Retrieve: Query → Embed → Similarity search → Top-K context → Inject int
 
 35 tools, split across two services:
 
-| Location                   | Tools                                                                | Why                              |
-| -------------------------- | -------------------------------------------------------------------- | -------------------------------- |
-| tools-service (HTTP)       | math, http_fetch, file ops, datetime, web_search, code_execute, etc. | Crash isolation, SSRF protection |
+| Location                   | Tools                                                                                           | Why                              |
+| -------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------- |
+| tools-service (HTTP)       | math, http_fetch, file ops, datetime, web_search, code_execute, etc.                            | Crash isolation, SSRF protection |
 | agent-service (in-process) | vector_search, vector_store, delegate_to_agent, advanced_search, query_database, query_csv_data | Low-latency RAG + delegation     |
 
 **Sandboxing**: URL whitelist, blocked imports, filename sanitisation, 10s timeout, AST-safe eval.
 
 ### Tool Reference
 
-| #  | Tool                   | Type    | Endpoint                      | Parameters | Status |
-|----|------------------------|---------|-------------------------------|------------|--------|
-| 1  | `math`                 | proxy   | POST /tools/math              | `expression` (string) | ✅ |
-| 2  | `http_fetch`           | proxy   | POST /tools/http-fetch        | `url` (string) | ⚠️ Requires external internet |
-| 3  | `file_write`           | proxy   | POST /tools/file-write        | `filename` (string), `content` (string) | ✅ |
-| 4  | `file_read`            | proxy   | POST /tools/file-read         | `filename` (string) | ✅ |
-| 5  | `file_list`            | proxy   | POST /tools/file-list         | `directory` (string), `pattern` (string) | ✅ |
-| 6  | `file_search_content`  | proxy   | POST /tools/file-search-content | `query` (string), `pattern` (string), `max_results` (int) | ✅ |
-| 7  | `datetime_tool`        | proxy   | POST /tools/datetime          | *(none)* | ✅ |
-| 8  | `web_search`           | proxy   | POST /tools/web-search        | `query` (string), `max_results` (int) | ✅ |
-| 9  | `code_execute`         | proxy   | POST /tools/code-execute      | `code` (string), `language` (string) | ✅ |
-| 10 | `text_summarize`       | proxy   | POST /tools/text-summarize    | `text` (string), `max_sentences` (int) | ✅ |
-| 11 | `text_transform`       | proxy   | POST /tools/text-transform    | `text` (string), `operation` (string) | ✅ |
-| 12 | `text_diff`            | proxy   | POST /tools/text-diff         | `text_a` (string), `text_b` (string), `context_lines` (int) | ✅ |
-| 13 | `text_extract`         | proxy   | POST /tools/text-extract      | `text` (string), `extract_type` (string) | ✅ |
-| 14 | `json_transform`       | proxy   | POST /tools/json-transform    | `data` (string), `operation` (string), `jq_path` (string) | ✅ |
-| 15 | `csv_parse`            | proxy   | POST /tools/csv-parse         | `csv_text` (string), `operation` (string), `filter_column` (string), `filter_value` (string), `max_rows` (int) | ✅ |
-| 16 | `yaml_convert`         | proxy   | POST /tools/yaml-convert      | `content` (string), `direction` (string) | ✅ |
-| 17 | `base64_codec`         | proxy   | POST /tools/base64-codec      | `text` (string), `operation` (string) | ✅ |
-| 18 | `hash_generate`        | proxy   | POST /tools/hash-generate     | `text` (string), `algorithm` (string) | ✅ |
-| 19 | `uuid_generate`        | proxy   | POST /tools/uuid-generate     | `count` (int) | ✅ |
-| 20 | `regex_match`          | proxy   | POST /tools/regex-match       | `text` (string), `pattern` (string), `flags` (string) | ✅ |
-| 21 | `url_parse`            | proxy   | POST /tools/url-parse         | `url` (string) | ✅ |
-| 22 | `html_strip`           | proxy   | POST /tools/html-strip        | `html` (string), `keep_links` (bool) | ✅ |
-| 23 | `markdown_to_html`     | proxy   | POST /tools/markdown-to-html  | `markdown` (string) | ✅ |
-| 24 | `webpage_extract`      | proxy   | POST /tools/webpage-extract   | `url` (string), `max_length` (int) | ⚠️ Requires external internet |
-| 25 | `dns_lookup`           | proxy   | POST /tools/dns-lookup        | `hostname` (string) | ✅ |
-| 26 | `json_schema_validate` | proxy   | POST /tools/json-schema-validate | `data` (string), `schema_def` (string) | ✅ |
-| 27 | `cron_parse`           | proxy   | POST /tools/cron-parse        | `expression` (string) | ✅ |
-| 28 | `jwt_decode`           | proxy   | POST /tools/jwt-decode        | `token` (string) | ✅ |
-| 29 | `environment_info`     | proxy   | POST /tools/environment-info  | *(none)* | ✅ |
-| 30 | `delegate_to_agent`    | local   | in-process                    | `agent_id` (string), `task` (string) | ✅ |
-| 31 | `vector_search`        | local   | in-process (ChromaDB)         | `query` (string), `k` (int) | ✅ |
-| 32 | `vector_store`         | local   | in-process (ChromaDB)         | `text` (string), `source` (string) | ✅ |
-| 33 | `advanced_search`      | local   | in-process (LlamaIndex)       | `query` (string), `mode` (string), `k` (int) | ✅ |
-| 34 | `query_database`       | local   | in-process (SQL)              | `question` (string), `connection_string` (string), `tables` (string) | ✅ |
-| 35 | `query_csv_data`       | local   | in-process (Pandas)           | `question` (string), `csv_path` (string) | ✅ |
+| #   | Tool                   | Type  | Endpoint                         | Parameters                                                                                                     | Status                        |
+| --- | ---------------------- | ----- | -------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| 1   | `math`                 | proxy | POST /tools/math                 | `expression` (string)                                                                                          | ✅                            |
+| 2   | `http_fetch`           | proxy | POST /tools/http-fetch           | `url` (string)                                                                                                 | ⚠️ Requires external internet |
+| 3   | `file_write`           | proxy | POST /tools/file-write           | `filename` (string), `content` (string)                                                                        | ✅                            |
+| 4   | `file_read`            | proxy | POST /tools/file-read            | `filename` (string)                                                                                            | ✅                            |
+| 5   | `file_list`            | proxy | POST /tools/file-list            | `directory` (string), `pattern` (string)                                                                       | ✅                            |
+| 6   | `file_search_content`  | proxy | POST /tools/file-search-content  | `query` (string), `pattern` (string), `max_results` (int)                                                      | ✅                            |
+| 7   | `datetime_tool`        | proxy | POST /tools/datetime             | _(none)_                                                                                                       | ✅                            |
+| 8   | `web_search`           | proxy | POST /tools/web-search           | `query` (string), `max_results` (int)                                                                          | ✅                            |
+| 9   | `code_execute`         | proxy | POST /tools/code-execute         | `code` (string), `language` (string)                                                                           | ✅                            |
+| 10  | `text_summarize`       | proxy | POST /tools/text-summarize       | `text` (string), `max_sentences` (int)                                                                         | ✅                            |
+| 11  | `text_transform`       | proxy | POST /tools/text-transform       | `text` (string), `operation` (string)                                                                          | ✅                            |
+| 12  | `text_diff`            | proxy | POST /tools/text-diff            | `text_a` (string), `text_b` (string), `context_lines` (int)                                                    | ✅                            |
+| 13  | `text_extract`         | proxy | POST /tools/text-extract         | `text` (string), `extract_type` (string)                                                                       | ✅                            |
+| 14  | `json_transform`       | proxy | POST /tools/json-transform       | `data` (string), `operation` (string), `jq_path` (string)                                                      | ✅                            |
+| 15  | `csv_parse`            | proxy | POST /tools/csv-parse            | `csv_text` (string), `operation` (string), `filter_column` (string), `filter_value` (string), `max_rows` (int) | ✅                            |
+| 16  | `yaml_convert`         | proxy | POST /tools/yaml-convert         | `content` (string), `direction` (string)                                                                       | ✅                            |
+| 17  | `base64_codec`         | proxy | POST /tools/base64-codec         | `text` (string), `operation` (string)                                                                          | ✅                            |
+| 18  | `hash_generate`        | proxy | POST /tools/hash-generate        | `text` (string), `algorithm` (string)                                                                          | ✅                            |
+| 19  | `uuid_generate`        | proxy | POST /tools/uuid-generate        | `count` (int)                                                                                                  | ✅                            |
+| 20  | `regex_match`          | proxy | POST /tools/regex-match          | `text` (string), `pattern` (string), `flags` (string)                                                          | ✅                            |
+| 21  | `url_parse`            | proxy | POST /tools/url-parse            | `url` (string)                                                                                                 | ✅                            |
+| 22  | `html_strip`           | proxy | POST /tools/html-strip           | `html` (string), `keep_links` (bool)                                                                           | ✅                            |
+| 23  | `markdown_to_html`     | proxy | POST /tools/markdown-to-html     | `markdown` (string)                                                                                            | ✅                            |
+| 24  | `webpage_extract`      | proxy | POST /tools/webpage-extract      | `url` (string), `max_length` (int)                                                                             | ⚠️ Requires external internet |
+| 25  | `dns_lookup`           | proxy | POST /tools/dns-lookup           | `hostname` (string)                                                                                            | ✅                            |
+| 26  | `json_schema_validate` | proxy | POST /tools/json-schema-validate | `data` (string), `schema_def` (string)                                                                         | ✅                            |
+| 27  | `cron_parse`           | proxy | POST /tools/cron-parse           | `expression` (string)                                                                                          | ✅                            |
+| 28  | `jwt_decode`           | proxy | POST /tools/jwt-decode           | `token` (string)                                                                                               | ✅                            |
+| 29  | `environment_info`     | proxy | POST /tools/environment-info     | _(none)_                                                                                                       | ✅                            |
+| 30  | `delegate_to_agent`    | local | in-process                       | `agent_id` (string), `task` (string)                                                                           | ✅                            |
+| 31  | `vector_search`        | local | in-process (ChromaDB)            | `query` (string), `k` (int)                                                                                    | ✅                            |
+| 32  | `vector_store`         | local | in-process (ChromaDB)            | `text` (string), `source` (string)                                                                             | ✅                            |
+| 33  | `advanced_search`      | local | in-process (LlamaIndex)          | `query` (string), `mode` (string), `k` (int)                                                                   | ✅                            |
+| 34  | `query_database`       | local | in-process (SQL)                 | `question` (string), `connection_string` (string), `tables` (string)                                           | ✅                            |
+| 35  | `query_csv_data`       | local | in-process (Pandas)              | `question` (string), `csv_path` (string)                                                                       | ✅                            |
 
 **⚠️ Network-dependent tools**: `http_fetch` and `webpage_extract` require outbound internet access from the Docker container. Behind corporate proxies, set `HTTP_PROXY` / `HTTPS_PROXY` environment variables in docker-compose.yml for the `tools-service`.
 

@@ -55,7 +55,8 @@ from agent.memory import (add_workspace_member, assign_persona,
                           update_mcp_server, update_persona, update_pipeline,
                           update_pipeline_run, update_prompt, update_skill,
                           update_sync_job, update_user, update_workspace,
-                          verify_user_email)
+                          verify_user_email,
+                          get_disabled_tools, set_disabled_tools)
 from agent.observability import setup_otel
 from agent.workspace import (current_user_id, current_user_role,
                              current_workspace_id)
@@ -1540,14 +1541,29 @@ async def documents_registry_delete(doc_id: str):
 
 @app.get("/tools")
 async def tools_list():
-    """List all tools (built-in + custom)."""
-    from agent.tools import get_all_tools
+    """List all tools (built-in + custom) with status and enabled state."""
+    from agent.tools import get_all_tools_unfiltered
 
-    builtin = get_all_tools()
-    builtin_list = [
-        {"name": t.name, "description": t.description, "type": "builtin"}
-        for t in builtin
-    ]
+    # Tools that require external internet access
+    NETWORK_TOOLS = {"http_fetch", "webpage_extract"}
+
+    disabled = set(get_disabled_tools())
+    builtin = get_all_tools_unfiltered()
+    builtin_list = []
+    for t in builtin:
+        status = "ready"
+        status_detail = ""
+        if t.name in NETWORK_TOOLS:
+            status = "network"
+            status_detail = "Requires external internet access from container"
+        builtin_list.append({
+            "name": t.name,
+            "description": t.description,
+            "type": "builtin",
+            "enabled": t.name not in disabled,
+            "status": status,
+            "status_detail": status_detail,
+        })
     custom = list_custom_tools()
     custom_list = [
         {
@@ -1562,6 +1578,8 @@ async def tools_list():
             "body_template": t["body_template"],
             "parameters": t["parameters"],
             "enabled": t["enabled"],
+            "status": "ready" if t["enabled"] else "disabled",
+            "status_detail": "",
             "created_at": t["created_at"],
             "updated_at": t["updated_at"],
         }
@@ -1646,6 +1664,22 @@ async def custom_tools_update_endpoint(tool_id: str, body: CustomToolUpdate):
 async def custom_tools_delete_endpoint(tool_id: str):
     ok = delete_custom_tool(tool_id)
     return {"deleted": ok}
+
+
+class ToolToggleRequest(BaseModel):
+    enabled: bool
+
+
+@app.put("/tools/{tool_name}/toggle")
+async def tool_toggle(tool_name: str, body: ToolToggleRequest):
+    """Enable or disable a built-in tool (admin only)."""
+    disabled = set(get_disabled_tools())
+    if body.enabled:
+        disabled.discard(tool_name)
+    else:
+        disabled.add(tool_name)
+    set_disabled_tools(sorted(disabled))
+    return {"name": tool_name, "enabled": body.enabled}
 
 
 # ── Skills CRUD endpoints ─────────────────────────────────────────────────

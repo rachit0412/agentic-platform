@@ -27,12 +27,12 @@
     <div class="stat-label">Custom</div>
     <div class="stat-number" id="stat-custom">-</div>
   </div>
-  <div class="stat-card animate-fade-up delay-300" style="cursor:pointer" onclick="document.getElementById('tools-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View tools service status">
+  <div class="stat-card animate-fade-up delay-300" style="cursor:pointer" onclick="document.getElementById('tool-type-filter').value='all';filterTools();document.getElementById('tools-grid').scrollIntoView({behavior:'smooth',block:'start'})" title="View disabled tools">
     <div class="stat-icon" style="background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(244,63,94,0.08));color:#f43f5e">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     </div>
-    <div class="stat-label">Tools Service</div>
-    <div class="stat-number" id="stat-svc-status" style="font-size:0.85rem">-</div>
+    <div class="stat-label">Enabled / Disabled</div>
+    <div class="stat-number" id="stat-enabled-count" style="font-size:0.85rem">-</div>
   </div>
 </div>
 
@@ -284,15 +284,12 @@ function updateStats(tools) {
   document.getElementById('stat-total').textContent = tools.length;
   var builtinCount = tools.filter(t => t.type === 'builtin').length;
   var customCount = tools.filter(t => t.type === 'custom').length;
+  var enabledCount = tools.filter(t => t.enabled !== false).length;
+  var disabledCount = tools.length - enabledCount;
   document.getElementById('stat-builtin').textContent = builtinCount;
   document.getElementById('stat-custom').textContent = customCount;
-
-  fetch('/api/health-check').then(r=>r.json()).then(d=>{
-    var ts = (d.services||[]).find(s=>s.name==='tools-service');
-    var el = document.getElementById('stat-svc-status');
-    if (ts && ts.status === 'healthy') { el.textContent = 'Healthy'; el.style.color = '#10b981'; }
-    else { el.textContent = 'Down'; el.style.color = '#ef4444'; }
-  }).catch(()=>{ document.getElementById('stat-svc-status').textContent = '?'; });
+  var enEl = document.getElementById('stat-enabled-count');
+  enEl.innerHTML = '<span style="color:#10b981">' + enabledCount + '</span> / <span style="color:' + (disabledCount > 0 ? '#ef4444' : 'var(--text-3)') + '">' + disabledCount + '</span>';
 }
 
 function renderTools(tools) {
@@ -301,6 +298,7 @@ function renderTools(tools) {
     grid.innerHTML = '<div style="color:var(--text-3);grid-column:1/-1;text-align:center;padding:2rem">No tools available</div>';
     return;
   }
+  var isAdmin = window.__userRole === 'admin';
   grid.innerHTML = tools.map(function(t) {
     var isCustom = t.type === 'custom';
     var icon = isCustom ? '🔌' : (TOOL_ICONS[t.name] || '🔧');
@@ -310,10 +308,17 @@ function renderTools(tools) {
     var typeBadge = isCustom
       ? '<span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)">custom</span>'
       : '<span class="badge" style="font-size:0.6rem;background:rgba(6,182,212,0.15);color:#06b6d4;border:1px solid rgba(6,182,212,0.3)">built-in</span>';
-    var enabledBadge = '';
-    if (isCustom && !t.enabled) {
-      enabledBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:#ef4444">disabled</span>';
+
+    // Status badge
+    var statusBadge = '';
+    if (t.enabled === false) {
+      statusBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.25)">disabled</span>';
+    } else if (t.status === 'network') {
+      statusBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)" title="' + escapeHtml(t.status_detail || '') + '">&#9888; network</span>';
+    } else {
+      statusBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25)">&#10003; ready</span>';
     }
+
     var ownerBadge = '';
     if (isCustom && t.created_by) {
       ownerBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(99,102,241,0.12);color:#818cf8;font-weight:500">' + escapeHtml(t.created_by) + '</span>';
@@ -324,13 +329,26 @@ function renderTools(tools) {
         ? ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600">GLOBAL</span>'
         : ' <span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.12);color:#f59e0b;font-weight:600">PRIVATE</span>';
     }
+
+    // Admin toggle button
+    var toggleBtn = '';
+    if (isAdmin) {
+      var isEnabled = t.enabled !== false;
+      var toggleLabel = isEnabled ? 'Disable' : 'Enable';
+      var toggleColor = isEnabled ? '#ef4444' : '#10b981';
+      toggleBtn = ' <button class="btn btn-sm" style="color:' + toggleColor + '" onclick="toggleTool(\\'' + escapeHtml(t.name) + '\\',' + (isEnabled ? 'false' : 'true') + ',\\'' + escapeHtml(t.type) + '\\',' + (isCustom ? '\\'' + escapeHtml(t.id || '') + '\\'' : 'null') + ')">' + toggleLabel + '</button>';
+    }
+
     var actions = '<button class="btn btn-sm" onclick="showToolDetail(\\'' + escapeHtml(t.name) + '\\')">Details</button>' +
-      ' <button class="btn btn-sm btn-secondary" onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">Test</button>';
+      ' <button class="btn btn-sm btn-secondary" onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">Test</button>' +
+      toggleBtn;
     if (isCustom) {
       actions += ' <button class="btn btn-sm" style="color:#f59e0b" onclick="editCustomTool(\\'' + escapeHtml(t.id) + '\\')">Edit</button>';
       actions += ' <button class="btn btn-sm" style="color:#ef4444" onclick="deleteCustomTool(\\'' + escapeHtml(t.id) + '\\', \\'' + escapeHtml(t.name) + '\\')">Delete</button>';
     }
-    return '<div class="card animate-fade-up" style="position:relative">' +
+
+    var cardOpacity = t.enabled === false ? 'opacity:0.55;' : '';
+    return '<div class="card animate-fade-up" style="position:relative;' + cardOpacity + '">' +
       '<div style="display:flex;align-items:start;gap:0.75rem;margin-bottom:0.75rem">' +
         '<div style="font-size:1.5rem;line-height:1">' + icon + '</div>' +
         '<div style="flex:1;min-width:0">' +
@@ -338,7 +356,7 @@ function renderTools(tools) {
             '<h4 style="margin:0;font-size:0.95rem;color:var(--text-1)">' + escapeHtml(t.name) + '</h4>' +
             typeBadge +
             '<span class="badge" style="font-size:0.6rem;background:' + catColor + '20;color:' + catColor + ';border:1px solid ' + catColor + '30">' + cat + '</span>' +
-            enabledBadge +
+            statusBadge +
             scopeBadge +
             ownerBadge +
           '</div>' +
@@ -351,6 +369,30 @@ function renderTools(tools) {
       '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' + actions + '</div>' +
     '</div>';
   }).join('');
+}
+
+async function toggleTool(name, enable, type, customId) {
+  try {
+    if (type === 'custom' && customId) {
+      var t = allToolsData.find(function(x) { return x.id === customId; });
+      if (!t) return;
+      var payload = Object.assign({}, t, { enabled: enable });
+      await fetch('/api/custom-tools/' + customId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      await fetch('/api/tools/' + encodeURIComponent(name) + '/toggle', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: enable })
+      });
+    }
+    await loadTools();
+  } catch(e) {
+    alert('Failed to toggle tool: ' + e.message);
+  }
 }
 
 function filterTools() {
@@ -381,8 +423,10 @@ function showToolDetail(name) {
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Category</td><td><span class="badge" style="font-size:0.72rem">' + cat + '</span></td></tr>';
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Endpoint</td><td class="mono" style="font-size:0.78rem">' + escapeHtml(endpoint) + '</td></tr>';
   html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0;vertical-align:top">Description</td><td style="line-height:1.5">' + escapeHtml(t.description) + '</td></tr>';
-  if (isCustom && t.enabled !== undefined) {
-    html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Enabled</td><td>' + (t.enabled ? '<span style="color:#10b981">Yes</span>' : '<span style="color:#ef4444">No</span>') + '</td></tr>';
+  var statusLabel = t.enabled === false ? '<span style="color:#ef4444">Disabled</span>' : t.status === 'network' ? '<span style="color:#f59e0b">&#9888; Requires network</span>' : '<span style="color:#10b981">&#10003; Ready</span>';
+  html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Status</td><td>' + statusLabel + '</td></tr>';
+  if (t.status_detail) {
+    html += '<tr><td style="color:var(--text-3);padding:0.3rem 1rem 0.3rem 0">Note</td><td style="color:var(--text-3);font-size:0.78rem">' + escapeHtml(t.status_detail) + '</td></tr>';
   }
   html += '</table>';
 

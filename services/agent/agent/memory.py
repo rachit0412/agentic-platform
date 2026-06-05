@@ -1440,6 +1440,38 @@ def set_best_practices(practices: list[str]) -> list[str]:
     return practices
 
 
+# ── Tool Settings ──────────────────────────────────────────────────────────
+
+
+def get_disabled_tools() -> list[str]:
+    """Return list of disabled built-in tool names."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT value FROM platform_settings WHERE key = 'disabled_tools'"
+    ).fetchone()
+    if not row:
+        return []
+    return json.loads(row["value"])
+
+
+def set_disabled_tools(disabled: list[str]) -> list[str]:
+    """Replace the disabled tools list."""
+    conn = _get_conn()
+    conn.execute(
+        "INSERT INTO platform_settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("disabled_tools", json.dumps(disabled)),
+    )
+    conn.commit()
+    log_audit(
+        "update",
+        "platform_settings",
+        "disabled_tools",
+        f"{len(disabled)} tools disabled",
+    )
+    return disabled
+
+
 # ── Skill File Management ──────────────────────────────────────────────────
 
 SKILL_FILES_ROOT = os.path.join(

@@ -411,44 +411,11 @@ async def query_csv_data(question: str, csv_path: str) -> str:
 
 
 def get_all_tools() -> list:
-    """Return all available LangChain tools (built-in + custom dynamic)."""
-    builtin = [
-        math,
-        http_fetch,
-        file_write,
-        file_read,
-        file_list,
-        file_search_content,
-        datetime_tool,
-        web_search,
-        code_execute,
-        delegate_to_agent,
-        vector_search,
-        vector_store,
-        advanced_search,
-        query_database,
-        query_csv_data,
-        text_summarize,
-        text_transform,
-        text_diff,
-        text_extract,
-        json_transform,
-        csv_parse,
-        yaml_convert,
-        base64_codec,
-        hash_generate,
-        uuid_generate,
-        regex_match,
-        url_parse,
-        html_strip,
-        markdown_to_html,
-        webpage_extract,
-        dns_lookup,
-        json_schema_validate,
-        cron_parse,
-        jwt_decode,
-        environment_info,
-    ]
+    """Return enabled LangChain tools (built-in + custom dynamic). Disabled tools are excluded."""
+    from agent.memory import get_disabled_tools
+
+    disabled = set(get_disabled_tools())
+    builtin = [t for t in _ALL_BUILTIN_TOOLS if t.name not in disabled]
     try:
         from agent.memory import list_custom_tools
 
@@ -462,6 +429,50 @@ def get_all_tools() -> list:
     except Exception as e:
         logger.warning("Failed to load custom tools: %s", e)
     return builtin
+
+
+def get_all_tools_unfiltered() -> list:
+    """Return ALL built-in LangChain tools regardless of enabled state (for listings)."""
+    return list(_ALL_BUILTIN_TOOLS)
+
+
+_ALL_BUILTIN_TOOLS = [
+    math,
+    http_fetch,
+    file_write,
+    file_read,
+    file_list,
+    file_search_content,
+    datetime_tool,
+    web_search,
+    code_execute,
+    delegate_to_agent,
+    vector_search,
+    vector_store,
+    advanced_search,
+    query_database,
+    query_csv_data,
+    text_summarize,
+    text_transform,
+    text_diff,
+    text_extract,
+    json_transform,
+    csv_parse,
+    yaml_convert,
+    base64_codec,
+    hash_generate,
+    uuid_generate,
+    regex_match,
+    url_parse,
+    html_strip,
+    markdown_to_html,
+    webpage_extract,
+    dns_lookup,
+    json_schema_validate,
+    cron_parse,
+    jwt_decode,
+    environment_info,
+]
 
 
 def _make_custom_tool(ct: dict):
