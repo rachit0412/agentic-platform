@@ -9,57 +9,125 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 
-from agent.connectors import (CONNECTOR_CATALOG, generate_connector_id,
-                              generate_job_id)
+from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
 from agent.connectors.sync_engine import run_sync, test_connector
 from agent.graph import run_agent, run_agent_stream
-from agent.llm import (get_active_model, list_available_embedding_providers,
-                       list_available_models, set_active_model)
+from agent.llm import (
+    get_active_model,
+    list_available_embedding_providers,
+    list_available_models,
+    set_active_model,
+)
 from agent.memory import _get_conn  # Persona management
-from agent.memory import (add_workspace_member, assign_persona,
-                          authenticate_user, create_a2a_peer, create_agent,
-                          create_connector, create_custom_tool,
-                          create_document_registry, create_mcp_server,
-                          create_persona, create_pipeline, create_pipeline_run,
-                          create_prompt, create_skill, create_sync_job,
-                          create_user, create_workspace, delete_a2a_peer,
-                          delete_agent, delete_connector, delete_custom_tool,
-                          delete_document_registry,
-                          delete_document_registry_by_source,
-                          delete_documents_by_collection, delete_mcp_server,
-                          delete_persona, delete_pipeline, delete_prompt,
-                          delete_session, delete_skill, delete_user,
-                          delete_workspace, export_all_data, get_a2a_peer,
-                          get_agent, get_connector, get_custom_tool,
-                          get_db_stats, get_document_registry, get_guardrail,
-                          get_history, get_llm_usage_summary, get_mcp_server,
-                          get_memory_stats, get_persona, get_pipeline,
-                          get_prompt, get_session_summary, get_skill, get_user,
-                          get_user_by_email, get_user_by_username,
-                          get_user_personas, get_version, get_workspace,
-                          import_all_data, init_db, list_a2a_peers,
-                          list_agents, list_audit_log, list_connectors,
-                          list_custom_tools, list_documents_registry,
-                          list_folders, list_guardrails, list_llm_usage,
-                          list_mcp_servers, list_personas, list_pipeline_runs,
-                          list_pipelines, list_prompts, list_sessions,
-                          list_skills, list_sync_jobs, list_users,
-                          list_versions, list_workspace_members,
-                          list_workspaces, log_audit, remove_workspace_member,
-                          resend_verification_code, reset_user_password,
-                          save_version, tag_document_to_agent,
-                          unassign_persona, untag_all_for_agent,
-                          untag_document_from_agent, update_a2a_peer,
-                          update_agent, update_connector, update_custom_tool,
-                          update_document_registry, update_guardrail,
-                          update_mcp_server, update_persona, update_pipeline,
-                          update_pipeline_run, update_prompt, update_skill,
-                          update_sync_job, update_user, update_workspace,
-                          verify_user_email,
-                          get_disabled_tools, set_disabled_tools)
+from agent.memory import (
+    add_workspace_member,
+    assign_persona,
+    authenticate_user,
+    create_a2a_peer,
+    create_agent,
+    create_connector,
+    create_custom_tool,
+    create_document_registry,
+    create_mcp_server,
+    create_persona,
+    create_pipeline,
+    create_pipeline_run,
+    create_prompt,
+    create_skill,
+    create_sync_job,
+    create_user,
+    create_workspace,
+    delete_a2a_peer,
+    delete_agent,
+    delete_connector,
+    delete_custom_tool,
+    delete_document_registry,
+    delete_document_registry_by_source,
+    delete_documents_by_collection,
+    delete_mcp_server,
+    delete_persona,
+    delete_pipeline,
+    delete_prompt,
+    delete_session,
+    delete_skill,
+    delete_user,
+    delete_workspace,
+    export_all_data,
+    get_a2a_peer,
+    get_agent,
+    get_connector,
+    get_custom_tool,
+    get_db_stats,
+    get_disabled_tools,
+    get_document_registry,
+    get_guardrail,
+    get_history,
+    get_llm_usage_summary,
+    get_mcp_server,
+    get_memory_stats,
+    get_persona,
+    get_pipeline,
+    get_prompt,
+    get_session_summary,
+    get_skill,
+    get_user,
+    get_user_by_email,
+    get_user_by_username,
+    get_user_personas,
+    get_version,
+    get_workspace,
+    import_all_data,
+    init_db,
+    list_a2a_peers,
+    list_agents,
+    list_audit_log,
+    list_connectors,
+    list_custom_tools,
+    list_documents_registry,
+    list_folders,
+    list_guardrails,
+    list_llm_usage,
+    list_mcp_servers,
+    list_personas,
+    list_pipeline_runs,
+    list_pipelines,
+    list_prompts,
+    list_sessions,
+    list_skills,
+    list_sync_jobs,
+    list_users,
+    list_versions,
+    list_workspace_members,
+    list_workspaces,
+    log_audit,
+    remove_workspace_member,
+    resend_verification_code,
+    reset_user_password,
+    save_version,
+    set_disabled_tools,
+    tag_document_to_agent,
+    unassign_persona,
+    untag_all_for_agent,
+    untag_document_from_agent,
+    update_a2a_peer,
+    update_agent,
+    update_connector,
+    update_custom_tool,
+    update_document_registry,
+    update_guardrail,
+    update_mcp_server,
+    update_persona,
+    update_pipeline,
+    update_pipeline_run,
+    update_prompt,
+    update_skill,
+    update_sync_job,
+    update_user,
+    update_workspace,
+    verify_user_email,
+)
 from agent.observability import setup_otel
-from agent.workspace import (current_user_id, current_user_role,
-                             current_workspace_id)
+from agent.workspace import current_user_id, current_user_role, current_workspace_id
 from fastapi import BackgroundTasks, FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -374,7 +442,9 @@ async def auth_sso_login(body: SSOLoginRequest):
     from fastapi.responses import JSONResponse
 
     if not body.email:
-        return JSONResponse(status_code=400, content={"error": "Email is required from SSO provider"})
+        return JSONResponse(
+            status_code=400, content={"error": "Email is required from SSO provider"}
+        )
 
     # Try to find existing user by email
     user = get_user_by_email(body.email)
@@ -383,6 +453,7 @@ async def auth_sso_login(body: SSOLoginRequest):
 
     # Create new user from SSO (pre-verified, random password since they use SSO)
     import secrets
+
     random_pw = secrets.token_urlsafe(32)
     username = body.email.split("@")[0]
     # Ensure unique username
@@ -1208,8 +1279,7 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
         file_ext = (
             os.path.splitext(doc["name"])[1].lower() if "." in doc["name"] else ""
         )
-        from agent.llamaindex_loader import (SUPPORTED_EXTENSIONS,
-                                             parse_file_bytes)
+        from agent.llamaindex_loader import SUPPORTED_EXTENSIONS, parse_file_bytes
 
         if file_ext in SUPPORTED_EXTENSIONS and file_ext not in (".txt", ".md", ""):
             parsed_docs = parse_file_bytes(
@@ -1556,14 +1626,16 @@ async def tools_list():
         if t.name in NETWORK_TOOLS:
             status = "network"
             status_detail = "Requires external internet access from container"
-        builtin_list.append({
-            "name": t.name,
-            "description": t.description,
-            "type": "builtin",
-            "enabled": t.name not in disabled,
-            "status": status,
-            "status_detail": status_detail,
-        })
+        builtin_list.append(
+            {
+                "name": t.name,
+                "description": t.description,
+                "type": "builtin",
+                "enabled": t.name not in disabled,
+                "status": status,
+                "status_detail": status_detail,
+            }
+        )
     custom = list_custom_tools()
     custom_list = [
         {
@@ -1577,6 +1649,7 @@ async def tools_list():
             "headers": t["headers"],
             "body_template": t["body_template"],
             "parameters": t["parameters"],
+            "labels": t.get("labels", []),
             "enabled": t["enabled"],
             "status": "ready" if t["enabled"] else "disabled",
             "status_detail": "",
@@ -1602,6 +1675,7 @@ class CustomToolCreate(BaseModel):
     headers: dict = Field(default_factory=dict)
     body_template: dict = Field(default_factory=dict)
     parameters: list[dict] = Field(default_factory=list)
+    labels: list[str] = Field(default_factory=list)
     scope: str = Field(default="workspace", pattern="^(global|workspace)$")
 
 
@@ -1614,6 +1688,7 @@ class CustomToolUpdate(BaseModel):
     headers: dict | None = None
     body_template: dict | None = None
     parameters: list[dict] | None = None
+    labels: list[str] | None = None
     enabled: bool | None = None
 
 
@@ -1637,6 +1712,7 @@ async def custom_tools_create_endpoint(body: CustomToolCreate):
         body_template=body.body_template,
         parameters=body.parameters,
         scope=body.scope,
+        labels=body.labels,
     )
     return tool
 
@@ -1679,8 +1755,8 @@ async def tool_toggle(tool_name: str, body: ToolToggleRequest):
     - Built-in / global tools: admin only
     - Private custom tools: admin or creator
     """
+    from agent.workspace import get_user_id, get_user_role
     from fastapi import HTTPException
-    from agent.workspace import get_user_role, get_user_id
 
     role = get_user_role()
     user_id = get_user_id()

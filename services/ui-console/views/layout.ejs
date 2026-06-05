@@ -325,7 +325,16 @@
       return _origFetch.call(this, url, opts);
     };
     // Expose user context from server session
-    window.__userRole = '<%= (typeof user !== "undefined" && user.role ? user.role : "member") %>';
+    // Effective role: if persona is active and lacks admin access, downgrade to 'member'
+    window.__userRole = '<%= (function() {
+      if (typeof user === "undefined" || !user) return "member";
+      var role = user.role || "member";
+      if (role === "admin" && user.active_persona && user.active_persona.permissions) {
+        var actions = user.active_persona.permissions.actions || [];
+        if (actions.indexOf("access_admin") === -1 && actions.indexOf("create_global") === -1) return "member";
+      }
+      return role;
+    })() %>';
     window.__userName = '<%= (typeof user !== "undefined" && user.username ? user.username : "") %>';
     window.__userDisplayName = '<%= (typeof user !== "undefined" && user.display_name ? user.display_name : "User") %>';
     window.__userEmail = '<%= (typeof user !== "undefined" && user.email ? user.email : "") %>';

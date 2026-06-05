@@ -6,13 +6,13 @@ Two categories:
 2. Local tools  — run in-process (vector_search, vector_store)
 """
 
-import os
 import json
 import logging
+import os
 from typing import Optional
 
 import httpx
-from langchain_core.tools import tool, StructuredTool
+from langchain_core.tools import StructuredTool, tool
 
 logger = logging.getLogger("agent-service.tools")
 
@@ -306,9 +306,10 @@ async def environment_info() -> str:
 async def delegate_to_agent(agent_id: str, task: str) -> str:
     """Delegate a task to another agent by its ID. Use when a sub-agent is better suited for a specific part of your task. Returns the sub-agent's response."""
     try:
-        from agent.memory import get_agent
-        from agent.graph import run_agent
         import uuid
+
+        from agent.graph import run_agent
+        from agent.memory import get_agent
 
         agent_cfg = get_agent(agent_id)
         if not agent_cfg:
@@ -558,7 +559,9 @@ def _make_mcp_tool(server_config: dict, tool_def: dict):
                 data = resp.json()
                 if "result" in data:
                     content = data["result"].get("content", [])
-                    texts = [c.get("text", str(c)) for c in content if isinstance(c, dict)]
+                    texts = [
+                        c.get("text", str(c)) for c in content if isinstance(c, dict)
+                    ]
                     return "\n".join(texts) if texts else json.dumps(data["result"])
                 if "error" in data:
                     return json.dumps({"error": data["error"]})
@@ -661,7 +664,9 @@ def catalogue_as_text() -> str:
     return "\n".join(lines)
 
 
-def catalogue_as_text_filtered(tool_ids: list[str] | None = None, extra_tools: list | None = None) -> str:
+def catalogue_as_text_filtered(
+    tool_ids: list[str] | None = None, extra_tools: list | None = None
+) -> str:
     """Render tool list filtered by tool_ids. If tool_ids is None or empty, return all."""
     _refresh_catalogue()
     all_tools = get_all_tools()
@@ -676,7 +681,9 @@ def catalogue_as_text_filtered(tool_ids: list[str] | None = None, extra_tools: l
     return "\n".join(lines)
 
 
-async def call_tool(tool_name: str, arguments: dict, extra_tools: list | None = None) -> dict:
+async def call_tool(
+    tool_name: str, arguments: dict, extra_tools: list | None = None
+) -> dict:
     """Legacy: call a tool by name with arguments dict."""
     all_tools = get_all_tools()
     if extra_tools:

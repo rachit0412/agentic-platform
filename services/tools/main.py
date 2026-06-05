@@ -114,7 +114,24 @@ NOTES_DIR = Path(os.getenv("NOTES_DIR", "/data/notes"))
 NOTES_DIR.mkdir(parents=True, exist_ok=True)
 
 # Allowed domains for http-fetch (prevent SSRF)
-ALLOWED_DOMAINS = {"httpbin.org", "jsonplaceholder.typicode.com"}
+# Configurable via env: ALLOWED_FETCH_DOMAINS=httpbin.org,api.example.com
+# Set to "*" to allow all public domains
+_allowed_env = os.getenv("ALLOWED_FETCH_DOMAINS", "*")
+ALLOWED_DOMAINS = None if _allowed_env.strip() == "*" else {d.strip().lower() for d in _allowed_env.split(",") if d.strip()}
+
+import ipaddress
+
+def _is_private_ip(hostname: str) -> bool:
+    """Block requests to private/internal IPs to prevent SSRF."""
+    try:
+        import socket
+        for info in socket.getaddrinfo(hostname, None):
+            addr = ipaddress.ip_address(info[4][0])
+            if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+                return True
+    except Exception:
+        pass
+    return False
 
 
 # ── Health ──────────────────────────────────────────────────────────────────
@@ -189,13 +206,18 @@ class HttpFetchRequest(BaseModel):
 
 
 def _is_allowed_url(url: str) -> bool:
-    """Check URL is in the allowlist to prevent SSRF."""
-    # Extract hostname
+    """Check URL is safe (blocks private IPs; optionally checks domain allowlist)."""
     match = re.match(r"https?://([^/:]+)", url)
     if not match:
         return False
     hostname = match.group(1).lower()
-    return hostname in ALLOWED_DOMAINS
+    # Always block private/internal IPs (SSRF protection)
+    if _is_private_ip(hostname):
+        return False
+    # If allowlist is set, enforce it
+    if ALLOWED_DOMAINS is not None:
+        return hostname in ALLOWED_DOMAINS
+    return True
 
 
 @app.post("/tools/http-fetch")
@@ -204,7 +226,7 @@ async def tool_http_fetch(body: HttpFetchRequest):
     if not _is_allowed_url(body.url):
         raise HTTPException(
             status_code=403,
-            detail=f"Domain not allowed. Allowed: {', '.join(sorted(ALLOWED_DOMAINS))}",
+            detail="Domain blocked. Private/internal IPs are not allowed for security reasons.",
         )
     try:
         async with httpx.AsyncClient(
@@ -221,10 +243,26 @@ async def tool_http_fetch(body: HttpFetchRequest):
             return {"url": body.url, "status": resp.status_code, "content": text}
     except HTTPException:
         raise
-    except httpx.ConnectError as exc:
+    except httpx.ConnectError:
+        # Fallback: try DuckDuckGo search for the URL content
+        try:
+            from ddgs import DDGS
+            with DDGS() as ddgs:
+                results = list(ddgs.text(body.url, max_results=3))
+            if results:
+                return {
+                    "url": body.url,
+                    "status": 200,
+                    "content": "\\n\\n".join(
+                        f"**{r.get('title','')}**\\n{r.get('body','')}" for r in results
+                    ),
+                    "note": "Direct fetch failed (network/proxy). Showing DuckDuckGo search results instead.",
+                }
+        except Exception:
+            pass
         raise HTTPException(
             status_code=502,
-            detail=f"Connection failed — the container cannot reach external URLs. Check network/proxy settings. ({type(exc).__name__})",
+            detail="Connection failed — the container cannot reach external URLs. DuckDuckGo fallback also failed. Check network/proxy settings.",
         )
     except httpx.RequestError as exc:
         raise HTTPException(

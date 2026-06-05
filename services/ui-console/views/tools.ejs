@@ -198,6 +198,25 @@ const BUILTIN_CATEGORIES = {
   'jwt_decode': 'proxy', 'environment_info': 'proxy'
 };
 
+const BUILTIN_LABELS = {
+  'math': ['utility'], 'http_fetch': ['integration', 'search'], 'file_write': ['file-io'],
+  'file_read': ['file-io'], 'file_list': ['file-io'], 'file_search_content': ['file-io', 'search'],
+  'datetime_tool': ['utility'], 'web_search': ['search', 'integration'],
+  'code_execute': ['devops', 'utility'], 'vector_search': ['ai', 'search'],
+  'vector_store': ['ai', 'data'], 'delegate_to_agent': ['workflow', 'ai'],
+  'advanced_search': ['ai', 'search'], 'query_database': ['database', 'analytics'],
+  'query_csv_data': ['data', 'analytics'], 'text_summarize': ['ai', 'utility'],
+  'text_transform': ['utility'], 'text_diff': ['utility'], 'text_extract': ['data', 'utility'],
+  'json_transform': ['data', 'utility'], 'csv_parse': ['data', 'analytics'],
+  'yaml_convert': ['data', 'utility'], 'base64_codec': ['security', 'utility'],
+  'hash_generate': ['security', 'utility'], 'uuid_generate': ['utility'],
+  'regex_match': ['utility', 'search'], 'url_parse': ['utility'],
+  'html_strip': ['utility'], 'markdown_to_html': ['utility'],
+  'webpage_extract': ['search', 'integration'], 'dns_lookup': ['devops', 'integration'],
+  'json_schema_validate': ['data', 'utility'], 'cron_parse': ['devops', 'utility'],
+  'jwt_decode': ['security'], 'environment_info': ['devops', 'monitoring']
+};
+
 const BUILTIN_ENDPOINTS = {
   'math': 'POST /tools/math', 'http_fetch': 'POST /tools/http-fetch',
   'file_write': 'POST /tools/file-write', 'file_read': 'POST /tools/file-read',
@@ -323,6 +342,13 @@ function renderTools(tools) {
     if (isCustom && t.created_by) {
       ownerBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(99,102,241,0.12);color:#818cf8;font-weight:500">' + escapeHtml(t.created_by) + '</span>';
     }
+    var labelBadges = '';
+    var toolLabels = isCustom ? (t.labels || []) : (BUILTIN_LABELS[t.name] || []);
+    if (toolLabels.length) {
+      labelBadges = toolLabels.map(function(l) {
+        return ' <span class="badge" style="font-size:0.55rem;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:1px 6px">' + escapeHtml(l) + '</span>';
+      }).join('');
+    }
     var scopeBadge = '';
     if (isCustom) {
       scopeBadge = t.scope === 'global'
@@ -369,6 +395,7 @@ function renderTools(tools) {
             statusBadge +
             scopeBadge +
             ownerBadge +
+            labelBadges +
           '</div>' +
           '<p style="margin:0.25rem 0 0;font-size:0.8rem;color:var(--text-3);line-height:1.4">' + escapeHtml(t.description) + '</p>' +
         '</div>' +
@@ -522,6 +549,9 @@ function _toolFormHtml(tool) {
   var bodyTpl = isEdit ? JSON.stringify(tool.body_template || {}, null, 2) : '{}';
   var params = isEdit ? (tool.parameters || []) : [];
   var enabled = isEdit ? tool.enabled : true;
+  var labels = isEdit ? (tool.labels || []) : [];
+
+  var PRESET_LABELS = ['data', 'search', 'analytics', 'integration', 'ai', 'devops', 'security', 'monitoring', 'notification', 'utility', 'file-io', 'database', 'messaging', 'workflow'];
 
   var html = '';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
@@ -529,6 +559,18 @@ function _toolFormHtml(tool) {
   html += '<div><label class="field-label">Category</label><select class="input" id="ct-category" style="font-size:0.82rem"><option value="proxy"' + (cat==='proxy'?' selected':'') + '>Proxy</option><option value="api"' + (cat==='api'?' selected':'') + '>API</option><option value="webhook"' + (cat==='webhook'?' selected':'') + '>Webhook</option><option value="local"' + (cat==='local'?' selected':'') + '>Local</option></select></div>';
   html += '</div>';
   html += '<div style="margin-top:0.75rem"><label class="field-label">Description *</label><textarea class="input" id="ct-description" rows="2" placeholder="What does this tool do? The LLM reads this to decide when to use it." style="font-size:0.82rem">' + escapeHtml(desc) + '</textarea></div>';
+
+  // Labels
+  html += '<div style="margin-top:0.75rem"><label class="field-label">Labels</label>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem" id="ct-labels-wrap">';
+  PRESET_LABELS.forEach(function(l) {
+    var isActive = labels.indexOf(l) !== -1;
+    html += '<button type="button" class="btn btn-sm ct-label-btn" data-label="' + escapeHtml(l) + '" onclick="toggleLabel(this)" style="font-size:0.68rem;padding:3px 8px;border-radius:12px;border:1px solid ' + (isActive ? '#06b6d4' : 'var(--glass-border)') + ';background:' + (isActive ? 'rgba(6,182,212,0.15)' : 'transparent') + ';color:' + (isActive ? '#06b6d4' : 'var(--text-3)') + '">' + escapeHtml(l) + '</button>';
+  });
+  html += '</div>';
+  html += '<div style="display:flex;gap:0.5rem;align-items:center"><input type="text" class="input" id="ct-custom-label" placeholder="Add custom label..." style="font-size:0.78rem;height:30px;flex:1"><button type="button" class="btn btn-sm btn-secondary" onclick="addCustomLabel()" style="height:30px">Add</button></div>';
+  html += '</div>';
+
   html += '<div style="display:grid;grid-template-columns:100px 1fr;gap:0.75rem;margin-top:0.75rem">';
   html += '<div><label class="field-label">Method</label><select class="input" id="ct-method" style="font-size:0.82rem"><option value="GET"' + (method==='GET'?' selected':'') + '>GET</option><option value="POST"' + (method==='POST'?' selected':'') + '>POST</option><option value="PUT"' + (method==='PUT'?' selected':'') + '>PUT</option><option value="PATCH"' + (method==='PATCH'?' selected':'') + '>PATCH</option><option value="DELETE"' + (method==='DELETE'?' selected':'') + '>DELETE</option></select></div>';
   html += '<div><label class="field-label">Endpoint URL *</label><input type="text" class="input" id="ct-endpoint" value="' + escapeHtml(endpoint) + '" placeholder="https://api.example.com/v1/action" style="font-size:0.82rem"></div>';
@@ -580,6 +622,48 @@ function addParamRow() {
   container.appendChild(div.firstChild);
 }
 
+function toggleLabel(btn) {
+  var active = btn.style.color === 'rgb(6, 182, 212)';
+  if (active) {
+    btn.style.color = 'var(--text-3)';
+    btn.style.background = 'transparent';
+    btn.style.borderColor = 'var(--glass-border)';
+  } else {
+    btn.style.color = '#06b6d4';
+    btn.style.background = 'rgba(6,182,212,0.15)';
+    btn.style.borderColor = '#06b6d4';
+  }
+}
+
+function addCustomLabel() {
+  var input = document.getElementById('ct-custom-label');
+  var val = input.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  if (!val) return;
+  input.value = '';
+  var wrap = document.getElementById('ct-labels-wrap');
+  // check duplicate
+  if (wrap.querySelector('[data-label="' + val + '"]')) return;
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-sm ct-label-btn';
+  btn.setAttribute('data-label', val);
+  btn.onclick = function() { toggleLabel(this); };
+  btn.style.cssText = 'font-size:0.68rem;padding:3px 8px;border-radius:12px;border:1px solid #06b6d4;background:rgba(6,182,212,0.15);color:#06b6d4';
+  btn.textContent = val;
+  wrap.appendChild(btn);
+}
+
+function _collectLabels() {
+  var btns = document.querySelectorAll('#ct-labels-wrap .ct-label-btn');
+  var labels = [];
+  btns.forEach(function(btn) {
+    if (btn.style.color === 'rgb(6, 182, 212)') {
+      labels.push(btn.getAttribute('data-label'));
+    }
+  });
+  return labels;
+}
+
 function _collectParams() {
   var rows = document.querySelectorAll('.ct-param-row');
   var params = [];
@@ -626,7 +710,8 @@ async function saveCustomTool(id) {
   try { body_template = JSON.parse(document.getElementById('ct-body-template').value || '{}'); } catch(e) { showToast('Invalid body template JSON', 'error'); return; }
 
   var parameters = _collectParams();
-  var payload = { name: name, description: description, category: category, method: method, endpoint: endpoint, headers: headers, body_template: body_template, parameters: parameters };
+  var labels = _collectLabels();
+  var payload = { name: name, description: description, category: category, method: method, endpoint: endpoint, headers: headers, body_template: body_template, parameters: parameters, labels: labels };
 
   if (id) {
     var enabledEl = document.getElementById('ct-enabled');

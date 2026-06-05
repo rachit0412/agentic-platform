@@ -419,9 +419,16 @@ app.get("/api/health-check", async (req, res) => {
 function wsHeaders(req, extra) {
   const h = { ...extra };
   const user = req.session && req.session.user;
-  // Use session user context for content isolation
   h['x-user-id'] = (user && user.username) || req.headers['x-user-id'] || 'system';
-  h['x-user-role'] = (user && user.role) || req.headers['x-user-role'] || 'admin';
+  // Effective role: downgrade admin to member if active persona lacks admin access
+  let role = (user && user.role) || req.headers['x-user-role'] || 'admin';
+  if (role === 'admin' && user && user.active_persona && user.active_persona.permissions) {
+    const actions = user.active_persona.permissions.actions || [];
+    if (!actions.includes('access_admin') && !actions.includes('create_global')) {
+      role = 'member';
+    }
+  }
+  h['x-user-role'] = role;
   h['x-workspace-id'] = 'default';
   return h;
 }

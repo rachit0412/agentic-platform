@@ -2552,6 +2552,7 @@ def _init_custom_tools_table():
             headers     TEXT DEFAULT '{}',
             body_template TEXT DEFAULT '{}',
             parameters  TEXT DEFAULT '[]',
+            labels      TEXT DEFAULT '[]',
             enabled     INTEGER DEFAULT 1,
             scope       TEXT DEFAULT 'global',
             workspace_id TEXT DEFAULT 'default',
@@ -2560,10 +2561,15 @@ def _init_custom_tools_table():
             updated_at  TEXT NOT NULL
         )
         """)
+    # Migration: add labels column if missing
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(custom_tools)").fetchall()}
+    if "labels" not in cols:
+        conn.execute("ALTER TABLE custom_tools ADD COLUMN labels TEXT DEFAULT '[]'")
     conn.commit()
 
 
 def _row_to_custom_tool(row) -> dict:
+    keys = row.keys() if hasattr(row, "keys") else []
     return {
         "id": row["id"],
         "name": row["name"],
@@ -2574,6 +2580,7 @@ def _row_to_custom_tool(row) -> dict:
         "headers": json.loads(row["headers"]),
         "body_template": json.loads(row["body_template"]),
         "parameters": json.loads(row["parameters"]),
+        "labels": json.loads(row["labels"]) if "labels" in keys else [],
         "enabled": bool(row["enabled"]),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
@@ -2610,6 +2617,7 @@ def create_custom_tool(
     body_template: dict | None = None,
     parameters: list[dict] | None = None,
     scope: str = "private",
+    labels: list[str] | None = None,
 ) -> dict:
     from agent.workspace import effective_scope, get_user_id, get_workspace_id
 
@@ -2618,7 +2626,7 @@ def create_custom_tool(
     tool_id = str(uuid.uuid4())[:8]
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO custom_tools (id, name, description, category, endpoint, method, headers, body_template, parameters, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO custom_tools (id, name, description, category, endpoint, method, headers, body_template, parameters, labels, scope, workspace_id, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             tool_id,
             name,
@@ -2629,6 +2637,7 @@ def create_custom_tool(
             json.dumps(headers or {}),
             json.dumps(body_template or {}),
             json.dumps(parameters or []),
+            json.dumps(labels or []),
             effective_scope(scope),
             get_workspace_id(),
             get_user_id(),
@@ -2652,7 +2661,7 @@ def update_custom_tool(tool_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
-    for key in ("headers", "body_template", "parameters"):
+    for key in ("headers", "body_template", "parameters", "labels"):
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(json.dumps(kwargs[key]))
