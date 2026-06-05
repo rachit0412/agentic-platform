@@ -1614,8 +1614,8 @@ async def tools_list():
     """List all tools (built-in + custom) with status and enabled state."""
     from agent.tools import get_all_tools_unfiltered
 
-    # Tools that require external internet access
-    NETWORK_TOOLS = {"http_fetch", "webpage_extract"}
+    # Tools that require external internet access (no fallback)
+    NETWORK_TOOLS = {"webpage_extract"}
 
     disabled = set(get_disabled_tools())
     builtin = get_all_tools_unfiltered()

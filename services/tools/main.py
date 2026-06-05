@@ -117,17 +117,28 @@ NOTES_DIR.mkdir(parents=True, exist_ok=True)
 # Configurable via env: ALLOWED_FETCH_DOMAINS=httpbin.org,api.example.com
 # Set to "*" to allow all public domains
 _allowed_env = os.getenv("ALLOWED_FETCH_DOMAINS", "*")
-ALLOWED_DOMAINS = None if _allowed_env.strip() == "*" else {d.strip().lower() for d in _allowed_env.split(",") if d.strip()}
+ALLOWED_DOMAINS = (
+    None
+    if _allowed_env.strip() == "*"
+    else {d.strip().lower() for d in _allowed_env.split(",") if d.strip()}
+)
 
 import ipaddress
+
 
 def _is_private_ip(hostname: str) -> bool:
     """Block requests to private/internal IPs to prevent SSRF."""
     try:
         import socket
+
         for info in socket.getaddrinfo(hostname, None):
             addr = ipaddress.ip_address(info[4][0])
-            if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            if (
+                addr.is_private
+                or addr.is_loopback
+                or addr.is_link_local
+                or addr.is_reserved
+            ):
                 return True
     except Exception:
         pass
@@ -247,6 +258,7 @@ async def tool_http_fetch(body: HttpFetchRequest):
         # Fallback: try DuckDuckGo search for the URL content
         try:
             from ddgs import DDGS
+
             with DDGS() as ddgs:
                 results = list(ddgs.text(body.url, max_results=3))
             if results:
