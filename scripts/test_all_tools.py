@@ -1,14 +1,16 @@
-"""Test all 29 proxy tools against tools-service."""
+"""Test all 35 tools — 29 proxy (tools-service) + 6 in-process (agent-service)."""
 
 import json
+import os
 
 import httpx
 
-BASE = "http://localhost:8001"
+TOOLS_BASE = os.environ.get("TOOLS_BASE", "http://localhost:8001")
+AGENT_BASE = os.environ.get("AGENT_BASE", "http://localhost:8000")
 
 tests = [
     ("math", "/tools/math", {"expression": "2+2"}),
-    ("http_fetch", "/tools/http-fetch", {"url": "https://httpbin.org/get"}),
+    ("http_fetch", "/tools/http-fetch", {"url": "https://example.com"}),
     (
         "file_write",
         "/tools/file-write",
@@ -92,7 +94,7 @@ tests = [
 results = []
 for name, path, payload in tests:
     try:
-        r = httpx.post(BASE + path, json=payload, timeout=15)
+        r = httpx.post(TOOLS_BASE + path, json=payload, timeout=15)
         status = "PASS" if r.status_code == 200 else "FAIL"
         detail = ""
         if r.status_code != 200:
@@ -110,4 +112,39 @@ for name, status, code, detail in results:
 
 passes = sum(1 for _, s, _, _ in results if s == "PASS")
 fails = sum(1 for _, s, _, _ in results if s != "PASS")
-print(f"\nTotal: {len(results)} | Pass: {passes} | Fail: {fails}")
+print(f"\nProxy Tools: {len(results)} | Pass: {passes} | Fail: {fails}")
+
+# ── In-process tools (via agent /run endpoint) ──────────────────
+print("\n--- In-process tools (via agent) ---")
+in_process_tests = [
+    ("vector_store", "Use vector_store to store text: test document for tool validation, with source: test-suite"),
+    ("vector_search", "Use vector_search to find documents about tool validation with k=2"),
+    ("advanced_search", "Use advanced_search to search for tool validation with mode hybrid and k=2"),
+    ("delegate_to_agent", "Use delegate_to_agent to delegate task: say hello, to agent_id: default"),
+    ("query_database", "Use query_database to list all tables using connection_string sqlite:///data/agent.db"),
+    ("query_csv_data", "Use query_csv_data to count rows in file /tmp/test.csv"),
+]
+
+in_results = []
+for name, prompt in in_process_tests:
+    try:
+        r = httpx.post(
+            AGENT_BASE + "/run",
+            json={"prompt": prompt, "workspace_id": "test-tools"},
+            headers={"x-user-id": "admin", "x-user-role": "admin"},
+            timeout=60,
+        )
+        resp = r.json().get("response", "")[:100]
+        status = "PASS" if r.status_code == 200 else "FAIL"
+        in_results.append((name, status, r.status_code, resp[:60]))
+    except Exception as e:
+        in_results.append((name, "ERROR", 0, str(e)[:60]))
+
+for name, status, code, detail in in_results:
+    print(f"{name:<25} {status:<6} {code:<5} {detail}")
+
+ip_pass = sum(1 for _, s, _, _ in in_results if s == "PASS")
+ip_fail = sum(1 for _, s, _, _ in in_results if s != "PASS")
+print(f"\nIn-process Tools: {len(in_results)} | Pass: {ip_pass} | Fail: {ip_fail}")
+print(f"\n{'='*50}")
+print(f"TOTAL: {len(results) + len(in_results)} | Pass: {passes + ip_pass} | Fail: {fails + ip_fail}")

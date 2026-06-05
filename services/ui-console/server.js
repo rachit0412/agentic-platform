@@ -742,7 +742,7 @@ app.post("/api/agent-run", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/run`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...wsHeaders(req) },
       body: JSON.stringify(req.body),
     });
     const data = await resp.json();

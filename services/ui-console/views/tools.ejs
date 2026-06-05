@@ -573,9 +573,10 @@ async function _runToolTest(name) {
   var payload = {};
   params.forEach(function(p) {
     var el = document.getElementById('test-param-' + p.name);
-    if (el) {
-      var val = el.value;
-      if (p.type === 'int') val = parseInt(val) || 0;
+    if (el && el.value.trim() !== '') {
+      var val = el.value.trim();
+      if (p.type === 'int') val = parseInt(val);
+      if (p.type === 'bool') val = val === 'true' || val === '1';
       payload[p.name] = val;
     }
   });
