@@ -385,14 +385,17 @@
           renderPersonaSwitcher(pd.personas || [], data.active_persona);
           applyPersonaNav(data.active_persona);
           showToast('Switched to ' + data.active_persona.name + ' persona', 'success');
-          // Redirect away from admin if persona lacks access
-          if (window.location.pathname === '/admin') {
-            var nav = (data.active_persona.permissions && data.active_persona.permissions.nav) || [];
-            var actions = (data.active_persona.permissions && data.active_persona.permissions.actions) || [];
-            if (nav.indexOf('admin') === -1 && actions.indexOf('access_admin') === -1) {
+          // Reload to reflect role changes; redirect away from admin if not allowed
+          var nav = (data.active_persona.permissions && data.active_persona.permissions.nav) || [];
+          var actions = (data.active_persona.permissions && data.active_persona.permissions.actions) || [];
+          var noAdmin = nav.indexOf('admin') === -1 && actions.indexOf('access_admin') === -1;
+          setTimeout(function() {
+            if (noAdmin && window.location.pathname === '/admin') {
               window.location.href = '/';
+            } else {
+              window.location.reload();
             }
-          }
+          }, 400);
         } else {
           showToast(data.error || 'Failed to switch persona', 'error');
         }
