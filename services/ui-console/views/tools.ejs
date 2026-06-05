@@ -376,8 +376,8 @@ function renderTools(tools) {
     }
 
     var disabledAttr = t.enabled === false ? ' disabled style="opacity:0.4;cursor:not-allowed;pointer-events:none"' : '';
-    var actions = '<button class="btn btn-sm" onclick="showToolDetail(\'' + escapeHtml(t.name) + '\')">Details</button>' +
-      ' <button class="btn btn-sm btn-secondary"' + disabledAttr + ' onclick="testTool(\'' + escapeHtml(t.name) + '\')">Test</button>' +
+    var actions = '<button class="btn btn-sm" onclick="showToolDetail(\\'' + escapeHtml(t.name) + '\\')">Details</button>' +
+      ' <button class="btn btn-sm btn-secondary"' + disabledAttr + ' onclick="testTool(\\'' + escapeHtml(t.name) + '\\')">Test</button>' +
       toggleBtn;
     if (isCustom) {
       actions += ' <button class="btn btn-sm" style="color:#f59e0b" onclick="editCustomTool(\\'' + escapeHtml(t.id) + '\\')">Edit</button>';
