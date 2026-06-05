@@ -325,6 +325,14 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   z-index: 50;
 }
 .rail-item:hover .rail-tooltip { opacity: 1; transform: translateX(0); }
+html:not(.dark) .rail-logo > .rail-tooltip,
+html:not(.dark) .rail-logo:hover > .rail-tooltip,
+html:not(.dark) .rail-logo > .rail-tooltip:hover,
+html:not(.dark) .sidebar-expanded .rail-logo > .rail-tooltip,
+html:not(.dark) .sidebar-expanded .rail-logo:hover > .rail-tooltip {
+  color: #000000 !important;
+  background: transparent !important;
+}
 
 /* ─── Rail Group Flyout ─── */
 .rail-group { position: relative; }
@@ -335,8 +343,8 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   top: 50%;
   transform: translateY(-50%);
   min-width: 170px;
-  background: var(--tooltip-bg);
-  border: 1px solid var(--tooltip-border);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 10px;
   padding: 0.45rem 0;
   opacity: 0;
@@ -361,10 +369,10 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   padding: 0.25rem 0.85rem 0.45rem;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #06b6d4;
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--divider);
   margin-bottom: 0.2rem;
 }
 .rail-submenu a {
@@ -374,13 +382,24 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   padding: 0.35rem 0.85rem;
   font-size: 0.78rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: var(--text-2);
   text-decoration: none;
   transition: color 0.15s, background 0.15s;
 }
-.rail-submenu a:hover { color: #e2e8f0; background: rgba(6,182,212,0.08); }
-.rail-submenu a.sub-active { color: #06b6d4; }
+.rail-submenu a:hover { color: var(--text-1); background: var(--rail-hover-bg); }
+.rail-submenu a.sub-active { color: var(--accent-text); }
 .rail-submenu a svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+
+.dark .rail-submenu {
+  background: var(--tooltip-bg);
+  border-color: var(--tooltip-border);
+}
+
+html:not(.dark) .rail-submenu,
+html:not(.dark) .rail-profile-group .rail-profile-menu {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border-color: rgba(255,255,255,0.16);
+}
 
 /* ─── Rail Bottom ─── */
 .rail-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -443,6 +462,25 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   height: 1px;
   background: rgba(255,255,255,0.06);
   margin: 0.2rem 0.85rem;
+}
+
+/* ─── Persona Switcher — Light Mode Overrides ─── */
+html:not(.dark) .persona-switcher-section {
+  border-bottom-color: var(--glass-border);
+}
+html:not(.dark) .rail-divider {
+  background: var(--glass-border);
+}
+html:not(.dark) .persona-chip {
+  color: var(--text-2);
+}
+html:not(.dark) .persona-chip:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-1);
+}
+html:not(.dark) .persona-active {
+  background: rgba(16,185,129,0.1);
+  color: var(--text-1);
 }
 
 /* ─── Theme Toggle ─── */
@@ -513,9 +551,12 @@ h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.95rem; fo
   border-bottom: 1px solid var(--topbar-border);
 }
 .topbar-left { display: flex; align-items: center; gap: 8px; }
-.topbar-section { font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); opacity: 0.75; }
+.topbar-section { font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-1); opacity: 0.92; }
 .topbar-slash { color: var(--text-4); }
-.topbar-page { font-size: 0.875rem; font-family: 'Space Grotesk', system-ui; font-weight: 500; color: var(--accent-text); }
+.topbar-page { font-size: 0.875rem; font-family: 'Space Grotesk', system-ui; font-weight: 600; color: var(--text-1); }
+
+.dark .topbar-section { color: var(--text-2); opacity: 0.8; }
+.dark .topbar-page { color: var(--accent-text); }
 
 .topbar-right { display: flex; align-items: center; gap: 1rem; }
 .topbar-status { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; }
@@ -1098,11 +1139,11 @@ iframe { border: none; border-radius: 12px; width: 100%; background: var(--glass
     position: static;
     transform: none;
     min-width: auto;
-    background: none;
-    border: none;
-    border-radius: 0;
+    background: var(--glass-hover-bg);
+    border: 1px solid transparent;
+    border-radius: 10px;
     padding: 0;
-    margin: 0;
+    margin: 0 10px;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -1119,7 +1160,20 @@ iframe { border: none; border-radius: 12px; width: 100%; background: var(--glass
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    padding: 4px 0 2px;
+    padding: 4px 0 6px;
+    border-color: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  .sidebar-expanded .rail-submenu-title {
+    border-bottom-color: var(--divider);
+  }
+  .sidebar-expanded .rail-submenu a {
+    color: var(--text-2);
+    padding: 0.42rem 0.85rem 0.42rem 1.4rem;
+  }
+  .sidebar-expanded .rail-submenu a:hover {
+    color: var(--text-1);
+    background: var(--rail-hover-bg);
   }
   .sidebar-expanded .rail-group:hover > .rail-submenu {
     /* disable hover flyout in expanded mode */
@@ -1211,6 +1265,9 @@ iframe { border: none; border-radius: 12px; width: 100%; background: var(--glass
     letter-spacing: 0.03em;
     white-space: nowrap;
     pointer-events: auto;
+  }
+  html:not(.dark) .sidebar-expanded .rail-logo > .rail-tooltip {
+    color: #000000;
   }
 
   /* Dividers */

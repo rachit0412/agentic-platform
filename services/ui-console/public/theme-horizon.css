@@ -190,3 +190,76 @@
   font-weight: 800;
   letter-spacing: -0.02em;
 }
+
+/* ===================================================
+   SIDEBAR RAIL ITEMS
+   Dark sidebar in both light + dark mode — always uses light text
+   =================================================== */
+.theme-horizon .rail-item {
+  color: rgba(148,163,184,0.65);
+}
+.theme-horizon .rail-item:hover {
+  color: #94a3b8;
+  background: rgba(255,255,255,0.06);
+}
+.theme-horizon .rail-item.active {
+  color: #2dd4bf;
+  background: rgba(20,184,166,0.12);
+  box-shadow: 0 0 12px rgba(20,184,166,0.04);
+}
+.theme-horizon .rail-item.active::before {
+  background: linear-gradient(180deg, #14b8a6, #0d9488);
+  box-shadow: 0 0 8px rgba(20,184,166,0.4);
+}
+.theme-horizon.dark .rail-item {
+  color: rgba(148,163,184,0.55);
+}
+.theme-horizon.dark .rail-item:hover {
+  color: #94a3b8;
+  background: rgba(255,255,255,0.04);
+}
+.theme-horizon.dark .rail-item.active {
+  color: #2dd4bf;
+  background: rgba(20,184,166,0.1);
+}
+
+/* Expanded sidebar submenu — keep dark to match rail bg */
+.theme-horizon .sidebar-expanded .rail-submenu {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.08);
+}
+.theme-horizon .sidebar-expanded .rail-submenu a {
+  color: rgba(148,163,184,0.65);
+}
+.theme-horizon .sidebar-expanded .rail-submenu a:hover {
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8;
+}
+.theme-horizon .sidebar-expanded .rail-submenu a.sub-active {
+  color: #2dd4bf;
+  background: rgba(20,184,166,0.1);
+}
+
+/* Persona chip — sidebar context is dark in both modes */
+.theme-horizon .persona-chip,
+.theme-horizon.dark .persona-chip {
+  color: rgba(148,163,184,0.65);
+}
+.theme-horizon .persona-chip:hover,
+.theme-horizon.dark .persona-chip:hover {
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8;
+}
+.theme-horizon .persona-active,
+.theme-horizon.dark .persona-active {
+  background: rgba(20,184,166,0.12);
+  color: #ccfbf1;
+}
+.theme-horizon .persona-switcher-section,
+.theme-horizon.dark .persona-switcher-section {
+  border-bottom-color: rgba(255,255,255,0.08);
+}
+.theme-horizon .rail-divider,
+.theme-horizon.dark .rail-divider {
+  background: rgba(255,255,255,0.07);
+}

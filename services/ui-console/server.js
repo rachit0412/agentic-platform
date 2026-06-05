@@ -112,6 +112,8 @@ app.post("/auth/resend-code", (req, res) => proxyToAgent(req, res, "/auth/resend
 
 // ── SSO / OAuth 2.0 Routes ────────────────────────────
 const SSO_BASE_URL = process.env.SSO_BASE_URL || "http://localhost:3000";
+const fs = require("fs");
+const SSO_CONFIG_PATH = path.join(__dirname, "data", "sso-config.json");
 
 const SSO_PROVIDERS = {
   google: {
@@ -143,6 +145,20 @@ const SSO_PROVIDERS = {
     parseProfile: (p) => ({ id: p.id, email: p.mail || p.userPrincipalName || "", name: p.displayName || "" }),
   },
 };
+
+// Load persisted SSO credentials (override env vars if configured via UI)
+(function loadPersistedSSOConfig() {
+  try {
+    const data = JSON.parse(fs.readFileSync(SSO_CONFIG_PATH, "utf8"));
+    for (const [provider, cfg] of Object.entries(data)) {
+      if (SSO_PROVIDERS[provider]) {
+        if (cfg.clientId) SSO_PROVIDERS[provider].clientId = cfg.clientId;
+        if (cfg.clientSecret) SSO_PROVIDERS[provider].clientSecret = cfg.clientSecret;
+      }
+    }
+    console.log("[SSO] Loaded persisted config from", SSO_CONFIG_PATH);
+  } catch (_) { /* file absent or invalid — use env vars */ }
+})();
 
 // GET /auth/sso/status — check which providers are configured
 app.get("/auth/sso/status", (req, res) => {
@@ -1819,6 +1835,51 @@ app.put("/api/admin/global-constraints", async (req, res) => {
     const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
     res.json(await r.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── API: Admin – SSO Provider Configuration ──────────
+app.get("/api/admin/sso-config", (req, res) => {
+  const result = {};
+  for (const [name, cfg] of Object.entries(SSO_PROVIDERS)) {
+    result[name] = {
+      configured: !!(cfg.clientId && cfg.clientSecret),
+      clientId: cfg.clientId ? cfg.clientId : "",
+    };
+  }
+  res.json(result);
+});
+
+app.put("/api/admin/sso-config", (req, res) => {
+  const { provider, clientId, clientSecret } = req.body;
+  if (!provider || !SSO_PROVIDERS[provider]) {
+    return res.status(400).json({ error: "Invalid provider. Must be google, github, or microsoft." });
+  }
+  if (typeof clientId !== "string" || typeof clientSecret !== "string") {
+    return res.status(400).json({ error: "clientId and clientSecret must be strings." });
+  }
+  // Update in-memory config
+  SSO_PROVIDERS[provider].clientId = clientId.trim();
+  SSO_PROVIDERS[provider].clientSecret = clientSecret.trim();
+
+  // Persist to file so config survives restarts
+  let saved = {};
+  try { saved = JSON.parse(fs.readFileSync(SSO_CONFIG_PATH, "utf8")); } catch (_) {}
+  saved[provider] = { clientId: clientId.trim(), clientSecret: clientSecret.trim() };
+  try {
+    fs.mkdirSync(path.dirname(SSO_CONFIG_PATH), { recursive: true });
+    fs.writeFileSync(SSO_CONFIG_PATH, JSON.stringify(saved, null, 2), "utf8");
+  } catch (e) {
+    console.warn("[SSO] Could not persist config:", e.message);
+    return res.status(200).json({
+      ok: true,
+      warning: "Config updated in memory but could not be saved to disk. Set env vars for persistence.",
+      configured: !!(SSO_PROVIDERS[provider].clientId && SSO_PROVIDERS[provider].clientSecret),
+    });
+  }
+  res.json({
+    ok: true,
+    configured: !!(SSO_PROVIDERS[provider].clientId && SSO_PROVIDERS[provider].clientSecret),
+  });
 });
 
 // ── API: Admin – Best practices ──────────────────────

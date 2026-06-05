@@ -46,6 +46,7 @@ services:
       - ./services/ui-console/server.js:/app/server.js
       - ./services/ui-console/marketplace.js:/app/marketplace.js
       - ./docs:/app/docs-static
+      - ./data:/app/data
     networks:
       - platform-net
     healthcheck:

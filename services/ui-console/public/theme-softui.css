@@ -800,10 +800,20 @@
   transition: background 0.1s ease;
 }
 .theme-softui .rail-submenu a:hover {
+  background: rgba(0,0,0,0.06);
+  color: #18181b;
+}
+.theme-softui .rail-submenu a.sub-active {
+  color: #18181b;
+  background: rgba(0,0,0,0.08);
+}
+
+.theme-softui.dark .rail-submenu a:hover {
   background: rgba(255,255,255,0.06);
   color: #fafafa;
 }
-.theme-softui .rail-submenu a.sub-active {
+
+.theme-softui.dark .rail-submenu a.sub-active {
   color: #fafafa;
   background: rgba(255,255,255,0.08);
 }

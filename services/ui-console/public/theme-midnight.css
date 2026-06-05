@@ -34,8 +34,8 @@
   --input-focus-bg: rgba(0,0,0,0.4);
   --input-placeholder: #484f58;
 
-  --rail-bg: #010409;
-  --topbar-bg: rgba(1,4,9,0.92);
+  --rail-bg: #0b1220;
+  --topbar-bg: rgba(11,18,32,0.92);
   --rail-border: rgba(48,54,61,0.5);
   --topbar-border: rgba(48,54,61,0.4);
 
@@ -133,4 +133,75 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #6e7681;
+}
+
+/* ===================================================
+   SIDEBAR RAIL ITEMS
+   Always dark terminal aesthetic — consistent across light/dark toggle
+   =================================================== */
+.theme-midnight .rail-item {
+  color: #6e7681;
+}
+.theme-midnight .rail-item:hover {
+  color: #8b949e;
+  background: rgba(16,185,129,0.06);
+}
+.theme-midnight .rail-item.active {
+  color: #34d399;
+  background: rgba(16,185,129,0.1);
+  box-shadow: 0 0 12px rgba(16,185,129,0.05);
+}
+.theme-midnight .rail-item.active::before {
+  background: linear-gradient(180deg, #34d399, #10b981);
+  box-shadow: 0 0 8px rgba(16,185,129,0.5);
+}
+.theme-midnight.dark .rail-item { color: #6e7681; }
+.theme-midnight.dark .rail-item:hover {
+  color: #8b949e;
+  background: rgba(16,185,129,0.05);
+}
+.theme-midnight.dark .rail-item.active {
+  color: #34d399;
+  background: rgba(16,185,129,0.08);
+}
+
+/* Expanded sidebar submenu */
+.theme-midnight .sidebar-expanded .rail-submenu {
+  background: rgba(22,27,34,0.95);
+  border-color: rgba(48,54,61,0.6);
+}
+.theme-midnight .sidebar-expanded .rail-submenu a {
+  color: #6e7681;
+}
+.theme-midnight .sidebar-expanded .rail-submenu a:hover {
+  background: rgba(16,185,129,0.06);
+  color: #8b949e;
+}
+.theme-midnight .sidebar-expanded .rail-submenu a.sub-active {
+  color: #34d399;
+  background: rgba(16,185,129,0.08);
+}
+
+/* Persona chip */
+.theme-midnight .persona-chip,
+.theme-midnight.dark .persona-chip {
+  color: #6e7681;
+}
+.theme-midnight .persona-chip:hover,
+.theme-midnight.dark .persona-chip:hover {
+  background: rgba(16,185,129,0.06);
+  color: #8b949e;
+}
+.theme-midnight .persona-active,
+.theme-midnight.dark .persona-active {
+  background: rgba(16,185,129,0.1);
+  color: #34d399;
+}
+.theme-midnight .persona-switcher-section,
+.theme-midnight.dark .persona-switcher-section {
+  border-bottom-color: rgba(48,54,61,0.6);
+}
+.theme-midnight .rail-divider,
+.theme-midnight.dark .rail-divider {
+  background: rgba(48,54,61,0.5);
 }
