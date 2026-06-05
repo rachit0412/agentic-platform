@@ -1580,6 +1580,8 @@ async def tools_list():
             "enabled": t["enabled"],
             "status": "ready" if t["enabled"] else "disabled",
             "status_detail": "",
+            "scope": t.get("scope", "global"),
+            "created_by": t.get("created_by", "system"),
             "created_at": t["created_at"],
             "updated_at": t["updated_at"],
         }
@@ -1672,14 +1674,42 @@ class ToolToggleRequest(BaseModel):
 
 @app.put("/tools/{tool_name}/toggle")
 async def tool_toggle(tool_name: str, body: ToolToggleRequest):
-    """Enable or disable a built-in tool (admin only)."""
-    disabled = set(get_disabled_tools())
-    if body.enabled:
-        disabled.discard(tool_name)
+    """Enable or disable a tool with permission checks.
+
+    - Built-in / global tools: admin only
+    - Private custom tools: admin or creator
+    """
+    from fastapi import HTTPException
+    from agent.workspace import get_user_role, get_user_id
+
+    role = get_user_role()
+    user_id = get_user_id()
+
+    # Check if this is a custom tool
+    custom_tools = list_custom_tools()
+    ct = next((t for t in custom_tools if t["name"] == tool_name), None)
+
+    if ct:
+        # Custom tool: admin can always toggle; non-admin can toggle own private tools
+        if role != "admin":
+            if ct.get("scope") == "global":
+                raise HTTPException(403, "Only admins can toggle global tools")
+            if ct.get("created_by") != user_id:
+                raise HTTPException(403, "You can only toggle tools you created")
+        # Toggle via custom tool update
+        update_custom_tool(ct["id"], {"enabled": body.enabled})
+        return {"name": tool_name, "enabled": body.enabled}
     else:
-        disabled.add(tool_name)
-    set_disabled_tools(sorted(disabled))
-    return {"name": tool_name, "enabled": body.enabled}
+        # Built-in tool: admin only
+        if role != "admin":
+            raise HTTPException(403, "Only admins can toggle built-in tools")
+        disabled = set(get_disabled_tools())
+        if body.enabled:
+            disabled.discard(tool_name)
+        else:
+            disabled.add(tool_name)
+        set_disabled_tools(sorted(disabled))
+        return {"name": tool_name, "enabled": body.enabled}
 
 
 # ── Skills CRUD endpoints ─────────────────────────────────────────────────

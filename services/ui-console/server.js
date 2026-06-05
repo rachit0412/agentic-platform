@@ -941,7 +941,7 @@ app.post("/api/models/embedding", async (req, res) => {
 // ── API: Tools (proxy to agent) ───────────────────────
 app.get("/api/tools", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/tools`, { signal: AbortSignal.timeout(5000) });
+    const resp = await fetch(`${AGENT_URL}/tools`, { headers: wsHeaders(req), signal: AbortSignal.timeout(5000) });
     const data = await resp.json();
     res.json(data);
   } catch (e) {
@@ -988,10 +988,11 @@ app.put("/api/tools/:name/toggle", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/tools/${req.params.name}/toggle`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: wsHeaders(req, { "Content-Type": "application/json" }),
       body: JSON.stringify(req.body),
       signal: AbortSignal.timeout(5000),
     });
+    if (!resp.ok) { const err = await resp.json(); return res.status(resp.status).json(err); }
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
