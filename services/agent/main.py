@@ -427,6 +427,49 @@ async def auth_resend_code(body: ResendCodeRequest):
     }
 
 
+# ── SSO Login (find-or-create user by provider email) ───────────────────────
+class SSOLoginRequest(BaseModel):
+    provider: str = Field(..., description="SSO provider: google, github, microsoft")
+    provider_id: str = Field(..., description="Unique ID from the provider")
+    email: str = Field(..., description="Email from the provider profile")
+    display_name: str = Field(default="", description="Display name from provider")
+
+
+@app.post("/auth/sso-login")
+async def auth_sso_login(body: SSOLoginRequest):
+    from fastapi.responses import JSONResponse
+
+    if not body.email:
+        return JSONResponse(status_code=400, content={"error": "Email is required from SSO provider"})
+
+    # Try to find existing user by email
+    user = get_user_by_email(body.email)
+    if user:
+        return user
+
+    # Create new user from SSO (pre-verified, random password since they use SSO)
+    import secrets
+    random_pw = secrets.token_urlsafe(32)
+    username = body.email.split("@")[0]
+    # Ensure unique username
+    base = username
+    suffix = 1
+    while get_user_by_username(username):
+        username = f"{base}{suffix}"
+        suffix += 1
+
+    user = create_user(
+        username=username,
+        password=random_pw,
+        display_name=body.display_name or username,
+        email=body.email,
+        role="member",
+        default_workspace="default",
+        pre_verified=True,
+    )
+    return user
+
+
 # ── User Management (admin-only enforced by UI) ────────────────────────────
 @app.get("/users")
 async def list_users_endpoint():

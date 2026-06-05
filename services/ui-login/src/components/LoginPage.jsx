@@ -518,6 +518,37 @@ export default function LoginPage() {
   const [toast, setToast] = useState('');
   const [verifyModal, setVerifyModal] = useState(null); // { userId, email }
   const [gateOpen, setGateOpen] = useState(false);
+  const [ssoStatus, setSsoStatus] = useState({});
+
+  /* ── Check for SSO error in URL params ─────────────── */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ssoError = params.get('error');
+    if (ssoError) {
+      const messages = {
+        unknown_provider: 'Unknown SSO provider.',
+        no_code: 'Authentication was cancelled.',
+        invalid_state: 'Security validation failed. Please try again.',
+        token_exchange_failed: 'Failed to authenticate with provider. Please try again.',
+        no_email: 'No email address found in your account. Email is required.',
+        sso_user_failed: 'Failed to create or find your account.',
+        session_error: 'Session error. Please try again.',
+        sso_error: 'SSO authentication failed. Please try again.',
+        access_denied: 'Access was denied.',
+      };
+      setError(messages[ssoError] || `SSO error: ${ssoError}`);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  /* ── Fetch SSO provider status ─────────────────────── */
+  useEffect(() => {
+    fetch(`${CONSOLE_URL}/auth/sso/status`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => setSsoStatus(data))
+      .catch(() => {});
+  }, []);
 
   /* ── Remember me: restore saved credentials ──────────── */
   useEffect(() => {
@@ -583,8 +614,14 @@ export default function LoginPage() {
 
   /* ── Social login handler ────────────────────────────── */
   const handleSocialLogin = useCallback((provider) => {
-    setToast(`${provider} SSO is coming soon. Use username/password for now.`);
-  }, []);
+    const key = provider.toLowerCase();
+    if (ssoStatus[key]) {
+      // Provider is configured — redirect to OAuth flow
+      window.location.href = `${CONSOLE_URL}/auth/sso/${key}`;
+    } else {
+      setToast(`${provider} SSO is not configured. Ask your admin to set SSO_${key.toUpperCase()}_CLIENT_ID and SSO_${key.toUpperCase()}_CLIENT_SECRET.`);
+    }
+  }, [ssoStatus]);
 
   /* ── Card animation variants ─────────────────────────── */
   const cardVariants = {
@@ -734,23 +771,30 @@ export default function LoginPage() {
               {/* ── Social buttons ────────────────────────────── */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { name: 'Google', icon: GoogleIcon },
-                  { name: 'GitHub', icon: GitHubIcon },
-                  { name: 'Microsoft', icon: MicrosoftIcon },
-                ].map(({ name, icon: Icon }) => (
-                  <motion.button
-                    key={name}
-                    type="button"
-                    onClick={() => handleSocialLogin(name)}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/25 dark:border-white/10 bg-white/40 dark:bg-white/[0.04] py-2.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-white/[0.08] transition-all duration-200"
-                    aria-label={`Sign in with ${name}`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{name}</span>
-                  </motion.button>
-                ))}
+                  { name: 'Google', key: 'google', icon: GoogleIcon },
+                  { name: 'GitHub', key: 'github', icon: GitHubIcon },
+                  { name: 'Microsoft', key: 'microsoft', icon: MicrosoftIcon },
+                ].map(({ name, key, icon: Icon }) => {
+                  const configured = ssoStatus[key];
+                  return (
+                    <motion.button
+                      key={name}
+                      type="button"
+                      onClick={() => handleSocialLogin(name)}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-medium transition-all duration-200 ${
+                        configured
+                          ? 'border-indigo-300/30 dark:border-indigo-500/20 bg-white/40 dark:bg-white/[0.04] text-gray-700 dark:text-gray-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 hover:border-indigo-400/40 dark:hover:border-indigo-400/30'
+                          : 'border-white/15 dark:border-white/5 bg-white/20 dark:bg-white/[0.02] text-gray-400 dark:text-gray-500 cursor-default opacity-60'
+                      }`}
+                      aria-label={`Sign in with ${name}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="hidden sm:inline">{name}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
 
               {/* ── Sign up link ──────────────────────────────── */}

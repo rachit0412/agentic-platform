@@ -110,6 +110,201 @@ app.post("/auth/reset-password", (req, res) => proxyToAgent(req, res, "/auth/res
 app.post("/auth/verify-email", (req, res) => proxyToAgent(req, res, "/auth/verify-email"));
 app.post("/auth/resend-code", (req, res) => proxyToAgent(req, res, "/auth/resend-code"));
 
+// ── SSO / OAuth 2.0 Routes ────────────────────────────
+const SSO_BASE_URL = process.env.SSO_BASE_URL || "http://localhost:3000";
+
+const SSO_PROVIDERS = {
+  google: {
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    profileUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
+    scopes: "openid email profile",
+    clientId: process.env.SSO_GOOGLE_CLIENT_ID || "",
+    clientSecret: process.env.SSO_GOOGLE_CLIENT_SECRET || "",
+    parseProfile: (p) => ({ id: p.id, email: p.email, name: p.name || p.email }),
+  },
+  github: {
+    authorizeUrl: "https://github.com/login/oauth/authorize",
+    tokenUrl: "https://github.com/login/oauth/access_token",
+    profileUrl: "https://api.github.com/user",
+    emailUrl: "https://api.github.com/user/emails",
+    scopes: "user:email",
+    clientId: process.env.SSO_GITHUB_CLIENT_ID || "",
+    clientSecret: process.env.SSO_GITHUB_CLIENT_SECRET || "",
+    parseProfile: (p, email) => ({ id: String(p.id), email: email || p.email || "", name: p.name || p.login }),
+  },
+  microsoft: {
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    profileUrl: "https://graph.microsoft.com/v1.0/me",
+    scopes: "openid email profile User.Read",
+    clientId: process.env.SSO_MICROSOFT_CLIENT_ID || "",
+    clientSecret: process.env.SSO_MICROSOFT_CLIENT_SECRET || "",
+    parseProfile: (p) => ({ id: p.id, email: p.mail || p.userPrincipalName || "", name: p.displayName || "" }),
+  },
+};
+
+// GET /auth/sso/status — check which providers are configured
+app.get("/auth/sso/status", (req, res) => {
+  const status = {};
+  for (const [name, cfg] of Object.entries(SSO_PROVIDERS)) {
+    status[name] = !!(cfg.clientId && cfg.clientSecret);
+  }
+  res.json(status);
+});
+
+// GET /auth/sso/:provider — initiate OAuth flow
+app.get("/auth/sso/:provider", (req, res) => {
+  const provider = req.params.provider.toLowerCase();
+  const cfg = SSO_PROVIDERS[provider];
+  if (!cfg) return res.status(404).json({ error: "Unknown SSO provider" });
+  if (!cfg.clientId || !cfg.clientSecret) {
+    return res.status(400).json({
+      error: `${provider} SSO is not configured. Set SSO_${provider.toUpperCase()}_CLIENT_ID and SSO_${provider.toUpperCase()}_CLIENT_SECRET environment variables.`,
+    });
+  }
+
+  // Generate CSRF state token
+  const state = crypto.randomBytes(32).toString("hex");
+  req.session.sso_state = state;
+  req.session.sso_provider = provider;
+
+  const redirectUri = `${SSO_BASE_URL}/auth/sso/${provider}/callback`;
+  const params = new URLSearchParams({
+    client_id: cfg.clientId,
+    redirect_uri: redirectUri,
+    scope: cfg.scopes,
+    state: state,
+    response_type: "code",
+  });
+  // Google needs access_type for refresh tokens
+  if (provider === "google") params.set("access_type", "offline");
+  // Microsoft needs response_mode
+  if (provider === "microsoft") params.set("response_mode", "query");
+
+  res.redirect(`${cfg.authorizeUrl}?${params.toString()}`);
+});
+
+// GET /auth/sso/:provider/callback — handle OAuth callback
+app.get("/auth/sso/:provider/callback", async (req, res) => {
+  const provider = req.params.provider.toLowerCase();
+  const cfg = SSO_PROVIDERS[provider];
+  if (!cfg) return res.redirect("/login?error=unknown_provider");
+
+  const { code, state, error: oauthError } = req.query;
+  if (oauthError) {
+    console.error(`[SSO] ${provider} error:`, oauthError);
+    return res.redirect(`/login?error=${encodeURIComponent(oauthError)}`);
+  }
+  if (!code) return res.redirect("/login?error=no_code");
+
+  // Verify CSRF state
+  if (!state || state !== req.session.sso_state) {
+    console.error("[SSO] State mismatch — possible CSRF");
+    return res.redirect("/login?error=invalid_state");
+  }
+  delete req.session.sso_state;
+  delete req.session.sso_provider;
+
+  try {
+    // Exchange code for access token
+    const redirectUri = `${SSO_BASE_URL}/auth/sso/${provider}/callback`;
+    const tokenBody = new URLSearchParams({
+      client_id: cfg.clientId,
+      client_secret: cfg.clientSecret,
+      code: code,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    });
+
+    const tokenRes = await fetch(cfg.tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: tokenBody.toString(),
+    });
+    const tokenData = await tokenRes.json();
+
+    if (!tokenData.access_token) {
+      console.error("[SSO] Token exchange failed:", tokenData);
+      return res.redirect("/login?error=token_exchange_failed");
+    }
+
+    // Fetch user profile
+    const profileRes = await fetch(cfg.profileUrl, {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const profile = await profileRes.json();
+
+    // GitHub: email might be private, need separate call
+    let email = null;
+    if (provider === "github" && !profile.email && cfg.emailUrl) {
+      const emailRes = await fetch(cfg.emailUrl, {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const emails = await emailRes.json();
+      if (Array.isArray(emails)) {
+        const primary = emails.find((e) => e.primary && e.verified) || emails.find((e) => e.verified) || emails[0];
+        if (primary) email = primary.email;
+      }
+    }
+
+    const parsed = cfg.parseProfile(profile, email);
+    if (!parsed.email) {
+      return res.redirect("/login?error=no_email");
+    }
+
+    // Create or find user via agent service
+    const ssoRes = await fetch(`${AGENT_URL}/auth/sso-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider: provider,
+        provider_id: parsed.id,
+        email: parsed.email,
+        display_name: parsed.name,
+      }),
+    });
+    const userData = await ssoRes.json();
+
+    if (!ssoRes.ok || !userData.id) {
+      console.error("[SSO] User creation/lookup failed:", userData);
+      return res.redirect("/login?error=sso_user_failed");
+    }
+
+    // Load personas
+    let personas = [];
+    try {
+      const pr = await fetch(`${AGENT_URL}/users/${userData.id}/personas`);
+      const pd = await pr.json();
+      personas = pd.personas || [];
+    } catch (_) {}
+    userData.personas = personas;
+    userData.active_persona = personas.length > 0 ? personas[0] : null;
+
+    // Create session
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error("[SSO] Session regenerate error:", err);
+        return res.redirect("/login?error=session_error");
+      }
+      req.session.user = userData;
+      req.session.save((err) => {
+        if (err) {
+          console.error("[SSO] Session save error:", err);
+          return res.redirect("/login?error=session_error");
+        }
+        return res.redirect("/");
+      });
+    });
+  } catch (e) {
+    console.error("[SSO] Callback error:", e);
+    return res.redirect("/login?error=sso_error");
+  }
+});
+
 app.post("/auth/logout", (req, res) => {
   req.session.destroy(() => {
     res.clearCookie("agentic.sid");
