@@ -2785,15 +2785,17 @@ Respond ONLY with valid JSON."""
 
 @app.post("/prompts/generate")
 async def prompts_generate_endpoint(request: Request):
-    """Use LLM to generate a prompt from a natural-language description."""
+    """Use LLM to generate or refine a prompt from a description and/or base prompt."""
     data = await request.json()
     description = data.get("description", "").strip()
+    base_prompt = data.get("base_prompt", "").strip()
     category = data.get("category", "general")
-    if not description:
+    if not description and not base_prompt:
         from fastapi.responses import JSONResponse
 
         return JSONResponse(
-            status_code=400, content={"error": "description is required"}
+            status_code=400,
+            content={"error": "description or base_prompt is required"},
         )
 
     import json as _json
@@ -2804,7 +2806,7 @@ async def prompts_generate_endpoint(request: Request):
 
     system = (
         """\
-You are a prompt engineering expert. Given a user's description, generate a production-ready prompt.
+You are a prompt engineering expert. Given a user's description and optionally an existing prompt, generate a production-ready prompt.
 
 Return ONLY a JSON object (no other text):
 {
@@ -2820,6 +2822,9 @@ Category: """
         + """
 
 Keep the content field concise but complete. Do NOT include examples or lengthy templates.
+If an existing prompt is provided, refine and extend it instead of replacing it wholesale.
+Treat additional directions as incremental guidance layered onto the existing prompt unless the user explicitly asks for a rewrite.
+Preserve useful structure, constraints, and intent from the existing prompt when they are still valid.
 Respond ONLY with the JSON object."""
     )
 
@@ -2839,6 +2844,15 @@ Respond ONLY with the JSON object."""
             + directions
         )
 
+    user_input_parts = []
+    if description:
+        user_input_parts.append("Prompt goal / description:\n" + description)
+    if base_prompt:
+        user_input_parts.append(
+            "Existing prompt to refine (preserve its useful parts unless directions explicitly change them):\n"
+            + base_prompt
+        )
+
     try:
         import time as _time
 
@@ -2854,7 +2868,10 @@ Respond ONLY with the JSON object."""
             active = _gam()
             provider = active.get("provider", "ollama")
             model = active.get("model", "llama3")
-        msgs = [SystemMessage(content=system), HumanMessage(content=description)]
+        msgs = [
+            SystemMessage(content=system),
+            HumanMessage(content="\n\n".join(user_input_parts)),
+        ]
         for temp in (0.7, 1, None):
             try:
                 kwargs = {

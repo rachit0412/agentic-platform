@@ -35,9 +35,9 @@
   --input-focus-bg: #ffffff;
   --input-placeholder: #a1a1aa;
 
-  --rail-bg: #18181b;
+  --rail-bg: #f4f4f5;
   --topbar-bg: rgba(255,255,255,0.8);
-  --rail-border: transparent;
+  --rail-border: #e4e4e7;
   --topbar-border: #e4e4e7;
 
   --tooltip-bg: #18181b;
@@ -50,7 +50,7 @@
   --badge-bg: #f4f4f5;
   --badge-border: #e4e4e7;
 
-  --rail-hover-bg: rgba(255,255,255,0.08);
+  --rail-hover-bg: rgba(0,0,0,0.05);
   --dot-grid-color: transparent;
   --scrollbar-thumb: #d4d4d8;
   --scrollbar-hover: #a1a1aa;
@@ -335,13 +335,13 @@
 
 
 /* ═══════════════════════════════════════════
-   SIDEBAR — Dark zinc, no border-radius
+   SIDEBAR — Clean, adapts to light/dark
    ═══════════════════════════════════════════ */
 .theme-softui .icon-rail {
   background: var(--rail-bg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid var(--rail-border);
   border-radius: 0;
   margin: 0;
   height: 100vh;
@@ -362,29 +362,52 @@
   transform: none;
 }
 
+/* Light mode sidebar items */
 .theme-softui .rail-item {
   border-radius: var(--sh-radius-sm);
-  color: #a1a1aa;
+  color: #71717a;
   transition: all 0.15s ease;
 }
 .theme-softui .rail-item:hover {
-  color: #fafafa;
-  background: rgba(255,255,255,0.06);
+  color: #18181b;
+  background: rgba(0,0,0,0.05);
 }
 .theme-softui .rail-item.active {
-  color: #fafafa;
-  background: rgba(255,255,255,0.1);
+  color: #18181b;
+  background: rgba(0,0,0,0.08);
   box-shadow: none;
 }
 .theme-softui .rail-item.active::before {
-  background: #fafafa;
+  background: #18181b;
   box-shadow: none;
   width: 2px;
   height: 16px;
   border-radius: 1px;
 }
 .theme-softui .rail-divider {
+  background: #e4e4e7;
+}
+
+/* Dark mode sidebar items */
+.theme-softui.dark .rail-item {
+  color: #a1a1aa;
+}
+.theme-softui.dark .rail-item:hover {
+  color: #fafafa;
   background: rgba(255,255,255,0.06);
+}
+.theme-softui.dark .rail-item.active {
+  color: #fafafa;
+  background: rgba(255,255,255,0.1);
+}
+.theme-softui.dark .rail-item.active::before {
+  background: #fafafa;
+}
+.theme-softui.dark .rail-divider {
+  background: rgba(255,255,255,0.06);
+}
+.theme-softui.dark .icon-rail {
+  border-right-color: rgba(255,255,255,0.06);
 }
 
 

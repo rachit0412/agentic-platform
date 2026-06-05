@@ -159,7 +159,7 @@
         </select>
       </div>
       <div>
-        <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; org standards, tone, structure, constraints, references, or any guidance (used by Regenerate &amp; Validate)</span></label>
+        <label class="field-label">AI Directions <span style="color:var(--text-3);font-weight:400;font-size:0.72rem">&mdash; org standards, tone, structure, constraints, references, or any guidance (when editing, these are added on top of the current prompt)</span></label>
         <textarea id="prompt-directions" class="input" rows="3" placeholder="e.g.\nUse chain-of-thought, keep under 400 words\nOutput must be JSON with persona + constraints + format\nAlign with our org prompt engineering standards\nNo examples — keep it generic and reusable" style="resize:vertical;font-family:var(--mono);font-size:0.78rem"></textarea>
       </div>
     </div>
@@ -549,11 +549,14 @@
   async function regeneratePrompt() {
     var desc = document.getElementById('prompt-desc').value.trim();
     var name = document.getElementById('prompt-name').value.trim();
-    if (!desc && !name) { showToast('Add a description so AI knows what to generate', 'error'); return; }
+    var content = document.getElementById('prompt-content').value.trim();
+    if (!desc && !name && !content) { showToast('Add a description or existing prompt content before regenerating', 'error'); return; }
     var btn = document.getElementById('regenerate-btn');
     btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;animation:spin 1s linear infinite"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Regenerating...';
     try {
-      var payload = { description: desc || name, category: document.getElementById('prompt-category').value };
+      var payload = { category: document.getElementById('prompt-category').value };
+      if (desc || name) { payload.description = desc || name; }
+      if (content) { payload.base_prompt = content; }
       var modelVal = document.getElementById('prompt-model').value;
       if (modelVal) { var parts = modelVal.split(':'); payload.provider = parts[0]; payload.model = parts.slice(1).join(':'); }
       var dirs = (document.getElementById('prompt-directions').value || '').trim();
