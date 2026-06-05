@@ -119,9 +119,9 @@
   --input-focus-bg: #1c1c1f;
   --input-placeholder: #52525b;
 
-  --rail-bg: #09090b;
+  --rail-bg: #18181b;
   --topbar-bg: rgba(9,9,11,0.85);
-  --rail-border: transparent;
+  --rail-border: rgba(255,255,255,0.06);
   --topbar-border: rgba(255,255,255,0.08);
 
   --tooltip-bg: #27272a;
