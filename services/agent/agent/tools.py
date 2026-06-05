@@ -48,7 +48,7 @@ async def math(expression: str) -> str:
 
 @tool
 async def http_fetch(url: str) -> str:
-    """Fetch the text content of a public URL. Only allowed domains: httpbin.org, jsonplaceholder.typicode.com."""
+    """Fetch the text content of any public URL. Returns the page content (up to 5000 chars). Falls back to web search if direct fetch fails."""
     result = await _proxy_call("/tools/http-fetch", {"url": url})
     return json.dumps(result)
 
