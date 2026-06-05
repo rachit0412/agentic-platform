@@ -207,13 +207,25 @@ async def tool_http_fetch(body: HttpFetchRequest):
             detail=f"Domain not allowed. Allowed: {', '.join(sorted(ALLOWED_DOMAINS))}",
         )
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, verify=False) as client:
             resp = await client.get(body.url)
+            if resp.status_code == 503:
+                raise HTTPException(
+                    status_code=502,
+                    detail="External URL unreachable (HTTP 503). If running behind a corporate proxy, configure HTTP_PROXY/HTTPS_PROXY environment variables for the container.",
+                )
             resp.raise_for_status()
-            text = resp.text[:5000]  # truncate for safety
+            text = resp.text[:5000]
             return {"url": body.url, "status": resp.status_code, "content": text}
+    except HTTPException:
+        raise
+    except httpx.ConnectError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Connection failed — the container cannot reach external URLs. Check network/proxy settings. ({type(exc).__name__})",
+        )
     except httpx.RequestError as exc:
-        raise HTTPException(status_code=502, detail=f"Fetch failed: {exc}")
+        raise HTTPException(status_code=502, detail=f"Fetch failed: {type(exc).__name__}: {exc}")
 
 
 # ── File Write ──────────────────────────────────────────────────────────────
@@ -1200,8 +1212,14 @@ async def tool_webpage_extract(body: WebpageExtractRequest):
             timeout=15.0,
             follow_redirects=True,
             headers={"User-Agent": "AgenticPlatform/1.0"},
+            verify=False,
         ) as client:
             resp = await client.get(body.url)
+            if resp.status_code == 503:
+                raise HTTPException(
+                    status_code=502,
+                    detail="External URL unreachable (HTTP 503). If running behind a corporate proxy, configure HTTP_PROXY/HTTPS_PROXY environment variables for the container.",
+                )
             resp.raise_for_status()
             html = resp.text
         # Strip tags
@@ -1224,8 +1242,15 @@ async def tool_webpage_extract(body: WebpageExtractRequest):
             "text": text[: body.max_length],
             "length": len(text),
         }
+    except HTTPException:
+        raise
+    except httpx.ConnectError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Connection failed — the container cannot reach external URLs. Check network/proxy settings. ({type(exc).__name__})",
+        )
     except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Fetch failed: {e}")
+        raise HTTPException(status_code=502, detail=f"Fetch failed: {type(e).__name__}: {e}")
     except httpx.HTTPStatusError as e:
         raise HTTPException(
             status_code=502, detail=f"HTTP {e.response.status_code}: {e}"

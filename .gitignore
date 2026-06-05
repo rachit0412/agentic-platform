@@ -90,3 +90,5 @@ coverage/
 # Documentation builds
 docs/_build/
 site/
+tools-out.json
+tool-test-results.json
