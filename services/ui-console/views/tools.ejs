@@ -49,8 +49,13 @@
     <select id="label-filter" class="input" style="width:auto;min-width:130px;height:34px;font-size:0.82rem" onchange="filterTools()">
       <option value="">All Labels</option>
     </select>
-    <select id="owner-filter" class="input" style="width:auto;min-width:160px;height:34px;font-size:0.78rem;display:none" onchange="filterTools()">
-      <option value="">All Users</option>
+    <select id="scope-filter" class="input" style="width:auto;min-width:120px;height:34px;font-size:0.82rem" onchange="filterTools()">
+      <option value="">All Scopes</option>
+      <option value="global">Global</option>
+      <option value="private">Private</option>
+    </select>
+    <select id="owner-filter" class="input" style="width:auto;min-width:140px;height:34px;font-size:0.78rem;display:none" onchange="filterTools()">
+      <option value="">All Creators</option>
     </select>
   </div>
   <div style="display:flex;gap:0.5rem;align-items:center">
@@ -210,22 +215,22 @@ const BUILTIN_CATEGORIES = {
 };
 
 const BUILTIN_LABELS = {
-  'math': ['utility'], 'http_fetch': ['integration', 'search'], 'file_write': ['file-io'],
-  'file_read': ['file-io'], 'file_list': ['file-io'], 'file_search_content': ['file-io', 'search'],
-  'datetime_tool': ['utility'], 'web_search': ['search', 'integration'],
-  'code_execute': ['devops', 'utility'], 'vector_search': ['ai', 'search'],
-  'vector_store': ['ai', 'data'], 'delegate_to_agent': ['workflow', 'ai'],
-  'advanced_search': ['ai', 'search'], 'query_database': ['database', 'analytics'],
-  'query_csv_data': ['data', 'analytics'], 'text_summarize': ['ai', 'utility'],
-  'text_transform': ['utility'], 'text_diff': ['utility'], 'text_extract': ['data', 'utility'],
-  'json_transform': ['data', 'utility'], 'csv_parse': ['data', 'analytics'],
-  'yaml_convert': ['data', 'utility'], 'base64_codec': ['security', 'utility'],
-  'hash_generate': ['security', 'utility'], 'uuid_generate': ['utility'],
-  'regex_match': ['utility', 'search'], 'url_parse': ['utility'],
+  'math': ['utility'], 'http_fetch': ['integration'], 'file_write': ['file-io'],
+  'file_read': ['file-io'], 'file_list': ['file-io'], 'file_search_content': ['search'],
+  'datetime_tool': ['utility'], 'web_search': ['search'],
+  'code_execute': ['devops'], 'vector_search': ['ai'],
+  'vector_store': ['ai'], 'delegate_to_agent': ['workflow'],
+  'advanced_search': ['ai'], 'query_database': ['database'],
+  'query_csv_data': ['analytics'], 'text_summarize': ['ai'],
+  'text_transform': ['utility'], 'text_diff': ['utility'], 'text_extract': ['data'],
+  'json_transform': ['data'], 'csv_parse': ['data'],
+  'yaml_convert': ['data'], 'base64_codec': ['security'],
+  'hash_generate': ['security'], 'uuid_generate': ['utility'],
+  'regex_match': ['search'], 'url_parse': ['utility'],
   'html_strip': ['utility'], 'markdown_to_html': ['utility'],
-  'webpage_extract': ['search', 'integration'], 'dns_lookup': ['devops', 'integration'],
-  'json_schema_validate': ['data', 'utility'], 'cron_parse': ['devops', 'utility'],
-  'jwt_decode': ['security'], 'environment_info': ['devops', 'monitoring']
+  'webpage_extract': ['search'], 'dns_lookup': ['devops'],
+  'json_schema_validate': ['data'], 'cron_parse': ['devops'],
+  'jwt_decode': ['security'], 'environment_info': ['devops']
 };
 
 const BUILTIN_ENDPOINTS = {
@@ -295,13 +300,15 @@ async function loadTools() {
     const d = await r.json();
     allToolsData = d.tools || [];
 
-    // Populate owner filter for custom tools (admin only)
-    if (window.__userRole === 'admin') {
-      var ownerEl = document.getElementById('owner-filter');
+    // Populate owner filter (show when custom tools exist)
+    var ownerEl = document.getElementById('owner-filter');
+    var owners = [...new Set(allToolsData.filter(function(t){return t.type==='custom' && t.created_by}).map(function(t){return t.created_by}))].sort();
+    if (owners.length) {
       ownerEl.style.display = '';
-      var owners = [...new Set(allToolsData.filter(function(t){return t.type==='custom' && t.created_by}).map(function(t){return t.created_by}))].sort();
       var curVal = ownerEl.value;
-      ownerEl.innerHTML = '<option value="">All Users</option>' + owners.map(function(o){ return '<option value="' + escapeHtml(o) + '"' + (o === curVal ? ' selected' : '') + '>' + escapeHtml(o) + '</option>'; }).join('');
+      ownerEl.innerHTML = '<option value="">All Creators</option>' + owners.map(function(o){ return '<option value="' + escapeHtml(o) + '"' + (o === curVal ? ' selected' : '') + '>' + escapeHtml(o) + '</option>'; }).join('');
+    } else {
+      ownerEl.style.display = 'none';
     }
 
     // Populate label filter
@@ -355,6 +362,7 @@ function renderTools(tools) {
   var grid = document.getElementById('tools-grid');
   if (!tools.length) {
     grid.innerHTML = '<div style="color:var(--text-3);grid-column:1/-1;text-align:center;padding:2rem">No tools match your filters</div>';
+    document.getElementById('tool-count').textContent = '0 tools';
     return;
   }
   var isAdmin = window.__userRole === 'admin';
@@ -367,53 +375,31 @@ function renderTools(tools) {
   grid.innerHTML = tools.map(function(t) {
     var isCustom = t.type === 'custom';
     var icon = isCustom ? '🔌' : (TOOL_ICONS[t.name] || '🔧');
-    var cat = isCustom ? (t.category || 'custom') : (BUILTIN_CATEGORIES[t.name] || 'unknown');
-    var catColor = cat === 'proxy' ? '#06b6d4' : cat === 'local' ? '#8b5cf6' : cat === 'api' ? '#f59e0b' : cat === 'webhook' ? '#f43f5e' : '#10b981';
     var endpoint = isCustom ? (t.method + ' ' + (t.endpoint || '-')) : (BUILTIN_ENDPOINTS[t.name] || '-');
-    var typeBadge = isCustom
-      ? '<span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)">custom</span>'
-      : '<span class="badge" style="font-size:0.6rem;background:rgba(6,182,212,0.15);color:#06b6d4;border:1px solid rgba(6,182,212,0.3)">built-in</span>';
 
-    var statusBadge = '';
-    if (t.enabled === false) {
-      statusBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.25)">disabled</span>';
-    } else if (t.status === 'network') {
-      statusBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)" title="' + escapeHtml(t.status_detail || '') + '">&#9888; network</span>';
-    } else {
-      statusBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25)">&#10003; ready</span>';
-    }
+    // Status dot: green=ready, red=disabled, amber=network
+    var dotColor = t.enabled === false ? '#ef4444' : t.status === 'network' ? '#f59e0b' : '#10b981';
+    var dotTitle = t.enabled === false ? 'Disabled' : t.status === 'network' ? 'Network issue' : 'Ready';
+    var statusDot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dotColor + ';flex-shrink:0" title="' + dotTitle + '"></span>';
 
-    var ownerBadge = '';
-    if (isCustom && t.created_by) {
-      ownerBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(99,102,241,0.12);color:#818cf8;font-weight:500">' + escapeHtml(t.created_by) + '</span>';
-    }
-    var labelBadges = '';
+    // Label badge (1 per tool)
     var toolLabels = isCustom ? (t.labels || []) : (BUILTIN_LABELS[t.name] || []);
-    if (toolLabels.length) {
-      var showLabels = isList ? toolLabels : toolLabels.slice(0, 2);
-      labelBadges = showLabels.map(function(l) {
-        return ' <span class="badge" style="font-size:0.55rem;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:1px 6px">' + escapeHtml(l) + '</span>';
-      }).join('');
-      if (!isList && toolLabels.length > 2) {
-        labelBadges += ' <span class="badge" style="font-size:0.55rem;background:rgba(168,85,247,0.06);color:#a855f7;border-radius:10px;padding:1px 6px">+' + (toolLabels.length - 2) + '</span>';
+    var labelBadge = toolLabels.length ? '<span class="badge" style="font-size:0.6rem;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:1px 7px">' + escapeHtml(toolLabels[0]) + '</span>' : '';
+
+    // Scope + owner (only for custom tools)
+    var metaBadge = '';
+    if (isCustom) {
+      metaBadge = t.scope === 'global'
+        ? '<span class="badge" style="font-size:0.55rem;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;letter-spacing:0.3px">GLOBAL</span>'
+        : '<span class="badge" style="font-size:0.55rem;background:rgba(245,158,11,0.1);color:#f59e0b;font-weight:600;letter-spacing:0.3px">PRIVATE</span>';
+      if (t.created_by) {
+        metaBadge += ' <span style="font-size:0.65rem;color:var(--text-3)">by ' + escapeHtml(t.created_by) + '</span>';
       }
     }
-    var scopeBadge = '';
-    if (isCustom) {
-      scopeBadge = t.scope === 'global'
-        ? ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600">GLOBAL</span>'
-        : ' <span class="badge" style="font-size:0.6rem;background:rgba(245,158,11,0.12);color:#f59e0b;font-weight:600">PRIVATE</span>';
-    } else {
-      scopeBadge = ' <span class="badge" style="font-size:0.6rem;background:rgba(16,185,129,0.12);color:#10b981;font-weight:600">GLOBAL</span>';
-    }
 
+    // Toggle button
     var toggleBtn = '';
-    var canToggle = false;
-    if (isAdmin) {
-      canToggle = true;
-    } else if (isCustom && t.scope !== 'global' && t.created_by === window.__userName) {
-      canToggle = true;
-    }
+    var canToggle = isAdmin || (isCustom && t.scope !== 'global' && t.created_by === window.__userName);
     if (canToggle) {
       var isEnabled = t.enabled !== false;
       var toggleLabel = isEnabled ? 'Disable' : 'Enable';
@@ -433,39 +419,37 @@ function renderTools(tools) {
     var cardOpacity = t.enabled === false ? 'opacity:0.55;' : '';
 
     if (isList) {
-      return '<div class="card" style="position:relative;padding:0.6rem 1rem;' + cardOpacity + '">' +
-        '<div style="display:flex;align-items:center;gap:0.75rem">' +
-          '<div style="font-size:1.1rem;line-height:1;flex-shrink:0">' + icon + '</div>' +
-          '<div style="flex:1;min-width:0;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">' +
-            '<strong style="font-size:0.85rem;color:var(--text-1);white-space:nowrap">' + escapeHtml(t.name) + '</strong>' +
-            typeBadge + statusBadge + scopeBadge + labelBadges +
-          '</div>' +
-          '<div style="font-size:0.72rem;color:var(--text-3);font-family:var(--mono);white-space:nowrap;flex-shrink:0;margin:0 0.5rem">' + escapeHtml(endpoint) + '</div>' +
-          '<div style="display:flex;gap:0.35rem;flex-shrink:0;flex-wrap:nowrap">' + actions + '</div>' +
+      return '<div class="card" style="position:relative;padding:0.5rem 1rem;' + cardOpacity + '">' +
+        '<div style="display:flex;align-items:center;gap:0.6rem">' +
+          '<div style="font-size:1rem;line-height:1;flex-shrink:0">' + icon + '</div>' +
+          statusDot +
+          '<strong style="font-size:0.82rem;color:var(--text-1);white-space:nowrap;min-width:140px">' + escapeHtml(t.name) + '</strong>' +
+          labelBadge +
+          (metaBadge ? '<span style="flex-shrink:0">' + metaBadge + '</span>' : '') +
+          '<span style="flex:1"></span>' +
+          '<span style="font-size:0.68rem;color:var(--text-3);font-family:var(--mono);white-space:nowrap;flex-shrink:0">' + escapeHtml(endpoint) + '</span>' +
+          '<div style="display:flex;gap:0.3rem;flex-shrink:0;margin-left:0.5rem">' + actions + '</div>' +
         '</div>' +
       '</div>';
     }
 
     return '<div class="card animate-fade-up" style="position:relative;' + cardOpacity + '">' +
-      '<div style="display:flex;align-items:start;gap:0.75rem;margin-bottom:0.75rem">' +
-        '<div style="font-size:1.5rem;line-height:1">' + icon + '</div>' +
+      '<div style="display:flex;align-items:start;gap:0.75rem;margin-bottom:0.5rem">' +
+        '<div style="font-size:1.4rem;line-height:1;margin-top:2px">' + icon + '</div>' +
         '<div style="flex:1;min-width:0">' +
-          '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">' +
-            '<h4 style="margin:0;font-size:0.95rem;color:var(--text-1)">' + escapeHtml(t.name) + '</h4>' +
-            typeBadge +
-            '<span class="badge" style="font-size:0.6rem;background:' + catColor + '20;color:' + catColor + ';border:1px solid ' + catColor + '30">' + cat + '</span>' +
-            statusBadge +
-            scopeBadge +
-            ownerBadge +
-            labelBadges +
+          '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">' +
+            '<h4 style="margin:0;font-size:0.92rem;color:var(--text-1)">' + escapeHtml(t.name) + '</h4>' +
+            statusDot +
+            labelBadge +
+            metaBadge +
           '</div>' +
-          '<p style="margin:0.25rem 0 0;font-size:0.8rem;color:var(--text-3);line-height:1.4">' + escapeHtml(t.description) + '</p>' +
+          '<p style="margin:0.3rem 0 0;font-size:0.78rem;color:var(--text-3);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + escapeHtml(t.description) + '</p>' +
         '</div>' +
       '</div>' +
-      '<div style="font-size:0.72rem;color:var(--text-3);font-family:var(--mono);margin-bottom:0.5rem">' +
-        '<span style="color:var(--text-2);font-weight:600">Endpoint:</span> ' + escapeHtml(endpoint) +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">' +
+        '<span style="font-size:0.68rem;color:var(--text-3);font-family:var(--mono)">' + escapeHtml(endpoint) + '</span>' +
+        '<div style="display:flex;gap:0.35rem;flex-shrink:0">' + actions + '</div>' +
       '</div>' +
-      '<div style="display:flex;gap:0.5rem;flex-wrap:wrap">' + actions + '</div>' +
     '</div>';
   }).join('');
   document.getElementById('tool-count').textContent = tools.length + ' tools';
@@ -500,6 +484,7 @@ function filterTools() {
   var typeFilter = document.getElementById('tool-type-filter').value;
   var ownerFilter = document.getElementById('owner-filter').value;
   var labelFilter = document.getElementById('label-filter').value;
+  var scopeFilter = document.getElementById('scope-filter').value;
   var filtered = allToolsData.filter(function(t) {
     var matchText = t.name.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q);
     var matchType = typeFilter === 'all' || t.type === typeFilter;
@@ -509,7 +494,13 @@ function filterTools() {
       var toolLabels = t.type === 'custom' ? (t.labels || []) : (BUILTIN_LABELS[t.name] || []);
       matchLabel = toolLabels.indexOf(labelFilter) !== -1;
     }
-    return matchText && matchType && matchOwner && matchLabel;
+    var matchScope = true;
+    if (scopeFilter === 'global') {
+      matchScope = t.type === 'builtin' || t.scope === 'global';
+    } else if (scopeFilter === 'private') {
+      matchScope = t.type === 'custom' && t.scope !== 'global';
+    }
+    return matchText && matchType && matchOwner && matchLabel && matchScope;
   });
   renderTools(filtered);
 }
