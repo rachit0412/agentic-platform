@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Platform — Interactive Architecture Diagrams</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #232734;
+  --border: #2d3348;
+  --text: #e2e8f0;
+  --muted: #8b92a8;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --green: #22c55e;
+  --green-dim: #166534;
+  --blue: #3b82f6;
+  --blue-dim: #1e3a5f;
+  --orange: #f59e0b;
+  --orange-dim: #78350f;
+  --red: #ef4444;
+  --red-dim: #7f1d1d;
+  --purple: #a855f7;
+  --purple-dim: #581c87;
+  --cyan: #06b6d4;
+  --cyan-dim: #164e63;
+  --pink: #ec4899;
+  --yellow: #eab308;
+  --shadow: 0 8px 32px rgba(0,0,0,0.3);
+  --glow: 0 0 20px rgba(99,102,241,0.15);
+  --radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+/* ─── Header ─── */
+.header {
+  background: linear-gradient(135deg, #1a1d27 0%, #232734 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 1.2rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.header-left { display:flex; align-items:center; gap:1rem; }
+.logo { width:36px; height:36px; background:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.header h1 { font-size:1.15rem; font-weight:800; letter-spacing:-0.02em; }
+.header h1 span { color:var(--accent2); }
+.header-sub { font-size:0.72rem; color:var(--muted); font-weight:500; }
+
+/* ─── Tab Bar ─── */
+.tabs {
+  display:flex; gap:4px; background:var(--surface); border-radius:10px; padding:4px;
+}
+.tab {
+  padding:0.5rem 1.2rem; border-radius:8px; border:none; background:transparent;
+  color:var(--muted); font-family:inherit; font-size:0.78rem; font-weight:600;
+  cursor:pointer; transition:all 0.25s; white-space:nowrap;
+}
+.tab:hover { color:var(--text); background:var(--surface2); }
+.tab.active { background:var(--accent); color:#fff; box-shadow:0 2px 8px rgba(99,102,241,0.3); }
+
+/* ─── Controls ─── */
+.controls {
+  display:flex; align-items:center; gap:0.6rem; padding:0.8rem 2rem;
+  border-bottom:1px solid var(--border); background:var(--surface);
+}
+.ctrl-btn {
+  padding:0.4rem 0.8rem; border-radius:7px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--muted); font-family:inherit;
+  font-size:0.72rem; font-weight:500; cursor:pointer; transition:all 0.2s;
+  display:flex; align-items:center; gap:0.35rem;
+}
+.ctrl-btn:hover { border-color:var(--accent); color:var(--text); }
+.ctrl-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.zoom-display { font-size:0.72rem; color:var(--muted); font-weight:600; min-width:40px; text-align:center; }
+.spacer { flex:1; }
+.search-box {
+  padding:0.4rem 0.8rem; border-radius:7px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-family:inherit; font-size:0.75rem;
+  width:200px; outline:none; transition:border-color 0.2s;
+}
+.search-box:focus { border-color:var(--accent); }
+.search-box::placeholder { color:var(--muted); }
+
+/* ─── Canvas ─── */
+.canvas-wrap {
+  flex:1; overflow:hidden; position:relative; cursor:grab;
+  height: calc(100vh - 110px);
+}
+.canvas-wrap:active { cursor:grabbing; }
+.canvas {
+  position:absolute; transform-origin:0 0; transition: transform 0.1s ease-out;
+  min-width:2400px; min-height:1600px;
+}
+
+/* ─── Diagram Page ─── */
+.diagram-page { display:none; }
+.diagram-page.active { display:block; }
+
+/* ─── Nodes ─── */
+.node {
+  position:absolute; background:var(--surface); border:1.5px solid var(--border);
+  border-radius:var(--radius); padding:0; overflow:hidden;
+  box-shadow:var(--shadow); transition:all 0.3s; cursor:pointer; z-index:2;
+}
+.node:hover { border-color:var(--accent); transform:translateY(-2px);
+  box-shadow:var(--shadow), var(--glow); z-index:10; }
+.node.highlight { border-color:var(--accent); box-shadow:0 0 30px rgba(99,102,241,0.3); z-index:10; }
+.node.dimmed { opacity:0.25; }
+.node-header {
+  padding:0.65rem 0.85rem 0.45rem; display:flex; align-items:center; gap:0.5rem;
+  border-bottom:1px solid var(--border);
+}
+.node-icon {
+  width:28px; height:28px; border-radius:8px; display:flex;
+  align-items:center; justify-content:center; font-size:14px; flex-shrink:0;
+}
+.node-title { font-size:0.78rem; font-weight:700; letter-spacing:-0.01em; }
+.node-subtitle { font-size:0.65rem; color:var(--muted); font-weight:500; }
+.node-body { padding:0.55rem 0.85rem 0.65rem; }
+.node-body .detail { font-size:0.68rem; color:var(--muted); line-height:1.6; }
+.node-body .detail b { color:var(--text); font-weight:600; }
+.node-badge {
+  display:inline-flex; align-items:center; gap:0.2rem; padding:0.15rem 0.45rem;
+  border-radius:5px; font-size:0.62rem; font-weight:600; margin-top:0.3rem;
+}
+.node-badge.port { background:var(--blue-dim); color:var(--blue); }
+.node-badge.health { background:var(--green-dim); color:var(--green); }
+.node-badge.dep { background:var(--orange-dim); color:var(--orange); }
+.node-badge.vol { background:var(--purple-dim); color:var(--purple); }
+
+/* ─── Zone labels ─── */
+.zone {
+  position:absolute; border:1.5px dashed; border-radius:16px; z-index:1;
+  transition:all 0.3s;
+}
+.zone-label {
+  position:absolute; top:-12px; left:20px; padding:0.15rem 0.7rem;
+  border-radius:6px; font-size:0.7rem; font-weight:700; letter-spacing:0.02em;
+  text-transform:uppercase;
+}
+
+/* ─── SVG Connections ─── */
+.connections {
+  position:absolute; top:0; left:0; width:100%; height:100%; z-index:1;
+  pointer-events:none;
+}
+.conn-line {
+  fill:none; stroke-width:1.5; opacity:0.4; transition:all 0.3s;
+}
+.conn-line.highlight { opacity:1; stroke-width:2.5; }
+.conn-line.dimmed { opacity:0.08; }
+.conn-label {
+  font-size:10px; font-weight:600; fill:var(--muted); transition:all 0.3s;
+}
+.conn-label.highlight { fill:var(--text); }
+.conn-label.dimmed { opacity:0.1; }
+
+/* Animated flow dots */
+.flow-dot {
+  r:3; opacity:0;
+}
+.flow-dot.animate {
+  opacity:1;
+  animation: flowPulse 2s ease-in-out infinite;
+}
+@keyframes flowPulse {
+  0%, 100% { opacity:0.3; r:2; }
+  50% { opacity:1; r:4; }
+}
+
+/* ─── Tooltip ─── */
+.tooltip {
+  position:fixed; z-index:1000; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:0.8rem 1rem; pointer-events:none;
+  opacity:0; transition:opacity 0.2s; box-shadow:var(--shadow);
+  max-width:320px; font-size:0.72rem; line-height:1.5;
+}
+.tooltip.show { opacity:1; }
+.tooltip h4 { font-size:0.8rem; font-weight:700; margin-bottom:0.3rem; }
+.tooltip .tt-row { display:flex; gap:0.5rem; color:var(--muted); }
+.tooltip .tt-row b { color:var(--text); min-width:60px; }
+
+/* ─── Info Panel (slide-out) ─── */
+.info-panel {
+  position:fixed; right:-400px; top:0; width:380px; height:100vh;
+  background:var(--surface); border-left:1px solid var(--border);
+  z-index:200; transition:right 0.35s; overflow-y:auto;
+  box-shadow:-8px 0 32px rgba(0,0,0,0.3);
+}
+.info-panel.open { right:0; }
+.info-panel-header {
+  padding:1.2rem; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.info-panel-header h3 { font-size:0.95rem; font-weight:700; }
+.info-panel-close {
+  width:28px; height:28px; border-radius:7px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--muted); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+.info-panel-close:hover { border-color:var(--red); color:var(--red); }
+.info-panel-body { padding:1rem 1.2rem; }
+.info-section { margin-bottom:1.2rem; }
+.info-section h4 { font-size:0.75rem; font-weight:700; color:var(--accent2); text-transform:uppercase;
+  letter-spacing:0.04em; margin-bottom:0.5rem; }
+.info-row { display:flex; gap:0.6rem; font-size:0.75rem; padding:0.3rem 0; border-bottom:1px solid rgba(45,51,72,0.5); }
+.info-row .label { color:var(--muted); min-width:90px; font-weight:500; }
+.info-row .value { color:var(--text); font-weight:600; word-break:break-all; }
+.info-tag {
+  display:inline-flex; padding:0.2rem 0.5rem; border-radius:5px;
+  font-size:0.65rem; font-weight:600; margin:0.15rem;
+}
+
+/* ─── Legend ─── */
+.legend {
+  position:absolute; bottom:20px; left:20px; background:var(--surface);
+  border:1px solid var(--border); border-radius:12px; padding:1rem 1.2rem;
+  z-index:50; box-shadow:var(--shadow); font-size:0.7rem;
+}
+.legend h4 { font-weight:700; margin-bottom:0.5rem; font-size:0.75rem; }
+.legend-items { display:flex; flex-wrap:wrap; gap:0.6rem; }
+.legend-item { display:flex; align-items:center; gap:0.35rem; }
+.legend-dot { width:10px; height:10px; border-radius:3px; }
+
+/* ─── Minimap ─── */
+.minimap {
+  position:absolute; bottom:20px; right:20px; width:180px; height:120px;
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  z-index:50; overflow:hidden; box-shadow:var(--shadow);
+}
+.minimap-viewport {
+  position:absolute; border:1.5px solid var(--accent); background:rgba(99,102,241,0.1);
+  border-radius:2px; pointer-events:none;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.node { animation: fadeIn 0.5s ease-out backwards; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>Agentic <span>Platform</span></h1>
+      <div class="header-sub">Interactive Architecture Explorer</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('system')">🏗️ System Architecture</button>
+    <button class="tab" onclick="switchTab('network')">🌐 Network Architecture</button>
+    <button class="tab" onclick="switchTab('topology')">🔄 Service Topology</button>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="zoomIn()" title="Zoom In">➕</button>
+  <span class="zoom-display" id="zoomLevel">100%</span>
+  <button class="ctrl-btn" onclick="zoomOut()" title="Zoom Out">➖</button>
+  <button class="ctrl-btn" onclick="resetView()" title="Reset View">⟲ Reset</button>
+  <button class="ctrl-btn" onclick="fitToScreen()" title="Fit to Screen">⊞ Fit</button>
+  <div style="width:1px;height:20px;background:var(--border);margin:0 0.3rem"></div>
+  <button class="ctrl-btn" id="flowToggle" onclick="toggleFlow()">▶ Animate Flow</button>
+  <button class="ctrl-btn" id="labelToggle" onclick="toggleLabels()">🏷️ Labels</button>
+  <div class="spacer"></div>
+  <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search services..." oninput="searchNodes(this.value)">
+</div>
+
+<div class="canvas-wrap" id="canvasWrap">
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SYSTEM ARCHITECTURE DIAGRAM                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="canvas diagram-page active" id="system" data-diagram="system">
+
+  <svg class="connections" id="system-svg" viewBox="0 0 2400 1600" preserveAspectRatio="none" style="width:2400px;height:1600px">
+    <defs>
+      <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3b82f6" opacity="0.6"/></marker>
+      <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#22c55e" opacity="0.6"/></marker>
+      <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#f59e0b" opacity="0.6"/></marker>
+      <marker id="arrow-purple" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#a855f7" opacity="0.6"/></marker>
+      <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#ef4444" opacity="0.6"/></marker>
+      <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+
+    <!-- User → UI Console -->
+    <path class="conn-line" d="M1100,130 L1100,200" stroke="#6366f1" data-from="sys-user" data-to="sys-ui" marker-end="url(#arrow-blue)"/>
+    <text class="conn-label" x="1110" y="170">HTTP :3000</text>
+    <!-- UI Console → Agent Service -->
+    <path class="conn-line" d="M760,330 L760,430" stroke="#22c55e" data-from="sys-ui" data-to="sys-agent" marker-end="url(#arrow-green)"/>
+    <text class="conn-label" x="770" y="385">REST API</text>
+    <!-- Agent → Tools -->
+    <path class="conn-line" d="M950,480 L1100,480" stroke="#22c55e" data-from="sys-agent" data-to="sys-tools" marker-end="url(#arrow-green)"/>
+    <text class="conn-label" x="1000" y="470">HTTP /tools/*</text>
+    <!-- Agent → Ollama -->
+    <path class="conn-line" d="M640,480 L460,480" stroke="#ef4444" data-from="sys-agent" data-to="sys-ollama" marker-end="url(#arrow-red)"/>
+    <text class="conn-label" x="500" y="470">LLM API</text>
+    <!-- Agent → ChromaDB -->
+    <path class="conn-line" d="M760,530 L760,680" stroke="#f59e0b" data-from="sys-agent" data-to="sys-chroma" marker-end="url(#arrow-orange)"/>
+    <text class="conn-label" x="770" y="610">Vectors</text>
+    <!-- Agent → DatastoreDB -->
+    <path class="conn-line" d="M850,530 L1000,680" stroke="#f59e0b" data-from="sys-agent" data-to="sys-dsdb" marker-end="url(#arrow-orange)"/>
+    <text class="conn-label" x="910" y="610">SQL</text>
+    <!-- Agent → OTel -->
+    <path class="conn-line" d="M950,460 L1500,360" stroke="#a855f7" stroke-dasharray="6,4" data-from="sys-agent" data-to="sys-otel" marker-end="url(#arrow-purple)"/>
+    <text class="conn-label" x="1220" y="400">OTLP</text>
+    <!-- Agent → Langfuse -->
+    <path class="conn-line" d="M950,500 L1500,530" stroke="#a855f7" stroke-dasharray="6,4" data-from="sys-agent" data-to="sys-langfuse" marker-end="url(#arrow-purple)"/>
+    <text class="conn-label" x="1220" y="510">LLM Traces</text>
+    <!-- OTel → Prometheus -->
+    <path class="conn-line" d="M1600,380 L1600,450" stroke="#a855f7" data-from="sys-otel" data-to="sys-prom" marker-end="url(#arrow-purple)"/>
+    <text class="conn-label" x="1610" y="420">Metrics</text>
+    <!-- OTel → Loki -->
+    <path class="conn-line" d="M1700,380 L1700,450" stroke="#a855f7" data-from="sys-otel" data-to="sys-loki" marker-end="url(#arrow-purple)"/>
+    <text class="conn-label" x="1710" y="420">Logs</text>
+    <!-- Grafana → Prometheus -->
+    <path class="conn-line" d="M1600,580 L1600,520" stroke="#a855f7" stroke-dasharray="6,4" data-from="sys-grafana" data-to="sys-prom"/>
+    <text class="conn-label" x="1610" y="555">Query</text>
+    <!-- n8n proxy → n8n -->
+    <path class="conn-line" d="M1280,280 L1400,280" stroke="#6366f1" data-from="sys-n8nproxy" data-to="sys-n8n"/>
+    <!-- UI → n8n -->
+    <path class="conn-line" d="M900,250 L1400,250" stroke="#6366f1" stroke-dasharray="6,4" data-from="sys-ui" data-to="sys-n8n"/>
+    <text class="conn-label" x="1100" y="242">Webhooks</text>
+    <!-- Agent → MCP -->
+    <path class="conn-line" d="M950,500 L1100,570" stroke="#22c55e" data-from="sys-agent" data-to="sys-brave" marker-end="url(#arrow-green)"/>
+    <text class="conn-label" x="1010" y="545">JSON-RPC</text>
+    <!-- Langfuse → LangfuseDB -->
+    <path class="conn-line" d="M1560,560 L1400,700" stroke="#f59e0b" data-from="sys-langfuse" data-to="sys-lfdb" marker-end="url(#arrow-orange)"/>
+
+    <!-- Animated flow dots -->
+    <circle class="flow-dot" fill="#6366f1" data-path="M1100,130 L1100,200"/>
+    <circle class="flow-dot" fill="#22c55e" data-path="M760,330 L760,430"/>
+    <circle class="flow-dot" fill="#ef4444" data-path="M640,480 L460,480"/>
+  </svg>
+
+  <!-- Zones -->
+  <div class="zone" style="left:550;top:180;width:800px;height:170px;border-color:rgba(99,102,241,0.3);background:rgba(99,102,241,0.03)">
+    <span class="zone-label" style="background:var(--accent);color:#fff;">Presentation Tier</span>
+  </div>
+  <div class="zone" style="left:200;top:400;width:1100px;height:170px;border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.03)">
+    <span class="zone-label" style="background:var(--green);color:#fff;">Application Tier</span>
+  </div>
+  <div class="zone" style="left:550;top:640;width:650px;height:180px;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.03)">
+    <span class="zone-label" style="background:var(--orange);color:#fff;">Data Tier</span>
+  </div>
+  <div class="zone" style="left:1450;top:280;width:370px;height:380px;border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.03)">
+    <span class="zone-label" style="background:var(--purple);color:#fff;">Observability</span>
+  </div>
+  <div class="zone" style="left:200;top:400;width:280px;height:380px;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.03)">
+    <span class="zone-label" style="background:var(--red);color:#fff;">LLM Providers</span>
+  </div>
+
+  <!-- User -->
+  <div class="node" id="sys-user" style="left:1050;top:70;width:100px" data-name="User"
+       data-info='{"type":"Actor","desc":"Browser client accessing the platform"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--accent);color:#fff">👤</div>
+      <div><div class="node-title">User</div><div class="node-subtitle">Browser</div></div>
+    </div>
+  </div>
+
+  <!-- Presentation Tier -->
+  <div class="node" id="sys-ui" style="left:600;top:200;width:210px" data-name="UI Console"
+       data-info='{"type":"Frontend","tech":"Express.js + EJS","port":"3000 → 3001","pages":27,"desc":"Platform dashboard with 27 pages, API proxies, SSO auth"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:#1e3a5f;color:var(--blue)">🖥️</div>
+      <div><div class="node-title">UI Console</div><div class="node-subtitle">Express.js + EJS</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">27 pages · API proxy · SSO</div>
+      <span class="node-badge port">:3000 → :3001</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-login" style="left:860;top:200;width:180px" data-name="Login UI"
+       data-info='{"type":"Frontend","tech":"React 18 + Vite","desc":"SPA login, register, email verify, password reset"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:#1e3a5f;color:var(--blue)">🔐</div>
+      <div><div class="node-title">Login UI</div><div class="node-subtitle">React 18 + Vite</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">Auth SPA</div>
+    </div>
+  </div>
+
+  <div class="node" id="sys-n8nproxy" style="left:1100;top:200;width:170px" data-name="n8n Proxy"
+       data-info='{"type":"Proxy","tech":"Nginx Alpine","port":"5679 → 8080","desc":"Reverse proxy for iframe embedding of n8n"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:#1e3a5f;color:var(--blue)">🔀</div>
+      <div><div class="node-title">n8n Proxy</div><div class="node-subtitle">Nginx</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:5679 → :8080</span>
+    </div>
+  </div>
+
+  <!-- Application Tier -->
+  <div class="node" id="sys-agent" style="left:640;top:430;width:300px" data-name="Agent Service"
+       data-info='{"type":"Core Service","tech":"FastAPI + LangGraph","port":"8010 → 8000","desc":"Core agent runtime with ReAct graph, LLM layer, RAG, guardrails, A2A/MCP protocols, connectors, auth/IAM, memory (SQLite 16 tables)","modules":["ReAct Graph","LLM Layer","Memory","Guardrails","RAG Pipeline","A2A Protocol","MCP Protocol","Connectors","Auth/IAM","Observability","Docker Manager","File Store","Advanced Retrieval"],"depends":["ollama","tools-service","chromadb","datastore-db"]}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">🤖</div>
+      <div><div class="node-title">Agent Service</div><div class="node-subtitle">FastAPI + LangGraph</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail"><b>13 modules</b> · ReAct graph · RAG · Guardrails</div>
+      <span class="node-badge port">:8010 → :8000</span>
+      <span class="node-badge dep">4 deps</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-tools" style="left:1100;top:430;width:200px" data-name="Tools Service"
+       data-info='{"type":"Service","tech":"FastAPI","port":"8011 → 8001","desc":"29 sandboxed tools: math, HTTP, file ops, text, JSON, code execution","tools":29}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">🔧</div>
+      <div><div class="node-title">Tools Service</div><div class="node-subtitle">FastAPI</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail"><b>29 tools</b> · Sandboxed</div>
+      <span class="node-badge port">:8011 → :8001</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-n8n" style="left:1400;top:200;width:180px" data-name="n8n"
+       data-info='{"type":"Workflow Engine","tech":"n8n","port":"5678","desc":"Workflow orchestrator with 5 pre-built templates including multi-agent orchestration"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">⚙️</div>
+      <div><div class="node-title">n8n</div><div class="node-subtitle">Workflow Engine</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">5 templates</div>
+      <span class="node-badge port">:5678</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-brave" style="left:1100;top:540;width:170px" data-name="Brave MCP"
+       data-info='{"type":"MCP Server","tech":"managed-mcp-base","desc":"Brave web search + local search via MCP JSON-RPC protocol"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">🔍</div>
+      <div><div class="node-title">Brave Search MCP</div><div class="node-subtitle">MCP Server</div></div>
+    </div>
+  </div>
+
+  <div class="node" id="sys-openmcp" style="left:1100;top:610;width:170px" data-name="Open Tools MCP"
+       data-info='{"type":"MCP Server","tech":"open-tools-mcp","desc":"Open tools MCP server — no API key needed"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">🛠️</div>
+      <div><div class="node-title">Open Tools MCP</div><div class="node-subtitle">MCP Server</div></div>
+    </div>
+  </div>
+
+  <!-- LLM Providers -->
+  <div class="node" id="sys-ollama" style="left:220;top:430;width:220px" data-name="Ollama"
+       data-info='{"type":"LLM Runtime","tech":"Ollama","port":"11436 → 11434","desc":"Local LLM runtime — llama3, nomic-embed-text","models":["llama3","nomic-embed-text"]}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--red-dim);color:var(--red)">🧠</div>
+      <div><div class="node-title">Ollama</div><div class="node-subtitle">Local LLM Runtime</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">llama3 · nomic-embed</div>
+      <span class="node-badge port">:11436 → :11434</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-azureoai" style="left:220;top:540;width:200px" data-name="Azure OpenAI"
+       data-info='{"type":"Cloud LLM","tech":"Azure OpenAI","desc":"Enterprise GPT-4o-mini deployment"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--red-dim);color:var(--red)">☁️</div>
+      <div><div class="node-title">Azure OpenAI</div><div class="node-subtitle">Enterprise</div></div>
+    </div>
+  </div>
+
+  <div class="node" id="sys-openai" style="left:220;top:610;width:200px" data-name="OpenAI"
+       data-info='{"type":"Cloud LLM","tech":"OpenAI","desc":"GPT-4o-mini — latest models"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--red-dim);color:var(--red)">🌐</div>
+      <div><div class="node-title">OpenAI</div><div class="node-subtitle">Latest Models</div></div>
+    </div>
+  </div>
+
+  <div class="node" id="sys-foundry" style="left:220;top:680;width:200px" data-name="Azure AI Foundry"
+       data-info='{"type":"Cloud LLM","tech":"Azure AI Foundry","desc":"Managed model deployment"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--red-dim);color:var(--red)">🏭</div>
+      <div><div class="node-title">Azure AI Foundry</div><div class="node-subtitle">Managed Deploy</div></div>
+    </div>
+  </div>
+
+  <!-- Data Tier -->
+  <div class="node" id="sys-chroma" style="left:580;top:680;width:190px" data-name="ChromaDB"
+       data-info='{"type":"Vector Store","tech":"ChromaDB 0.6.3","port":"8200 → 8000","desc":"Vector store for RAG — cosine similarity search","volume":"chroma-data"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🗄️</div>
+      <div><div class="node-title">ChromaDB</div><div class="node-subtitle">Vector Store</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:8200 → :8000</span>
+      <span class="node-badge vol">📁 chroma-data</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-dsdb" style="left:820;top:680;width:210px" data-name="Datastore DB"
+       data-info='{"type":"Database","tech":"PostgreSQL 16-alpine","port":"5433 → 5432","desc":"Document registry — datastore database","volume":"datastore-db-data"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🐘</div>
+      <div><div class="node-title">Datastore DB</div><div class="node-subtitle">PostgreSQL 16</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">Document Registry</div>
+      <span class="node-badge port">:5433 → :5432</span>
+      <span class="node-badge vol">📁 datastore-db-data</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-lfdb" style="left:1100;top:680;width:210px" data-name="Langfuse DB"
+       data-info='{"type":"Database","tech":"PostgreSQL 16-alpine","desc":"Langfuse trace storage — no host port","volume":"langfuse-db-data"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🐘</div>
+      <div><div class="node-title">Langfuse DB</div><div class="node-subtitle">PostgreSQL 16</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">Trace Storage</div>
+      <span class="node-badge vol">📁 langfuse-db-data</span>
+    </div>
+  </div>
+
+  <!-- Observability -->
+  <div class="node" id="sys-otel" style="left:1480;top:310;width:200px" data-name="OTel Collector"
+       data-info='{"type":"Telemetry","tech":"OTel Collector Contrib 0.100.0","port":"4318 (HTTP), 4317 (gRPC), 8889 (Prom)","desc":"Receives OTLP, exports to Prometheus and Loki"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📡</div>
+      <div><div class="node-title">OTel Collector</div><div class="node-subtitle">OpenTelemetry</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:4318 :4317 :8889</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-prom" style="left:1480;top:450;width:160px" data-name="Prometheus"
+       data-info='{"type":"Metrics","tech":"Prometheus","port":"9090","desc":"Metrics store — scrapes OTel exporter","volume":"prometheus-data"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📊</div>
+      <div><div class="node-title">Prometheus</div><div class="node-subtitle">Metrics</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:9090</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-loki" style="left:1680;top:450;width:140px" data-name="Loki"
+       data-info='{"type":"Logs","tech":"Grafana Loki 3.0.0","port":"3100","desc":"Log aggregation from OTel Collector","volume":"loki-data"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📝</div>
+      <div><div class="node-title">Loki</div><div class="node-subtitle">Logs</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:3100</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-langfuse" style="left:1480;top:530;width:200px" data-name="Langfuse"
+       data-info='{"type":"LLM Observability","tech":"Langfuse 2","port":"3012 → 3000","desc":"LLM traces, costs, latency tracking","depends":["langfuse-db"]}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">🔬</div>
+      <div><div class="node-title">Langfuse</div><div class="node-subtitle">LLM Traces</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:3012 → :3000</span>
+    </div>
+  </div>
+
+  <div class="node" id="sys-grafana" style="left:1530;top:580;width:180px" data-name="Grafana"
+       data-info='{"type":"Dashboards","tech":"Grafana 11.0.0","port":"3013 → 3000","desc":"Dashboards querying Prometheus + Loki","depends":["prometheus"],"volume":"grafana-data"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📈</div>
+      <div><div class="node-title">Grafana</div><div class="node-subtitle">Dashboards</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">:3013 → :3000</span>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <h4>Legend</h4>
+    <div class="legend-items">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Presentation</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Application</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Data</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>LLM Providers</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Observability</div>
+      <div class="legend-item"><svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="var(--muted)" stroke-width="1.5"/></svg>Data flow</div>
+      <div class="legend-item"><svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4,3"/></svg>Telemetry</div>
+    </div>
+    <div style="margin-top:0.5rem;color:var(--muted);font-size:0.65rem">Click a node for details · Hover for connections · Search to filter</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- NETWORK ARCHITECTURE DIAGRAM                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="canvas diagram-page" id="network" data-diagram="network">
+
+  <svg class="connections" id="network-svg" viewBox="0 0 2400 1600" preserveAspectRatio="none" style="width:2400px;height:1600px">
+    <!-- host → containers -->
+    <path class="conn-line" d="M200,160 L200,300" stroke="#3b82f6" data-from="net-p3000" data-to="net-ui"/>
+    <text class="conn-label" x="210" y="230">NAT</text>
+    <path class="conn-line" d="M500,160 L500,300" stroke="#3b82f6" data-from="net-p8010" data-to="net-agent"/>
+    <path class="conn-line" d="M800,160 L800,300" stroke="#3b82f6" data-from="net-p8011" data-to="net-tools"/>
+    <path class="conn-line" d="M1100,160 L1100,300" stroke="#3b82f6" data-from="net-p11436" data-to="net-ollama"/>
+    <!-- internal -->
+    <path class="conn-line" d="M290,370 L440,370" stroke="#22c55e" data-from="net-ui" data-to="net-agent" marker-end="url(#arrow-green)"/>
+    <text class="conn-label" x="340" y="360">:8000</text>
+    <path class="conn-line" d="M660,370 L740,370" stroke="#22c55e" data-from="net-agent" data-to="net-tools" marker-end="url(#arrow-green)"/>
+    <text class="conn-label" x="680" y="360">:8001</text>
+    <path class="conn-line" d="M660,400 L1040,400" stroke="#ef4444" data-from="net-agent" data-to="net-ollama" marker-end="url(#arrow-red)"/>
+    <text class="conn-label" x="830" y="392">:11434</text>
+    <path class="conn-line" d="M550,440 L550,560" stroke="#f59e0b" data-from="net-agent" data-to="net-chroma" marker-end="url(#arrow-orange)"/>
+    <text class="conn-label" x="560" y="505">:8000</text>
+    <path class="conn-line" d="M600,440 L750,560" stroke="#f59e0b" data-from="net-agent" data-to="net-dsdb" marker-end="url(#arrow-orange)"/>
+    <text class="conn-label" x="660" y="505">:5432</text>
+    <path class="conn-line" d="M550,420 L1400,500" stroke="#a855f7" stroke-dasharray="6,4" data-from="net-agent" data-to="net-otel"/>
+    <text class="conn-label" x="950" y="455">OTLP :4318</text>
+    <path class="conn-line" d="M1500,550 L1500,660" stroke="#a855f7" data-from="net-otel" data-to="net-prom"/>
+    <path class="conn-line" d="M1600,550 L1700,660" stroke="#a855f7" data-from="net-otel" data-to="net-loki"/>
+    <path class="conn-line" d="M1600,800 L1500,740" stroke="#a855f7" stroke-dasharray="6,4" data-from="net-grafana" data-to="net-prom"/>
+    <path class="conn-line" d="M1700,800 L1700,740" stroke="#a855f7" stroke-dasharray="6,4" data-from="net-grafana" data-to="net-loki"/>
+    <path class="conn-line" d="M660,380 L1300,520" stroke="#a855f7" stroke-dasharray="6,4" data-from="net-agent" data-to="net-langfuse"/>
+    <text class="conn-label" x="950" y="440">Langfuse SDK</text>
+    <path class="conn-line" d="M1300,580 L1000,600" stroke="#f59e0b" data-from="net-langfuse" data-to="net-lfdb"/>
+    <path class="conn-line" d="M660,350 L1300,300" stroke="#22c55e" data-from="net-agent" data-to="net-brave"/>
+    <text class="conn-label" x="950" y="310">JSON-RPC :8080</text>
+  </svg>
+
+  <!-- Host Ports bar -->
+  <div class="zone" style="left:60;top:60;width:2000px;height:120px;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.04)">
+    <span class="zone-label" style="background:var(--red);color:#fff;">Exposed Host Ports</span>
+  </div>
+
+  <div class="node" id="net-p3000" style="left:80;top:90;width:110px" data-name="Port :3000"
+       data-info='{"type":"Host Port","maps":"UI Console :3001","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:3000</div><div class="node-subtitle">UI Console</div></div></div>
+  </div>
+  <div class="node" id="net-p5678" style="left:210;top:90;width:110px" data-name="Port :5678"
+       data-info='{"type":"Host Port","maps":"n8n :5678","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:5678</div><div class="node-subtitle">n8n</div></div></div>
+  </div>
+  <div class="node" id="net-p8010" style="left:340;top:90;width:110px" data-name="Port :8010"
+       data-info='{"type":"Host Port","maps":"Agent Service :8000","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:8010</div><div class="node-subtitle">Agent API</div></div></div>
+  </div>
+  <div class="node" id="net-p8011" style="left:470;top:90;width:110px" data-name="Port :8011"
+       data-info='{"type":"Host Port","maps":"Tools Service :8001","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:8011</div><div class="node-subtitle">Tools API</div></div></div>
+  </div>
+  <div class="node" id="net-p11436" style="left:600;top:90;width:110px" data-name="Port :11436"
+       data-info='{"type":"Host Port","maps":"Ollama :11434","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:11436</div><div class="node-subtitle">Ollama</div></div></div>
+  </div>
+  <div class="node" id="net-p8200" style="left:730;top:90;width:110px" data-name="Port :8200"
+       data-info='{"type":"Host Port","maps":"ChromaDB :8000","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:8200</div><div class="node-subtitle">ChromaDB</div></div></div>
+  </div>
+  <div class="node" id="net-p5433" style="left:860;top:90;width:110px" data-name="Port :5433"
+       data-info='{"type":"Host Port","maps":"Datastore DB :5432","protocol":"TCP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:5433</div><div class="node-subtitle">Postgres</div></div></div>
+  </div>
+  <div class="node" id="net-p3012" style="left:990;top:90;width:110px" data-name="Port :3012"
+       data-info='{"type":"Host Port","maps":"Langfuse :3000","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:3012</div><div class="node-subtitle">Langfuse</div></div></div>
+  </div>
+  <div class="node" id="net-p9090" style="left:1120;top:90;width:110px" data-name="Port :9090"
+       data-info='{"type":"Host Port","maps":"Prometheus :9090","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:9090</div><div class="node-subtitle">Prometheus</div></div></div>
+  </div>
+  <div class="node" id="net-p3013" style="left:1250;top:90;width:110px" data-name="Port :3013"
+       data-info='{"type":"Host Port","maps":"Grafana :3000","protocol":"HTTP"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--red-dim);color:var(--red)">🔌</div><div><div class="node-title">:3013</div><div class="node-subtitle">Grafana</div></div></div>
+  </div>
+
+  <!-- Docker Bridge Network -->
+  <div class="zone" style="left:60;top:220;width:2000px;height:880px;border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.03)">
+    <span class="zone-label" style="background:var(--blue);color:#fff;">Docker Bridge: platform-net (DNS Service Discovery)</span>
+  </div>
+
+  <!-- Frontend Zone -->
+  <div class="zone" style="left:80;top:260;width:600px;height:200px;border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.03)">
+    <span class="zone-label" style="background:var(--green);color:#fff;">Frontend Zone</span>
+  </div>
+
+  <div class="node" id="net-ui" style="left:100;top:300;width:180px" data-name="ui-console"
+       data-info='{"type":"Container","image":"Build: services/ui-console","internal_port":3001,"host_port":3000,"health":"wget /health","dns":"ui-console"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">🖥️</div>
+      <div><div class="node-title">ui-console</div><div class="node-subtitle">Internal :3001</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :3000</span>
+      <span class="node-badge health">✓ healthy</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-n8nproxy" style="left:320;top:300;width:160px" data-name="n8n-proxy"
+       data-info='{"type":"Container","image":"nginx:alpine","internal_port":8080,"host_port":5679,"dns":"n8n-proxy"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">🔀</div>
+      <div><div class="node-title">n8n-proxy</div><div class="node-subtitle">Internal :8080</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :5679</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-n8n" style="left:520;top:300;width:150px" data-name="n8n"
+       data-info='{"type":"Container","image":"n8nio/n8n:latest","internal_port":5678,"host_port":5678,"dns":"n8n"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--green-dim);color:var(--green)">⚙️</div>
+      <div><div class="node-title">n8n</div><div class="node-subtitle">Internal :5678</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :5678</span>
+    </div>
+  </div>
+
+  <!-- Agent Zone -->
+  <div class="zone" style="left:80;top:480;width:1200px;height:200px;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.03)">
+    <span class="zone-label" style="background:var(--orange);color:#fff;">Agent Processing Zone</span>
+  </div>
+
+  <div class="node" id="net-agent" style="left:100;top:520;width:220px" data-name="agent-service"
+       data-info='{"type":"Container","image":"Build: services/agent","internal_port":8000,"host_port":8010,"health":"curl /health","dns":"agent-service","docker_socket":true}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🤖</div>
+      <div><div class="node-title">agent-service</div><div class="node-subtitle">Internal :8000</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail">🔗 Docker socket mounted</div>
+      <span class="node-badge port">Host :8010</span>
+      <span class="node-badge health">✓ healthy</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-tools" style="left:380;top:520;width:180px" data-name="tools-service"
+       data-info='{"type":"Container","image":"Build: services/tools","internal_port":8001,"host_port":8011,"dns":"tools-service"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🔧</div>
+      <div><div class="node-title">tools-service</div><div class="node-subtitle">Internal :8001</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :8011</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-ollama" style="left:620;top:520;width:180px" data-name="ollama"
+       data-info='{"type":"Container","image":"ollama/ollama:latest","internal_port":11434,"host_port":11436,"dns":"ollama"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🧠</div>
+      <div><div class="node-title">ollama</div><div class="node-subtitle">Internal :11434</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :11436</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-brave" style="left:860;top:520;width:180px" data-name="brave-search-mcp"
+       data-info='{"type":"Container","image":"Build: managed-mcp-base","internal_port":8080,"host_port":"none","dns":"brave-search-mcp"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🔍</div>
+      <div><div class="node-title">brave-search-mcp</div><div class="node-subtitle">Internal :8080</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge dep">No host port</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-openmcp" style="left:1080;top:520;width:180px" data-name="open-tools-mcp"
+       data-info='{"type":"Container","image":"Build: open-tools-mcp","internal_port":8080,"host_port":"none","dns":"open-tools-mcp"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🛠️</div>
+      <div><div class="node-title">open-tools-mcp</div><div class="node-subtitle">Internal :8080</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge dep">No host port</span>
+    </div>
+  </div>
+
+  <!-- Data Zone -->
+  <div class="zone" style="left:80;top:710;width:1000px;height:180px;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.03)">
+    <span class="zone-label" style="background:var(--cyan);color:#fff;">Data Zone</span>
+  </div>
+
+  <div class="node" id="net-chroma" style="left:100;top:750;width:180px" data-name="chromadb"
+       data-info='{"type":"Container","image":"chromadb/chroma:0.6.3","internal_port":8000,"host_port":8200,"volume":"chroma-data","dns":"chromadb"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🗄️</div>
+      <div><div class="node-title">chromadb</div><div class="node-subtitle">Internal :8000</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :8200</span>
+      <span class="node-badge vol">📁 chroma-data</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-dsdb" style="left:340;top:750;width:190px" data-name="datastore-db"
+       data-info='{"type":"Container","image":"postgres:16-alpine","internal_port":5432,"host_port":5433,"volume":"datastore-db-data","dns":"datastore-db"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🐘</div>
+      <div><div class="node-title">datastore-db</div><div class="node-subtitle">Internal :5432</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :5433</span>
+      <span class="node-badge vol">📁 datastore-db-data</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-lfdb" style="left:590;top:750;width:190px" data-name="langfuse-db"
+       data-info='{"type":"Container","image":"postgres:16-alpine","internal_port":5432,"host_port":"none","volume":"langfuse-db-data","dns":"langfuse-db"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🐘</div>
+      <div><div class="node-title">langfuse-db</div><div class="node-subtitle">Internal :5432</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge dep">No host port</span>
+      <span class="node-badge vol">📁 langfuse-db-data</span>
+    </div>
+  </div>
+
+  <!-- Observability Zone -->
+  <div class="zone" style="left:1100;top:460;width:900px;height:640px;border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.03)">
+    <span class="zone-label" style="background:var(--purple);color:#fff;">Observability Zone</span>
+  </div>
+
+  <div class="node" id="net-otel" style="left:1120;top:500;width:220px" data-name="otel-collector"
+       data-info='{"type":"Container","image":"otel-contrib:0.100.0","internal_port":"4318/4317/8889","host_port":"4318/4317","dns":"otel-collector"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📡</div>
+      <div><div class="node-title">otel-collector</div><div class="node-subtitle">:4318 :4317 :8889</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">HTTP + gRPC + Prom</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-prom" style="left:1120;top:660;width:170px" data-name="prometheus"
+       data-info='{"type":"Container","image":"prom/prometheus:latest","internal_port":9090,"host_port":9090,"volume":"prometheus-data","dns":"prometheus"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📊</div>
+      <div><div class="node-title">prometheus</div><div class="node-subtitle">Internal :9090</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :9090</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-loki" style="left:1350;top:660;width:170px" data-name="loki"
+       data-info='{"type":"Container","image":"grafana/loki:3.0.0","internal_port":3100,"host_port":3100,"volume":"loki-data","dns":"loki"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📝</div>
+      <div><div class="node-title">loki</div><div class="node-subtitle">Internal :3100</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :3100</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-langfuse" style="left:1580;top:500;width:190px" data-name="langfuse"
+       data-info='{"type":"Container","image":"langfuse/langfuse:2","internal_port":3000,"host_port":3012,"dns":"langfuse"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">🔬</div>
+      <div><div class="node-title">langfuse</div><div class="node-subtitle">Internal :3000</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :3012</span>
+    </div>
+  </div>
+
+  <div class="node" id="net-grafana" style="left:1580;top:700;width:190px" data-name="grafana"
+       data-info='{"type":"Container","image":"grafana/grafana:11.0.0","internal_port":3000,"host_port":3013,"volume":"grafana-data","dns":"grafana"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📈</div>
+      <div><div class="node-title">grafana</div><div class="node-subtitle">Internal :3000</div></div>
+    </div>
+    <div class="node-body">
+      <span class="node-badge port">Host :3013</span>
+      <span class="node-badge vol">📁 grafana-data</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h4>Network Legend</h4>
+    <div class="legend-items">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Host Ports</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Frontend</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Processing</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Data</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Observability</div>
+    </div>
+    <div style="margin-top:0.5rem;color:var(--muted);font-size:0.65rem">All containers on single bridge network · DNS names = container names</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SERVICE TOPOLOGY DIAGRAM                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="canvas diagram-page" id="topology" data-diagram="topology">
+
+  <svg class="connections" id="topology-svg" viewBox="0 0 2400 1400" preserveAspectRatio="none" style="width:2400px;height:1400px">
+    <!-- L0 → L1 dependencies -->
+    <path class="conn-line" d="M900,230 L700,340" stroke="#22c55e" stroke-width="2" data-from="top-lfdb" data-to="top-langfuse" marker-end="url(#arrow-green)"/>
+    <text class="conn-label" x="780" y="280">depends_on</text>
+
+    <!-- L0+L1 → L2 -->
+    <path class="conn-line" d="M180,230 L400,530" stroke="#f59e0b" stroke-width="2.5" data-from="top-ollama" data-to="top-agent" marker-end="url(#arrow-orange)"/>
+    <path class="conn-line" d="M420,230 L500,530" stroke="#f59e0b" stroke-width="2.5" data-from="top-dsdb" data-to="top-agent"/>
+    <path class="conn-line" d="M650,230 L600,530" stroke="#f59e0b" stroke-width="2.5" data-from="top-chromadb" data-to="top-agent"/>
+    <path class="conn-line" d="M200,430 L450,530" stroke="#f59e0b" stroke-width="2.5" data-from="top-tools" data-to="top-agent"/>
+    <text class="conn-label" x="250" y="490">4 dependencies</text>
+
+    <!-- L2 → L3 -->
+    <path class="conn-line" d="M550,660 L300,760" stroke="#a855f7" stroke-width="2.5" data-from="top-agent" data-to="top-uiconsole" marker-end="url(#arrow-purple)"/>
+    <text class="conn-label" x="400" y="710">depends_on: healthy</text>
+    <path class="conn-line" d="M400,430 L550,760" stroke="#a855f7" stroke-width="2" data-from="top-n8n" data-to="top-n8nproxy" marker-end="url(#arrow-purple)"/>
+    <path class="conn-line" d="M700,430 L800,760" stroke="#a855f7" stroke-width="2" data-from="top-prometheus" data-to="top-grafana" marker-end="url(#arrow-purple)"/>
+
+    <!-- Runtime flow -->
+    <path class="conn-line" d="M300,890 L500,890" stroke="#06b6d4" stroke-width="2" data-from="top-flow-user" data-to="top-flow-ui" marker-end="url(#arrow-blue)"/>
+    <text class="conn-label" x="370" y="882">①</text>
+    <path class="conn-line" d="M660,890 L830,890" stroke="#06b6d4" stroke-width="2" data-from="top-flow-ui" data-to="top-flow-agent" marker-end="url(#arrow-blue)"/>
+    <text class="conn-label" x="720" y="882">②</text>
+    <path class="conn-line" d="M1020,870 L1150,870" stroke="#06b6d4" stroke-width="2" data-from="top-flow-agent" data-to="top-flow-llm" marker-end="url(#arrow-blue)"/>
+    <text class="conn-label" x="1070" y="862">③</text>
+    <path class="conn-line" d="M1020,890 L1150,910" stroke="#06b6d4" stroke-width="2" data-from="top-flow-agent" data-to="top-flow-tools" marker-end="url(#arrow-blue)"/>
+    <text class="conn-label" x="1070" y="905">④</text>
+    <path class="conn-line" d="M1020,910 L1150,950" stroke="#06b6d4" stroke-width="2" data-from="top-flow-agent" data-to="top-flow-chroma" marker-end="url(#arrow-blue)"/>
+    <text class="conn-label" x="1070" y="940">⑤</text>
+  </svg>
+
+  <!-- Layer 0 -->
+  <div class="zone" style="left:60;top:60;width:2000px;height:200px;border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.03)">
+    <span class="zone-label" style="background:var(--blue);color:#fff;">Layer 0 — Infrastructure (start first, no dependencies)</span>
+  </div>
+
+  <div class="node" id="top-ollama" style="left:80;top:100;width:200px" data-name="ollama"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"ollama list","startup":"15s intervals","desc":"Starts first — no dependencies"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">🧠</div><div><div class="node-title">ollama</div><div class="node-subtitle">LLM Runtime</div></div></div>
+    <div class="node-body"><div class="detail">Health: <b>ollama list</b></div><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-dsdb" style="left:310;top:100;width:200px" data-name="datastore-db"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"pg_isready -U agentic","desc":"PostgreSQL for document registry"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">🐘</div><div><div class="node-title">datastore-db</div><div class="node-subtitle">PostgreSQL 16</div></div></div>
+    <div class="node-body"><div class="detail">Health: <b>pg_isready</b></div><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-chromadb" style="left:540;top:100;width:200px" data-name="chromadb"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"heartbeat API","desc":"Vector store for RAG"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">🗄️</div><div><div class="node-title">chromadb</div><div class="node-subtitle">Vector Store</div></div></div>
+    <div class="node-body"><div class="detail">Health: <b>heartbeat</b></div><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-lfdb" style="left:770;top:100;width:200px" data-name="langfuse-db"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"pg_isready -U langfuse"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">🐘</div><div><div class="node-title">langfuse-db</div><div class="node-subtitle">PostgreSQL 16</div></div></div>
+    <div class="node-body"><div class="detail">Health: <b>pg_isready</b></div><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-otel" style="left:1000;top:100;width:200px" data-name="otel-collector"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"components check"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">📡</div><div><div class="node-title">otel-collector</div><div class="node-subtitle">OpenTelemetry</div></div></div>
+    <div class="node-body"><div class="detail">Health: <b>components</b></div><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-loki" style="left:1230;top:100;width:180px" data-name="loki"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"/ready"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">📝</div><div><div class="node-title">loki</div><div class="node-subtitle">Logs</div></div></div>
+    <div class="node-body"><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-brave" style="left:1440;top:100;width:180px" data-name="brave-search-mcp"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"/health :8080"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">🔍</div><div><div class="node-title">brave-search-mcp</div><div class="node-subtitle">MCP</div></div></div>
+    <div class="node-body"><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <div class="node" id="top-openmcp" style="left:1650;top:100;width:180px" data-name="open-tools-mcp"
+       data-info='{"type":"Infrastructure","phase":"Phase 1","health":"/health :8080"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--blue-dim);color:var(--blue)">🛠️</div><div><div class="node-title">open-tools-mcp</div><div class="node-subtitle">MCP</div></div></div>
+    <div class="node-body"><span class="node-badge health">Phase 1</span></div>
+  </div>
+
+  <!-- Layer 1 -->
+  <div class="zone" style="left:60;top:290;width:1400px;height:200px;border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.03)">
+    <span class="zone-label" style="background:var(--green);color:#fff;">Layer 1 — Core Services (depend on Layer 0)</span>
+  </div>
+
+  <div class="node" id="top-tools" style="left:80;top:340;width:220px" data-name="tools-service"
+       data-info='{"type":"Core","phase":"Phase 2","health":"curl /health :8001","desc":"29 sandboxed tools"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--green-dim);color:var(--green)">🔧</div><div><div class="node-title">tools-service</div><div class="node-subtitle">FastAPI · 29 tools</div></div></div>
+    <div class="node-body"><div class="detail">Health: <b>curl /health</b></div><span class="node-badge health">Phase 2</span></div>
+  </div>
+
+  <div class="node" id="top-n8n" style="left:340;top:340;width:200px" data-name="n8n"
+       data-info='{"type":"Core","phase":"Phase 2","health":"/healthz","desc":"Workflow orchestrator"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--green-dim);color:var(--green)">⚙️</div><div><div class="node-title">n8n</div><div class="node-subtitle">Workflow Engine</div></div></div>
+    <div class="node-body"><span class="node-badge health">Phase 2</span></div>
+  </div>
+
+  <div class="node" id="top-langfuse" style="left:580;top:340;width:200px" data-name="langfuse"
+       data-info='{"type":"Core","phase":"Phase 2","health":"/api/public/health","depends":["langfuse-db"],"desc":"LLM observability"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--green-dim);color:var(--green)">🔬</div><div><div class="node-title">langfuse</div><div class="node-subtitle">LLM Observability</div></div></div>
+    <div class="node-body"><div class="detail">Depends: <b>langfuse-db</b></div><span class="node-badge health">Phase 2</span></div>
+  </div>
+
+  <div class="node" id="top-prometheus" style="left:820;top:340;width:200px" data-name="prometheus"
+       data-info='{"type":"Core","phase":"Phase 2","health":"/-/healthy","desc":"Metrics store"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--green-dim);color:var(--green)">📊</div><div><div class="node-title">prometheus</div><div class="node-subtitle">Metrics</div></div></div>
+    <div class="node-body"><span class="node-badge health">Phase 2</span></div>
+  </div>
+
+  <!-- Layer 2 -->
+  <div class="zone" style="left:60;top:520;width:1400px;height:200px;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.03)">
+    <span class="zone-label" style="background:var(--orange);color:#fff;">Layer 2 — Agent Service (critical path, 4 dependencies)</span>
+  </div>
+
+  <div class="node" id="top-agent" style="left:300;top:560;width:500px" data-name="agent-service"
+       data-info='{"type":"Critical Service","phase":"Phase 3","health":"curl /health :8000","depends":["ollama","tools-service","chromadb","datastore-db"],"modules":["ReAct Graph","LLM Layer","Memory","Tools Proxy","RAG","Guardrails","A2A","MCP","Connectors","Auth/IAM","Observability","Docker Manager","File Store","Advanced Retrieval"],"desc":"Core agent runtime — 13+ modules"}'>
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--orange-dim);color:var(--orange)">🤖</div>
+      <div><div class="node-title">agent-service — FastAPI + LangGraph</div><div class="node-subtitle">Core Runtime · 13 Modules</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail"><b>Depends:</b> ollama ✓ · tools-service ✓ · chromadb ✓ · datastore-db ✓</div>
+      <span class="node-badge dep">Phase 3 — Critical Path</span>
+      <span class="node-badge health">✓ 4/4 deps healthy</span>
+    </div>
+  </div>
+
+  <!-- Layer 3 -->
+  <div class="zone" style="left:60;top:750;width:1400px;height:170px;border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.03)">
+    <span class="zone-label" style="background:var(--purple);color:#fff;">Layer 3 — Frontend (last to start)</span>
+  </div>
+
+  <div class="node" id="top-uiconsole" style="left:80;top:790;width:300px" data-name="ui-console"
+       data-info='{"type":"Frontend","phase":"Phase 4","health":"wget /health :3001","depends":["agent-service"],"desc":"27-page platform dashboard"}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">🖥️</div><div><div class="node-title">ui-console</div><div class="node-subtitle">Express.js + EJS · 27 pages</div></div></div>
+    <div class="node-body"><div class="detail">Depends: <b>agent-service ✓</b></div><span class="node-badge dep">Phase 4</span></div>
+  </div>
+
+  <div class="node" id="top-n8nproxy" style="left:430;top:790;width:240px" data-name="n8n-proxy"
+       data-info='{"type":"Proxy","phase":"Phase 4","depends":["n8n"]}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">🔀</div><div><div class="node-title">n8n-proxy</div><div class="node-subtitle">Nginx</div></div></div>
+    <div class="node-body"><div class="detail">Depends: <b>n8n ✓</b></div><span class="node-badge dep">Phase 4</span></div>
+  </div>
+
+  <div class="node" id="top-grafana" style="left:720;top:790;width:240px" data-name="grafana"
+       data-info='{"type":"Dashboards","phase":"Phase 4","depends":["prometheus"]}'>
+    <div class="node-header"><div class="node-icon" style="background:var(--purple-dim);color:var(--purple)">📈</div><div><div class="node-title">grafana</div><div class="node-subtitle">Dashboards</div></div></div>
+    <div class="node-body"><div class="detail">Depends: <b>prometheus ✓</b></div><span class="node-badge dep">Phase 4</span></div>
+  </div>
+
+  <!-- Runtime Flow -->
+  <div class="zone" style="left:60;top:950;width:1800px;height:150px;border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.03)">
+    <span class="zone-label" style="background:var(--cyan);color:#fff;">Runtime Request Flow</span>
+  </div>
+
+  <div class="node" id="top-flow-user" style="left:100;top:990;width:130px" data-name="User">
+    <div class="node-header"><div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">👤</div><div><div class="node-title">User</div><div class="node-subtitle">Browser</div></div></div>
+  </div>
+  <div class="node" id="top-flow-ui" style="left:340;top:990;width:160px" data-name="UI Console">
+    <div class="node-header"><div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🖥️</div><div><div class="node-title">UI Console</div><div class="node-subtitle">:3000</div></div></div>
+  </div>
+  <div class="node" id="top-flow-agent" style="left:610;top:980;width:180px" data-name="Agent Service">
+    <div class="node-header"><div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🤖</div><div><div class="node-title">Agent Service</div><div class="node-subtitle">:8000</div></div></div>
+  </div>
+  <div class="node" id="top-flow-llm" style="left:900;top:970;width:150px" data-name="LLM">
+    <div class="node-header"><div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🧠</div><div><div class="node-title">③ LLM</div><div class="node-subtitle">Ollama / Cloud</div></div></div>
+  </div>
+  <div class="node" id="top-flow-tools" style="left:900;top:1020;width:150px" data-name="Tools">
+    <div class="node-header"><div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🔧</div><div><div class="node-title">④ Tools</div><div class="node-subtitle">:8001</div></div></div>
+  </div>
+  <div class="node" id="top-flow-chroma" style="left:900;top:1070;width:150px" data-name="ChromaDB">
+    <div class="node-header"><div class="node-icon" style="background:var(--cyan-dim);color:var(--cyan)">🗄️</div><div><div class="node-title">⑤ ChromaDB</div><div class="node-subtitle">RAG</div></div></div>
+  </div>
+
+  <!-- Startup Order Panel -->
+  <div class="node" style="left:1500;top:100;width:380px;cursor:default" data-name="Startup Order">
+    <div class="node-header">
+      <div class="node-icon" style="background:var(--accent);color:#fff">🔄</div>
+      <div><div class="node-title">Startup Order</div><div class="node-subtitle">depends_on: service_healthy</div></div>
+    </div>
+    <div class="node-body">
+      <div class="detail" style="line-height:1.8">
+        <b style="color:var(--blue)">Phase 1</b> (parallel):<br>
+        &nbsp;&nbsp;├─ ollama, datastore-db, chromadb<br>
+        &nbsp;&nbsp;├─ langfuse-db, otel-collector, loki<br>
+        &nbsp;&nbsp;└─ brave-search-mcp, open-tools-mcp<br><br>
+        <b style="color:var(--green)">Phase 2</b> (after Phase 1):<br>
+        &nbsp;&nbsp;├─ tools-service, n8n<br>
+        &nbsp;&nbsp;├─ langfuse → langfuse-db<br>
+        &nbsp;&nbsp;└─ prometheus<br><br>
+        <b style="color:var(--orange)">Phase 3</b> (after Phase 2):<br>
+        &nbsp;&nbsp;└─ <b>agent-service</b> (critical path)<br><br>
+        <b style="color:var(--purple)">Phase 4</b> (after Phase 3):<br>
+        &nbsp;&nbsp;├─ ui-console → agent-service<br>
+        &nbsp;&nbsp;├─ n8n-proxy → n8n<br>
+        &nbsp;&nbsp;└─ grafana → prometheus
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h4>Topology Legend</h4>
+    <div class="legend-items">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Phase 1</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Phase 2</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Phase 3</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Phase 4</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Runtime Flow</div>
+    </div>
+    <div style="margin-top:0.5rem;color:var(--muted);font-size:0.65rem">Arrows show dependency direction · Click nodes for details</div>
+  </div>
+
+</div>
+
+</div><!-- end canvas-wrap -->
+
+<!-- Info Panel (slide-out) -->
+<div class="info-panel" id="infoPanel">
+  <div class="info-panel-header">
+    <h3 id="infoPanelTitle">Service Details</h3>
+    <button class="info-panel-close" onclick="closeInfoPanel()">✕</button>
+  </div>
+  <div class="info-panel-body" id="infoPanelBody"></div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ─── State ───
+let currentTab = 'system';
+let zoom = 1;
+let panX = 0, panY = 0;
+let isPanning = false;
+let startX, startY;
+let flowAnimating = false;
+let labelsVisible = true;
+let selectedNode = null;
+
+// ─── Tab Switching ───
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.diagram-page').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(tab).classList.add('active');
+  resetView();
+  clearHighlights();
+}
+
+// ─── Zoom/Pan ───
+function updateTransform() {
+  const canvas = document.querySelector('.diagram-page.active');
+  if (canvas) canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+}
+
+function zoomIn() { zoom = Math.min(zoom * 1.2, 3); updateTransform(); }
+function zoomOut() { zoom = Math.max(zoom / 1.2, 0.3); updateTransform(); }
+function resetView() { zoom = 1; panX = 0; panY = 0; updateTransform(); }
+function fitToScreen() {
+  const wrap = document.getElementById('canvasWrap');
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  zoom = Math.min(w / 2400, h / 1600) * 0.9;
+  panX = (w - 2400 * zoom) / 2;
+  panY = 20;
+  updateTransform();
+}
+
+// Pan
+const wrap = document.getElementById('canvasWrap');
+wrap.addEventListener('mousedown', e => {
+  if (e.target.closest('.node') || e.target.closest('.legend')) return;
+  isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY;
+});
+wrap.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  panX = e.clientX - startX; panY = e.clientY - startY;
+  const canvas = document.querySelector('.diagram-page.active');
+  if (canvas) canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+});
+wrap.addEventListener('mouseup', () => isPanning = false);
+wrap.addEventListener('mouseleave', () => isPanning = false);
+
+// Wheel zoom
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newZoom = Math.max(0.3, Math.min(3, zoom * delta));
+  const rect = wrap.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * (newZoom / zoom);
+  panY = my - (my - panY) * (newZoom / zoom);
+  zoom = newZoom;
+  updateTransform();
+}, { passive: false });
+
+// ─── Node Interactions ───
+document.addEventListener('click', e => {
+  const node = e.target.closest('.node');
+  if (node && node.dataset.info) {
+    openInfoPanel(node);
+    highlightConnections(node.id);
+  } else if (!e.target.closest('.info-panel') && !e.target.closest('.ctrl-btn') && !e.target.closest('.tab')) {
+    closeInfoPanel();
+    clearHighlights();
+  }
+});
+
+// Hover tooltips
+document.addEventListener('mouseover', e => {
+  const node = e.target.closest('.node');
+  if (node && node.dataset.name) {
+    const tt = document.getElementById('tooltip');
+    const info = node.dataset.info ? JSON.parse(node.dataset.info) : {};
+    tt.innerHTML = `<h4>${node.dataset.name}</h4>`;
+    if (info.type) tt.innerHTML += `<div class="tt-row"><b>Type:</b> ${info.type}</div>`;
+    if (info.tech) tt.innerHTML += `<div class="tt-row"><b>Tech:</b> ${info.tech}</div>`;
+    if (info.port) tt.innerHTML += `<div class="tt-row"><b>Port:</b> ${info.port}</div>`;
+    if (info.desc) tt.innerHTML += `<div class="tt-row" style="margin-top:0.3rem;color:var(--text)">${info.desc}</div>`;
+    tt.classList.add('show');
+    positionTooltip(e);
+    // Highlight connections on hover
+    highlightConnections(node.id);
+  }
+});
+document.addEventListener('mouseout', e => {
+  const node = e.target.closest('.node');
+  if (node) {
+    document.getElementById('tooltip').classList.remove('show');
+    if (!selectedNode) clearHighlights();
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (document.getElementById('tooltip').classList.contains('show')) positionTooltip(e);
+});
+
+function positionTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  let x = e.clientX + 15, y = e.clientY + 15;
+  if (x + 320 > window.innerWidth) x = e.clientX - 330;
+  if (y + 200 > window.innerHeight) y = e.clientY - 200;
+  tt.style.left = x + 'px'; tt.style.top = y + 'px';
+}
+
+// ─── Connection Highlighting ───
+function highlightConnections(nodeId) {
+  const page = document.querySelector('.diagram-page.active');
+  const lines = page.querySelectorAll('.conn-line');
+  const labels = page.querySelectorAll('.conn-label');
+  const nodes = page.querySelectorAll('.node');
+
+  const connectedNodeIds = new Set([nodeId]);
+
+  lines.forEach(l => {
+    const from = l.dataset.from, to = l.dataset.to;
+    if (from === nodeId || to === nodeId) {
+      l.classList.add('highlight'); l.classList.remove('dimmed');
+      if (from) connectedNodeIds.add(from);
+      if (to) connectedNodeIds.add(to);
+    } else {
+      l.classList.remove('highlight'); l.classList.add('dimmed');
+    }
+  });
+
+  labels.forEach(l => {
+    const prevLine = l.previousElementSibling;
+    if (prevLine && prevLine.classList.contains('highlight')) {
+      l.classList.add('highlight'); l.classList.remove('dimmed');
+    } else {
+      l.classList.remove('highlight'); l.classList.add('dimmed');
+    }
+  });
+
+  nodes.forEach(n => {
+    if (connectedNodeIds.has(n.id)) {
+      n.classList.add('highlight'); n.classList.remove('dimmed');
+    } else {
+      n.classList.remove('highlight'); n.classList.add('dimmed');
+    }
+  });
+}
+
+function clearHighlights() {
+  selectedNode = null;
+  document.querySelectorAll('.conn-line, .conn-label, .node').forEach(el => {
+    el.classList.remove('highlight', 'dimmed');
+  });
+}
+
+// ─── Info Panel ───
+function openInfoPanel(node) {
+  selectedNode = node.id;
+  const info = JSON.parse(node.dataset.info);
+  const panel = document.getElementById('infoPanel');
+  document.getElementById('infoPanelTitle').textContent = node.dataset.name;
+
+  let html = '';
+
+  // Basic info
+  html += '<div class="info-section"><h4>Overview</h4>';
+  for (const [key, val] of Object.entries(info)) {
+    if (typeof val === 'string') {
+      html += `<div class="info-row"><span class="label">${key}</span><span class="value">${val}</span></div>`;
+    }
+  }
+  html += '</div>';
+
+  // Arrays (modules, depends, models)
+  for (const [key, val] of Object.entries(info)) {
+    if (Array.isArray(val)) {
+      html += `<div class="info-section"><h4>${key}</h4><div>`;
+      val.forEach(item => {
+        const colors = { depends: `background:var(--orange-dim);color:var(--orange)`,
+                         modules: `background:var(--blue-dim);color:var(--blue)`,
+                         models: `background:var(--red-dim);color:var(--red)` };
+        html += `<span class="info-tag" style="${colors[key] || 'background:var(--surface2);color:var(--text)'}">${item}</span>`;
+      });
+      html += '</div></div>';
+    }
+  }
+
+  document.getElementById('infoPanelBody').innerHTML = html;
+  panel.classList.add('open');
+}
+
+function closeInfoPanel() {
+  document.getElementById('infoPanel').classList.remove('open');
+}
+
+// ─── Search ───
+function searchNodes(query) {
+  const page = document.querySelector('.diagram-page.active');
+  const nodes = page.querySelectorAll('.node');
+  const q = query.toLowerCase().trim();
+
+  if (!q) { clearHighlights(); return; }
+
+  nodes.forEach(n => {
+    const name = (n.dataset.name || '').toLowerCase();
+    const info = n.dataset.info || '';
+    if (name.includes(q) || info.toLowerCase().includes(q)) {
+      n.classList.add('highlight'); n.classList.remove('dimmed');
+    } else {
+      n.classList.remove('highlight'); n.classList.add('dimmed');
+    }
+  });
+}
+
+// ─── Flow Animation ───
+function toggleFlow() {
+  flowAnimating = !flowAnimating;
+  const btn = document.getElementById('flowToggle');
+  btn.textContent = flowAnimating ? '⏸ Stop Flow' : '▶ Animate Flow';
+  btn.classList.toggle('active', flowAnimating);
+
+  document.querySelectorAll('.flow-dot').forEach(dot => {
+    dot.classList.toggle('animate', flowAnimating);
+  });
+
+  if (flowAnimating) animateFlowLines();
+}
+
+function animateFlowLines() {
+  if (!flowAnimating) return;
+  const lines = document.querySelectorAll('.diagram-page.active .conn-line:not([stroke-dasharray])');
+  let i = 0;
+  function pulse() {
+    if (!flowAnimating) return;
+    lines.forEach(l => l.style.opacity = '0.4');
+    if (lines[i]) {
+      lines[i].style.opacity = '1';
+      lines[i].style.strokeWidth = '3';
+      setTimeout(() => { if(lines[i]) { lines[i].style.strokeWidth = '1.5'; } }, 400);
+    }
+    i = (i + 1) % lines.length;
+    setTimeout(pulse, 500);
+  }
+  pulse();
+}
+
+// ─── Label Toggle ───
+function toggleLabels() {
+  labelsVisible = !labelsVisible;
+  const btn = document.getElementById('labelToggle');
+  btn.classList.toggle('active', labelsVisible);
+  document.querySelectorAll('.conn-label').forEach(l => {
+    l.style.display = labelsVisible ? '' : 'none';
+  });
+}
+
+// ─── Keyboard shortcuts ───
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '1') switchTab('system');
+  if (e.key === '2') switchTab('network');
+  if (e.key === '3') switchTab('topology');
+  if (e.key === '+' || e.key === '=') zoomIn();
+  if (e.key === '-') zoomOut();
+  if (e.key === '0') resetView();
+  if (e.key === 'f') fitToScreen();
+  if (e.key === 'Escape') { closeInfoPanel(); clearHighlights(); }
+  if (e.key === '/') { e.preventDefault(); document.getElementById('searchBox').focus(); }
+});
+
+// ─── Init ───
+fitToScreen();
+</script>
+</body>
+</html>

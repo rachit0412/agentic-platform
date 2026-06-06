@@ -1,7 +1,7 @@
 ---
 name: project-documentation
-description: Generate update validate project documentation README API docs architecture principles building blocks decisions changelog contributing guidelines technical writing
-argument-hint: "[readme|api|architecture|validate|changelog|all] - generate, update, or validate project documentation"
+description: Generate update validate project documentation README API docs architecture principles evaluation building blocks ABB SBB decisions standards guidelines changelog contributing technical writing
+argument-hint: "[readme|api|architecture|validate|principles|building-blocks|decisions|standards|guidelines|changelog|all] - generate, update, evaluate, or validate project documentation"
 ---
 
 # Project Documentation
@@ -281,4 +281,309 @@ After validation, output a summary:
 - [ ] Fixed in documentation
 - [ ] Added Future Vision section
 - [ ] Cross-references updated
+```
+
+---
+
+## Architecture Document Update & Evaluation
+
+When the user requests updates to architecture documents (not just validation), follow these procedures to modify `docs/PRINCIPLES.md`, `docs/BUILDING-BLOCKS.md`, and `docs/DECISIONS.md` based on codebase reality.
+
+### 14. Update & Evaluate PRINCIPLES.md
+
+Update architecture principles to reflect current implementation state and evaluate their effectiveness.
+
+#### 14a. Principle Evaluation Procedure
+
+For each principle (AP-1 through AP-11+):
+
+1. **Run validation** (Section 10) to determine current status (FULLY MET / PARTIAL / NOT MET)
+2. **Evaluate effectiveness** — assess whether the principle is:
+   - **Delivering value** — measurable benefit to the platform (e.g., AP-4 Defence in Depth prevents prompt injection)
+   - **Aspirational** — not yet delivering value but on roadmap (e.g., /v1/ versioning)
+   - **Needs revision** — principle wording doesn't match actual architecture direction
+3. **Score each principle** on Implementation Maturity (1–5):
+   - 1 = Not started
+   - 2 = Proof of concept
+   - 3 = Partially implemented with gaps
+   - 4 = Fully implemented, minor gaps
+   - 5 = Fully implemented and battle-tested
+4. **Update the Validation Summary table** in PRINCIPLES.md with current scores and dates
+
+#### 14b. Adding New Principles
+
+When the codebase implements patterns not captured by existing principles:
+
+1. Scan for emergent patterns (e.g., new cross-cutting concerns like rate limiting, caching, multi-tenancy)
+2. Assign the next AP-N ID sequentially
+3. Follow the existing principle template:
+
+```markdown
+### AP-N · [Principle Name]
+
+> **Statement**: One-line principle statement.
+
+**Why**: Rationale for adopting this principle.
+
+| Claim                | Status       | Evidence                   |
+| -------------------- | ------------ | -------------------------- |
+| "Verifiable claim 1" | ✅ / ❌ / 🟡 | Code file + line reference |
+| "Verifiable claim 2" | ✅ / ❌ / 🟡 | Code file + line reference |
+
+**Validation Status**: FULLY MET / PARTIAL / NOT MET
+```
+
+4. Add the new principle to the Validation Summary table
+5. Cross-reference in BUILDING-BLOCKS.md and DECISIONS.md where applicable
+
+#### 14c. Updating Existing Principles
+
+When code has evolved beyond what a principle documents:
+
+1. **Update claims** — replace outdated numbers (e.g., endpoint counts, table counts) with verified actuals
+2. **Update evidence** — refresh code file paths and line numbers
+3. **Update status** — promote from PARTIAL → FULLY MET if gaps are closed, or demote if regression detected
+4. **Update the Future Vision section** — remove completed items, add newly discovered gaps
+5. **Update the Priority Roadmap** — re-rank P1–P4 items based on current importance
+
+### 15. Update BUILDING-BLOCKS.md (ABBs & SBBs)
+
+Update Architecture Building Blocks (abstract capabilities) and Solution Building Blocks (concrete implementations).
+
+#### 15a. Update Existing ABB/SBB Pairs
+
+For each ABB (ABB-1 through ABB-18):
+
+1. **Verify the ABB description** still matches the capability's scope
+2. **Update SBB technology mapping**:
+   - Check package versions in `requirements.txt`, `package.json`
+   - Check actual library imports in source files
+   - Check docker-compose service definitions for image versions
+3. **Update numeric claims**:
+   - Table counts → grep `CREATE TABLE` in `memory.py`
+   - Endpoint counts → count `@app.` decorators in `main.py`
+   - Tool counts → count registered tools in tools-service `server.py`
+   - View counts → count `.ejs` files in `services/ui-console/views/`
+   - File type counts → check parser registrations
+4. **Update configuration details**:
+   - Env var names and defaults
+   - Port numbers (verify against docker-compose.yml)
+   - Default parameter values (verify against function signatures)
+5. **Update the Traceability Matrix** row for this ABB
+
+#### 15b. Adding New ABBs
+
+When the codebase introduces new architectural capabilities:
+
+1. Identify the new capability (e.g., "Rate Limiting", "Multi-Tenant Isolation", "Prompt Management")
+2. Assign the next ABB-N ID sequentially
+3. Define the ABB (abstract capability):
+
+```markdown
+### ABB-N · [Capability Name]
+
+**Purpose**: What architectural need this addresses.
+
+| Aspect       | Detail                          |
+| ------------ | ------------------------------- |
+| Scope        | What this building block covers |
+| Interfaces   | APIs/protocols it exposes       |
+| Dependencies | Other ABBs it depends on        |
+```
+
+4. Define the SBB (concrete implementation):
+
+```markdown
+#### SBB-N · [Implementation Name]
+
+| Component | Technology        | Evidence                  |
+| --------- | ----------------- | ------------------------- |
+| Runtime   | Library/framework | File path + line          |
+| Storage   | Database/cache    | Docker service name       |
+| API       | Endpoints         | Route paths               |
+| Config    | Env vars          | Variable names + defaults |
+```
+
+5. Map to principles — list which AP-N principles this ABB supports
+6. Add to the Traceability Matrix
+7. Cross-reference in DECISIONS.md if an ADR drove the technology choice
+
+#### 15c. ABB/SBB Consistency Checks
+
+After any update, verify:
+
+| Check                                                             | How                                       |
+| ----------------------------------------------------------------- | ----------------------------------------- |
+| Every ABB has a matching SBB                                      | No abstract blocks without implementation |
+| Every SBB technology is in docker-compose.yml or requirements.txt | No phantom dependencies                   |
+| SBB port numbers match docker-compose.yml `ports:`                | No port mismatches                        |
+| SBB env vars exist in code (os.getenv/os.environ)                 | No documented-but-unused vars             |
+| ABB principle mappings reference valid AP-N IDs                   | No broken cross-references                |
+
+### 16. Update DECISIONS.md (ADRs)
+
+Update Architecture Decision Records to track evolving decisions.
+
+#### 16a. Update Existing ADRs
+
+For each ADR:
+
+1. **Verify Status field** — should be one of: `Accepted`, `Superseded`, `Deprecated`, `Proposed`
+2. **Check if decision is still valid** — does the code still implement this decision?
+3. **Update Consequences** — add newly discovered consequences (positive or negative)
+4. **Add supersession links** — if a newer ADR replaces this one, add `Superseded by: ADR-NNN`
+5. **Refresh code evidence** — update file paths and line numbers
+
+#### 16b. Adding New ADRs
+
+When architectural decisions are made but not documented:
+
+1. Scan for undocumented decisions:
+   - New service additions not covered by existing ADRs
+   - Technology swaps (e.g., database migration, new LLM provider)
+   - Architectural pattern changes (e.g., adding event-driven patterns)
+   - Security decisions (e.g., auth mechanism changes)
+2. Assign the next ADR-NNN ID sequentially (3-digit, zero-padded)
+3. Follow the ADR template:
+
+```markdown
+### ADR-NNN · [Decision Title]
+
+| Field      | Value      |
+| ---------- | ---------- |
+| Status     | Accepted   |
+| Date       | YYYY-MM-DD |
+| Principles | AP-N, AP-M |
+
+**Context**: Why this decision was needed.
+
+**Decision**: What was decided and chosen.
+
+**Consequences**:
+
+- ✅ Positive consequence 1
+- ✅ Positive consequence 2
+- ⚠️ Trade-off or risk
+```
+
+4. Cross-reference the relevant principles (AP-N) and building blocks (ABB-N)
+5. Update the ADR index table at the top of DECISIONS.md
+
+#### 16c. ADR Lifecycle Management
+
+| Current Status | Valid Transitions | When                            |
+| -------------- | ----------------- | ------------------------------- |
+| Proposed       | → Accepted        | After implementation and review |
+| Accepted       | → Superseded      | When replaced by a newer ADR    |
+| Accepted       | → Deprecated      | When the feature is removed     |
+| Superseded     | (terminal)        | Link to replacement ADR         |
+| Deprecated     | (terminal)        | Note removal date               |
+
+### 17. Update Standards & Guidelines
+
+Maintain platform-wide standards and guidelines that complement principles and decisions.
+
+#### 17a. Coding Standards
+
+Document and enforce coding standards derived from the codebase:
+
+1. **API Design Standards**:
+   - Endpoint naming conventions (e.g., plural nouns for collections: `/agents`, `/skills`)
+   - HTTP method usage (GET for reads, POST for creates/actions, PUT for full updates, PATCH for partial, DELETE for removal)
+   - Response format standards (JSON envelope with `status`, `data`, `error` fields)
+   - Error response format (`{"detail": "message"}` for FastAPI, `{"error": "message"}` for Express)
+   - Pagination conventions (query params: `skip`, `limit`)
+
+2. **Service Structure Standards**:
+   - Each service must have: `Dockerfile`, `requirements.txt` or `package.json`, health endpoint
+   - Entry point naming: `main.py` (Python/FastAPI), `server.js` (Node.js/Express)
+   - Port allocation: document the port registry (which service owns which port)
+
+3. **Configuration Standards**:
+   - Environment variable naming: `UPPER_SNAKE_CASE`
+   - Default values: always provide sensible defaults via `os.getenv("VAR", "default")`
+   - Secrets: never commit; use `.env` files excluded from git
+
+4. **Testing Standards**:
+   - Test directory structure: `tests/unit/`, `tests/integration/`, `tests/e2e/`, `tests/contract/`, `tests/smoke/`, `tests/load/`
+   - Naming: `test_*.py` (Python), `*.test.js` (JavaScript)
+   - Coverage expectations per test type
+
+#### 17b. Security Guidelines
+
+Document security practices observed in the codebase:
+
+1. **Authentication**: Session-based auth with PBKDF2-SHA256, HttpOnly cookies, CSRF protection
+2. **Authorization**: RBAC with admin/member/viewer roles, workspace-scoped access
+3. **Input Validation**: Guardrails engine for LLM inputs, sanitization for user inputs
+4. **Output Filtering**: PII detection, data-leak prevention on LLM outputs
+5. **Tool Execution Safety**: URL whitelist, import blocklist, filename sanitization, execution timeout
+6. **Dependency Security**: Pin exact versions, audit for known vulnerabilities
+
+#### 17c. Operational Guidelines
+
+Document operational practices:
+
+1. **Health Checks**: Every service exposes `/health`; docker-compose uses healthchecks with `depends_on` conditions
+2. **Logging**: Structured JSON logging via OTel Collector → Loki
+3. **Monitoring**: Prometheus metrics → Grafana dashboards
+4. **Backup**: SQLite database at `/data/platform.db`; document backup procedures
+5. **Scaling**: Horizontal scaling via Docker Compose replicas or Kubernetes
+
+### 18. Cross-Reference Integrity
+
+After updating any architecture document, validate cross-references across all three:
+
+#### 18a. Automated Cross-Reference Checks
+
+| Source Document    | Reference Type          | Target Document    | Validation         |
+| ------------------ | ----------------------- | ------------------ | ------------------ |
+| PRINCIPLES.md      | "See ABB-N"             | BUILDING-BLOCKS.md | ABB-N must exist   |
+| PRINCIPLES.md      | "See ADR-NNN"           | DECISIONS.md       | ADR-NNN must exist |
+| BUILDING-BLOCKS.md | "Supports AP-N"         | PRINCIPLES.md      | AP-N must exist    |
+| BUILDING-BLOCKS.md | "See ADR-NNN"           | DECISIONS.md       | ADR-NNN must exist |
+| DECISIONS.md       | "Principles: AP-N"      | PRINCIPLES.md      | AP-N must exist    |
+| DECISIONS.md       | "Superseded by ADR-NNN" | DECISIONS.md       | ADR-NNN must exist |
+
+#### 18b. Consistency Checks
+
+After every update cycle:
+
+1. **ID continuity** — no gaps in AP-N, ABB-N, or ADR-NNN sequences
+2. **Status alignment** — if a principle is FULLY MET, the corresponding ABB should show verified SBB
+3. **Date freshness** — last-validated dates should be within the current quarter
+4. **Orphan detection** — no ABBs without principle mapping; no ADRs without principle references
+
+### 19. Documentation Update Report
+
+After performing updates (not just validation), output a change summary:
+
+```markdown
+## Documentation Update Report
+
+**Date**: YYYY-MM-DD
+**Scope**: [principles|building-blocks|decisions|standards|all]
+
+### Changes Made
+
+| Document           | Section | Change Type | Description                     |
+| ------------------ | ------- | ----------- | ------------------------------- |
+| PRINCIPLES.md      | AP-1    | Updated     | Endpoint count 145 → 157        |
+| BUILDING-BLOCKS.md | ABB-7   | Updated     | Table count 16 → 23             |
+| DECISIONS.md       | ADR-026 | Added       | New ADR for guardrails engine   |
+| PRINCIPLES.md      | AP-12   | Added       | New principle for rate limiting |
+
+### Evaluation Summary
+
+| Principle | Score | Trend | Notes                    |
+| --------- | ----- | ----- | ------------------------ |
+| AP-1      | 4/5   | ↑     | Improved: more endpoints |
+| AP-5      | 3/5   | →     | Unchanged: still opt-in  |
+
+### Cross-Reference Status
+
+- [ ] All AP-N → ABB-N links valid
+- [ ] All ADR-NNN → AP-N links valid
+- [ ] All SBB technologies verified in code
+- [ ] No orphaned references
 ```

@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="Agentic Platform" version="24.7.6">
+  <diagram name="System Architecture" id="system-arch">
+    <mxGraphModel dx="1900" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             TITLE
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="title" value="Agentic Platform — System Architecture" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;fontFamily=Helvetica;fontColor=#1A1A2E;" vertex="1" parent="1">
+          <mxGeometry x="540" y="20" width="500" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Containerised Agent Factory  ·  16 Docker Services  ·  platform-net Bridge  ·  8 Named Volumes" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=11;fontColor=#777777;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="480" y="55" width="620" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             USER ACTOR
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="user" value="User / Browser" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontStyle=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="774" y="85" width="32" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             TIER 1 — PRESENTATION
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="tierPres" value="PRESENTATION TIER" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;rounded=1;arcSize=6;fontStyle=1;fontSize=13;fontColor=#2E5A88;swimlaneLine=1;shadow=1;gradientColor=#C8DEFF;gradientDirection=south;" vertex="1" parent="1">
+          <mxGeometry x="200" y="170" width="1180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="uiConsole" value="&lt;b&gt;UI Console&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Express.js + EJS&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;27 views · :3000→3001&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;shadow=1;fontSize=10;arcSize=12;spacingTop=0;" vertex="1" parent="tierPres">
+          <mxGeometry x="30" y="40" width="165" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="loginUI" value="&lt;b&gt;Login UI&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;React 18 + Vite&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;Auth SPA&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierPres">
+          <mxGeometry x="220" y="40" width="130" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="n8nProxy" value="&lt;b&gt;n8n Proxy&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Nginx Alpine&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;:5679→8080&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierPres">
+          <mxGeometry x="375" y="40" width="120" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="grafanaUI" value="&lt;b&gt;Grafana&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Dashboards&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;:3013→3000&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierPres">
+          <mxGeometry x="910" y="40" width="120" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="langfuseUI" value="&lt;b&gt;Langfuse&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;LLM Observability&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;:3012→3000&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierPres">
+          <mxGeometry x="1045" y="40" width="120" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             TIER 2 — APPLICATION
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="tierApp" value="APPLICATION TIER" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;arcSize=6;fontStyle=1;fontSize=13;fontColor=#3B6E3B;swimlaneLine=1;shadow=1;gradientColor=#C1E8C1;gradientDirection=south;" vertex="1" parent="1">
+          <mxGeometry x="200" y="320" width="1180" height="280" as="geometry" />
+        </mxCell>
+
+        <!-- Core services -->
+        <mxCell id="agentSvc" value="&lt;b&gt;Agent Service&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;FastAPI + LangGraph&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;Core orchestrator · :8010→8000&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2D7600;shadow=1;fontSize=11;arcSize=12;strokeWidth=2;" vertex="1" parent="tierApp">
+          <mxGeometry x="30" y="40" width="210" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="toolsSvc" value="&lt;b&gt;Tools Service&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;FastAPI — 29 proxy tools&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;:8011→8001&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2D7600;shadow=1;fontSize=11;arcSize=12;strokeWidth=2;" vertex="1" parent="tierApp">
+          <mxGeometry x="275" y="40" width="185" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="n8nSvc" value="&lt;b&gt;n8n&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Workflow Engine&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;5 templates · :5678&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;shadow=1;fontSize=11;arcSize=12;" vertex="1" parent="tierApp">
+          <mxGeometry x="495" y="40" width="155" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="braveMCP" value="&lt;b&gt;Brave MCP&lt;/b&gt;&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;Search · :8080&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierApp">
+          <mxGeometry x="685" y="40" width="115" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="openMCP" value="&lt;b&gt;Open Tools MCP&lt;/b&gt;&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;No key · :8080&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierApp">
+          <mxGeometry x="830" y="40" width="115" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Agent internal modules container -->
+        <mxCell id="modContainer" value="Agent Internal Modules  (12 pluggable capabilities)" style="swimlane;startSize=22;fillColor=#f5f5f5;strokeColor=#82b366;rounded=1;arcSize=8;dashed=1;dashPattern=8 4;fontStyle=1;fontSize=10;fontColor=#3B6E3B;" vertex="1" parent="tierApp">
+          <mxGeometry x="30" y="120" width="930" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="m1" value="&lt;b&gt;ReAct Graph&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;LangGraph&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="15" y="30" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m2" value="&lt;b&gt;LLM Layer&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;Multi-provider&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="120" y="30" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m3" value="&lt;b&gt;Memory&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;SQLite · 16 tables&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="225" y="30" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m4" value="&lt;b&gt;Guardrails&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;Input / Output&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="330" y="30" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" value="&lt;b&gt;RAG Pipeline&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;5 retrieval modes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="435" y="30" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m6" value="&lt;b&gt;A2A / MCP&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;Protocols&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="540" y="30" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m7" value="&lt;b&gt;Auth &amp;amp; IAM&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;RBAC&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="15" y="85" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m8" value="&lt;b&gt;Observability&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;OTel + Langfuse&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="120" y="85" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m9" value="&lt;b&gt;Connectors&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;DB / REST / Cloud&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="225" y="85" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m10" value="&lt;b&gt;File Store&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;Per-workspace&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="330" y="85" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m11" value="&lt;b&gt;Docker Mgr&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;Container ops&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="435" y="85" width="95" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="m12" value="&lt;b&gt;Adv Retrieval&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#888&quot; style=&quot;font-size:8px&quot;&gt;LlamaIndex&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F5E6;strokeColor=#82b366;fontSize=9;arcSize=14;" vertex="1" parent="modContainer">
+          <mxGeometry x="540" y="85" width="95" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             LLM PROVIDERS (left sidebar)
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="tierLLM" value="LLM PROVIDERS" style="swimlane;startSize=30;fillColor=#f8cecc;strokeColor=#b85450;rounded=1;arcSize=6;fontStyle=1;fontSize=13;fontColor=#993333;shadow=1;gradientColor=#FFD5D5;gradientDirection=south;" vertex="1" parent="1">
+          <mxGeometry x="20" y="320" width="155" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="ollama" value="&lt;b&gt;Ollama&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Local LLMs&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;llama3 · nomic-embed&lt;br/&gt;:11436→11434&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierLLM">
+          <mxGeometry x="10" y="38" width="135" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="azOAI" value="&lt;b&gt;Azure OpenAI&lt;/b&gt;&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;GPT-4o-mini&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierLLM">
+          <mxGeometry x="10" y="110" width="135" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="oai" value="&lt;b&gt;OpenAI&lt;/b&gt;&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;GPT-4o-mini&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierLLM">
+          <mxGeometry x="10" y="158" width="135" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="foundry" value="&lt;b&gt;Azure AI Foundry&lt;/b&gt;&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;Managed deploy&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierLLM">
+          <mxGeometry x="10" y="206" width="135" height="38" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             TIER 3 — DATA
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="tierData" value="DATA TIER" style="swimlane;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;rounded=1;arcSize=6;fontStyle=1;fontSize=13;fontColor=#8C7A32;shadow=1;gradientColor=#FFF5D5;gradientDirection=south;" vertex="1" parent="1">
+          <mxGeometry x="200" y="640" width="1180" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="chromaDB" value="&lt;b&gt;ChromaDB&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Vector Store&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;RAG · :8200→8000&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#d6b656;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierData">
+          <mxGeometry x="30" y="35" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="datastoreDB" value="&lt;b&gt;Datastore DB&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;PostgreSQL 16&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;Doc registry · :5433→5432&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#d6b656;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierData">
+          <mxGeometry x="200" y="35" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="langfuseDB" value="&lt;b&gt;Langfuse DB&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;PostgreSQL 16&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;Trace storage&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#d6b656;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierData">
+          <mxGeometry x="400" y="35" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="sqliteDB" value="&lt;b&gt;SQLite&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Agent Memory&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;16 tables in-proc&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#d6b656;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierData">
+          <mxGeometry x="570" y="35" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="volumes" value="&lt;b&gt;Docker Volumes (8)&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;font color=&quot;#888&quot;&gt;n8n · ollama · chroma&lt;br/&gt;db · langfuse · prom&lt;br/&gt;grafana · loki&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#d6b656;shadow=1;fontSize=9;arcSize=12;" vertex="1" parent="tierData">
+          <mxGeometry x="720" y="35" width="130" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             OBSERVABILITY STACK (right sidebar)
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="tierObs" value="OBSERVABILITY" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;rounded=1;arcSize=6;fontStyle=1;fontSize=13;fontColor=#5C3D7A;shadow=1;gradientColor=#EDE4F5;gradientDirection=south;" vertex="1" parent="1">
+          <mxGeometry x="1410" y="320" width="190" height="450" as="geometry" />
+        </mxCell>
+        <mxCell id="otelCol" value="&lt;b&gt;OTel Collector&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;font color=&quot;#888&quot;&gt;:4318 HTTP&lt;br/&gt;:4317 gRPC&lt;br/&gt;:8889 Prom export&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierObs">
+          <mxGeometry x="15" y="40" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="promSvc" value="&lt;b&gt;Prometheus&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;font color=&quot;#888&quot;&gt;Metrics · :9090&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierObs">
+          <mxGeometry x="15" y="130" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="lokiSvc" value="&lt;b&gt;Loki&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;font color=&quot;#888&quot;&gt;Logs · :3100&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierObs">
+          <mxGeometry x="15" y="200" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="langfuseSvc" value="&lt;b&gt;Langfuse&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;font color=&quot;#888&quot;&gt;LLM Traces · :3012→3000&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierObs">
+          <mxGeometry x="15" y="270" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="grafanaSvc" value="&lt;b&gt;Grafana&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;font color=&quot;#888&quot;&gt;Dashboards · :3013→3000&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="tierObs">
+          <mxGeometry x="15" y="340" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Obs internal edges -->
+        <mxCell id="oe1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;fontSize=8;fontColor=#9673a6;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="tierObs" source="otelCol" target="promSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe1lbl" value="scrape" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#9673a6;" vertex="1" connectable="0" parent="oe1">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+        <mxCell id="oe2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="tierObs" source="promSvc" target="lokiSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;dashPattern=8 4;strokeColor=#9673a6;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="tierObs" source="langfuseSvc" target="grafanaSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             EDGES — Data Flow
+             ═══════════════════════════════════════════════════════════════ -->
+        <!-- User → UI Console -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=2;fontColor=#6c8ebf;fontSize=9;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="user" target="uiConsole">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1lbl" value="HTTP :3000" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#6c8ebf;fontStyle=1;" vertex="1" connectable="0" parent="e1">
+          <mxGeometry x="-0.2" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- UI Console → Agent Service -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2D7600;strokeWidth=2;fontSize=9;fontColor=#2D7600;" edge="1" parent="1" source="uiConsole" target="agentSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2lbl" value="REST API" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#2D7600;fontStyle=1;" vertex="1" connectable="0" parent="e2">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → Tools -->
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2D7600;strokeWidth=2;fontSize=9;fontColor=#2D7600;" edge="1" parent="1" source="agentSvc" target="toolsSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3lbl" value="HTTP /tools/*" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#2D7600;" vertex="1" connectable="0" parent="e3">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → Ollama -->
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;strokeWidth=2;fontSize=9;fontColor=#b85450;" edge="1" parent="1" source="agentSvc" target="ollama">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4lbl" value="LLM API" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#b85450;fontStyle=1;" vertex="1" connectable="0" parent="e4">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → ChromaDB -->
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2;fontSize=9;fontColor=#8C7A32;" edge="1" parent="1" source="agentSvc" target="chromaDB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5lbl" value="vectors" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#8C7A32;fontStyle=1;" vertex="1" connectable="0" parent="e5">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → Datastore DB -->
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=1;fontSize=9;fontColor=#8C7A32;" edge="1" parent="1" source="agentSvc" target="datastoreDB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6lbl" value="SQL" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#8C7A32;" vertex="1" connectable="0" parent="e6">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → OTel (telemetry) -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;dashPattern=8 4;strokeColor=#9673a6;strokeWidth=1;fontSize=9;fontColor=#9673a6;" edge="1" parent="1" source="agentSvc" target="otelCol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7lbl" value="OTLP" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#9673a6;" vertex="1" connectable="0" parent="e7">
+          <mxGeometry x="-0.2" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → Langfuse (traces) -->
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;dashPattern=8 4;strokeColor=#9673a6;strokeWidth=1;fontSize=9;fontColor=#9673a6;" edge="1" parent="1" source="agentSvc" target="langfuseSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8lbl" value="traces" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=#9673a6;" vertex="1" connectable="0" parent="e8">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Agent → Brave MCP -->
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=9;fontColor=#3B6E3B;" edge="1" parent="1" source="agentSvc" target="braveMCP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9lbl" value="JSON-RPC" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#3B6E3B;" vertex="1" connectable="0" parent="e9">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- n8n-proxy → n8n -->
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontSize=9;fontColor=#6c8ebf;" edge="1" parent="1" source="n8nProxy" target="n8nSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10lbl" value="proxy_pass" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#6c8ebf;" vertex="1" connectable="0" parent="e10">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <!-- Langfuse → Langfuse DB -->
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontSize=9;" edge="1" parent="1" source="langfuseSvc" target="langfuseDB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Grafana → Prometheus (query) -->
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;dashPattern=8 4;strokeColor=#9673a6;fontSize=9;" edge="1" parent="1" source="grafanaSvc" target="promSvc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             LEGEND
+             ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="legendBox" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="660" width="510" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="legT" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;fontSize=11;align=left;verticalAlign=top;fontColor=#333;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="665" width="50" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" value="Presentation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="685" width="75" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l2" value="Application" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="685" width="70" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" value="Data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="685" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l4" value="LLM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1315" y="685" width="45" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l5" value="Observability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=8;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="685" width="75" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="l6" value="─── Data flow" style="text;html=1;fontSize=8;fontColor=#333;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="715" width="80" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="l7" value="- - - Telemetry" style="text;html=1;fontSize=8;fontColor=#9673a6;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="715" width="80" height="15" as="geometry" />
+        </mxCell>
+        <mxCell id="l8" value="&lt;font color=&quot;#999&quot;&gt;All services on &lt;b&gt;platform-net&lt;/b&gt; Docker bridge network&lt;/font&gt;" style="text;html=1;fontSize=8;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="730" width="260" height="15" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
