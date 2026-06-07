@@ -608,6 +608,7 @@ function _toolFormHtml(tool) {
   var name = isEdit ? tool.name : '';
   var desc = isEdit ? tool.description : '';
   var cat = isEdit ? tool.category : 'proxy';
+  var scope = isEdit ? (tool.scope || 'private') : 'private';
   var endpoint = isEdit ? tool.endpoint : '';
   var method = isEdit ? tool.method : 'POST';
   var headers = isEdit ? JSON.stringify(tool.headers || {}, null, 2) : '{}';
@@ -617,11 +618,13 @@ function _toolFormHtml(tool) {
   var labels = isEdit ? (tool.labels || []) : [];
 
   var PRESET_LABELS = ['data', 'search', 'analytics', 'integration', 'ai', 'devops', 'security', 'monitoring', 'notification', 'utility', 'file-io', 'database', 'messaging', 'workflow'];
+  var canGlobal = (window.__userRole === 'admin');
 
   var html = '';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem">';
   html += '<div><label class="field-label">Name *</label><input type="text" class="input" id="ct-name" value="' + escapeHtml(name) + '" placeholder="e.g. weather_api" style="font-size:0.82rem"></div>';
   html += '<div><label class="field-label">Category</label><select class="input" id="ct-category" style="font-size:0.82rem"><option value="proxy"' + (cat==='proxy'?' selected':'') + '>Proxy</option><option value="api"' + (cat==='api'?' selected':'') + '>API</option><option value="webhook"' + (cat==='webhook'?' selected':'') + '>Webhook</option><option value="local"' + (cat==='local'?' selected':'') + '>Local</option></select></div>';
+  html += '<div><label class="field-label">Scope</label><select class="input" id="ct-scope" style="min-width:110px;font-size:0.82rem"><option value="private"' + (scope==='private'?' selected':'') + '>Private</option><option value="global"' + (scope==='global'?' selected':'') + (canGlobal ? '' : ' disabled') + '>' + (canGlobal ? 'Global' : 'Global (admin only)') + '</option></select></div>';
   html += '</div>';
   html += '<div style="margin-top:0.75rem"><label class="field-label">Description *</label><textarea class="input" id="ct-description" rows="2" placeholder="What does this tool do? The LLM reads this to decide when to use it." style="font-size:0.82rem">' + escapeHtml(desc) + '</textarea></div>';
 
@@ -776,7 +779,8 @@ async function saveCustomTool(id) {
 
   var parameters = _collectParams();
   var labels = _collectLabels();
-  var payload = { name: name, description: description, category: category, method: method, endpoint: endpoint, headers: headers, body_template: body_template, parameters: parameters, labels: labels };
+  var scope = document.getElementById('ct-scope').value;
+  var payload = { name: name, description: description, category: category, scope: scope, method: method, endpoint: endpoint, headers: headers, body_template: body_template, parameters: parameters, labels: labels };
 
   if (id) {
     var enabledEl = document.getElementById('ct-enabled');

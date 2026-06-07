@@ -167,7 +167,7 @@
 <div class="card animate-fade-up" id="skill-form" style="display:none">
   <h3 id="form-title">Create Skill</h3>
   <input type="hidden" id="edit-id" value="">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:1rem;margin-top:1rem">
     <div>
       <label class="field-label">Name</label>
       <input type="text" id="skill-name" class="input" placeholder="e.g. Code Reviewer" maxlength="100">
@@ -175,6 +175,14 @@
     <div>
       <label class="field-label">Description</label>
       <input type="text" id="skill-desc" class="input" placeholder="Brief description" maxlength="1000">
+    </div>
+    <div>
+      <label class="field-label">Scope</label>
+      <select id="skill-scope" class="input" style="min-width:110px">
+        <option value="private">Private</option>
+        <option value="global" id="skill-scope-global">Global</option>
+      </select>
+      <script>(function(){ if (window.__userRole !== 'admin') { var o = document.getElementById('skill-scope-global'); o.disabled = true; o.textContent = 'Global (admin only)'; } })();</script>
     </div>
   </div>
   <div style="margin-top:1rem">
@@ -658,6 +666,7 @@
     document.getElementById('edit-id').value = '';
     document.getElementById('skill-name').value = '';
     document.getElementById('skill-desc').value = '';
+    document.getElementById('skill-scope').value = 'private';
     document.getElementById('skill-prompt').value = '';
     renderToolsDropdown([]);
     document.getElementById('skill-constraints').value = '';
@@ -684,6 +693,7 @@
       document.getElementById('edit-id').value = s.id;
       document.getElementById('skill-name').value = s.name;
       document.getElementById('skill-desc').value = s.description || '';
+      document.getElementById('skill-scope').value = s.scope || 'private';
       document.getElementById('skill-prompt').value = s.system_prompt || '';
       renderToolsDropdown(s.tool_ids || []);
       document.getElementById('skill-constraints').value = (s.constraints || []).join(', ');
@@ -765,6 +775,7 @@
     const payload = {
       name: document.getElementById('skill-name').value.trim(),
       description: document.getElementById('skill-desc').value.trim(),
+      scope: document.getElementById('skill-scope').value,
       system_prompt: document.getElementById('skill-prompt').value.trim(),
       tool_ids: getSelectedTools(),
       constraints: document.getElementById('skill-constraints').value.split(',').map(s=>s.trim()).filter(Boolean),

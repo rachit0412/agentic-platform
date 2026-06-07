@@ -113,7 +113,7 @@
 <div class="card animate-fade-up" id="prompt-form" style="display:none">
   <h3 id="form-title">Create Prompt</h3>
   <input type="hidden" id="edit-id" value="">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:1rem;margin-top:1rem">
     <div>
       <label class="field-label">Name</label>
       <input type="text" id="prompt-name" class="input" placeholder="e.g. Deep Research Analyst" maxlength="100">
@@ -130,6 +130,14 @@
         <option value="qa">QA / Testing</option>
         <option value="custom">Custom</option>
       </select>
+    </div>
+    <div>
+      <label class="field-label">Scope</label>
+      <select id="prompt-scope" class="input" style="min-width:110px">
+        <option value="private">Private</option>
+        <option value="global" id="prompt-scope-global">Global</option>
+      </select>
+      <script>(function(){ if (window.__userRole !== 'admin') { var o = document.getElementById('prompt-scope-global'); o.disabled = true; o.textContent = 'Global (admin only)'; } })();</script>
     </div>
   </div>
   <div style="margin-top:1rem">
@@ -509,6 +517,7 @@
     document.getElementById('edit-id').value = '';
     document.getElementById('prompt-name').value = '';
     document.getElementById('prompt-category').value = 'general';
+    document.getElementById('prompt-scope').value = 'private';
     document.getElementById('prompt-desc').value = '';
     document.getElementById('prompt-content').value = '';
     document.getElementById('prompt-tags').value = '';
@@ -533,6 +542,7 @@
       document.getElementById('edit-id').value = p.id;
       document.getElementById('prompt-name').value = p.name;
       document.getElementById('prompt-category').value = p.category || 'general';
+      document.getElementById('prompt-scope').value = p.scope || 'private';
       document.getElementById('prompt-desc').value = p.description || '';
       document.getElementById('prompt-content').value = p.content || '';
       document.getElementById('prompt-tags').value = (p.tags || []).join(', ');
@@ -579,6 +589,7 @@
     const payload = {
       name: document.getElementById('prompt-name').value.trim(),
       category: document.getElementById('prompt-category').value,
+      scope: document.getElementById('prompt-scope').value,
       description: document.getElementById('prompt-desc').value.trim(),
       content: document.getElementById('prompt-content').value.trim(),
       tags: document.getElementById('prompt-tags').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean),
