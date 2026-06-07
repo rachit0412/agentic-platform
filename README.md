@@ -127,7 +127,7 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🖥️  UI Console (Express.js + EJS)                :3000        │
+│  🖥️  UI Console (Express.js + EJS)                :3005        │
 │  26 pages — build, run, evaluate, trace agents from the browser│
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
@@ -177,7 +177,7 @@ docker compose up -d --build
 docker exec ollama ollama pull llama3    # first time only (~4 GB)
 ```
 
-Open **http://localhost:3000** — you're running a full agent factory.
+Open **http://localhost:3005** — you're running a full agent factory.
 
 > 📖 **Detailed installation** (Windows/Mac/Linux, GPU setup, troubleshooting): **[INSTALL.md](INSTALL.md)**
 
@@ -219,7 +219,7 @@ curl -X POST http://localhost:8010/run \
 
 | Service              | Port    | Purpose                                                                                     |
 | -------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| **ui-console**       | `3000`  | Platform dashboard — 26 pages for building, running, monitoring agents                      |
+| **ui-console**       | `3005`  | Platform dashboard — 26 pages for building, running, monitoring agents                      |
 | **agent-service**    | `8010`  | FastAPI + LangGraph — 145 endpoints: ReAct agent, registry, auto-RAG, personas, managed MCP |
 | **tools-service**    | `8011`  | 32 endpoints: web search, code exec, HTTP fetch, file I/O, text transforms, more            |
 | **ollama**           | `11436` | Local LLM runtime — llama3, mistral, deepseek-r1, and more                                  |
@@ -311,7 +311,7 @@ Key settings:
 | `OLLAMA_MODEL`         | `llama3` | Default local model                                                       |
 | `AZURE_OPENAI_API_KEY` | —        | Enables Azure OpenAI models                                               |
 | `OPENAI_API_KEY`       | —        | Enables OpenAI models                                                     |
-| `UI_PORT`              | `3000`   | Dashboard port                                                            |
+| `UI_PORT`              | `3005`   | Dashboard port                                                            |
 
 > Full configuration reference with 20+ variables: see the **Configuration** section in **[INSTALL.md](INSTALL.md)**
 

@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart TD
-    User([👤 User]) --> UI[🖥️ UI Console<br/>Express.js :3000]
+    User([👤 User]) --> UI[🖥️ UI Console<br/>Express.js :3005]
     UI --> Agent[🧠 Agent Service<br/>FastAPI + LangGraph :8010]
 
     Agent --> Guards{Guardrails}
@@ -53,12 +53,12 @@ flowchart TD
 
 ## Layer Summary
 
-| Layer         | Components                                | Purpose                        |
-| ------------- | ----------------------------------------- | ------------------------------ |
-| Frontend      | Express.js + EJS (25 pages)               | Dashboard & API proxy          |
-| Orchestrator  | FastAPI + LangGraph                       | ReAct loop, routing, state     |
-| LLM           | Ollama, Azure OpenAI, OpenAI, Foundry     | Multi-provider inference       |
-| RAG           | ChromaDB + LlamaIndex                     | Retrieval-augmented generation |
+| Layer         | Components                                        | Purpose                        |
+| ------------- | ------------------------------------------------- | ------------------------------ |
+| Frontend      | Express.js + EJS (25 pages)                       | Dashboard & API proxy          |
+| Orchestrator  | FastAPI + LangGraph                               | ReAct loop, routing, state     |
+| LLM           | Ollama, Azure OpenAI, OpenAI, Foundry             | Multi-provider inference       |
+| RAG           | ChromaDB + LlamaIndex                             | Retrieval-augmented generation |
 | Tools         | tools-service, MCP (external + managed), A2A, n8n | Tool execution & automation    |
-| Data          | SQLite + PostgreSQL                       | Config, memory, documents      |
-| Observability | OTel, Prometheus, Grafana, Loki, Langfuse | Metrics, logs, LLM traces      |
+| Data          | SQLite + PostgreSQL                               | Config, memory, documents      |
+| Observability | OTel, Prometheus, Grafana, Loki, Langfuse         | Metrics, logs, LLM traces      |

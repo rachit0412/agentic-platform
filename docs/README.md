@@ -18,7 +18,7 @@
 | ------------- | -------------------------- | --------------------------------- |
 | Agent Service | http://localhost:8010/docs | FastAPI auto-docs (145 endpoints) |
 | Tools Service | http://localhost:8011/docs | FastAPI auto-docs (33 endpoints)  |
-| REST Console  | http://localhost:3000/rest | Interactive API testing UI        |
+| REST Console  | http://localhost:3005/rest | Interactive API testing UI        |
 
 ## API Quick Reference
 

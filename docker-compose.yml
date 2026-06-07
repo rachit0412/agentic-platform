@@ -11,7 +11,7 @@ services:
       dockerfile: Dockerfile
     container_name: ui-console
     ports:
-      - "${UI_PORT:-3000}:3001"
+      - "${UI_PORT:-3005}:3001"
     environment:
       - PORT=3001
       - AGENT_URL=http://agent-service:8000
@@ -36,7 +36,7 @@ services:
       - SSO_GITHUB_CLIENT_SECRET=${SSO_GITHUB_CLIENT_SECRET:-}
       - SSO_MICROSOFT_CLIENT_ID=${SSO_MICROSOFT_CLIENT_ID:-}
       - SSO_MICROSOFT_CLIENT_SECRET=${SSO_MICROSOFT_CLIENT_SECRET:-}
-      - SSO_BASE_URL=${SSO_BASE_URL:-http://localhost:3000}
+      - SSO_BASE_URL=${SSO_BASE_URL:-http://localhost:3005}
     depends_on:
       agent-service:
         condition: service_healthy

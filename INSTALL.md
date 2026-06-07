@@ -40,7 +40,7 @@ cd agentic-platform
 # 2. (Optional) Copy and customise environment
 cp .env.example .env
 
-# 3. Start all 14 containers
+# 3. Start all 16 containers
 docker compose up -d --build
 
 # 4. Pull a model (first time only — ~4 GB)
@@ -50,7 +50,7 @@ docker exec ollama ollama pull llama3
 docker compose ps
 
 # 6. Open the dashboard
-# http://localhost:3000
+# http://localhost:3005
 ```
 
 ## Platform-Specific Instructions
@@ -205,20 +205,20 @@ All images used are multi-arch compatible. No special configuration needed.
 
 Copy `.env.example` to `.env` and edit as needed. Key variables:
 
-| Variable                    | Default              | Description                                   |
-| --------------------------- | -------------------- | --------------------------------------------- |
-| `UI_PORT`                   | `3000`               | UI Console host port                          |
-| `AGENT_PORT`                | `8010`               | Agent Service host port                       |
-| `TOOLS_PORT`                | `8011`               | Tools Service host port                       |
-| `OLLAMA_PORT`               | `11436`              | Ollama host port                              |
-| `OLLAMA_MODEL`              | `llama3`             | Default Ollama model                          |
+| Variable                    | Default              | Description                                                            |
+| --------------------------- | -------------------- | ---------------------------------------------------------------------- |
+| `UI_PORT`                   | `3005`               | UI Console host port                                                   |
+| `AGENT_PORT`                | `8010`               | Agent Service host port                                                |
+| `TOOLS_PORT`                | `8011`               | Tools Service host port                                                |
+| `OLLAMA_PORT`               | `11436`              | Ollama host port                                                       |
+| `OLLAMA_MODEL`              | `llama3`             | Default Ollama model                                                   |
 | `LLM_PROVIDER`              | `ollama`             | Default provider (`ollama`, `azure-openai`, `openai`, `azure-foundry`) |
-| `AZURE_OPENAI_API_KEY`      | _(empty)_            | Azure OpenAI API key                          |
-| `AZURE_OPENAI_ENDPOINT`     | _(empty)_            | Azure OpenAI endpoint URL                     |
-| `AZURE_OPENAI_DEPLOYMENT`   | `gpt-4o-mini`        | Azure OpenAI deployment name                  |
-| `N8N_USER` / `N8N_PASSWORD` | `admin` / `changeme` | n8n basic auth                                |
-| `LANGFUSE_PORT`             | `3012`               | Langfuse host port                            |
-| `GRAFANA_PORT`              | `3013`               | Grafana host port                             |
+| `AZURE_OPENAI_API_KEY`      | _(empty)_            | Azure OpenAI API key                                                   |
+| `AZURE_OPENAI_ENDPOINT`     | _(empty)_            | Azure OpenAI endpoint URL                                              |
+| `AZURE_OPENAI_DEPLOYMENT`   | `gpt-4o-mini`        | Azure OpenAI deployment name                                           |
+| `N8N_USER` / `N8N_PASSWORD` | `admin` / `changeme` | n8n basic auth                                                         |
+| `LANGFUSE_PORT`             | `3012`               | Langfuse host port                                                     |
+| `GRAFANA_PORT`              | `3013`               | Grafana host port                                                      |
 
 ### Resource Allocation
 
@@ -245,23 +245,23 @@ docker compose ps
 # API health checks
 curl http://localhost:8010/health   # agent-service
 curl http://localhost:8011/health   # tools-service
-curl http://localhost:3000/health   # ui-console
+curl http://localhost:3005/health   # ui-console
 
 # Multi-service health check
-curl http://localhost:3000/api/health-check
+curl http://localhost:3005/api/health-check
 ```
 
 ### Access Services
 
-| Service        | URL                        | Credentials                     |
-| -------------- | -------------------------- | ------------------------------- |
-| UI Console     | http://localhost:3000      | admin / Admin@Platform2026!     |
-| Agent API Docs | http://localhost:8010/docs | —                               |
-| Tools API Docs | http://localhost:8011/docs | —                               |
-| n8n            | http://localhost:5678      | admin / changeme                |
-| Langfuse       | http://localhost:3012      | admin@local.dev / changeme      |
-| Grafana        | http://localhost:3013      | admin / admin                   |
-| Prometheus     | http://localhost:9090      | —                               |
+| Service        | URL                        | Credentials                 |
+| -------------- | -------------------------- | --------------------------- |
+| UI Console     | http://localhost:3005      | admin / Admin@Platform2026! |
+| Agent API Docs | http://localhost:8010/docs | —                           |
+| Tools API Docs | http://localhost:8011/docs | —                           |
+| n8n            | http://localhost:5678      | admin / changeme            |
+| Langfuse       | http://localhost:3012      | admin@local.dev / changeme  |
+| Grafana        | http://localhost:3013      | admin / admin               |
+| Prometheus     | http://localhost:9090      | —                           |
 
 ### Test Agent
 
@@ -323,14 +323,14 @@ docker compose logs --tail=100
 
 After successful installation:
 
-1. Open the UI at http://localhost:3000
+1. Open the UI at http://localhost:3005
 2. Create a **Skill** (prompt + tools + constraints + optional file attachments: scripts, references, assets)
 3. Create an **Agent** (model + skills + knowledge base)
 4. Run your agent in **Run Agent**
 5. Pull additional models: `docker exec ollama ollama pull mistral`
 6. Ingest documents into the knowledge base
 7. Explore API docs at http://localhost:8010/docs
-8. Use the **REST Console** at http://localhost:3000/rest to test all 108 endpoints
+8. Use the **REST Console** at http://localhost:3005/rest to test all 145 endpoints
 9. Create workflows in n8n at http://localhost:5678
 10. Review LLM traces in Langfuse at http://localhost:3012
 11. Monitor platform health in Grafana at http://localhost:3013

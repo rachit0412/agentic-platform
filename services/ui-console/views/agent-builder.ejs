@@ -24,7 +24,7 @@
       <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Give your agent a name and describe its purpose.</p>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:1rem">
     <div>
       <label class="field-label">Agent Name</label>
       <input type="text" id="ab-name" class="input" placeholder="e.g. Research Agent" maxlength="100" oninput="abRenderCollections()">
@@ -32,6 +32,20 @@
     <div>
       <label class="field-label">Description</label>
       <input type="text" id="ab-desc" class="input" placeholder="Brief purpose of this agent" maxlength="500">
+    </div>
+    <div>
+      <label class="field-label">Scope</label>
+      <select id="ab-scope" class="input" style="min-width:110px">
+        <option value="private">Private</option>
+        <option value="global" id="ab-scope-global">Global</option>
+      </select>
+      <script>
+        (function() {
+          var canGlobal = (window.__userRole === 'admin');
+          var opt = document.getElementById('ab-scope-global');
+          if (!canGlobal) { opt.disabled = true; opt.textContent = 'Global (admin only)'; }
+        })();
+      </script>
     </div>
   </div>
 </div>
@@ -1251,6 +1265,7 @@ function abLoadExisting() {
   abEditingId = id;
   document.getElementById('ab-name').value = agent.name || '';
   document.getElementById('ab-desc').value = agent.description || '';
+  document.getElementById('ab-scope').value = agent.scope || 'private';
   document.getElementById('ab-prompt').value = agent.system_prompt || '';
   abUpdatePromptChars();
   document.getElementById('ab-constraints').value = (agent.constraints || []).join(', ');
@@ -1312,6 +1327,7 @@ function abReset() {
   document.getElementById('ab-load-agent').value = '';
   document.getElementById('ab-name').value = '';
   document.getElementById('ab-desc').value = '';
+  document.getElementById('ab-scope').value = 'private';
   document.getElementById('ab-prompt').value = '';
   document.getElementById('ab-prompt-library').value = '';
   document.getElementById('ab-constraints').value = '';
@@ -1415,6 +1431,7 @@ function abGetConfig() {
   return {
     name: name || 'Untitled Agent',
     description: document.getElementById('ab-desc').value.trim(),
+    scope: document.getElementById('ab-scope').value,
     system_prompt: document.getElementById('ab-prompt').value.trim(),
     provider: document.getElementById('ab-provider').value,
     model: document.getElementById('ab-model').value,

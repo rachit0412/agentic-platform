@@ -67,29 +67,29 @@ flowchart LR
 
 ### Step-by-Step
 
-| Step | Action | Component | Details |
-|------|--------|-----------|---------|
-| **A** | Upload raw document | `filestore.py` | Files staged on disk at `/data/filestore` with per-document directory isolation |
-| **B** | Parse to text | `llamaindex_loader.py` | 15+ format-specific readers: `PDFReader`, `DocxReader`, `CSVReader`, `HTMLTagReader`, etc. Falls back to plain text |
-| **C** | Chunk text | `vectorstore.py` | `RecursiveCharacterTextSplitter` with 1000-char chunks and 200-char overlap for context continuity |
-| **D** | Generate embeddings | `llm.py` | Vectors via active embedding provider (configurable independently from LLM provider via `EMBEDDING_PROVIDER`) |
-| **E** | Store vectors | `vectorstore.py` → ChromaDB | Each agent gets isolated collection `agent_{name}_kb` with source metadata preserved |
-| **1** | Receive query | `graph.py` | User prompt enters the ReAct loop |
-| **2** | Embed query | `llm.py` | Same embedding model used for ingestion |
-| **3** | Search vectors | `vectorstore.py` | Cosine similarity, `k` results, score threshold < 0.8 filters irrelevant matches |
-| **4** | Inject context | `graph.py` | Retrieved chunks injected into system prompt as `kb_context` section |
-| **5** | Generate answer | LLM provider | LLM synthesises response grounded in retrieved evidence |
+| Step  | Action              | Component                   | Details                                                                                                             |
+| ----- | ------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **A** | Upload raw document | `filestore.py`              | Files staged on disk at `/data/filestore` with per-document directory isolation                                     |
+| **B** | Parse to text       | `llamaindex_loader.py`      | 15+ format-specific readers: `PDFReader`, `DocxReader`, `CSVReader`, `HTMLTagReader`, etc. Falls back to plain text |
+| **C** | Chunk text          | `vectorstore.py`            | `RecursiveCharacterTextSplitter` with 1000-char chunks and 200-char overlap for context continuity                  |
+| **D** | Generate embeddings | `llm.py`                    | Vectors via active embedding provider (configurable independently from LLM provider via `EMBEDDING_PROVIDER`)       |
+| **E** | Store vectors       | `vectorstore.py` → ChromaDB | Each agent gets isolated collection `agent_{name}_kb` with source metadata preserved                                |
+| **1** | Receive query       | `graph.py`                  | User prompt enters the ReAct loop                                                                                   |
+| **2** | Embed query         | `llm.py`                    | Same embedding model used for ingestion                                                                             |
+| **3** | Search vectors      | `vectorstore.py`            | Cosine similarity, `k` results, score threshold < 0.8 filters irrelevant matches                                    |
+| **4** | Inject context      | `graph.py`                  | Retrieved chunks injected into system prompt as `kb_context` section                                                |
+| **5** | Generate answer     | LLM provider                | LLM synthesises response grounded in retrieved evidence                                                             |
 
 ### Key Configuration
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `use_kb` | `true` | Enable/disable KB retrieval per agent |
-| `retrieval_mode` | `basic` | One of: `basic`, `hybrid`, `reranked`, `sentence_window`, `auto_merging` |
-| `chunk_size` | `1000` | Characters per chunk |
-| `chunk_overlap` | `200` | Overlap between adjacent chunks |
-| `k` (top-K) | `5` | Number of chunks to retrieve |
-| `score_threshold` | `0.8` | Maximum distance for relevance (lower = stricter) |
+| Parameter         | Default | Description                                                              |
+| ----------------- | ------- | ------------------------------------------------------------------------ |
+| `use_kb`          | `true`  | Enable/disable KB retrieval per agent                                    |
+| `retrieval_mode`  | `basic` | One of: `basic`, `hybrid`, `reranked`, `sentence_window`, `auto_merging` |
+| `chunk_size`      | `1000`  | Characters per chunk                                                     |
+| `chunk_overlap`   | `200`   | Overlap between adjacent chunks                                          |
+| `k` (top-K)       | `5`     | Number of chunks to retrieve                                             |
+| `score_threshold` | `0.8`   | Maximum distance for relevance (lower = stricter)                        |
 
 ### Source Files
 
@@ -112,13 +112,13 @@ flowchart TD
     GI["🛡️ Input Guardrails<br/><i>PII, injection, toxicity,<br/>topic restriction</i>"]
     RC["📚 Retrieve Context<br/><i>ChromaDB KB search +<br/>conversation memory summary</i>"]
     R["🧠 Reason<br/><i>LLM analyses prompt + context +<br/>tool results from prior iterations</i>"]
-    
+
     D{{"Tool calls<br/>needed?"}}
-    
+
     ET["⚙️ Execute Tools<br/><i>Run pending tool calls<br/>(proxy + local + MCP + custom)</i>"]
-    
+
     MAX{{"Max iterations<br/>reached? (default: 5)"}}
-    
+
     GR["💬 Generate Response<br/><i>Synthesise final answer from<br/>all tool results + context</i>"]
     GO["🛡️ Output Guardrails<br/><i>Data leak, toxicity, length,<br/>hallucination, citation</i>"]
     MEM["💾 Save Memory<br/><i>Store messages + update<br/>rolling session summary</i>"]
@@ -143,12 +143,12 @@ flowchart TD
 
 ### The Four Graph Nodes
 
-| Node | Purpose | What Happens |
-|------|---------|--------------|
-| **retrieve_context** | Gather knowledge | Auto-fetches top-K documents from ChromaDB collection + loads conversation memory summary |
-| **reason** | Think & plan | Sends full context (prompt + history + KB + prior tool results) to LLM; parses structured tool-call JSON from response |
-| **execute_tools** | Act | Dispatches each pending tool call to the appropriate executor (proxy HTTP, local function, MCP JSON-RPC, or custom HTTP) |
-| **generate_response** | Synthesise | Compiles final answer from accumulated tool results; saves conversation to memory; updates session summary |
+| Node                  | Purpose          | What Happens                                                                                                             |
+| --------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **retrieve_context**  | Gather knowledge | Auto-fetches top-K documents from ChromaDB collection + loads conversation memory summary                                |
+| **reason**            | Think & plan     | Sends full context (prompt + history + KB + prior tool results) to LLM; parses structured tool-call JSON from response   |
+| **execute_tools**     | Act              | Dispatches each pending tool call to the appropriate executor (proxy HTTP, local function, MCP JSON-RPC, or custom HTTP) |
+| **generate_response** | Synthesise       | Compiles final answer from accumulated tool results; saves conversation to memory; updates session summary               |
 
 ### Agent State
 
@@ -169,13 +169,13 @@ class AgentState(TypedDict):
 
 ### Key Configuration
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `MAX_REACT_ITERATIONS` | `5` | Maximum reason→act→observe loops before forced response |
-| `max_iterations` (per-agent) | `5` | Override at agent level |
-| `temperature` | `0.7` | LLM creativity parameter |
-| `memory_enabled` | `true` | Enable conversation persistence |
-| `memory_window` | `10` | Number of history messages to include |
+| Parameter                    | Default | Description                                             |
+| ---------------------------- | ------- | ------------------------------------------------------- |
+| `MAX_REACT_ITERATIONS`       | `5`     | Maximum reason→act→observe loops before forced response |
+| `max_iterations` (per-agent) | `5`     | Override at agent level                                 |
+| `temperature`                | `0.7`   | LLM creativity parameter                                |
+| `memory_enabled`             | `true`  | Enable conversation persistence                         |
+| `memory_window`              | `10`    | Number of history messages to include                   |
 
 ### Source Files
 
@@ -219,12 +219,12 @@ flowchart LR
 
 ### Provider Details
 
-| Provider | LLM Class | Embedding Class | Config Variables | Use Case |
-|----------|-----------|-----------------|-----------------|----------|
-| `ollama` | `ChatOllama` | `OllamaEmbeddings` | `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_EMBED_MODEL` | Local dev, zero cost, air-gapped |
-| `azure-openai` | `AzureChatOpenAI` | `AzureOpenAIEmbeddings` | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` | Enterprise compliance, managed |
-| `openai` | `ChatOpenAI` | `OpenAIEmbeddings` | `OPENAI_API_KEY`, `OPENAI_MODEL` | Latest frontier models |
-| `azure-foundry` | `AzureChatOpenAI` | `AzureOpenAIEmbeddings` | `AZURE_FOUNDRY_API_KEY`, `AZURE_FOUNDRY_ENDPOINT`, `AZURE_FOUNDRY_MODEL` | Managed model deployment |
+| Provider        | LLM Class         | Embedding Class         | Config Variables                                                           | Use Case                         |
+| --------------- | ----------------- | ----------------------- | -------------------------------------------------------------------------- | -------------------------------- |
+| `ollama`        | `ChatOllama`      | `OllamaEmbeddings`      | `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_EMBED_MODEL`                    | Local dev, zero cost, air-gapped |
+| `azure-openai`  | `AzureChatOpenAI` | `AzureOpenAIEmbeddings` | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` | Enterprise compliance, managed   |
+| `openai`        | `ChatOpenAI`      | `OpenAIEmbeddings`      | `OPENAI_API_KEY`, `OPENAI_MODEL`                                           | Latest frontier models           |
+| `azure-foundry` | `AzureChatOpenAI` | `AzureOpenAIEmbeddings` | `AZURE_FOUNDRY_API_KEY`, `AZURE_FOUNDRY_ENDPOINT`, `AZURE_FOUNDRY_MODEL`   | Managed model deployment         |
 
 ### Runtime Switching
 
@@ -253,7 +253,7 @@ Five retrieval modes beyond basic cosine similarity, powered by LlamaIndex, to m
 ```mermaid
 flowchart TD
     Q["❓ User Query"]
-    
+
     subgraph Modes["Retrieval Strategy Selection"]
         direction LR
         B["📏 Basic<br/><i>Direct cosine<br/>similarity</i>"]
@@ -285,19 +285,20 @@ flowchart TD
 
 ### Mode Comparison
 
-| Mode | Strategy | How It Works | Best For |
-|------|----------|-------------|----------|
-| **`basic`** | Direct ChromaDB cosine similarity | Query embedded → cosine distance search → threshold filter < 0.8 | Simple keyword-aligned queries |
-| **`hybrid`** | Vector + keyword (BM25) combined | Cosine similarity scores combined with BM25 keyword scores via configurable `alpha` weight (default 0.5) | Queries mixing domain terms with natural language |
-| **`reranked`** | LLM cross-encoder reranking | Initial vector retrieval → LLM reranks top candidates by contextual relevance | High-stakes answers requiring precision |
-| **`sentence_window`** | Surrounding sentence context | Returns chunks with adjacent sentence context from metadata, expanding the window around matches | Questions requiring broader passage context |
-| **`auto_merging`** | Hierarchical chunk merging | Groups chunks by source document, merges adjacent chunks, averages scores for unified passages | Long documents where context spans multiple chunks |
+| Mode                  | Strategy                          | How It Works                                                                                             | Best For                                           |
+| --------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| **`basic`**           | Direct ChromaDB cosine similarity | Query embedded → cosine distance search → threshold filter < 0.8                                         | Simple keyword-aligned queries                     |
+| **`hybrid`**          | Vector + keyword (BM25) combined  | Cosine similarity scores combined with BM25 keyword scores via configurable `alpha` weight (default 0.5) | Queries mixing domain terms with natural language  |
+| **`reranked`**        | LLM cross-encoder reranking       | Initial vector retrieval → LLM reranks top candidates by contextual relevance                            | High-stakes answers requiring precision            |
+| **`sentence_window`** | Surrounding sentence context      | Returns chunks with adjacent sentence context from metadata, expanding the window around matches         | Questions requiring broader passage context        |
+| **`auto_merging`**    | Hierarchical chunk merging        | Groups chunks by source document, merges adjacent chunks, averages scores for unified passages           | Long documents where context spans multiple chunks |
 
 ### Integration Architecture
 
 LlamaIndex bridges into existing LangChain infrastructure:
+
 - LLM wrapped via `LangChainLLM` adapter
-- Embeddings wrapped via `LangchainEmbedding` adapter  
+- Embeddings wrapped via `LangchainEmbedding` adapter
 - Vector store backed by existing ChromaDB collections (no data duplication)
 
 ### Source Files
@@ -354,57 +355,57 @@ flowchart TD
 
 ### Security Controls
 
-| Control | Protection |
-|---------|-----------|
-| **URL Whitelist** | `ALLOWED_FETCH_DOMAINS` — only whitelisted domains reachable via `http_fetch` |
-| **SSRF Prevention** | Private IP ranges blocked (10.x, 172.16-31.x, 192.168.x, 127.x, fd00::/8) |
-| **AST-Safe Math** | `ast.literal_eval` — no arbitrary code execution in math expressions |
+| Control             | Protection                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| **URL Whitelist**   | `ALLOWED_FETCH_DOMAINS` — only whitelisted domains reachable via `http_fetch`            |
+| **SSRF Prevention** | Private IP ranges blocked (10.x, 172.16-31.x, 192.168.x, 127.x, fd00::/8)                |
+| **AST-Safe Math**   | `ast.literal_eval` — no arbitrary code execution in math expressions                     |
 | **Blocked Imports** | `os`, `sys`, `subprocess`, `shutil`, `importlib`, `__import__` blocked in `code_execute` |
-| **Path Sandboxing** | File operations restricted to `/data/notes` directory |
-| **Timeout** | 10-second execution limit per tool call |
+| **Path Sandboxing** | File operations restricted to `/data/notes` directory                                    |
+| **Timeout**         | 10-second execution limit per tool call                                                  |
 
 ### Tool Catalogue (35 tools)
 
 <details>
 <summary>Click to expand full tool list</summary>
 
-| # | Tool | Type | Endpoint | Parameters |
-|---|------|------|----------|------------|
-| 1 | `math` | proxy | POST /tools/math | `expression` |
-| 2 | `http_fetch` | proxy | POST /tools/http-fetch | `url` |
-| 3 | `file_write` | proxy | POST /tools/file-write | `filename`, `content` |
-| 4 | `file_read` | proxy | POST /tools/file-read | `filename` |
-| 5 | `file_list` | proxy | POST /tools/file-list | `directory`, `pattern` |
-| 6 | `file_search_content` | proxy | POST /tools/file-search-content | `query`, `pattern`, `max_results` |
-| 7 | `datetime_tool` | proxy | POST /tools/datetime | _(none)_ |
-| 8 | `web_search` | proxy | POST /tools/web-search | `query`, `max_results` |
-| 9 | `code_execute` | proxy | POST /tools/code-execute | `code`, `language` |
-| 10 | `text_summarize` | proxy | POST /tools/text-summarize | `text`, `max_sentences` |
-| 11 | `text_transform` | proxy | POST /tools/text-transform | `text`, `operation` |
-| 12 | `text_diff` | proxy | POST /tools/text-diff | `text_a`, `text_b`, `context_lines` |
-| 13 | `text_extract` | proxy | POST /tools/text-extract | `text`, `extract_type` |
-| 14 | `json_transform` | proxy | POST /tools/json-transform | `data`, `operation`, `jq_path` |
-| 15 | `csv_parse` | proxy | POST /tools/csv-parse | `csv_text`, `operation`, `filter_column`, `filter_value` |
-| 16 | `yaml_convert` | proxy | POST /tools/yaml-convert | `content`, `direction` |
-| 17 | `base64_codec` | proxy | POST /tools/base64-codec | `text`, `operation` |
-| 18 | `hash_generate` | proxy | POST /tools/hash-generate | `text`, `algorithm` |
-| 19 | `uuid_generate` | proxy | POST /tools/uuid-generate | `count` |
-| 20 | `regex_match` | proxy | POST /tools/regex-match | `text`, `pattern`, `flags` |
-| 21 | `url_parse` | proxy | POST /tools/url-parse | `url` |
-| 22 | `html_strip` | proxy | POST /tools/html-strip | `html`, `keep_links` |
-| 23 | `markdown_to_html` | proxy | POST /tools/markdown-to-html | `markdown` |
-| 24 | `webpage_extract` | proxy | POST /tools/webpage-extract | `url`, `max_length` |
-| 25 | `dns_lookup` | proxy | POST /tools/dns-lookup | `hostname` |
-| 26 | `json_schema_validate` | proxy | POST /tools/json-schema-validate | `data`, `schema_def` |
-| 27 | `cron_parse` | proxy | POST /tools/cron-parse | `expression` |
-| 28 | `jwt_decode` | proxy | POST /tools/jwt-decode | `token` |
-| 29 | `environment_info` | proxy | POST /tools/environment-info | _(none)_ |
-| 30 | `delegate_to_agent` | local | in-process | `agent_id`, `task` |
-| 31 | `vector_search` | local | in-process (ChromaDB) | `query`, `k` |
-| 32 | `vector_store` | local | in-process (ChromaDB) | `text`, `source` |
-| 33 | `advanced_search` | local | in-process (LlamaIndex) | `query`, `mode`, `k` |
-| 34 | `query_database` | local | in-process (SQL) | `question`, `connection_string`, `tables` |
-| 35 | `query_csv_data` | local | in-process (Pandas) | `question`, `csv_path` |
+| #   | Tool                   | Type  | Endpoint                         | Parameters                                               |
+| --- | ---------------------- | ----- | -------------------------------- | -------------------------------------------------------- |
+| 1   | `math`                 | proxy | POST /tools/math                 | `expression`                                             |
+| 2   | `http_fetch`           | proxy | POST /tools/http-fetch           | `url`                                                    |
+| 3   | `file_write`           | proxy | POST /tools/file-write           | `filename`, `content`                                    |
+| 4   | `file_read`            | proxy | POST /tools/file-read            | `filename`                                               |
+| 5   | `file_list`            | proxy | POST /tools/file-list            | `directory`, `pattern`                                   |
+| 6   | `file_search_content`  | proxy | POST /tools/file-search-content  | `query`, `pattern`, `max_results`                        |
+| 7   | `datetime_tool`        | proxy | POST /tools/datetime             | _(none)_                                                 |
+| 8   | `web_search`           | proxy | POST /tools/web-search           | `query`, `max_results`                                   |
+| 9   | `code_execute`         | proxy | POST /tools/code-execute         | `code`, `language`                                       |
+| 10  | `text_summarize`       | proxy | POST /tools/text-summarize       | `text`, `max_sentences`                                  |
+| 11  | `text_transform`       | proxy | POST /tools/text-transform       | `text`, `operation`                                      |
+| 12  | `text_diff`            | proxy | POST /tools/text-diff            | `text_a`, `text_b`, `context_lines`                      |
+| 13  | `text_extract`         | proxy | POST /tools/text-extract         | `text`, `extract_type`                                   |
+| 14  | `json_transform`       | proxy | POST /tools/json-transform       | `data`, `operation`, `jq_path`                           |
+| 15  | `csv_parse`            | proxy | POST /tools/csv-parse            | `csv_text`, `operation`, `filter_column`, `filter_value` |
+| 16  | `yaml_convert`         | proxy | POST /tools/yaml-convert         | `content`, `direction`                                   |
+| 17  | `base64_codec`         | proxy | POST /tools/base64-codec         | `text`, `operation`                                      |
+| 18  | `hash_generate`        | proxy | POST /tools/hash-generate        | `text`, `algorithm`                                      |
+| 19  | `uuid_generate`        | proxy | POST /tools/uuid-generate        | `count`                                                  |
+| 20  | `regex_match`          | proxy | POST /tools/regex-match          | `text`, `pattern`, `flags`                               |
+| 21  | `url_parse`            | proxy | POST /tools/url-parse            | `url`                                                    |
+| 22  | `html_strip`           | proxy | POST /tools/html-strip           | `html`, `keep_links`                                     |
+| 23  | `markdown_to_html`     | proxy | POST /tools/markdown-to-html     | `markdown`                                               |
+| 24  | `webpage_extract`      | proxy | POST /tools/webpage-extract      | `url`, `max_length`                                      |
+| 25  | `dns_lookup`           | proxy | POST /tools/dns-lookup           | `hostname`                                               |
+| 26  | `json_schema_validate` | proxy | POST /tools/json-schema-validate | `data`, `schema_def`                                     |
+| 27  | `cron_parse`           | proxy | POST /tools/cron-parse           | `expression`                                             |
+| 28  | `jwt_decode`           | proxy | POST /tools/jwt-decode           | `token`                                                  |
+| 29  | `environment_info`     | proxy | POST /tools/environment-info     | _(none)_                                                 |
+| 30  | `delegate_to_agent`    | local | in-process                       | `agent_id`, `task`                                       |
+| 31  | `vector_search`        | local | in-process (ChromaDB)            | `query`, `k`                                             |
+| 32  | `vector_store`         | local | in-process (ChromaDB)            | `text`, `source`                                         |
+| 33  | `advanced_search`      | local | in-process (LlamaIndex)          | `query`, `mode`, `k`                                     |
+| 34  | `query_database`       | local | in-process (SQL)                 | `question`, `connection_string`, `tables`                |
+| 35  | `query_csv_data`       | local | in-process (Pandas)              | `question`, `csv_path`                                   |
 
 </details>
 
@@ -473,17 +474,17 @@ flowchart LR
 
 ### Guardrail Types
 
-| ID | Type | Applied To | Detection Method | Fallback |
-|----|------|-----------|-----------------|----------|
-| `gr-pii` | PII Detection | Input + Output | 7 regex patterns (email, phone, SSN, credit card, IBAN, password, API key) | Regex always runs |
-| `gr-prompt-injection` | Prompt Injection | Input | 17 known injection patterns + LLM semantic detection | Regex pattern matching |
-| `gr-toxicity` | Toxicity | Input + Output | LLM classification + Azure content filter auto-trigger | Keyword matching |
-| `gr-data-leak` | Data Leakage | Output | Detects system prompts, API keys, internal secrets in output | Pattern matching |
-| `gr-bias` | Bias Detection | Output | Stereotyping, prejudice, discriminatory language | LLM-only |
-| `gr-output-length` | Output Length | Output | Word count exceeds configurable maximum | Direct check |
-| `gr-topic-restrict` | Topic Restriction | Input | Blocked/allowed topic lists from configuration | Keyword matching |
-| `gr-hallucination` | Hallucination | Output | Fabricated facts, invented citations, unsupported claims | LLM-only |
-| `gr-citation` | Citation Check | Output | Verifies source attribution in responses | LLM-only |
+| ID                    | Type              | Applied To     | Detection Method                                                           | Fallback               |
+| --------------------- | ----------------- | -------------- | -------------------------------------------------------------------------- | ---------------------- |
+| `gr-pii`              | PII Detection     | Input + Output | 7 regex patterns (email, phone, SSN, credit card, IBAN, password, API key) | Regex always runs      |
+| `gr-prompt-injection` | Prompt Injection  | Input          | 17 known injection patterns + LLM semantic detection                       | Regex pattern matching |
+| `gr-toxicity`         | Toxicity          | Input + Output | LLM classification + Azure content filter auto-trigger                     | Keyword matching       |
+| `gr-data-leak`        | Data Leakage      | Output         | Detects system prompts, API keys, internal secrets in output               | Pattern matching       |
+| `gr-bias`             | Bias Detection    | Output         | Stereotyping, prejudice, discriminatory language                           | LLM-only               |
+| `gr-output-length`    | Output Length     | Output         | Word count exceeds configurable maximum                                    | Direct check           |
+| `gr-topic-restrict`   | Topic Restriction | Input          | Blocked/allowed topic lists from configuration                             | Keyword matching       |
+| `gr-hallucination`    | Hallucination     | Output         | Fabricated facts, invented citations, unsupported claims                   | LLM-only               |
+| `gr-citation`         | Citation Check    | Output         | Verifies source attribution in responses                                   | LLM-only               |
 
 ### Key Design Decisions
 
@@ -508,7 +509,7 @@ Persistent conversation storage with rolling summaries for long-term context ret
 flowchart TD
     USER["💬 User Message"]
     AGENT["🤖 Agent Response"]
-    
+
     subgraph Memory["Memory System"]
         direction TB
         MSG[("💾 Message Store<br/><i>SQLite: conversations table<br/>session_id, role, content,<br/>timestamp</i>")]
@@ -539,10 +540,10 @@ flowchart TD
 
 ### What Gets Stored
 
-| Table | Columns | Purpose |
-|-------|---------|---------|
-| `conversations` | `session_id`, `role`, `content`, `timestamp` | Every message (user, assistant, system) |
-| `session_summaries` | `session_id`, `summary`, `updated_at` | Rolling LLM-generated summary of conversation so far |
+| Table               | Columns                                      | Purpose                                              |
+| ------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| `conversations`     | `session_id`, `role`, `content`, `timestamp` | Every message (user, assistant, system)              |
+| `session_summaries` | `session_id`, `summary`, `updated_at`        | Rolling LLM-generated summary of conversation so far |
 
 ### How Summaries Work
 
@@ -553,10 +554,10 @@ flowchart TD
 
 ### Key Configuration
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `memory_enabled` | `true` | Enable/disable per agent |
-| `memory_window` | `10` | Number of recent messages included verbatim in prompt |
+| Parameter        | Default | Description                                           |
+| ---------------- | ------- | ----------------------------------------------------- |
+| `memory_enabled` | `true`  | Enable/disable per agent                              |
+| `memory_window`  | `10`    | Number of recent messages included verbatim in prompt |
 
 ### Source Files
 
@@ -605,10 +606,10 @@ flowchart TD
 
 ### Two Orchestration Modes
 
-| Mode | How It Works | When to Use |
-|------|-------------|-------------|
-| **Runtime Delegation (LLM-decided)** | Orchestrator's LLM autonomously calls `delegate_to_agent(agent_id, task)` tool based on sub-agent descriptions in system prompt | Dynamic routing — LLM picks the best specialist |
-| **Deterministic Pipelines (n8n DAGs)** | n8n workflows define fixed execution order: sequential (A→B chain with output passing) or parallel (A+B simultaneous, results merged) | Fixed workflows — guaranteed execution order |
+| Mode                                   | How It Works                                                                                                                          | When to Use                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Runtime Delegation (LLM-decided)**   | Orchestrator's LLM autonomously calls `delegate_to_agent(agent_id, task)` tool based on sub-agent descriptions in system prompt       | Dynamic routing — LLM picks the best specialist |
+| **Deterministic Pipelines (n8n DAGs)** | n8n workflows define fixed execution order: sequential (A→B chain with output passing) or parallel (A+B simultaneous, results merged) | Fixed workflows — guaranteed execution order    |
 
 ### Safety: Recursion Guard
 
@@ -655,12 +656,12 @@ flowchart LR
 
 ### Available Functions
 
-| Function | Engine | Input | Output |
-|----------|--------|-------|--------|
-| `query_sql()` | LlamaIndex `NLSQLTableQueryEngine` | NL question + connection string + table names | Generated SQL + result rows + NL answer |
-| `query_csv()` | LlamaIndex `PandasQueryEngine` | NL question + CSV file path | Pandas-computed answer |
-| `query_dataframe()` | LlamaIndex `PandasQueryEngine` | NL question + list of dicts | Pandas-computed answer |
-| `get_table_schema()` | SQLAlchemy `inspect` | Connection string | Table names, column names, column types |
+| Function             | Engine                             | Input                                         | Output                                  |
+| -------------------- | ---------------------------------- | --------------------------------------------- | --------------------------------------- |
+| `query_sql()`        | LlamaIndex `NLSQLTableQueryEngine` | NL question + connection string + table names | Generated SQL + result rows + NL answer |
+| `query_csv()`        | LlamaIndex `PandasQueryEngine`     | NL question + CSV file path                   | Pandas-computed answer                  |
+| `query_dataframe()`  | LlamaIndex `PandasQueryEngine`     | NL question + list of dicts                   | Pandas-computed answer                  |
+| `get_table_schema()` | SQLAlchemy `inspect`               | Connection string                             | Table names, column names, column types |
 
 ### Source Files
 
@@ -702,12 +703,12 @@ flowchart TD
 
 ### Metrics Detail
 
-| Metric | What It Measures | Inputs Required | Evaluator |
-|--------|-----------------|-----------------|-----------|
-| **Faithfulness** | Response claims are supported by retrieved context — no hallucinated facts | query, response, contexts | `FaithfulnessEvaluator` |
-| **Relevancy** | Retrieved documents are topically relevant to the user's query | query, response, contexts | `RelevancyEvaluator` |
-| **Correctness** | Response correctly answers the question (optionally compared to a reference answer) | query, response, (reference) | `CorrectnessEvaluator` |
-| **Guideline Adherence** | Response follows specified guidelines (e.g., "respond in formal tone", "cite sources") | query, response, guidelines | `GuidelineEvaluator` |
+| Metric                  | What It Measures                                                                       | Inputs Required              | Evaluator               |
+| ----------------------- | -------------------------------------------------------------------------------------- | ---------------------------- | ----------------------- |
+| **Faithfulness**        | Response claims are supported by retrieved context — no hallucinated facts             | query, response, contexts    | `FaithfulnessEvaluator` |
+| **Relevancy**           | Retrieved documents are topically relevant to the user's query                         | query, response, contexts    | `RelevancyEvaluator`    |
+| **Correctness**         | Response correctly answers the question (optionally compared to a reference answer)    | query, response, (reference) | `CorrectnessEvaluator`  |
+| **Guideline Adherence** | Response follows specified guidelines (e.g., "respond in formal tone", "cite sources") | query, response, guidelines  | `GuidelineEvaluator`    |
 
 ### API
 
@@ -775,10 +776,10 @@ flowchart TD
 
 ### Workflow Modes
 
-| Mode | Behaviour | Use Case |
-|------|----------|----------|
-| **Sequential** | Skills execute in user-defined order (drag-to-reorder in UI) | Step-by-step workflows: "first research, then write, then review" |
-| **Router** | LLM dynamically selects the best skill based on request content | Versatile agents: "pick the right expert for this question" |
+| Mode           | Behaviour                                                       | Use Case                                                          |
+| -------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Sequential** | Skills execute in user-defined order (drag-to-reorder in UI)    | Step-by-step workflows: "first research, then write, then review" |
+| **Router**     | LLM dynamically selects the best skill based on request content | Versatile agents: "pick the right expert for this question"       |
 
 ### Source Files
 
@@ -835,10 +836,10 @@ flowchart LR
 
 Users create MCP servers from the UI in two modes:
 
-| Mode | What You Provide | What Gets Deployed |
-|------|-----------------|-------------------|
+| Mode            | What You Provide                               | What Gets Deployed                               |
+| --------------- | ---------------------------------------------- | ------------------------------------------------ |
 | **Config mode** | HTTP endpoint URL, method, headers, parameters | Proxy MCP server — routes tool calls to your API |
-| **Code mode** | Custom Python function code | MCP server running your code as a tool |
+| **Code mode**   | Custom Python function code                    | MCP server running your code as a tool           |
 
 Each managed server deploys as an **isolated Docker container** on the `platform-net` network.
 
@@ -938,13 +939,13 @@ flowchart TD
 
 ### Connector Types
 
-| Type | Sources | Configuration |
-|------|---------|--------------|
-| `database` | PostgreSQL, MySQL, MSSQL | Host, port, credentials, SQL query, text columns |
-| `cloud_storage` | S3, Azure Blob, GCS | Bucket, prefix, file extensions, credentials |
-| `api` | Any REST endpoint | URL, method, headers, response path, text field |
-| `google_drive` | Google Drive folders | Service account JSON, folder ID, file types |
-| `sharepoint` | SharePoint document libraries | Site URL, client credentials, tenant ID, library |
+| Type            | Sources                       | Configuration                                    |
+| --------------- | ----------------------------- | ------------------------------------------------ |
+| `database`      | PostgreSQL, MySQL, MSSQL      | Host, port, credentials, SQL query, text columns |
+| `cloud_storage` | S3, Azure Blob, GCS           | Bucket, prefix, file extensions, credentials     |
+| `api`           | Any REST endpoint             | URL, method, headers, response path, text field  |
+| `google_drive`  | Google Drive folders          | Service account JSON, folder ID, file types      |
+| `sharepoint`    | SharePoint document libraries | Site URL, client credentials, tenant ID, library |
 
 ### Source Files
 
@@ -1001,13 +1002,13 @@ flowchart LR
 
 ### Workflow Templates
 
-| Workflow | Trigger | Pipeline | Output |
-|----------|---------|----------|--------|
-| **Agent Run** | `POST /webhook/agent-run` | Webhook → Call agent-service `/run` | Agent response |
-| **Multi-Agent Orchestration** | `POST /webhook/multi-agent` | Strategy router → Sequential (A→B chain) or Parallel (A+B merge) | Combined results |
-| **RAG Document Ingest** | `POST /webhook/rag-ingest` | Webhook → Call `/documents/ingest` → ChromaDB | Ingestion confirmation |
-| **Web Research** | `POST /webhook/web-research` | Web search via tools-service → Agent analysis | Research report |
-| **Daily Summary** | Cron `0 9 * * *` | Trigger → Agent generates summary → Save to file | Daily digest |
+| Workflow                      | Trigger                      | Pipeline                                                         | Output                 |
+| ----------------------------- | ---------------------------- | ---------------------------------------------------------------- | ---------------------- |
+| **Agent Run**                 | `POST /webhook/agent-run`    | Webhook → Call agent-service `/run`                              | Agent response         |
+| **Multi-Agent Orchestration** | `POST /webhook/multi-agent`  | Strategy router → Sequential (A→B chain) or Parallel (A+B merge) | Combined results       |
+| **RAG Document Ingest**       | `POST /webhook/rag-ingest`   | Webhook → Call `/documents/ingest` → ChromaDB                    | Ingestion confirmation |
+| **Web Research**              | `POST /webhook/web-research` | Web search via tools-service → Agent analysis                    | Research report        |
+| **Daily Summary**             | Cron `0 9 * * *`             | Trigger → Agent generates summary → Save to file                 | Daily digest           |
 
 ### Source Files
 
@@ -1081,11 +1082,11 @@ flowchart TD
 
 ### Telemetry Pipelines
 
-| Pipeline | Technology | What It Captures | Access |
-|----------|-----------|-----------------|--------|
-| **LLM Traces** | Langfuse SDK | Per-request traces with spans for each graph node, generation details (model, tokens, latency, prompts) | Langfuse UI |
-| **Metrics** | Prometheus + `prometheus_fastapi_instrumentator` | `llm_call_duration_seconds`, `tool_calls_total`, `agent_runs_total`, request rate, latency, status codes | Grafana dashboards |
-| **Logs** | OpenTelemetry → OTel Collector → Loki | Structured application logs from both services via OTLP | Grafana log explorer |
+| Pipeline       | Technology                                       | What It Captures                                                                                         | Access               |
+| -------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | -------------------- |
+| **LLM Traces** | Langfuse SDK                                     | Per-request traces with spans for each graph node, generation details (model, tokens, latency, prompts)  | Langfuse UI          |
+| **Metrics**    | Prometheus + `prometheus_fastapi_instrumentator` | `llm_call_duration_seconds`, `tool_calls_total`, `agent_runs_total`, request rate, latency, status codes | Grafana dashboards   |
+| **Logs**       | OpenTelemetry → OTel Collector → Loki            | Structured application logs from both services via OTLP                                                  | Grafana log explorer |
 
 ### Graceful Degradation
 
@@ -1106,7 +1107,7 @@ Langfuse tracing operates as **no-op fallback** when API keys are not configured
 flowchart TD
     USER["👤 User"]
 
-    subgraph Frontend["Frontend (:3000)"]
+    subgraph Frontend["Frontend (:3005)"]
         UI["🖥️ UI Console<br/><i>Express.js + EJS<br/>27 pages</i>"]
     end
 
@@ -1175,21 +1176,21 @@ flowchart TD
 
 ## Capability Cross-Reference
 
-| # | Capability | Services Involved | Key Files | Protocol |
-|---|-----------|-------------------|-----------|----------|
-| 1 | RAG Pipeline | agent-service, ChromaDB | `vectorstore.py`, `llamaindex_loader.py`, `filestore.py` | Internal |
-| 2 | ReAct Reasoning | agent-service | `graph.py` | LangGraph StateGraph |
-| 3 | LLM Abstraction | agent-service | `llm.py`, `llm-config.json` | LangChain `BaseChatModel` |
-| 4 | Advanced Retrieval | agent-service, ChromaDB | `advanced_retrieval.py` | LlamaIndex |
-| 5 | Tool Calling | agent-service, tools-service | `tools.py`, tools `main.py` | HTTP proxy + in-process |
-| 6 | Guardrails | agent-service | `graph.py` | LLM classification + regex |
-| 7 | Memory | agent-service | `memory.py` | SQLite |
-| 8 | Multi-Agent | agent-service, n8n | `tools.py`, `graph.py` | `delegate_to_agent` + n8n DAGs |
-| 9 | NL→SQL/Pandas | agent-service | `structured_query.py` | LlamaIndex engines |
-| 10 | RAG Evaluation | agent-service | `rag_evaluation.py` | LlamaIndex evaluators |
-| 11 | Skills System | agent-service | `memory.py`, `graph.py` | SQLite + context injection |
-| 12 | MCP Protocol | agent-service, MCP servers | `tools.py`, `docker_manager.py` | JSON-RPC 2.0 |
-| 13 | A2A Protocol | agent-service, external agents | `main.py` | HTTP REST |
-| 14 | Data Connectors | agent-service, ChromaDB | `connectors/` | Source-specific SDKs |
-| 15 | n8n Workflows | n8n, agent-service, tools-service | `n8n/workflows/` | Webhooks + HTTP |
-| 16 | Observability | all services | `observability.py`, OTel config | OTLP, Prometheus, Langfuse SDK |
+| #   | Capability         | Services Involved                 | Key Files                                                | Protocol                       |
+| --- | ------------------ | --------------------------------- | -------------------------------------------------------- | ------------------------------ |
+| 1   | RAG Pipeline       | agent-service, ChromaDB           | `vectorstore.py`, `llamaindex_loader.py`, `filestore.py` | Internal                       |
+| 2   | ReAct Reasoning    | agent-service                     | `graph.py`                                               | LangGraph StateGraph           |
+| 3   | LLM Abstraction    | agent-service                     | `llm.py`, `llm-config.json`                              | LangChain `BaseChatModel`      |
+| 4   | Advanced Retrieval | agent-service, ChromaDB           | `advanced_retrieval.py`                                  | LlamaIndex                     |
+| 5   | Tool Calling       | agent-service, tools-service      | `tools.py`, tools `main.py`                              | HTTP proxy + in-process        |
+| 6   | Guardrails         | agent-service                     | `graph.py`                                               | LLM classification + regex     |
+| 7   | Memory             | agent-service                     | `memory.py`                                              | SQLite                         |
+| 8   | Multi-Agent        | agent-service, n8n                | `tools.py`, `graph.py`                                   | `delegate_to_agent` + n8n DAGs |
+| 9   | NL→SQL/Pandas      | agent-service                     | `structured_query.py`                                    | LlamaIndex engines             |
+| 10  | RAG Evaluation     | agent-service                     | `rag_evaluation.py`                                      | LlamaIndex evaluators          |
+| 11  | Skills System      | agent-service                     | `memory.py`, `graph.py`                                  | SQLite + context injection     |
+| 12  | MCP Protocol       | agent-service, MCP servers        | `tools.py`, `docker_manager.py`                          | JSON-RPC 2.0                   |
+| 13  | A2A Protocol       | agent-service, external agents    | `main.py`                                                | HTTP REST                      |
+| 14  | Data Connectors    | agent-service, ChromaDB           | `connectors/`                                            | Source-specific SDKs           |
+| 15  | n8n Workflows      | n8n, agent-service, tools-service | `n8n/workflows/`                                         | Webhooks + HTTP                |
+| 16  | Observability      | all services                      | `observability.py`, OTel config                          | OTLP, Prometheus, Langfuse SDK |
