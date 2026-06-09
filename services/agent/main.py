@@ -9,57 +9,125 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 
-from agent.connectors import (CONNECTOR_CATALOG, generate_connector_id,
-                              generate_job_id)
+from agent.connectors import CONNECTOR_CATALOG, generate_connector_id, generate_job_id
 from agent.connectors.sync_engine import run_sync, test_connector
 from agent.graph import run_agent, run_agent_stream
-from agent.llm import (get_active_model, list_available_embedding_providers,
-                       list_available_models, set_active_model)
+from agent.llm import (
+    get_active_model,
+    list_available_embedding_providers,
+    list_available_models,
+    set_active_model,
+)
 from agent.memory import _get_conn  # Persona management
-from agent.memory import (add_workspace_member, assign_persona,
-                          authenticate_user, create_a2a_peer, create_agent,
-                          create_connector, create_custom_tool,
-                          create_document_registry, create_mcp_server,
-                          create_persona, create_pipeline, create_pipeline_run,
-                          create_prompt, create_skill, create_sync_job,
-                          create_user, create_workspace, delete_a2a_peer,
-                          delete_agent, delete_connector, delete_custom_tool,
-                          delete_document_registry,
-                          delete_document_registry_by_source,
-                          delete_documents_by_collection, delete_mcp_server,
-                          delete_persona, delete_pipeline, delete_prompt,
-                          delete_session, delete_skill, delete_user,
-                          delete_workspace, export_all_data, get_a2a_peer,
-                          get_agent, get_connector, get_custom_tool,
-                          get_db_stats, get_disabled_tools,
-                          get_document_registry, get_guardrail, get_history,
-                          get_llm_usage_summary, get_mcp_server,
-                          get_memory_stats, get_persona, get_pipeline,
-                          get_prompt, get_session_summary, get_skill, get_user,
-                          get_user_by_email, get_user_by_username,
-                          get_user_personas, get_version, get_workspace,
-                          import_all_data, init_db, list_a2a_peers,
-                          list_agents, list_audit_log, list_connectors,
-                          list_custom_tools, list_documents_registry,
-                          list_folders, list_guardrails, list_llm_usage,
-                          list_mcp_servers, list_personas, list_pipeline_runs,
-                          list_pipelines, list_prompts, list_sessions,
-                          list_skills, list_sync_jobs, list_users,
-                          list_versions, list_workspace_members,
-                          list_workspaces, log_audit, remove_workspace_member,
-                          resend_verification_code, reset_user_password,
-                          save_version, set_disabled_tools,
-                          tag_document_to_agent, unassign_persona,
-                          untag_all_for_agent, untag_document_from_agent,
-                          update_a2a_peer, update_agent, update_connector,
-                          update_custom_tool, update_document_registry,
-                          update_guardrail, update_mcp_server, update_persona,
-                          update_pipeline, update_pipeline_run, update_prompt,
-                          update_skill, update_sync_job, update_user,
-                          update_workspace, verify_user_email)
+from agent.memory import (
+    add_workspace_member,
+    assign_persona,
+    authenticate_user,
+    create_a2a_peer,
+    create_agent,
+    create_connector,
+    create_custom_tool,
+    create_document_registry,
+    create_mcp_server,
+    create_persona,
+    create_pipeline,
+    create_pipeline_run,
+    create_prompt,
+    create_skill,
+    create_sync_job,
+    create_user,
+    create_workspace,
+    delete_a2a_peer,
+    delete_agent,
+    delete_connector,
+    delete_custom_tool,
+    delete_document_registry,
+    delete_document_registry_by_source,
+    delete_documents_by_collection,
+    delete_mcp_server,
+    delete_persona,
+    delete_pipeline,
+    delete_prompt,
+    delete_session,
+    delete_skill,
+    delete_user,
+    delete_workspace,
+    export_all_data,
+    get_a2a_peer,
+    get_agent,
+    get_connector,
+    get_custom_tool,
+    get_db_stats,
+    get_disabled_tools,
+    get_document_registry,
+    get_guardrail,
+    get_history,
+    get_llm_usage_summary,
+    get_mcp_server,
+    get_memory_stats,
+    get_persona,
+    get_pipeline,
+    get_prompt,
+    get_session_summary,
+    get_skill,
+    get_user,
+    get_user_by_email,
+    get_user_by_username,
+    get_user_personas,
+    get_version,
+    get_workspace,
+    import_all_data,
+    init_db,
+    list_a2a_peers,
+    list_agents,
+    list_audit_log,
+    list_connectors,
+    list_custom_tools,
+    list_documents_registry,
+    list_folders,
+    list_guardrails,
+    list_llm_usage,
+    list_mcp_servers,
+    list_personas,
+    list_pipeline_runs,
+    list_pipelines,
+    list_prompts,
+    list_sessions,
+    list_skills,
+    list_sync_jobs,
+    list_users,
+    list_versions,
+    list_workspace_members,
+    list_workspaces,
+    log_audit,
+    remove_workspace_member,
+    resend_verification_code,
+    reset_user_password,
+    save_version,
+    set_disabled_tools,
+    tag_document_to_agent,
+    unassign_persona,
+    untag_all_for_agent,
+    untag_document_from_agent,
+    update_a2a_peer,
+    update_agent,
+    update_connector,
+    update_custom_tool,
+    update_document_registry,
+    update_guardrail,
+    update_mcp_server,
+    update_persona,
+    update_pipeline,
+    update_pipeline_run,
+    update_prompt,
+    update_skill,
+    update_sync_job,
+    update_user,
+    update_workspace,
+    verify_user_email,
+)
 from agent.observability import setup_otel
-from agent.workspace import (current_user_id, current_user_role,
-                             current_workspace_id)
+from agent.workspace import current_user_id, current_user_role, current_workspace_id
 from fastapi import BackgroundTasks, FastAPI, File, Form, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -1211,8 +1279,7 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
         file_ext = (
             os.path.splitext(doc["name"])[1].lower() if "." in doc["name"] else ""
         )
-        from agent.llamaindex_loader import (SUPPORTED_EXTENSIONS,
-                                             parse_file_bytes)
+        from agent.llamaindex_loader import SUPPORTED_EXTENSIONS, parse_file_bytes
 
         if file_ext in SUPPORTED_EXTENSIONS and file_ext not in (".txt", ".md", ""):
             parsed_docs = parse_file_bytes(
@@ -1784,7 +1851,7 @@ class SkillCreate(BaseModel):
     tool_ids: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
     input_parameters: list[dict] = Field(default_factory=list)
-    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
+    scope: str = Field(default="private", pattern="^(global|private)$")
 
     @model_validator(mode="after")
     def validate_skill(self):
@@ -1809,6 +1876,7 @@ class SkillUpdate(BaseModel):
     tool_ids: list[str] | None = None
     constraints: list[str] | None = None
     input_parameters: list[dict] | None = None
+    scope: str | None = Field(default=None, pattern="^(global|private)$")
 
     @model_validator(mode="after")
     def validate_skill(self):
@@ -2324,7 +2392,7 @@ class PromptCreate(BaseModel):
     description: str = ""
     tags: list[str] = Field(default_factory=list)
     model: str = ""
-    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
+    scope: str = Field(default="private", pattern="^(global|private)$")
 
 
 class PromptUpdate(BaseModel):
@@ -2334,6 +2402,7 @@ class PromptUpdate(BaseModel):
     description: str | None = None
     tags: list[str] | None = None
     model: str | None = None
+    scope: str | None = Field(default=None, pattern="^(global|private)$")
 
 
 @app.get("/prompts")
@@ -2864,7 +2933,7 @@ class AgentCreate(BaseModel):
     retrieval_mode: str = Field(default="basic")
     max_iterations: int = Field(default=5, ge=1, le=20)
     memory_enabled: bool = Field(default=True)
-    scope: str = Field(default="workspace", pattern="^(global|workspace)$")
+    scope: str = Field(default="private", pattern="^(global|private)$")
 
 
 class AgentUpdate(BaseModel):
@@ -2884,6 +2953,7 @@ class AgentUpdate(BaseModel):
     retrieval_mode: str | None = None
     max_iterations: int | None = None
     memory_enabled: bool | None = None
+    scope: str | None = Field(default=None, pattern="^(global|private)$")
 
 
 @app.get("/agents")

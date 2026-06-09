@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Eye, EyeOff, Info, Loader2, X, Zap } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /* ── In production the login app is served from the console itself,
    so all API calls are same-origin.  In dev (Vite) we proxy to the
@@ -505,6 +505,28 @@ function SubmitButton({ loading, text }) {
   );
 }
 
+/* ── XP Counter — rapid count-up animation ─────────────── */
+function XPCounter() {
+  const [count, setCount] = useState(0);
+  const target = useRef(Math.floor(150 + Math.random() * 350)); // 150-500 XP
+  useEffect(() => {
+    let frame;
+    const start = performance.now();
+    const duration = 800;
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target.current));
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return <>{`+${count}`}</>;
+}
+
 /* ── Main login page ───────────────────────────────────── */
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -604,7 +626,7 @@ export default function LoginPage() {
       /* Trigger dramatic gate animation, then redirect */
       setLoading(false);
       setGateOpen(true);
-      setTimeout(() => { window.location.href = '/'; }, 1400);
+      setTimeout(() => { window.location.href = '/'; }, 2200);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -976,10 +998,10 @@ export default function LoginPage() {
                 {/* Tech readout text */}
                 <div className={`absolute ${isLeft ? 'right-8' : 'left-8'} top-1/2 -translate-y-1/2 flex flex-col gap-3 ${isLeft ? 'items-end text-right' : 'items-start text-left'}`}>
                   {[
-                    { label: 'CLEARANCE', value: 'GRANTED' },
-                    { label: 'AUTH LEVEL', value: 'VERIFIED' },
-                    { label: 'PROTOCOL', value: 'SECURE' },
-                    { label: 'INTEGRITY', value: '100%' },
+                    { label: 'RANK', value: 'OPERATIVE' },
+                    { label: 'CLEARANCE', value: 'LEVEL 3' },
+                    { label: 'THREAT LVL', value: 'NOMINAL' },
+                    { label: 'SHIELDS', value: '100%' },
                   ].map((item, i) => (
                     <motion.div
                       key={`tech-${side[0]}-${i}`}
@@ -1016,7 +1038,7 @@ export default function LoginPage() {
                 {/* Panel ID label */}
                 <div className={`absolute bottom-10 ${isLeft ? 'left-6' : 'right-6'} font-mono text-[8px] tracking-[0.3em] uppercase`}
                   style={{ color: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.15)' }}>
-                  {isLeft ? 'GATE-L :: SEC-7' : 'GATE-R :: SEC-7'}
+                  {isLeft ? 'GATE-L :: SECTOR-7G' : 'GATE-R :: SECTOR-7G'}
                 </div>
               </div>
             );
@@ -1161,19 +1183,19 @@ export default function LoginPage() {
               }}
             />
 
-            {/* Central hexagonal shield icon + ACCESS GRANTED */}
+            {/* Central hexagonal shield icon + GAMIFIED ACCESS */}
             <motion.div
               className="fixed top-1/2 left-1/2 z-[103] -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1, 1, 1.05] }}
-              transition={{ duration: 1.2, delay: 0.05, times: [0, 0.15, 0.75, 1], ease: 'easeOut' }}
+              transition={{ duration: 1.8, delay: 0.05, times: [0, 0.1, 0.8, 1], ease: 'easeOut' }}
             >
               {/* Shield / lock icon */}
               <motion.div
                 initial={{ rotate: 0 }}
                 animate={{ rotate: [0, 0, 180] }}
                 transition={{ duration: 0.8, delay: 0.05, times: [0, 0.3, 1], ease: [0.22, 1, 0.36, 1] }}
-                className="mb-5"
+                className="mb-3"
               >
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <motion.path
@@ -1198,7 +1220,8 @@ export default function LoginPage() {
                   </defs>
                 </svg>
               </motion.div>
-              {/* Title text */}
+
+              {/* ACCESS GRANTED title */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1218,33 +1241,132 @@ export default function LoginPage() {
                   }}>
                   Access Granted
                 </div>
+
+                {/* ── XP Counter ──────────────────────── */}
+                <motion.div
+                  className="mt-3 flex items-center justify-center gap-2"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
+                >
+                  <div className="px-3 py-1 rounded-md border font-mono text-center"
+                    style={{
+                      borderColor: isDark ? 'rgba(245,158,11,0.4)' : 'rgba(245,158,11,0.3)',
+                      background: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.06)',
+                    }}>
+                    <div className="text-[8px] tracking-[0.2em] uppercase" style={{ color: isDark ? 'rgba(245,158,11,0.6)' : 'rgba(217,119,6,0.7)' }}>XP EARNED</div>
+                    <motion.div
+                      className="text-lg font-bold tabular-nums"
+                      style={{ color: isDark ? '#f59e0b' : '#d97706' }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <XPCounter />
+                    </motion.div>
+                  </div>
+                </motion.div>
+
+                {/* ── Agent Rank Badge ─────────────────── */}
+                <motion.div
+                  className="mt-3 flex items-center justify-center gap-1.5"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.3 }}
+                >
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border"
+                    style={{
+                      borderColor: isDark ? 'rgba(139,92,246,0.4)' : 'rgba(139,92,246,0.3)',
+                      background: isDark ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.06)',
+                      boxShadow: isDark ? '0 0 15px rgba(139,92,246,0.15)' : '0 0 15px rgba(139,92,246,0.08)',
+                    }}>
+                    <span className="text-[10px]">{'★'.repeat(3)}</span>
+                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase"
+                      style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}>
+                      Agent Operative
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* ── Power Bars (equalizer) ───────────── */}
+                <motion.div
+                  className="mt-3 flex items-end justify-center gap-[3px]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  {[0.6, 0.9, 0.4, 1.0, 0.7, 0.5, 0.85, 0.3, 0.75, 0.95, 0.5, 0.8].map((h, i) => (
+                    <motion.div
+                      key={`bar-${i}`}
+                      className="rounded-sm"
+                      style={{
+                        width: '3px',
+                        background: isDark
+                          ? `linear-gradient(to top, #6366f1, #06b6d4)`
+                          : `linear-gradient(to top, #4f46e5, #7c3aed)`,
+                        boxShadow: isDark ? '0 0 4px rgba(99,102,241,0.4)' : '0 0 4px rgba(79,70,229,0.3)',
+                      }}
+                      initial={{ height: 0 }}
+                      animate={{ height: [0, h * 20, h * 12, h * 18, h * 14] }}
+                      transition={{
+                        duration: 0.8,
+                        delay: 0.6 + i * 0.03,
+                        ease: 'easeOut',
+                        times: [0, 0.3, 0.5, 0.7, 1],
+                      }}
+                    />
+                  ))}
+                </motion.div>
+
                 <motion.div
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ duration: 0.35, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className="mx-auto mt-2 h-[1px] w-40"
+                  className="mx-auto mt-3 h-[1px] w-40"
                   style={{ background: isDark
                     ? 'linear-gradient(to right, transparent, rgba(6,182,212,0.6), transparent)'
                     : 'linear-gradient(to right, transparent, rgba(99,102,241,0.4), transparent)' }}
                 />
+
+                {/* ── Achievement Unlock ───────────────── */}
+                <motion.div
+                  className="mt-3 flex items-center justify-center gap-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: [0, 1, 1, 0.8], x: 0 }}
+                  transition={{ delay: 0.8, duration: 0.5, ease: 'easeOut' }}
+                >
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border"
+                    style={{
+                      borderColor: isDark ? 'rgba(16,185,129,0.4)' : 'rgba(16,185,129,0.3)',
+                      background: isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.05)',
+                    }}>
+                    <span className="text-sm">🏆</span>
+                    <span className="text-[9px] font-mono tracking-wider uppercase"
+                      style={{ color: isDark ? '#34d399' : '#059669' }}>
+                      Achievement: Gateway Breached
+                    </span>
+                  </div>
+                </motion.div>
+
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.25, delay: 0.35 }}
-                  className="mt-2.5 text-[10px] tracking-[0.25em] uppercase font-medium"
+                  className="mt-2 text-[10px] tracking-[0.25em] uppercase font-medium"
                   style={{ color: subtitleColor }}
                 >
-                  Initializing Platform
+                  Entering Command Center
                 </motion.div>
+
                 {/* Loading dots */}
-                <div className="flex justify-center gap-1.5 mt-3">
+                <div className="flex justify-center gap-1.5 mt-2">
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={`dot-${i}`}
                       className="w-1 h-1 rounded-full"
                       initial={{ opacity: 0.2 }}
                       animate={{ opacity: [0.2, 1, 0.2] }}
-                      transition={{ duration: 0.5, delay: 0.4 + i * 0.1, repeat: 1, ease: 'easeInOut' }}
+                      transition={{ duration: 0.5, delay: 0.4 + i * 0.1, repeat: 2, ease: 'easeInOut' }}
                       style={{ background: dotBg, boxShadow: dotShadow }}
                     />
                   ))}

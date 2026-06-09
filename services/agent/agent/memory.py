@@ -1301,6 +1301,8 @@ def create_skill(
 
 
 def update_skill(skill_id: str, **kwargs) -> dict | None:
+    from agent.workspace import effective_scope
+
     conn = _get_conn()
     existing = get_skill(skill_id)
     if not existing:
@@ -1319,6 +1321,9 @@ def update_skill(skill_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
+    if "scope" in kwargs:
+        fields.append("scope = ?")
+        values.append(effective_scope(kwargs["scope"]))
     for key in ("tool_ids", "constraints", "input_parameters"):
         if key in kwargs:
             fields.append(f"{key} = ?")
@@ -1726,6 +1731,8 @@ def create_agent(
 
 
 def update_agent(agent_id: str, **kwargs) -> dict | None:
+    from agent.workspace import effective_scope
+
     conn = _get_conn()
     existing = get_agent(agent_id)
     if not existing:
@@ -1753,6 +1760,9 @@ def update_agent(agent_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
+    if "scope" in kwargs:
+        fields.append("scope = ?")
+        values.append(effective_scope(kwargs["scope"]))
     for key in ("temperature", "top_p"):
         if key in kwargs:
             fields.append(f"{key} = ?")
@@ -2259,6 +2269,8 @@ def create_prompt(
 
 
 def update_prompt(prompt_id: str, **kwargs) -> dict | None:
+    from agent.workspace import effective_scope
+
     conn = _get_conn()
     existing = get_prompt(prompt_id)
     if not existing:
@@ -2277,6 +2289,9 @@ def update_prompt(prompt_id: str, **kwargs) -> dict | None:
         if key in kwargs:
             fields.append(f"{key} = ?")
             values.append(kwargs[key])
+    if "scope" in kwargs:
+        fields.append("scope = ?")
+        values.append(effective_scope(kwargs["scope"]))
     for key in ("tags",):
         if key in kwargs:
             fields.append(f"{key} = ?")

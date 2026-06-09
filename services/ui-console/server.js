@@ -609,19 +609,19 @@ app.get("/api/skills", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/skills/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/skills/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/skills/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 // ── Skill files proxy (upload streams raw body) ────────
@@ -669,19 +669,19 @@ app.get("/api/prompts", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/prompts/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/prompts/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/prompts/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts/validate", async (req, res) => {
@@ -699,19 +699,19 @@ app.get("/api/agents", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/agents", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/agents/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/agents/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/agents/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { method: "DELETE" }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { method: "DELETE", headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 

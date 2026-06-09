@@ -1,265 +1,1198 @@
 /*
-===================================================
-   AGENTIC PLATFORM - Horizon Theme
-   Compact geometric, teal accent
-   Token-only: no structural overrides
-=================================================== */
+═══════════════════════════════════════════════════════
+   AGENTIC PLATFORM — Liquid Glass Theme
+   Apple-inspired · Frosted translucency · Specular highlights
+   Refractive surfaces · Depth through light
+═══════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* ===================================================
-   LIGHT MODE
-   =================================================== */
+
+/* ═══════════════════════════════════════════
+   LIGHT MODE — Luminous frosted glass
+   ═══════════════════════════════════════════ */
 .theme-horizon {
-  --bg: #f8fafc;
-  --bg-from: #f8fafc;
-  --bg-mid: #f1f5f9;
-  --bg-to: #f8fafc;
+  --bg: #f2f2f7;
+  --bg-from: #e8edf5;
+  --bg-mid: #f0f1f6;
+  --bg-to: #f5f5fa;
 
-  --glass-bg: #ffffff;
-  --glass-hover-bg: #ffffff;
-  --glass-border: #e2e8f0;
-  --glass-hover-border: #0d9488;
-  --glass-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  --glass-hover-shadow: 0 2px 8px rgba(13,148,136,0.08);
-  --glass-inset: none;
+  /* ── Liquid Glass core tokens ── */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-hover-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-hover-border: rgba(255, 255, 255, 0.85);
+  --glass-shadow:
+    0 0.5px 0 0 rgba(255,255,255,0.6) inset,
+    0 1px 3px rgba(0,0,0,0.06),
+    0 6px 24px rgba(0,0,0,0.04);
+  --glass-hover-shadow:
+    0 0.5px 0 0 rgba(255,255,255,0.8) inset,
+    0 2px 8px rgba(0,0,0,0.08),
+    0 12px 40px rgba(0,0,0,0.06);
+  --glass-inset: inset 0 1px 0 0 rgba(255,255,255,0.8);
 
-  --text-1: #0f172a;
-  --text-2: #334155;
-  --text-3: #64748b;
-  --text-4: #cbd5e1;
+  --text-1: #1c1c1e;
+  --text-2: #3a3a3c;
+  --text-3: #8e8e93;
+  --text-4: #c7c7cc;
 
-  --input-bg: #ffffff;
-  --input-border: #e2e8f0;
-  --input-focus-bg: #ffffff;
-  --input-placeholder: #94a3b8;
+  --input-bg: rgba(255,255,255,0.5);
+  --input-border: rgba(0,0,0,0.06);
+  --input-focus-bg: rgba(255,255,255,0.8);
+  --input-placeholder: #aeaeb2;
 
-  --rail-bg: #1e293b;
-  --topbar-bg: rgba(255,255,255,0.92);
-  --rail-border: #334155;
-  --topbar-border: #e2e8f0;
+  --rail-bg: rgba(245, 245, 250, 0.72);
+  --topbar-bg: rgba(255, 255, 255, 0.6);
+  --rail-border: rgba(0,0,0,0.06);
+  --topbar-border: rgba(0,0,0,0.05);
 
-  --tooltip-bg: #0f172a;
-  --tooltip-border: #1e293b;
-  --tooltip-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  --tooltip-bg: rgba(255,255,255,0.92);
+  --tooltip-border: rgba(0,0,0,0.08);
+  --tooltip-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0.5px 0 rgba(255,255,255,0.5) inset;
 
-  --ring-inner: #f8fafc;
-  --ring-empty: #e2e8f0;
+  --ring-inner: #f5f5fa;
+  --ring-empty: rgba(0,0,0,0.05);
 
-  --badge-bg: #f1f5f9;
-  --badge-border: #e2e8f0;
+  --badge-bg: rgba(0,0,0,0.03);
+  --badge-border: rgba(0,0,0,0.06);
 
-  --rail-hover-bg: rgba(255,255,255,0.06);
+  --rail-hover-bg: rgba(0,0,0,0.04);
   --dot-grid-color: transparent;
-  --scrollbar-thumb: #cbd5e1;
-  --scrollbar-hover: #94a3b8;
-  --selection-bg: rgba(13,148,136,0.1);
-  --selection-color: #0f172a;
-  --divider: #e2e8f0;
-  --border-base: #e2e8f0;
-  --btn-secondary-hover-bg: #f1f5f9;
-  --btn-secondary-hover-border: #0d9488;
-  --btn-ghost-hover-bg: #f1f5f9;
-  --delete-hover-bg: rgba(239,68,68,0.05);
+  --scrollbar-thumb: rgba(0,0,0,0.12);
+  --scrollbar-hover: rgba(0,0,0,0.2);
+  --selection-bg: rgba(0,122,255,0.12);
+  --selection-color: #1c1c1e;
+  --divider: rgba(0,0,0,0.06);
+  --border-base: rgba(0,0,0,0.06);
+  --btn-secondary-hover-bg: rgba(0,0,0,0.04);
+  --btn-secondary-hover-border: rgba(0,0,0,0.1);
+  --btn-ghost-hover-bg: rgba(0,0,0,0.04);
+  --delete-hover-bg: rgba(255,59,48,0.06);
 
-  --modal-bg: #ffffff;
-  --modal-border: #e2e8f0;
-  --modal-shadow: 0 20px 60px rgba(0,0,0,0.08);
-  --modal-overlay: rgba(15,23,42,0.2);
-  --modal-field-bg: #f8fafc;
-  --warning: #d97706;
+  --modal-bg: rgba(255,255,255,0.82);
+  --modal-border: rgba(255,255,255,0.7);
+  --modal-shadow: 0 24px 80px rgba(0,0,0,0.12), 0 0.5px 0 rgba(255,255,255,0.6) inset;
+  --modal-overlay: rgba(0,0,0,0.25);
+  --modal-field-bg: rgba(0,0,0,0.03);
+  --warning: #ff9500;
 
-  --accent: #0d9488;
-  --accent-text: #0f766e;
-  --accent-glow: rgba(13,148,136,0.15);
+  --accent: #007aff;
+  --accent-text: #0066d6;
+  --accent-glow: rgba(0,122,255,0.15);
 
-  --success: #059669;
-  --success-bg: #ecfdf5;
-  --success-border: #6ee7b7;
-  --warn: #d97706;
-  --warn-bg: #fffbeb;
-  --warn-border: #fde68a;
-  --danger: #dc2626;
-  --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
+  --success: #34c759;
+  --success-bg: rgba(52,199,89,0.08);
+  --success-border: rgba(52,199,89,0.2);
+  --warn: #ff9500;
+  --warn-bg: rgba(255,149,0,0.08);
+  --warn-border: rgba(255,149,0,0.2);
+  --danger: #ff3b30;
+  --danger-bg: rgba(255,59,48,0.06);
+  --danger-border: rgba(255,59,48,0.15);
+
+  /* ── Liquid Glass specific tokens ── */
+  --lg-refraction: rgba(255,255,255,0.2);
+  --lg-specular: rgba(255,255,255,0.9);
+  --lg-caustic: rgba(0,122,255,0.03);
+  --lg-depth-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  --lg-surface: rgba(255,255,255,0.45);
+  --lg-surface-raised: rgba(255,255,255,0.65);
+  --lg-border-glow: rgba(255,255,255,0.7);
+  --lg-frost: blur(40px) saturate(180%);
+  --lg-frost-light: blur(20px) saturate(150%);
+  --lg-radius: 16px;
+  --lg-radius-sm: 12px;
+  --lg-radius-xs: 8px;
+  --lg-highlight: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 50%);
 
   color-scheme: light;
 }
 
-/* ===================================================
-   DARK MODE
-   =================================================== */
+
+/* ═══════════════════════════════════════════
+   DARK MODE — Deep translucent glass
+   ═══════════════════════════════════════════ */
 .theme-horizon.dark {
-  --bg: #0f172a;
-  --bg-from: #0f172a;
-  --bg-mid: #0f172a;
-  --bg-to: #020617;
+  --bg: #000000;
+  --bg-from: #000000;
+  --bg-mid: #0a0a0c;
+  --bg-to: #000000;
 
-  --glass-bg: #1e293b;
-  --glass-hover-bg: #1e293b;
-  --glass-border: #334155;
-  --glass-hover-border: #14b8a6;
-  --glass-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  --glass-hover-shadow: 0 4px 16px rgba(20,184,166,0.06);
-  --glass-inset: none;
+  --glass-bg: rgba(44, 44, 46, 0.45);
+  --glass-hover-bg: rgba(58, 58, 60, 0.55);
+  --glass-border: rgba(255,255,255,0.1);
+  --glass-hover-border: rgba(255,255,255,0.18);
+  --glass-shadow:
+    0 0.5px 0 0 rgba(255,255,255,0.08) inset,
+    0 1px 3px rgba(0,0,0,0.3),
+    0 8px 32px rgba(0,0,0,0.2);
+  --glass-hover-shadow:
+    0 0.5px 0 0 rgba(255,255,255,0.12) inset,
+    0 4px 16px rgba(0,0,0,0.35),
+    0 16px 48px rgba(0,0,0,0.25);
+  --glass-inset: inset 0 1px 0 0 rgba(255,255,255,0.06);
 
-  --text-1: #f1f5f9;
-  --text-2: #cbd5e1;
-  --text-3: #64748b;
-  --text-4: #334155;
+  --text-1: #f5f5f7;
+  --text-2: #a1a1a6;
+  --text-3: #636366;
+  --text-4: #3a3a3c;
 
-  --input-bg: #0f172a;
-  --input-border: #334155;
-  --input-focus-bg: #1e293b;
-  --input-placeholder: #475569;
+  --input-bg: rgba(255,255,255,0.06);
+  --input-border: rgba(255,255,255,0.08);
+  --input-focus-bg: rgba(255,255,255,0.1);
+  --input-placeholder: #48484a;
 
-  --rail-bg: #1e293b;
-  --topbar-bg: rgba(15,23,42,0.92);
-  --rail-border: #334155;
-  --topbar-border: #334155;
+  --rail-bg: rgba(28, 28, 30, 0.72);
+  --topbar-bg: rgba(28, 28, 30, 0.6);
+  --rail-border: rgba(255,255,255,0.06);
+  --topbar-border: rgba(255,255,255,0.06);
 
-  --tooltip-bg: #020617;
-  --tooltip-border: #1e293b;
-  --tooltip-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  --tooltip-bg: rgba(44,44,46,0.92);
+  --tooltip-border: rgba(255,255,255,0.1);
+  --tooltip-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0.5px 0 rgba(255,255,255,0.06) inset;
 
-  --ring-inner: #0f172a;
-  --ring-empty: #334155;
+  --ring-inner: #1c1c1e;
+  --ring-empty: rgba(255,255,255,0.08);
 
-  --badge-bg: #1e293b;
-  --badge-border: #334155;
+  --badge-bg: rgba(255,255,255,0.05);
+  --badge-border: rgba(255,255,255,0.08);
 
-  --rail-hover-bg: rgba(14,165,160,0.06);
-  --dot-grid-color: transparent;
-  --scrollbar-thumb: #334155;
-  --scrollbar-hover: #475569;
-  --selection-bg: rgba(20,184,166,0.15);
-  --selection-color: #f1f5f9;
-  --divider: #334155;
-  --border-base: #334155;
-  --btn-secondary-hover-bg: rgba(14,165,160,0.06);
-  --btn-secondary-hover-border: #14b8a6;
-  --btn-ghost-hover-bg: rgba(255,255,255,0.03);
-  --delete-hover-bg: rgba(239,68,68,0.08);
+  --rail-hover-bg: rgba(255,255,255,0.06);
+  --scrollbar-thumb: rgba(255,255,255,0.1);
+  --scrollbar-hover: rgba(255,255,255,0.2);
+  --selection-bg: rgba(10,132,255,0.25);
+  --selection-color: #f5f5f7;
+  --divider: rgba(255,255,255,0.06);
+  --border-base: rgba(255,255,255,0.08);
+  --btn-secondary-hover-bg: rgba(255,255,255,0.06);
+  --btn-secondary-hover-border: rgba(255,255,255,0.14);
+  --btn-ghost-hover-bg: rgba(255,255,255,0.06);
+  --delete-hover-bg: rgba(255,69,58,0.1);
 
-  --modal-bg: #1e293b;
-  --modal-border: #334155;
-  --modal-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  --modal-overlay: rgba(0,0,0,0.5);
-  --modal-field-bg: #0f172a;
+  --modal-bg: rgba(44,44,46,0.82);
+  --modal-border: rgba(255,255,255,0.1);
+  --modal-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0.5px 0 rgba(255,255,255,0.06) inset;
+  --modal-overlay: rgba(0,0,0,0.55);
+  --modal-field-bg: rgba(255,255,255,0.04);
 
-  --accent: #14b8a6;
-  --accent-text: #2dd4bf;
-  --accent-glow: rgba(20,184,166,0.2);
+  --accent: #0a84ff;
+  --accent-text: #409cff;
+  --accent-glow: rgba(10,132,255,0.2);
 
-  --success: #34d399;
-  --success-bg: rgba(52,211,153,0.06);
-  --success-border: rgba(52,211,153,0.2);
-  --warn: #fbbf24;
-  --warn-bg: rgba(251,191,36,0.06);
-  --warn-border: rgba(251,191,36,0.2);
-  --danger: #f87171;
-  --danger-bg: rgba(248,113,113,0.06);
-  --danger-border: rgba(248,113,113,0.2);
+  --success: #30d158;
+  --success-bg: rgba(48,209,88,0.1);
+  --success-border: rgba(48,209,88,0.2);
+  --warn: #ff9f0a;
+  --warn-bg: rgba(255,159,10,0.1);
+  --warn-border: rgba(255,159,10,0.2);
+  --danger: #ff453a;
+  --danger-bg: rgba(255,69,58,0.1);
+  --danger-border: rgba(255,69,58,0.2);
+
+  /* ── Dark liquid glass tokens ── */
+  --lg-refraction: rgba(255,255,255,0.04);
+  --lg-specular: rgba(255,255,255,0.12);
+  --lg-caustic: rgba(10,132,255,0.04);
+  --lg-surface: rgba(44,44,46,0.4);
+  --lg-surface-raised: rgba(58,58,60,0.55);
+  --lg-border-glow: rgba(255,255,255,0.1);
+  --lg-highlight: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%);
 
   color-scheme: dark;
 }
 
 
-/* ===================================================
-   TYPOGRAPHY - Tight, technical
-   =================================================== */
+/* ═══════════════════════════════════════════
+   BACKGROUND — Soft mesh gradient
+   ═══════════════════════════════════════════ */
 .theme-horizon body {
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(0,122,255,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(175,82,222,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(0,122,255,0.02) 0%, transparent 70%),
+    linear-gradient(180deg, var(--bg-from), var(--bg-mid), var(--bg-to));
+}
+.theme-horizon.dark body {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(10,132,255,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(191,90,242,0.04) 0%, transparent 50%),
+    linear-gradient(180deg, var(--bg-from), var(--bg-mid), var(--bg-to));
+}
+
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY — SF Pro inspired, clean weight hierarchy
+   ═══════════════════════════════════════════ */
+.theme-horizon body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif;
   font-size: 0.85rem;
   line-height: 1.5;
-  letter-spacing: -0.006em;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .theme-horizon h1,
 .theme-horizon h2,
 .theme-horizon h3 {
-  font-family: 'Inter', system-ui;
+  font-family: 'Inter', -apple-system, 'SF Pro Display', system-ui, sans-serif;
   letter-spacing: -0.025em;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-1);
 }
 .theme-horizon h1 {
-  font-size: 1.35rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.theme-horizon h2 {
+  font-size: 1.1rem;
+}
+.theme-horizon h3 {
+  font-size: 0.92rem;
 }
 .theme-horizon .stat-number {
-  font-family: 'Inter', system-ui;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+  color: var(--text-1);
+}
+.theme-horizon .stat-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
 }
 
-/* ===================================================
-   SIDEBAR RAIL ITEMS
-   Dark sidebar in both light + dark mode — always uses light text
-   =================================================== */
+
+/* ═══════════════════════════════════════════
+   SURFACES — True liquid glass with refractive edges
+   ═══════════════════════════════════════════ */
+.theme-horizon .glass,
+.theme-horizon .glass-hover {
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+  background: var(--glass-bg);
+  border: 0.5px solid var(--glass-border);
+  border-radius: var(--lg-radius);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+}
+.theme-horizon .glass::before,
+.theme-horizon .glass-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  border-radius: var(--lg-radius) var(--lg-radius) 0 0;
+  background: var(--lg-highlight);
+  pointer-events: none;
+  z-index: 0;
+}
+.theme-horizon .glass-hover:hover {
+  border-color: var(--glass-hover-border);
+  box-shadow: var(--glass-hover-shadow);
+  background: var(--glass-hover-bg);
+}
+
+
+/* ═══════════════════════════════════════════
+   CARDS — Floating glass panels with specular edge
+   ═══════════════════════════════════════════ */
+.theme-horizon .card,
+.theme-horizon .card-hover {
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+  background: var(--lg-surface);
+  border: 0.5px solid var(--lg-border-glow);
+  border-radius: var(--lg-radius);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+.theme-horizon .card::before,
+.theme-horizon .card-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 5%, var(--lg-specular) 50%, transparent 95%);
+  pointer-events: none;
+  z-index: 1;
+}
+.theme-horizon .card-hover:hover {
+  border-color: var(--glass-hover-border);
+  box-shadow: var(--glass-hover-shadow);
+  background: var(--lg-surface-raised);
+  transform: translateY(-1px);
+}
+
+
+/* ═══════════════════════════════════════════
+   STAT CARDS — Glass panes with chromatic accent
+   ═══════════════════════════════════════════ */
+.theme-horizon .stat-card {
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+  background: var(--lg-surface);
+  border: 0.5px solid var(--lg-border-glow);
+  border-radius: var(--lg-radius);
+  box-shadow: var(--glass-shadow);
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.theme-horizon .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 10%, var(--lg-specular) 50%, transparent 90%);
+  pointer-events: none;
+}
+.theme-horizon .stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--lg-highlight);
+  pointer-events: none;
+  border-radius: var(--lg-radius) var(--lg-radius) 0 0;
+}
+.theme-horizon .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-hover-shadow);
+  border-color: var(--glass-hover-border);
+}
+
+/* ── Stat icons — Frosted glass circles ── */
+.theme-horizon .stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--lg-radius-sm);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.theme-horizon .stat-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.theme-horizon .stat-icon-cyan {
+  background: rgba(50,173,230,0.12);
+  color: #32ade6;
+}
+.theme-horizon .stat-icon-violet {
+  background: rgba(175,82,222,0.12);
+  color: #af52de;
+}
+.theme-horizon .stat-icon-emerald {
+  background: rgba(52,199,89,0.12);
+  color: #34c759;
+}
+.theme-horizon .stat-icon-amber {
+  background: rgba(255,149,0,0.12);
+  color: #ff9500;
+}
+
+
+/* ═══════════════════════════════════════════
+   SIDEBAR — Frosted glass rail
+   ═══════════════════════════════════════════ */
+.theme-horizon .icon-rail {
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+  background: var(--rail-bg);
+  border-right: 0.5px solid var(--rail-border);
+  border-radius: 0;
+  margin: 0;
+  height: 100vh;
+  position: relative;
+}
+.theme-horizon .icon-rail::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 10%, var(--lg-specular) 50%, transparent 90%);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.theme-horizon .rail-logo-icon {
+  background: transparent !important;
+  border-radius: var(--lg-radius-sm);
+  box-shadow: none;
+}
+.theme-horizon .rail-logo-icon:hover {
+  background: var(--rail-hover-bg) !important;
+  transform: scale(1.05);
+}
+
+/* ── Rail items — Apple-style pill selection ── */
 .theme-horizon .rail-item {
-  color: rgba(148,163,184,0.65);
+  border-radius: var(--lg-radius-xs);
+  color: var(--text-3);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .theme-horizon .rail-item:hover {
-  color: #94a3b8;
-  background: rgba(255,255,255,0.06);
+  color: var(--text-2);
+  background: var(--rail-hover-bg);
 }
 .theme-horizon .rail-item.active {
-  color: #2dd4bf;
-  background: rgba(20,184,166,0.12);
-  box-shadow: 0 0 12px rgba(20,184,166,0.04);
+  color: var(--accent);
+  background: var(--accent-glow);
 }
 .theme-horizon .rail-item.active::before {
-  background: linear-gradient(180deg, #14b8a6, #0d9488);
-  box-shadow: 0 0 8px rgba(20,184,166,0.4);
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  width: 3px;
+  border-radius: 1.5px;
+}
+
+/* Dark mode sidebar */
+.theme-horizon.dark .icon-rail {
+  background: var(--rail-bg);
+  border-right-color: rgba(255,255,255,0.06);
 }
 .theme-horizon.dark .rail-item {
-  color: rgba(148,163,184,0.55);
+  color: var(--text-3);
 }
 .theme-horizon.dark .rail-item:hover {
-  color: #94a3b8;
-  background: rgba(255,255,255,0.04);
+  color: var(--text-2);
+  background: rgba(255,255,255,0.06);
 }
 .theme-horizon.dark .rail-item.active {
-  color: #2dd4bf;
-  background: rgba(20,184,166,0.1);
-}
-
-/* Expanded sidebar submenu — keep dark to match rail bg */
-.theme-horizon .sidebar-expanded .rail-submenu {
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.08);
-}
-.theme-horizon .sidebar-expanded .rail-submenu a {
-  color: rgba(148,163,184,0.65);
-}
-.theme-horizon .sidebar-expanded .rail-submenu a:hover {
-  background: rgba(255,255,255,0.06);
-  color: #94a3b8;
-}
-.theme-horizon .sidebar-expanded .rail-submenu a.sub-active {
-  color: #2dd4bf;
-  background: rgba(20,184,166,0.1);
-}
-
-/* Persona chip — sidebar context is dark in both modes */
-.theme-horizon .persona-chip,
-.theme-horizon.dark .persona-chip {
-  color: rgba(148,163,184,0.65);
-}
-.theme-horizon .persona-chip:hover,
-.theme-horizon.dark .persona-chip:hover {
-  background: rgba(255,255,255,0.06);
-  color: #94a3b8;
-}
-.theme-horizon .persona-active,
-.theme-horizon.dark .persona-active {
-  background: rgba(20,184,166,0.12);
-  color: #ccfbf1;
-}
-.theme-horizon .persona-switcher-section,
-.theme-horizon.dark .persona-switcher-section {
-  border-bottom-color: rgba(255,255,255,0.08);
+  color: var(--accent);
+  background: rgba(10,132,255,0.12);
 }
 .theme-horizon .rail-divider,
 .theme-horizon.dark .rail-divider {
-  background: rgba(255,255,255,0.07);
+  background: var(--divider);
+}
+
+/* Expanded sidebar submenu */
+.theme-horizon .sidebar-expanded .rail-submenu {
+  background: var(--lg-surface);
+  border-color: var(--glass-border);
+  backdrop-filter: var(--lg-frost-light);
+  -webkit-backdrop-filter: var(--lg-frost-light);
+  border-radius: var(--lg-radius-sm);
+}
+.theme-horizon .sidebar-expanded .rail-submenu a {
+  color: var(--text-3);
+  border-radius: var(--lg-radius-xs);
+}
+.theme-horizon .sidebar-expanded .rail-submenu a:hover {
+  background: var(--rail-hover-bg);
+  color: var(--text-2);
+}
+.theme-horizon .sidebar-expanded .rail-submenu a.sub-active {
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+
+/* ═══════════════════════════════════════════
+   PERSONA — Glass chip styling
+   ═══════════════════════════════════════════ */
+.theme-horizon .persona-chip,
+.theme-horizon.dark .persona-chip {
+  color: var(--text-3);
+}
+.theme-horizon .persona-chip:hover,
+.theme-horizon.dark .persona-chip:hover {
+  background: var(--rail-hover-bg);
+  color: var(--text-2);
+}
+.theme-horizon .persona-active,
+.theme-horizon.dark .persona-active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+.theme-horizon .persona-switcher-section,
+.theme-horizon.dark .persona-switcher-section {
+  border-bottom-color: var(--divider);
+}
+
+
+/* ═══════════════════════════════════════════
+   TOP BAR — Ultra-thin frosted glass
+   ═══════════════════════════════════════════ */
+.theme-horizon .topbar {
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+  background: var(--topbar-bg);
+  border-bottom: 0.5px solid var(--topbar-border);
+  border-radius: 0;
+  margin: 0;
+  position: relative;
+}
+.theme-horizon .topbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0.5px;
+  background: linear-gradient(90deg, transparent, var(--lg-specular), transparent);
+  pointer-events: none;
+  opacity: 0.2;
+}
+.theme-horizon .topbar-page {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.theme-horizon .topbar-section {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+.theme-horizon .topbar-slash {
+  color: var(--text-4);
+}
+
+
+/* ═══════════════════════════════════════════
+   BUTTONS — Vibrancy-filled glass buttons
+   ═══════════════════════════════════════════ */
+.theme-horizon .btn {
+  border-radius: var(--lg-radius-xs);
+  font-weight: 500;
+  font-size: 0.82rem;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+
+.theme-horizon .btn-primary {
+  background: var(--accent);
+  background-size: unset;
+  box-shadow: 0 1px 4px rgba(0,122,255,0.25), 0 0.5px 0 rgba(255,255,255,0.15) inset;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow: none;
+}
+.theme-horizon .btn-primary:hover {
+  background: #0071e3;
+  box-shadow: 0 2px 8px rgba(0,122,255,0.35), 0 0.5px 0 rgba(255,255,255,0.2) inset;
+  transform: translateY(-0.5px);
+}
+.theme-horizon .btn-primary:active {
+  transform: translateY(0);
+  background: #0064cc;
+  box-shadow: 0 1px 2px rgba(0,122,255,0.3);
+}
+.theme-horizon.dark .btn-primary {
+  background: #0a84ff;
+  box-shadow: 0 1px 4px rgba(10,132,255,0.3), 0 0.5px 0 rgba(255,255,255,0.08) inset;
+}
+.theme-horizon.dark .btn-primary:hover {
+  background: #409cff;
+  box-shadow: 0 2px 8px rgba(10,132,255,0.4), 0 0.5px 0 rgba(255,255,255,0.1) inset;
+}
+
+.theme-horizon .btn-secondary {
+  backdrop-filter: var(--lg-frost-light);
+  -webkit-backdrop-filter: var(--lg-frost-light);
+  background: var(--lg-surface);
+  border: 0.5px solid var(--lg-border-glow);
+  font-weight: 500;
+  box-shadow: var(--lg-depth-shadow);
+  color: var(--text-1);
+}
+.theme-horizon .btn-secondary:hover {
+  background: var(--lg-surface-raised);
+  border-color: var(--glass-hover-border);
+  box-shadow: var(--glass-hover-shadow);
+  transform: translateY(-0.5px);
+}
+
+.theme-horizon .btn-sm {
+  border-radius: var(--lg-radius-xs);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.theme-horizon .btn-ghost {
+  font-weight: 500;
+  color: var(--accent);
+}
+.theme-horizon .btn-ghost:hover {
+  background: var(--accent-glow);
+}
+
+.theme-horizon .btn-danger {
+  background: var(--danger);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(255,59,48,0.25);
+  text-shadow: none;
+}
+.theme-horizon .btn-danger:hover {
+  box-shadow: 0 2px 8px rgba(255,59,48,0.35);
+  transform: translateY(-0.5px);
+}
+
+
+/* ═══════════════════════════════════════════
+   INPUTS — Translucent material fields
+   ═══════════════════════════════════════════ */
+.theme-horizon input,
+.theme-horizon textarea,
+.theme-horizon select {
+  border-radius: var(--lg-radius-xs);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border: 0.5px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-1);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  line-height: 1.3;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.theme-horizon input:focus,
+.theme-horizon textarea:focus,
+.theme-horizon select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  outline: none;
+  background: var(--input-focus-bg);
+}
+.theme-horizon select {
+  background-color: var(--input-bg);
+  color: var(--text-1);
+}
+.theme-horizon.dark select option {
+  background-color: #2c2c2e;
+  color: var(--text-1);
+}
+
+
+/* ═══════════════════════════════════════════
+   BADGES — Pill-shaped vibrancy chips
+   ═══════════════════════════════════════════ */
+.theme-horizon .badge {
+  border-radius: 100px;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 2px 10px;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.theme-horizon .badge-success,
+.theme-horizon .badge.healthy {
+  background: rgba(52,199,89,0.12);
+  color: var(--success);
+  border: 0.5px solid rgba(52,199,89,0.2);
+}
+.theme-horizon .badge-error,
+.theme-horizon .badge.unhealthy,
+.theme-horizon .badge.unreachable {
+  background: rgba(255,59,48,0.1);
+  color: var(--danger);
+  border: 0.5px solid rgba(255,59,48,0.2);
+}
+.theme-horizon .badge-warning,
+.theme-horizon .badge.pending {
+  background: rgba(255,149,0,0.1);
+  color: var(--warn);
+  border: 0.5px solid rgba(255,149,0,0.2);
+}
+.theme-horizon .badge-info {
+  background: var(--badge-bg);
+  color: var(--text-2);
+  border: 0.5px solid var(--badge-border);
+}
+
+
+/* ═══════════════════════════════════════════
+   ARCHITECTURE PILLS
+   ═══════════════════════════════════════════ */
+.theme-horizon .arch-pill {
+  border-radius: 100px;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 4px 12px;
+}
+.theme-horizon .arch-pill-active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 0.5px solid rgba(0,122,255,0.2);
+}
+.theme-horizon .arch-pill-warn {
+  background: rgba(255,149,0,0.08);
+  color: var(--warn);
+  border: 0.5px dashed rgba(255,149,0,0.25);
+}
+
+
+/* ═══════════════════════════════════════════
+   TABLES — Clean glass data grid
+   ═══════════════════════════════════════════ */
+.theme-horizon table {
+  border: 0.5px solid var(--divider);
+  border-radius: var(--lg-radius);
+  overflow: hidden;
+  border-spacing: 0;
+}
+.theme-horizon th {
+  background: var(--lg-refraction);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom: 0.5px solid var(--divider);
+  padding: 0.625rem 1rem;
+  color: var(--text-3);
+}
+.theme-horizon td {
+  padding: 0.625rem 1rem;
+  font-size: 0.82rem;
+  border-bottom: 0.5px solid var(--divider);
+  transition: background 0.15s ease;
+}
+.theme-horizon tbody tr:last-child td {
+  border-bottom: none;
+}
+.theme-horizon tbody tr:hover td {
+  background: var(--lg-refraction) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   HEALTH ITEMS — Status glass panels
+   ═══════════════════════════════════════════ */
+.theme-horizon .health-item {
+  backdrop-filter: var(--lg-frost-light);
+  -webkit-backdrop-filter: var(--lg-frost-light);
+  background: var(--lg-surface);
+  border: 0.5px solid var(--lg-border-glow);
+  border-radius: var(--lg-radius);
+  padding: 0.875rem 1rem;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+.theme-horizon .health-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 10%, var(--lg-specular) 50%, transparent 90%);
+  pointer-events: none;
+  opacity: 0.5;
+}
+.theme-horizon .health-item:hover {
+  border-color: var(--glass-hover-border);
+  box-shadow: var(--glass-hover-shadow);
+  transform: translateY(-1px);
+}
+
+
+/* ═══════════════════════════════════════════
+   QUICK LINKS — Frosted action cards
+   ═══════════════════════════════════════════ */
+.theme-horizon .quick-link {
+  backdrop-filter: var(--lg-frost-light);
+  -webkit-backdrop-filter: var(--lg-frost-light);
+  background: var(--lg-surface);
+  border: 0.5px solid var(--lg-border-glow);
+  border-radius: var(--lg-radius);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+.theme-horizon .quick-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 15%, var(--lg-specular) 50%, transparent 85%);
+  pointer-events: none;
+  opacity: 0.4;
+}
+.theme-horizon .quick-link:hover {
+  border-color: var(--glass-hover-border);
+  box-shadow: var(--glass-hover-shadow);
+  transform: translateY(-2px);
+}
+.theme-horizon .quick-link-icon {
+  border-radius: var(--lg-radius-sm);
+}
+.theme-horizon .quick-link strong {
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+
+/* ═══════════════════════════════════════════
+   PULSE DOTS — Clean status indicators
+   ═══════════════════════════════════════════ */
+.theme-horizon .pulse-dot-cyan {
+  background: #32ade6;
+  box-shadow: 0 0 6px rgba(50,173,230,0.4);
+}
+.theme-horizon .pulse-dot-emerald {
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(52,199,89,0.4);
+}
+.theme-horizon .pulse-dot-rose {
+  background: var(--danger);
+  box-shadow: 0 0 6px rgba(255,59,48,0.4);
+}
+
+
+/* ═══════════════════════════════════════════
+   THEME TOGGLE — Glass pill
+   ═══════════════════════════════════════════ */
+.theme-horizon .theme-toggle {
+  border-radius: var(--lg-radius-xs);
+  font-weight: 500;
+  border: 0.5px solid var(--lg-border-glow);
+  background: var(--lg-surface);
+  color: var(--text-2);
+  backdrop-filter: var(--lg-frost-light);
+  -webkit-backdrop-filter: var(--lg-frost-light);
+}
+.theme-horizon .theme-toggle:hover {
+  background: var(--lg-surface-raised);
+  border-color: var(--glass-hover-border);
+  color: var(--text-1);
+  box-shadow: var(--glass-hover-shadow);
+}
+
+
+/* ═══════════════════════════════════════════
+   TOOLTIPS — Floating glass panels
+   ═══════════════════════════════════════════ */
+.theme-horizon .rail-tooltip {
+  border-radius: var(--lg-radius-xs);
+  font-weight: 500;
+  font-size: 0.78rem;
+  background: var(--tooltip-bg);
+  border: 0.5px solid var(--tooltip-border);
+  box-shadow: var(--tooltip-shadow);
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+}
+.theme-horizon .rail-submenu {
+  background: var(--tooltip-bg);
+  border: 0.5px solid var(--tooltip-border);
+  border-radius: var(--lg-radius);
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+  box-shadow: var(--tooltip-shadow);
+}
+.theme-horizon .rail-submenu-title {
+  color: var(--text-3);
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.theme-horizon .rail-submenu a {
+  font-weight: 400;
+  font-size: 0.82rem;
+  border-radius: var(--lg-radius-xs);
+  margin: 0 0.25rem;
+  transition: all 0.15s ease;
+  color: var(--text-2);
+}
+.theme-horizon .rail-submenu a:hover {
+  background: var(--rail-hover-bg);
+  color: var(--text-1);
+}
+.theme-horizon .rail-submenu a.sub-active {
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════════════ */
+.theme-horizon .empty-state-icon {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-radius: var(--lg-radius);
+}
+
+
+/* ═══════════════════════════════════════════
+   STEP SPINNER
+   ═══════════════════════════════════════════ */
+.theme-horizon .step-spinner {
+  border-color: var(--divider);
+  border-top-color: var(--accent);
+}
+
+
+/* ═══════════════════════════════════════════
+   GET STARTED STEPS
+   ═══════════════════════════════════════════ */
+.theme-horizon .get-started-step:hover {
+  background: var(--lg-refraction) !important;
+  border-color: var(--glass-hover-border) !important;
+  box-shadow: var(--glass-hover-shadow);
+  transform: translateY(-1px);
+}
+
+
+/* ═══════════════════════════════════════════
+   SCROLLBARS — Ultra-thin translucent
+   ═══════════════════════════════════════════ */
+.theme-horizon ::-webkit-scrollbar { width: 6px; height: 6px; }
+.theme-horizon ::-webkit-scrollbar-track { background: transparent; }
+.theme-horizon ::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+}
+.theme-horizon ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+
+/* ═══════════════════════════════════════════
+   IFRAMES
+   ═══════════════════════════════════════════ */
+.theme-horizon iframe {
+  border-radius: var(--lg-radius);
+  border: 0.5px solid var(--lg-border-glow);
+}
+
+
+/* ═══════════════════════════════════════════
+   ADMIN — Glass tab panels
+   ═══════════════════════════════════════════ */
+.theme-horizon .admin-tab {
+  border-radius: var(--lg-radius-xs) !important;
+  font-weight: 500 !important;
+  font-size: 0.78rem !important;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  color: var(--text-3);
+}
+.theme-horizon .admin-tab:hover {
+  background: var(--rail-hover-bg) !important;
+  color: var(--text-2) !important;
+}
+.theme-horizon .admin-tab.active {
+  background: var(--accent-glow) !important;
+  color: var(--accent) !important;
+  border-color: rgba(0,122,255,0.2) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   GUARDRAILS — Glass toggle cards
+   ═══════════════════════════════════════════ */
+.theme-horizon .gr-toggle input:checked + .gr-slider {
+  background: var(--accent) !important;
+}
+.theme-horizon .gr-slider {
+  border-radius: 9999px !important;
+  background: var(--border-base);
+}
+.theme-horizon .gr-slider::before {
+  border-radius: 50% !important;
+}
+.theme-horizon .cat-filter {
+  border-radius: 100px !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+.theme-horizon .cat-filter:hover {
+  background: var(--rail-hover-bg) !important;
+}
+.theme-horizon .cat-filter.active {
+  background: var(--accent-glow) !important;
+  color: var(--accent) !important;
+  border-color: rgba(0,122,255,0.2) !important;
+}
+.theme-horizon .severity-badge {
+  border-radius: 100px !important;
+  font-weight: 500 !important;
+  font-size: 0.68rem !important;
+}
+.theme-horizon .gr-card {
+  border-radius: var(--lg-radius) !important;
+  border: 0.5px solid var(--lg-border-glow) !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  background: var(--lg-surface) !important;
+  backdrop-filter: var(--lg-frost-light) !important;
+  -webkit-backdrop-filter: var(--lg-frost-light) !important;
+}
+.theme-horizon .gr-card:hover {
+  border-color: var(--glass-hover-border) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--glass-hover-shadow) !important;
+}
+.theme-horizon .cat-icon {
+  border-radius: var(--lg-radius-sm) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   DOCUMENTS / DATA INGESTION
+   ═══════════════════════════════════════════ */
+.theme-horizon .file-drop-zone {
+  border-radius: var(--lg-radius) !important;
+  border-color: var(--divider) !important;
+  background: var(--lg-refraction) !important;
+  transition: all 0.25s ease !important;
+  backdrop-filter: var(--lg-frost-light) !important;
+  -webkit-backdrop-filter: var(--lg-frost-light) !important;
+}
+.theme-horizon .file-drop-zone:hover {
+  border-color: var(--accent) !important;
+  background: var(--accent-glow) !important;
+  box-shadow: 0 0 0 3px rgba(0,122,255,0.08);
+}
+.theme-horizon .importer-tab {
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+.theme-horizon .importer-tab.active {
+  border-bottom-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   CHECKBOXES — Apple blue accent
+   ═══════════════════════════════════════════ */
+.theme-horizon input[type="checkbox"] {
+  accent-color: var(--accent) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   PROGRESS BARS — Gradient glass fill
+   ═══════════════════════════════════════════ */
+.theme-horizon div[style*="transition:width"] {
+  background: linear-gradient(90deg, var(--accent), #5ac8fa) !important;
+  border-radius: 100px;
+  box-shadow: 0 0.5px 0 rgba(255,255,255,0.3) inset;
+}
+.theme-horizon.dark div[style*="transition:width"] {
+  background: linear-gradient(90deg, #0a84ff, #5e5ce6) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   TOPOLOGY
+   ═══════════════════════════════════════════ */
+.theme-horizon .topo-canvas {
+  border-radius: var(--lg-radius);
+}
+.theme-horizon .topo-node {
+  border-radius: var(--lg-radius-sm) !important;
+  border-color: var(--lg-border-glow) !important;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  backdrop-filter: var(--lg-frost-light) !important;
+  -webkit-backdrop-filter: var(--lg-frost-light) !important;
+}
+.theme-horizon .topo-node:hover {
+  border-color: var(--accent) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px var(--accent-glow) !important;
+}
+.theme-horizon .topo-band {
+  border-radius: var(--lg-radius);
+}
+
+
+/* ═══════════════════════════════════════════
+   SECTION HEADERS
+   ═══════════════════════════════════════════ */
+.theme-horizon .section-header h3 {
+  font-weight: 600;
+}
+
+
+/* ═══════════════════════════════════════════
+   CODE BLOCKS — Translucent glass panels
+   ═══════════════════════════════════════════ */
+.theme-horizon code {
+  background: var(--lg-refraction);
+  border: 0.5px solid var(--divider);
+  border-radius: 5px;
+  padding: 1px 6px;
+  color: var(--accent-text);
+  font-size: 0.85em;
+}
+.theme-horizon pre {
+  background: var(--lg-surface);
+  border: 0.5px solid var(--lg-border-glow);
+  border-radius: var(--lg-radius-sm);
+  backdrop-filter: var(--lg-frost-light);
+  -webkit-backdrop-filter: var(--lg-frost-light);
+}
+
+
+/* ═══════════════════════════════════════════
+   MODALS — Deep frosted glass overlay
+   ═══════════════════════════════════════════ */
+.theme-horizon .modal-content,
+.theme-horizon [class*="modal"] > div[style*="background"] {
+  border: 0.5px solid var(--modal-border);
+  box-shadow: var(--modal-shadow);
+  border-radius: var(--lg-radius);
+  backdrop-filter: var(--lg-frost);
+  -webkit-backdrop-filter: var(--lg-frost);
+}
+
+
+/* ═══════════════════════════════════════════
+   FOCUS STATES — Apple blue ring
+   ═══════════════════════════════════════════ */
+.theme-horizon *:focus-visible {
+  outline: 3px solid var(--accent-glow);
+  outline-offset: 2px;
+}
+.theme-horizon .text-accent {
+  color: var(--accent);
+}
+
+
+/* ═══════════════════════════════════════════
+   INLINE OVERRIDES
+   ═══════════════════════════════════════════ */
+.theme-horizon .stat-card[style*="border-left"] {
+  border-left-color: var(--lg-border-glow) !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .theme-horizon h1 {
+    font-size: 1.25rem;
+  }
+  .theme-horizon .stat-card {
+    border-radius: var(--lg-radius-sm);
+  }
 }
