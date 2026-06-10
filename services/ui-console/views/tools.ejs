@@ -365,7 +365,7 @@ function renderTools(tools) {
     document.getElementById('tool-count').textContent = '0 tools';
     return;
   }
-  var isAdmin = window.__userRole === 'admin';
+  var isAdmin = window.__canCreateGlobal;
   var isList = currentViewMode === 'list';
   grid.className = isList ? '' : 'grid-3';
   grid.style.marginTop = '1rem';
@@ -618,7 +618,7 @@ function _toolFormHtml(tool) {
   var labels = isEdit ? (tool.labels || []) : [];
 
   var PRESET_LABELS = ['data', 'search', 'analytics', 'integration', 'ai', 'devops', 'security', 'monitoring', 'notification', 'utility', 'file-io', 'database', 'messaging', 'workflow'];
-  var canGlobal = (window.__userRole === 'admin');
+  var canGlobal = (window.__canCreateGlobal);
 
   var html = '';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem">';

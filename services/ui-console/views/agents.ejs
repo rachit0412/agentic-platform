@@ -273,7 +273,7 @@
           <option value="global" id="agent-scope-global">Global</option>
         </select>
         <script>(function(){
-          var isAdmin = window.__userRole === 'admin';
+          var isAdmin = window.__canCreateGlobal;
           var scopeEl = document.getElementById('agent-scope');
           var globalOpt = document.getElementById('agent-scope-global');
           if (!isAdmin) { globalOpt.disabled = true; globalOpt.textContent = 'Global (admin only)'; }
@@ -535,7 +535,7 @@
     document.getElementById('agent-iterations').value = '5';
     document.getElementById('agent-memory').value = '1';
     document.getElementById('agent-retrieval-mode').value = 'basic';
-    document.getElementById('agent-scope').value = window.__userRole === 'admin' ? 'global' : 'private';
+    document.getElementById('agent-scope').value = window.__canCreateGlobal ? 'global' : 'private';
     renderSkillCheckboxes([]);
     document.getElementById('agent-kb-filename').textContent = 'No file selected';
     document.getElementById('agent-kb-text').value = '';
@@ -573,7 +573,7 @@
       document.getElementById('agent-iterations').value = a.max_iterations || 5;
       document.getElementById('agent-memory').value = a.memory_enabled ? '1' : '0';
       document.getElementById('agent-retrieval-mode').value = a.retrieval_mode || 'basic';
-      document.getElementById('agent-scope').value = a.scope || (window.__userRole === 'admin' ? 'global' : 'private');
+      document.getElementById('agent-scope').value = a.scope || (window.__canCreateGlobal ? 'global' : 'private');
       renderSkillCheckboxes(a.skill_ids || []);
       document.getElementById('agent-kb-filename').textContent = 'No file selected';
       document.getElementById('agent-kb-text').value = '';

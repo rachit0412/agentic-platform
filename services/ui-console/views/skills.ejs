@@ -183,7 +183,7 @@
         <option value="global" id="skill-scope-global">Global</option>
       </select>
       <script>(function(){
-        var isAdmin = window.__userRole === 'admin';
+        var isAdmin = window.__canCreateGlobal;
         var scopeEl = document.getElementById('skill-scope');
         var globalOpt = document.getElementById('skill-scope-global');
         if (!isAdmin) { globalOpt.disabled = true; globalOpt.textContent = 'Global (admin only)'; }
@@ -672,7 +672,7 @@
     document.getElementById('edit-id').value = '';
     document.getElementById('skill-name').value = '';
     document.getElementById('skill-desc').value = '';
-    document.getElementById('skill-scope').value = window.__userRole === 'admin' ? 'global' : 'private';
+    document.getElementById('skill-scope').value = window.__canCreateGlobal ? 'global' : 'private';
     document.getElementById('skill-prompt').value = '';
     renderToolsDropdown([]);
     document.getElementById('skill-constraints').value = '';

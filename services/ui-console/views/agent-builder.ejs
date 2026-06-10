@@ -41,7 +41,7 @@
       </select>
       <script>
         (function() {
-          var canGlobal = (window.__userRole === 'admin');
+          var canGlobal = (window.__canCreateGlobal);
           var opt = document.getElementById('ab-scope-global');
           if (!canGlobal) { opt.disabled = true; opt.textContent = 'Global (admin only)'; }
         })();

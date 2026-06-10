@@ -335,6 +335,15 @@
       }
       return role;
     })() %>';
+    window.__canCreateGlobal = <%= (function() {
+      if (typeof user === "undefined" || !user) return false;
+      if (user.role === "admin") return true;
+      if (user.active_persona && user.active_persona.permissions) {
+        var actions = user.active_persona.permissions.actions || [];
+        return actions.indexOf("create_global") !== -1;
+      }
+      return false;
+    })() %>;
     window.__userName = '<%= (typeof user !== "undefined" && user.username ? user.username : "") %>';
     window.__userDisplayName = '<%= (typeof user !== "undefined" && user.display_name ? user.display_name : "User") %>';
     window.__userEmail = '<%= (typeof user !== "undefined" && user.email ? user.email : "") %>';

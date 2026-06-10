@@ -138,7 +138,7 @@
         <option value="global" id="prompt-scope-global">Global</option>
       </select>
       <script>(function(){
-        var isAdmin = window.__userRole === 'admin';
+        var isAdmin = window.__canCreateGlobal;
         var scopeEl = document.getElementById('prompt-scope');
         var globalOpt = document.getElementById('prompt-scope-global');
         if (!isAdmin) { globalOpt.disabled = true; globalOpt.textContent = 'Global (admin only)'; }
@@ -523,7 +523,7 @@
     document.getElementById('edit-id').value = '';
     document.getElementById('prompt-name').value = '';
     document.getElementById('prompt-category').value = 'general';
-    document.getElementById('prompt-scope').value = window.__userRole === 'admin' ? 'global' : 'private';
+    document.getElementById('prompt-scope').value = window.__canCreateGlobal ? 'global' : 'private';
     document.getElementById('prompt-desc').value = '';
     document.getElementById('prompt-content').value = '';
     document.getElementById('prompt-tags').value = '';

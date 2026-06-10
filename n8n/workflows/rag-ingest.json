@@ -10,7 +10,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 300]
+      "position": [
+        250,
+        300
+      ]
     },
     {
       "parameters": {
@@ -18,9 +21,18 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "text", "value": "={{ $json.body.text }}" },
-            { "name": "source", "value": "={{ $json.body.source }}" },
-            { "name": "metadata", "value": "={{ $json.body.metadata || {} }}" }
+            {
+              "name": "text",
+              "value": "={{ $json.body.text }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ $json.body.source }}"
+            },
+            {
+              "name": "metadata",
+              "value": "={{ $json.body.metadata || {} }}"
+            }
           ]
         },
         "options": {}
@@ -28,7 +40,10 @@
       "name": "Ingest to ChromaDB",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [470, 300]
+      "position": [
+        470,
+        300
+      ]
     },
     {
       "parameters": {
@@ -38,18 +53,40 @@
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [690, 300]
+      "position": [
+        690,
+        300
+      ]
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [[{ "node": "Ingest to ChromaDB", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Ingest to ChromaDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Ingest to ChromaDB": {
-      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {},
-  "tags": [{ "name": "rag" }, { "name": "documents" }]
+  "tags": [
+    "rag",
+    "documents"
+  ]
 }

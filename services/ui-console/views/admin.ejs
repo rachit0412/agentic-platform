@@ -570,7 +570,7 @@
       <h3>SSO / OAuth Providers</h3>
       <button class="btn btn-secondary btn-sm" onclick="loadSSOStatus()">Refresh</button>
     </div>
-    <p style="font-size:0.78rem;color:var(--text-3);margin:0.5rem 0 1rem">Configure Single Sign-On providers for the login page. Credentials saved here are persisted to <code>data/sso-config.json</code> and take effect immediately without a restart.</p>
+    <p style="font-size:0.78rem;color:var(--text-3);margin:0.5rem 0 1rem">Configure Single Sign-On providers for the login page. Credentials are <strong style="color:var(--success)">encrypted at rest</strong> (AES-256-GCM) and OAuth flows use <strong style="color:var(--success)">PKCE</strong> + time-limited state tokens for maximum security.</p>
     <div id="sso-status-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
       <!-- Google -->
       <div id="sso-card-google" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
@@ -659,6 +659,12 @@
     </div>
     <div style="margin-top:1rem;padding:0.85rem 1rem;border-radius:8px;background:var(--badge-bg);border:1px solid var(--badge-border)">
       <p style="font-size:0.75rem;color:var(--text-2);margin:0;line-height:1.6"><strong>Setup:</strong> Register an OAuth app with each provider, set the callback URL to <code style="font-size:0.68rem">&lt;your-domain&gt;/auth/sso/&lt;provider&gt;/callback</code>, then use the <strong>Configure</strong> button above to enter your credentials. Also set <code style="font-size:0.68rem">SSO_BASE_URL</code> to your public URL.</p>
+      <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--divider)">
+        <p style="font-size:0.72rem;color:var(--text-3);margin:0;line-height:1.6">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <strong>Security:</strong> Set <code style="font-size:0.66rem">SSO_ENCRYPTION_KEY</code> (64-char hex) for production encryption. Set <code style="font-size:0.66rem">SESSION_SECRET</code> for stable sessions. Enable <code style="font-size:0.66rem">secure: true</code> cookies behind HTTPS.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -1486,7 +1492,7 @@ async function loadSSOStatus() {
       var el = document.getElementById('sso-' + p + '-status');
       var card = document.getElementById('sso-card-' + p);
       if (d[p]) {
-        el.textContent = 'Configured';
+        el.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:2px;color:var(--success)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Configured &amp; Encrypted';
         el.style.color = 'var(--success)';
         card.style.borderColor = 'var(--success)';
       } else {

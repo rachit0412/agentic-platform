@@ -73,7 +73,8 @@ app.post("/auth/login", async (req, res) => {
         personas = pd.personas || [];
       } catch (_) {}
       data.personas = personas;
-      data.active_persona = personas.length > 0 ? personas[0] : null;
+      // Prefer admin persona for admin users so scope/role is not accidentally downgraded
+      data.active_persona = (data.role === 'admin' && personas.find(p => p.permissions && p.permissions.actions && p.permissions.actions.includes('access_admin'))) || personas[0] || null;
       // Regenerate session to prevent fixation and guarantee a fresh cookie
       return req.session.regenerate((err) => {
         if (err) return res.status(500).json({ error: "Session error" });
@@ -113,7 +114,44 @@ app.post("/auth/resend-code", (req, res) => proxyToAgent(req, res, "/auth/resend
 // ── SSO / OAuth 2.0 Routes ────────────────────────────
 const SSO_BASE_URL = process.env.SSO_BASE_URL || "http://localhost:3000";
 const fs = require("fs");
-const SSO_CONFIG_PATH = path.join(__dirname, "data", "sso-config.json");
+const SSO_CONFIG_PATH = path.join(__dirname, "data", "sso-config.enc.json");
+const SSO_STATE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+const SSO_VALID_PROVIDERS = new Set(["google", "github", "microsoft"]);
+
+// ── Encryption helpers for secrets at rest (AES-256-GCM) ──
+const SSO_ENC_KEY_HEX = process.env.SSO_ENCRYPTION_KEY || "";
+let _ssoEncKey = null;
+function getSSOEncKey() {
+  if (_ssoEncKey) return _ssoEncKey;
+  if (SSO_ENC_KEY_HEX && /^[0-9a-f]{64}$/i.test(SSO_ENC_KEY_HEX)) {
+    _ssoEncKey = Buffer.from(SSO_ENC_KEY_HEX, "hex");
+  } else {
+    // Derive a stable key from SESSION_SECRET so secrets survive restarts
+    _ssoEncKey = crypto.createHash("sha256").update(sessionSecret).digest();
+    if (!SSO_ENC_KEY_HEX) {
+      console.warn("[SECURITY] SSO_ENCRYPTION_KEY not set — deriving from SESSION_SECRET. Set a 64-char hex key for production.");
+    }
+  }
+  return _ssoEncKey;
+}
+function encryptSecret(plaintext) {
+  const key = getSSOEncKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return iv.toString("hex") + ":" + tag.toString("hex") + ":" + encrypted.toString("hex");
+}
+function decryptSecret(ciphertext) {
+  try {
+    const [ivHex, tagHex, encHex] = ciphertext.split(":");
+    if (!ivHex || !tagHex || !encHex) return null;
+    const key = getSSOEncKey();
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(ivHex, "hex"));
+    decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+    return decipher.update(Buffer.from(encHex, "hex")) + decipher.final("utf8");
+  } catch (_) { return null; }
+}
 
 const SSO_PROVIDERS = {
   google: {
@@ -123,6 +161,7 @@ const SSO_PROVIDERS = {
     scopes: "openid email profile",
     clientId: process.env.SSO_GOOGLE_CLIENT_ID || "",
     clientSecret: process.env.SSO_GOOGLE_CLIENT_SECRET || "",
+    supportsPKCE: true,
     parseProfile: (p) => ({ id: p.id, email: p.email, name: p.name || p.email }),
   },
   github: {
@@ -133,6 +172,7 @@ const SSO_PROVIDERS = {
     scopes: "user:email",
     clientId: process.env.SSO_GITHUB_CLIENT_ID || "",
     clientSecret: process.env.SSO_GITHUB_CLIENT_SECRET || "",
+    supportsPKCE: false, // GitHub does not support PKCE
     parseProfile: (p, email) => ({ id: String(p.id), email: email || p.email || "", name: p.name || p.login }),
   },
   microsoft: {
@@ -142,25 +182,42 @@ const SSO_PROVIDERS = {
     scopes: "openid email profile User.Read",
     clientId: process.env.SSO_MICROSOFT_CLIENT_ID || "",
     clientSecret: process.env.SSO_MICROSOFT_CLIENT_SECRET || "",
+    supportsPKCE: true,
     parseProfile: (p) => ({ id: p.id, email: p.mail || p.userPrincipalName || "", name: p.displayName || "" }),
   },
 };
 
-// Load persisted SSO credentials (override env vars if configured via UI)
+// Load persisted SSO credentials (encrypted at rest)
 (function loadPersistedSSOConfig() {
   try {
     const data = JSON.parse(fs.readFileSync(SSO_CONFIG_PATH, "utf8"));
     for (const [provider, cfg] of Object.entries(data)) {
       if (SSO_PROVIDERS[provider]) {
         if (cfg.clientId) SSO_PROVIDERS[provider].clientId = cfg.clientId;
-        if (cfg.clientSecret) SSO_PROVIDERS[provider].clientSecret = cfg.clientSecret;
+        if (cfg.encryptedSecret) {
+          const secret = decryptSecret(cfg.encryptedSecret);
+          if (secret) SSO_PROVIDERS[provider].clientSecret = secret;
+          else console.warn(`[SSO] Could not decrypt ${provider} secret — key may have changed`);
+        }
+        // Legacy: plain clientSecret in old config files — migrate on next save
+        if (!cfg.encryptedSecret && cfg.clientSecret) {
+          SSO_PROVIDERS[provider].clientSecret = cfg.clientSecret;
+          console.warn(`[SSO] ${provider} has unencrypted secret in config — will encrypt on next save`);
+        }
       }
     }
     console.log("[SSO] Loaded persisted config from", SSO_CONFIG_PATH);
   } catch (_) { /* file absent or invalid — use env vars */ }
 })();
 
-// GET /auth/sso/status — check which providers are configured
+// PKCE helper: generate code_verifier and code_challenge (S256)
+function generatePKCE() {
+  const verifier = crypto.randomBytes(32).toString("base64url");
+  const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
+  return { verifier, challenge };
+}
+
+// GET /auth/sso/status — check which providers are configured (no secrets exposed)
 app.get("/auth/sso/status", (req, res) => {
   const status = {};
   for (const [name, cfg] of Object.entries(SSO_PROVIDERS)) {
@@ -169,19 +226,23 @@ app.get("/auth/sso/status", (req, res) => {
   res.json(status);
 });
 
-// GET /auth/sso/:provider — initiate OAuth flow
+// GET /auth/sso/:provider — initiate OAuth flow (with PKCE + timed state)
 app.get("/auth/sso/:provider", (req, res) => {
   const provider = req.params.provider.toLowerCase();
+  if (!SSO_VALID_PROVIDERS.has(provider)) return res.status(404).json({ error: "Unknown SSO provider" });
   const cfg = SSO_PROVIDERS[provider];
-  if (!cfg) return res.status(404).json({ error: "Unknown SSO provider" });
   if (!cfg.clientId || !cfg.clientSecret) {
     return res.status(400).json({
       error: `${provider} SSO is not configured. Set SSO_${provider.toUpperCase()}_CLIENT_ID and SSO_${provider.toUpperCase()}_CLIENT_SECRET environment variables.`,
     });
   }
 
-  // Generate CSRF state token
-  const state = crypto.randomBytes(32).toString("hex");
+  // Generate CSRF state token with embedded timestamp for expiration
+  const nonce = crypto.randomBytes(32).toString("hex");
+  const statePayload = JSON.stringify({ nonce, ts: Date.now(), provider });
+  const stateHmac = crypto.createHmac("sha256", sessionSecret).update(statePayload).digest("hex");
+  const state = Buffer.from(statePayload).toString("base64url") + "." + stateHmac;
+
   req.session.sso_state = state;
   req.session.sso_provider = provider;
 
@@ -193,6 +254,15 @@ app.get("/auth/sso/:provider", (req, res) => {
     state: state,
     response_type: "code",
   });
+
+  // PKCE: generate code_verifier/challenge for providers that support it
+  if (cfg.supportsPKCE) {
+    const pkce = generatePKCE();
+    req.session.sso_code_verifier = pkce.verifier;
+    params.set("code_challenge", pkce.challenge);
+    params.set("code_challenge_method", "S256");
+  }
+
   // Google needs access_type for refresh tokens
   if (provider === "google") params.set("access_type", "offline");
   // Microsoft needs response_mode
@@ -201,11 +271,11 @@ app.get("/auth/sso/:provider", (req, res) => {
   res.redirect(`${cfg.authorizeUrl}?${params.toString()}`);
 });
 
-// GET /auth/sso/:provider/callback — handle OAuth callback
+// GET /auth/sso/:provider/callback — handle OAuth callback (with PKCE + timed state)
 app.get("/auth/sso/:provider/callback", async (req, res) => {
   const provider = req.params.provider.toLowerCase();
+  if (!SSO_VALID_PROVIDERS.has(provider)) return res.redirect("/login?error=unknown_provider");
   const cfg = SSO_PROVIDERS[provider];
-  if (!cfg) return res.redirect("/login?error=unknown_provider");
 
   const { code, state, error: oauthError } = req.query;
   if (oauthError) {
@@ -214,13 +284,38 @@ app.get("/auth/sso/:provider/callback", async (req, res) => {
   }
   if (!code) return res.redirect("/login?error=no_code");
 
-  // Verify CSRF state
+  // Verify CSRF state — HMAC integrity + expiration + provider binding
   if (!state || state !== req.session.sso_state) {
     console.error("[SSO] State mismatch — possible CSRF");
     return res.redirect("/login?error=invalid_state");
   }
+  try {
+    const [payloadB64, hmac] = state.split(".");
+    const payload = Buffer.from(payloadB64, "base64url").toString("utf8");
+    const expectedHmac = crypto.createHmac("sha256", sessionSecret).update(payload).digest("hex");
+    if (!crypto.timingSafeEqual(Buffer.from(hmac, "hex"), Buffer.from(expectedHmac, "hex"))) {
+      console.error("[SSO] State HMAC verification failed — tampered state");
+      return res.redirect("/login?error=invalid_state");
+    }
+    const stateData = JSON.parse(payload);
+    if (stateData.provider !== provider) {
+      console.error("[SSO] State provider mismatch");
+      return res.redirect("/login?error=invalid_state");
+    }
+    if (Date.now() - stateData.ts > SSO_STATE_MAX_AGE_MS) {
+      console.error("[SSO] State expired after", SSO_STATE_MAX_AGE_MS / 1000, "seconds");
+      return res.redirect("/login?error=state_expired");
+    }
+  } catch (e) {
+    console.error("[SSO] State verification error:", e.message);
+    return res.redirect("/login?error=invalid_state");
+  }
+
+  // Clean up session state (single-use)
+  const codeVerifier = req.session.sso_code_verifier;
   delete req.session.sso_state;
   delete req.session.sso_provider;
+  delete req.session.sso_code_verifier;
 
   try {
     // Exchange code for access token
@@ -232,6 +327,10 @@ app.get("/auth/sso/:provider/callback", async (req, res) => {
       redirect_uri: redirectUri,
       grant_type: "authorization_code",
     });
+    // Include PKCE code_verifier if the flow used it
+    if (cfg.supportsPKCE && codeVerifier) {
+      tokenBody.set("code_verifier", codeVerifier);
+    }
 
     const tokenRes = await fetch(cfg.tokenUrl, {
       method: "POST",
@@ -244,7 +343,7 @@ app.get("/auth/sso/:provider/callback", async (req, res) => {
     const tokenData = await tokenRes.json();
 
     if (!tokenData.access_token) {
-      console.error("[SSO] Token exchange failed:", tokenData);
+      console.error("[SSO] Token exchange failed — no access_token in response");
       return res.redirect("/login?error=token_exchange_failed");
     }
 
@@ -286,7 +385,7 @@ app.get("/auth/sso/:provider/callback", async (req, res) => {
     const userData = await ssoRes.json();
 
     if (!ssoRes.ok || !userData.id) {
-      console.error("[SSO] User creation/lookup failed:", userData);
+      console.error("[SSO] User creation/lookup failed");
       return res.redirect("/login?error=sso_user_failed");
     }
 
@@ -298,7 +397,7 @@ app.get("/auth/sso/:provider/callback", async (req, res) => {
       personas = pd.personas || [];
     } catch (_) {}
     userData.personas = personas;
-    userData.active_persona = personas.length > 0 ? personas[0] : null;
+    userData.active_persona = (userData.role === 'admin' && personas.find(p => p.permissions && p.permissions.actions && p.permissions.actions.includes('access_admin'))) || personas[0] || null;
 
     // Create session
     req.session.regenerate((err) => {
@@ -436,15 +535,9 @@ function wsHeaders(req, extra) {
   const h = { ...extra };
   const user = req.session && req.session.user;
   h['x-user-id'] = (user && user.username) || req.headers['x-user-id'] || 'system';
-  // Effective role: downgrade admin to member if active persona lacks admin access
-  let role = (user && user.role) || req.headers['x-user-role'] || 'admin';
-  if (role === 'admin' && user && user.active_persona && user.active_persona.permissions) {
-    const actions = user.active_persona.permissions.actions || [];
-    if (!actions.includes('access_admin') && !actions.includes('create_global')) {
-      role = 'member';
-    }
-  }
-  h['x-user-role'] = role;
+  // Send the base user role to the backend — the backend uses this for scope decisions.
+  // Persona-based UI restrictions are handled client-side via __userRole / __canCreateGlobal.
+  h['x-user-role'] = (user && user.role) || req.headers['x-user-role'] || 'admin';
   h['x-workspace-id'] = 'default';
   return h;
 }
@@ -1837,13 +1930,15 @@ app.put("/api/admin/global-constraints", async (req, res) => {
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
-// ── API: Admin – SSO Provider Configuration ──────────
+// ── API: Admin – SSO Provider Configuration (secrets encrypted at rest) ──
 app.get("/api/admin/sso-config", (req, res) => {
   const result = {};
   for (const [name, cfg] of Object.entries(SSO_PROVIDERS)) {
     result[name] = {
       configured: !!(cfg.clientId && cfg.clientSecret),
       clientId: cfg.clientId ? cfg.clientId : "",
+      // Never return secrets — only indicate if one is set
+      hasSecret: !!cfg.clientSecret,
     };
   }
   res.json(result);
@@ -1851,23 +1946,42 @@ app.get("/api/admin/sso-config", (req, res) => {
 
 app.put("/api/admin/sso-config", (req, res) => {
   const { provider, clientId, clientSecret } = req.body;
-  if (!provider || !SSO_PROVIDERS[provider]) {
+  if (!provider || !SSO_VALID_PROVIDERS.has(provider)) {
     return res.status(400).json({ error: "Invalid provider. Must be google, github, or microsoft." });
   }
   if (typeof clientId !== "string" || typeof clientSecret !== "string") {
     return res.status(400).json({ error: "clientId and clientSecret must be strings." });
   }
-  // Update in-memory config
-  SSO_PROVIDERS[provider].clientId = clientId.trim();
-  SSO_PROVIDERS[provider].clientSecret = clientSecret.trim();
+  const trimmedId = clientId.trim();
+  const trimmedSecret = clientSecret.trim();
+  if (!trimmedId || !trimmedSecret) {
+    return res.status(400).json({ error: "clientId and clientSecret must not be empty." });
+  }
+  // Basic format validation — reject obviously bad values
+  if (trimmedId.length < 5 || trimmedId.length > 256) {
+    return res.status(400).json({ error: "clientId must be between 5 and 256 characters." });
+  }
+  if (trimmedSecret.length < 8 || trimmedSecret.length > 512) {
+    return res.status(400).json({ error: "clientSecret must be between 8 and 512 characters." });
+  }
 
-  // Persist to file so config survives restarts
+  // Update in-memory config
+  SSO_PROVIDERS[provider].clientId = trimmedId;
+  SSO_PROVIDERS[provider].clientSecret = trimmedSecret;
+
+  // Persist to file with encrypted secrets
   let saved = {};
   try { saved = JSON.parse(fs.readFileSync(SSO_CONFIG_PATH, "utf8")); } catch (_) {}
-  saved[provider] = { clientId: clientId.trim(), clientSecret: clientSecret.trim() };
+  saved[provider] = {
+    clientId: trimmedId,
+    encryptedSecret: encryptSecret(trimmedSecret),
+    updatedAt: new Date().toISOString(),
+  };
   try {
     fs.mkdirSync(path.dirname(SSO_CONFIG_PATH), { recursive: true });
     fs.writeFileSync(SSO_CONFIG_PATH, JSON.stringify(saved, null, 2), "utf8");
+    // Set restrictive file permissions (owner-only read/write)
+    try { fs.chmodSync(SSO_CONFIG_PATH, 0o600); } catch (_) { /* Windows may not support chmod */ }
   } catch (e) {
     console.warn("[SSO] Could not persist config:", e.message);
     return res.status(200).json({
@@ -1876,6 +1990,7 @@ app.put("/api/admin/sso-config", (req, res) => {
       configured: !!(SSO_PROVIDERS[provider].clientId && SSO_PROVIDERS[provider].clientSecret),
     });
   }
+  console.log(`[SSO] ${provider} credentials updated by admin`);
   res.json({
     ok: true,
     configured: !!(SSO_PROVIDERS[provider].clientId && SSO_PROVIDERS[provider].clientSecret),

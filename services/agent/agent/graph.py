@@ -8,41 +8,35 @@ Uses ChatOllama (LangChain) instead of raw HTTP.
 Persists exchanges to SQLite memory.
 """
 
-import os
 import json
 import logging
-from typing import TypedDict, Annotated, AsyncIterator
+import os
+import re as _re
+from typing import Annotated, AsyncIterator, TypedDict
 
-from langgraph.graph import StateGraph, END
-from langchain_core.messages import (
-    HumanMessage,
-    AIMessage,
-    SystemMessage,
-    ToolMessage,
-)
-
+from agent.llm import get_active_model as _get_active_model
+from agent.llm import get_llm
 from agent.memory import (
     get_history,
-    save_message,
     get_session_summary,
+    save_message,
     update_session_summary,
 )
-from agent.tools import (
-    get_all_tools,
-    catalogue_as_text,
-    catalogue_as_text_filtered,
-    call_tool,
-    TOOL_CATALOGUE,
-)
-from agent.llm import get_llm
-from agent.llm import get_active_model as _get_active_model
 from agent.observability import (
     LangfuseTrace,
-    track_llm_call,
-    tool_call_counter,
     agent_run_counter,
+    tool_call_counter,
+    track_llm_call,
 )
-import re as _re
+from agent.tools import (
+    TOOL_CATALOGUE,
+    call_tool,
+    catalogue_as_text,
+    catalogue_as_text_filtered,
+    get_all_tools,
+)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langgraph.graph import END, StateGraph
 
 logger = logging.getLogger("agent-service.graph")
 
@@ -146,7 +140,8 @@ async def _llm_guardrail_check(
     """Use the LLM to evaluate text against the given guardrails.
     Returns dict mapping guardrail_id → {triggered, detail}, or None on failure."""
     system_prompt = _build_guardrail_prompt(guardrails, phase)
-    from langchain_core.messages import SystemMessage as _SM, HumanMessage as _HM
+    from langchain_core.messages import HumanMessage as _HM
+    from langchain_core.messages import SystemMessage as _SM
 
     msgs = [_SM(content=system_prompt), _HM(content=text)]
 
@@ -355,6 +350,8 @@ async def _check_guardrails_input_async(
 
     # Single LLM call evaluates ALL enabled guardrails
     llm_result = await _llm_guardrail_check(text, enabled, phase="input")
+    if not isinstance(llm_result, dict):
+        llm_result = None
 
     for gr in enabled:
         gid = gr["id"]
@@ -420,6 +417,8 @@ async def _check_guardrails_output_async(
         return results
 
     llm_result = await _llm_guardrail_check(text, enabled, phase="output")
+    if not isinstance(llm_result, dict):
+        llm_result = None
 
     for gr in enabled:
         gid = gr["id"]
@@ -531,7 +530,9 @@ Give a concise, helpful answer using the information above. No filler."""
 # ── Agent skill/tool helpers ────────────────────────────────────────────────
 
 
-def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str, list, list]:
+def _build_agent_context(
+    agent_config: dict | None,
+) -> tuple[str, str, str, str, list, list]:
     """Build tools text, skills section, tools section, agent constraints, extra system parts, and MCP tools.
     Returns (tools_text, skills_section, tools_section, agent_constraints, extra_system_parts, mcp_tools).
     """
@@ -719,6 +720,7 @@ def _build_agent_context(agent_config: dict | None) -> tuple[str, str, str, str,
     mcp_tools = []
     mcp_server_ids = agent_config.get("mcp_server_ids", []) if agent_config else []
     from agent.tools import get_mcp_tools
+
     mcp_tools = get_mcp_tools(mcp_server_ids if mcp_server_ids else None)
 
     tools_text = catalogue_as_text_filtered(tool_ids, extra_tools=mcp_tools)
@@ -909,7 +911,7 @@ async def retrieve_context(state: AgentState) -> dict:
     if not kb_context and retrieval_mode == "basic" and not skip_kb:
         # ── Basic retrieval via direct ChromaDB similarity search ─────
         try:
-            from agent.vectorstore import search_similar, get_collection_stats
+            from agent.vectorstore import get_collection_stats, search_similar
 
             t0 = _time.time()
             stats = get_collection_stats(collection_name=kb_coll)
@@ -1409,7 +1411,7 @@ async def run_agent_stream(
         )
     else:
         try:
-            from agent.vectorstore import search_similar, get_collection_stats
+            from agent.vectorstore import get_collection_stats, search_similar
 
             stats = get_collection_stats(collection_name=kb_coll)
             total_chunks = stats.get("total_chunks", 0)
@@ -1734,7 +1736,7 @@ async def run_agent_stream(
         gr_status = "flagged"
 
     try:
-        from agent.memory import log_llm_usage, estimate_cost
+        from agent.memory import estimate_cost, log_llm_usage
 
         total_elapsed_ms = int((_time.time() - run_start_time) * 1000)
         usage_entry = log_llm_usage(

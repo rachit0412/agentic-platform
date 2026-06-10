@@ -551,6 +551,7 @@ export default function LoginPage() {
         unknown_provider: 'Unknown SSO provider.',
         no_code: 'Authentication was cancelled.',
         invalid_state: 'Security validation failed. Please try again.',
+        state_expired: 'Login session expired. Please try again.',
         token_exchange_failed: 'Failed to authenticate with provider. Please try again.',
         no_email: 'No email address found in your account. Email is required.',
         sso_user_failed: 'Failed to create or find your account.',
