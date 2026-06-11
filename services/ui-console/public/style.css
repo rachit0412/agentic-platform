@@ -70,6 +70,8 @@
   --accent: #0891b2;
   --accent-text: #0891b2;
   --accent-glow: rgba(6,182,212,0.2);
+  --accent-border: rgba(8,145,178,0.4);
+  --accent-bg: rgba(8,145,178,0.08);
 
   --success: #059669;
   --success-bg: rgba(16,185,129,0.1);
@@ -147,6 +149,8 @@
   --accent: #22d3ee;
   --accent-text: #22d3ee;
   --accent-glow: rgba(6,182,212,0.3);
+  --accent-border: rgba(34,211,238,0.35);
+  --accent-bg: rgba(34,211,238,0.08);
 
   --success: #34d399;
   --success-bg: rgba(16,185,129,0.1);
@@ -407,6 +411,10 @@ html:not(.dark) .rail-profile-group .rail-profile-menu {
 /* ─── Rail Profile ─── */
 .rail-profile-group > .rail-item > .rail-tooltip { display: block; }
 .rail-profile-group .rail-profile-menu {
+  top: auto; bottom: 0; transform: none;
+}
+/* ─── Rail Admin ─── */
+.rail-admin-group .rail-submenu {
   top: auto; bottom: 0; transform: none;
 }
 .rail-profile-logout:hover { color: #f87171 !important; background: rgba(239,68,68,0.08) !important; }

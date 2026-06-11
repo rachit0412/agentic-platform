@@ -18,40 +18,44 @@
   </div>
 </div>
 
-<!-- Tab Navigation -->
-<div style="display:flex;gap:0.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--glass-border);padding-bottom:0;overflow-x:auto">
-  <button class="btn btn-sm admin-tab active" data-tab="health" onclick="switchTab('health')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    Service Health
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="users" onclick="switchTab('users')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    Users &amp; Access
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="personas" onclick="switchTab('personas')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
-    Personas
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="overview" onclick="switchTab('overview')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    Platform Overview
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="llm" onclick="switchTab('llm')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    LLM &amp; Models
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="database" onclick="switchTab('database')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-    Database &amp; Data
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="config" onclick="switchTab('config')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-    Configuration
-  </button>
-  <button class="btn btn-sm admin-tab" data-tab="audit" onclick="switchTab('audit')">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-    Audit Log
-  </button>
+<!-- Two-level admin nav -->
+<div class="admin-nav" id="admin-nav">
+  <div class="admin-section-tabs" id="admin-section-tabs">
+    <button class="admin-stab" data-section="operations">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Operations
+    </button>
+    <button class="admin-stab" data-section="identity">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Identity &amp; Access
+    </button>
+    <button class="admin-stab" data-section="ai">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/></svg>
+      AI Platform
+    </button>
+    <button class="admin-stab" data-section="data">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Data Platform
+    </button>
+  </div>
+  <div class="admin-subtab-row">
+    <div class="admin-subtabs" id="subtabs-operations">
+      <button class="admin-subtab" data-tab="health">Service Health</button>
+      <button class="admin-subtab" data-tab="overview">Platform Overview</button>
+      <button class="admin-subtab" data-tab="audit">Audit Log</button>
+    </div>
+    <div class="admin-subtabs" id="subtabs-identity" style="display:none">
+      <button class="admin-subtab" data-tab="users">Users &amp; Access</button>
+      <button class="admin-subtab" data-tab="personas">Personas</button>
+    </div>
+    <div class="admin-subtabs" id="subtabs-ai" style="display:none">
+      <button class="admin-subtab" data-tab="llm">LLM &amp; Models</button>
+      <button class="admin-subtab" data-tab="config">Configuration</button>
+    </div>
+    <div class="admin-subtabs" id="subtabs-data" style="display:none">
+      <button class="admin-subtab" data-tab="database">Database &amp; Data</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -809,9 +813,20 @@
 </div><!-- /admin-content -->
 
 <style>
-.admin-tab { background:transparent; border:none; border-bottom:2px solid transparent; border-radius:0; color:var(--text-3); padding:0.5rem 1rem; font-size:0.78rem; transition:all 0.2s; white-space:nowrap; }
-.admin-tab:hover { color:var(--text-1); background:rgba(255,255,255,0.03); }
-.admin-tab.active { color:var(--accent-text); border-bottom-color:var(--accent-text); }
+/* ── Admin two-level navigation ── */
+.admin-nav { margin-bottom:2rem; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:14px; overflow:hidden; }
+.admin-section-tabs { display:flex; background:rgba(0,0,0,0.06); border-bottom:1px solid var(--glass-border); padding:0 0.5rem; }
+.admin-stab { display:flex; align-items:center; gap:0.45rem; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--text-3); padding:0.8rem 1.1rem; font-size:0.82rem; font-weight:500; cursor:pointer; transition:all 0.18s; margin-bottom:-1px; white-space:nowrap; user-select:none; }
+.admin-stab svg { flex-shrink:0; opacity:0.55; transition:opacity 0.18s; }
+.admin-stab:hover { color:var(--text-1); background:rgba(255,255,255,0.04); border-radius:8px 8px 0 0; }
+.admin-stab:hover svg { opacity:0.85; }
+.admin-stab.active { color:var(--accent-text); border-bottom-color:var(--accent); font-weight:600; }
+.admin-stab.active svg { opacity:1; }
+.admin-subtab-row { padding:0.6rem 1rem 0.7rem; }
+.admin-subtabs { display:flex; gap:0.35rem; flex-wrap:wrap; }
+.admin-subtab { background:transparent; border:1px solid transparent; color:var(--text-3); border-radius:20px; padding:0.3rem 0.85rem; font-size:0.75rem; cursor:pointer; transition:all 0.15s; user-select:none; }
+.admin-subtab:hover { color:var(--text-1); border-color:var(--glass-border); background:var(--glass-hover-bg); }
+.admin-subtab.active { color:var(--accent-text); border-color:var(--accent-border); background:var(--accent-bg); font-weight:600; }
 .health-card { padding:0.75rem;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg);display:flex;align-items:center;gap:0.75rem;transition:all 0.2s }
 .health-card:hover { border-color:var(--accent-border) }
 .health-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0 }
@@ -1071,16 +1086,59 @@ async function loadWorkspacesAdmin() {
   } catch(e) { document.getElementById('workspaces-admin-table').innerHTML = '<p style="color:var(--text-3)">Failed to load workspaces</p>'; }
 }
 
-/* ═══ TABS ═══ */
-function switchTab(tab) {
-  document.querySelectorAll('.admin-tab-content').forEach(function(el) { el.style.display = 'none'; });
-  document.querySelectorAll('.admin-tab').forEach(function(el) { el.classList.remove('active'); });
-  var tabEl = document.getElementById('tab-' + tab);
-  if (tabEl) tabEl.style.display = 'block';
-  var btn = document.querySelector('.admin-tab[data-tab="' + tab + '"]');
-  if (btn) btn.classList.add('active');
+/* ═══ NAVIGATION ═══ */
+var SECTION_TABS = {
+  operations: ['health', 'overview', 'audit'],
+  identity: ['users', 'personas'],
+  ai: ['llm', 'config'],
+  data: ['database']
+};
+var TAB_SECTION = {
+  health: 'operations', overview: 'operations', audit: 'operations',
+  users: 'identity', personas: 'identity',
+  llm: 'ai', config: 'ai',
+  database: 'data'
+};
+
+function switchSection(section) {
+  /* Update section tab active states */
+  document.querySelectorAll('.admin-stab').forEach(function(el) {
+    el.classList.toggle('active', el.getAttribute('data-section') === section);
+  });
+  /* Show only the matching subtab row */
+  document.querySelectorAll('.admin-subtabs').forEach(function(el) {
+    el.style.display = el.id === 'subtabs-' + section ? 'flex' : 'none';
+  });
+  /* Navigate to first tab of section */
+  var firstTab = (SECTION_TABS[section] || [])[0];
+  if (firstTab) switchTab(firstTab, true);
+}
+
+function switchTab(tab, fromSection) {
+  /* Sync section if needed */
+  if (!fromSection) {
+    var sec = TAB_SECTION[tab];
+    if (sec) {
+      document.querySelectorAll('.admin-stab').forEach(function(el) {
+        el.classList.toggle('active', el.getAttribute('data-section') === sec);
+      });
+      document.querySelectorAll('.admin-subtabs').forEach(function(el) {
+        el.style.display = el.id === 'subtabs-' + sec ? 'flex' : 'none';
+      });
+    }
+  }
+  /* Update subtab active states */
+  document.querySelectorAll('.admin-subtab').forEach(function(el) {
+    el.classList.toggle('active', el.getAttribute('data-tab') === tab);
+  });
+  /* Show content panel */
+  document.querySelectorAll('.admin-tab-content').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  var panel = document.getElementById('tab-' + tab);
+  if (panel) panel.style.display = 'block';
   history.replaceState(null, '', '#' + tab);
-  /* Load data for the active tab */
+  /* Load data */
   if (tab === 'health') loadServiceHealth();
   if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
   if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
@@ -1090,6 +1148,23 @@ function switchTab(tab) {
   if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
   if (tab === 'audit') loadAuditLog();
 }
+
+/* Wire up nav via event delegation (avoids inline onclick in template literal) */
+document.getElementById('admin-section-tabs').addEventListener('click', function(e) {
+  var btn = e.target.closest('.admin-stab');
+  if (btn) switchSection(btn.getAttribute('data-section'));
+});
+document.querySelectorAll('.admin-subtabs').forEach(function(row) {
+  row.addEventListener('click', function(e) {
+    var btn = e.target.closest('.admin-subtab');
+    if (btn) switchTab(btn.getAttribute('data-tab'));
+  });
+});
+
+/* Hash-change: sidebar links like /admin#identity navigate here without reload */
+window.addEventListener('hashchange', function() {
+  adminLoadAll();
+});
 
 /* ═══ DESIGN THEME ═══ */
 function applyDesignTheme(name) {
@@ -1116,8 +1191,16 @@ function highlightThemeCard() {
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
+  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database' };
   var validTabs = ['health','users','personas','overview','llm','database','config','audit'];
-  var startTab = validTabs.indexOf(hash) >= 0 ? hash : 'health';
+  var startTab;
+  if (sectionDefaults[hash]) {
+    startTab = sectionDefaults[hash];
+  } else if (validTabs.indexOf(hash) >= 0) {
+    startTab = hash;
+  } else {
+    startTab = 'health';
+  }
   switchTab(startTab);
 }
 

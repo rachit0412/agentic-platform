@@ -849,535 +849,245 @@ export default function LoginPage() {
       )}
       <Toast message={toast} show={!!toast} onDone={() => setToast('')} />
 
-      {/* ── Cinematic Vault Gate Transition ─────────────────── */}
+      {/* ── Post-Login Access Gate ─────────────────────────── */}
       <AnimatePresence>
-        {gateOpen && (() => {
-          const isDark = document.documentElement.classList.contains('dark');
-          const bg = isDark
-            ? 'radial-gradient(ellipse at center, #0c1222 0%, #070b14 100%)'
-            : 'radial-gradient(ellipse at center, #f1f5f9 0%, #e2e8f0 100%)';
-          const panelBgL = isDark
-            ? 'linear-gradient(160deg, #0e1525 0%, #141d2f 40%, #0e1525 100%)'
-            : 'linear-gradient(160deg, #e2e8f0 0%, #f1f5f9 40%, #e2e8f0 100%)';
-          const panelBgR = isDark
-            ? 'linear-gradient(200deg, #0e1525 0%, #141d2f 40%, #0e1525 100%)'
-            : 'linear-gradient(200deg, #e2e8f0 0%, #f1f5f9 40%, #e2e8f0 100%)';
-          const panelBorder = isDark ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.2)';
-          const panelShadowL = isDark
-            ? '6px 0 60px rgba(99,102,241,0.15), inset -1px 0 0 rgba(99,102,241,0.1)'
-            : '6px 0 60px rgba(99,102,241,0.1), inset -1px 0 0 rgba(99,102,241,0.08)';
-          const panelShadowR = isDark
-            ? '-6px 0 60px rgba(99,102,241,0.15), inset 1px 0 0 rgba(99,102,241,0.1)'
-            : '-6px 0 60px rgba(99,102,241,0.1), inset 1px 0 0 rgba(99,102,241,0.08)';
-          const circuitColor = isDark ? '#6366f1' : '#818cf8';
-          const circuitOpacity = isDark ? '0.03' : '0.06';
-          const seamColor = isDark
-            ? 'linear-gradient(to bottom, transparent 5%, rgba(6,182,212,0.7) 25%, rgba(99,102,241,0.9) 50%, rgba(6,182,212,0.7) 75%, transparent 95%)'
-            : 'linear-gradient(to bottom, transparent 5%, rgba(79,70,229,0.5) 25%, rgba(99,102,241,0.7) 50%, rgba(79,70,229,0.5) 75%, transparent 95%)';
-          const lockBarBg = isDark ? 'rgba(6,182,212,0.8)' : 'rgba(79,70,229,0.6)';
-          const lockBarShadow = isDark ? '0 0 8px rgba(6,182,212,0.4)' : '0 0 8px rgba(79,70,229,0.3)';
-          const centerSeamBg = isDark
-            ? 'linear-gradient(to bottom, transparent 3%, rgba(6,182,212,0.9) 15%, rgba(99,102,241,1) 50%, rgba(6,182,212,0.9) 85%, transparent 97%)'
-            : 'linear-gradient(to bottom, transparent 3%, rgba(79,70,229,0.6) 15%, rgba(99,102,241,0.8) 50%, rgba(79,70,229,0.6) 85%, transparent 97%)';
-          const centerSeamShadow = isDark
-            ? '0 0 20px rgba(99,102,241,0.6), 0 0 60px rgba(6,182,212,0.3)'
-            : '0 0 20px rgba(99,102,241,0.3), 0 0 60px rgba(79,70,229,0.15)';
-          const auraBg = isDark
-            ? 'linear-gradient(to bottom, transparent 10%, rgba(99,102,241,0.15) 30%, rgba(6,182,212,0.2) 50%, rgba(99,102,241,0.15) 70%, transparent 90%)'
-            : 'linear-gradient(to bottom, transparent 10%, rgba(99,102,241,0.08) 30%, rgba(79,70,229,0.12) 50%, rgba(99,102,241,0.08) 70%, transparent 90%)';
-          const ringBorder = isDark ? 'rgba(6,182,212,0.5)' : 'rgba(79,70,229,0.35)';
-          const ringShadow = isDark
-            ? '0 0 30px rgba(6,182,212,0.2), inset 0 0 30px rgba(99,102,241,0.1)'
-            : '0 0 30px rgba(79,70,229,0.15), inset 0 0 30px rgba(99,102,241,0.05)';
-          const subtitleColor = isDark ? 'rgba(6,182,212,0.6)' : 'rgba(79,70,229,0.6)';
-          const dotBg = isDark ? '#06b6d4' : '#6366f1';
-          const dotShadow = isDark ? '0 0 6px rgba(6,182,212,0.5)' : '0 0 6px rgba(99,102,241,0.4)';
-          const stripeOpacity = isDark ? '0.06' : '0.08';
-          const chevronClass = isDark ? 'text-indigo-400' : 'text-indigo-500';
-          const scanlinesBg = isDark
-            ? 'repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(99,102,241,0.02) 2px, rgba(99,102,241,0.02) 4px)'
-            : 'repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(99,102,241,0.03) 2px, rgba(99,102,241,0.03) 4px)';
-          const sheenColor = isDark
-            ? 'linear-gradient(105deg, transparent 40%, rgba(99,102,241,0.06) 45%, rgba(255,255,255,0.03) 50%, rgba(99,102,241,0.06) 55%, transparent 60%)'
-            : 'linear-gradient(105deg, transparent 40%, rgba(99,102,241,0.08) 45%, rgba(255,255,255,0.06) 50%, rgba(99,102,241,0.08) 55%, transparent 60%)';
-          const techTextColor = isDark ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.35)';
-          const boltColor = isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.2)';
-          const boltInner = isDark ? 'rgba(6,182,212,0.3)' : 'rgba(79,70,229,0.25)';
-          const scanBeamColor = isDark
-            ? 'linear-gradient(to bottom, transparent, rgba(6,182,212,0.15), rgba(99,102,241,0.08), transparent)'
-            : 'linear-gradient(to bottom, transparent, rgba(79,70,229,0.12), rgba(99,102,241,0.06), transparent)';
-          const innerGlowL = isDark
-            ? 'linear-gradient(to left, rgba(99,102,241,0.08) 0%, transparent 60%)'
-            : 'linear-gradient(to left, rgba(99,102,241,0.06) 0%, transparent 60%)';
-          const innerGlowR = isDark
-            ? 'linear-gradient(to right, rgba(99,102,241,0.08) 0%, transparent 60%)'
-            : 'linear-gradient(to right, rgba(99,102,241,0.06) 0%, transparent 60%)';
-
-          /* Shared panel inner content renderer */
-          const PanelInner = ({ side }) => {
-            const isLeft = side === 'left';
-            return (
-              <div className="absolute inset-0 overflow-hidden">
-                {/* Circuit board pattern */}
-                <svg className="absolute inset-0 w-full h-full" style={{ opacity: circuitOpacity }} xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id={`circuit-${side[0]}`} width="80" height="80" patternUnits="userSpaceOnUse">
-                      <path d="M40 0v20M40 60v20M0 40h20M60 40h80M40 20a4 4 0 1 0 0 0.01M40 60a4 4 0 1 0 0 0.01M20 40a4 4 0 1 0 0 0.01M60 40a4 4 0 1 0 0 0.01M20 40h20v20M60 40h-20v-20" fill="none" stroke={circuitColor} strokeWidth="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill={`url(#circuit-${side[0]})`}/>
-                </svg>
-
-                {/* Horizontal scanlines overlay */}
-                <div className="absolute inset-0" style={{ background: scanlinesBg }} />
-
-                {/* Metallic sheen sweep */}
-                <motion.div
-                  className="absolute inset-0"
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '200%' }}
-                  transition={{ duration: 0.8, delay: 0.05, ease: 'easeInOut' }}
-                  style={{ background: sheenColor }}
-                />
-
-                {/* Inner glow near seam edge */}
-                <div className="absolute inset-0" style={{ background: isLeft ? innerGlowL : innerGlowR }} />
-
-                {/* Vertical scan beam */}
-                <motion.div
-                  className="absolute top-0 h-full"
-                  initial={{ [isLeft ? 'right' : 'left']: '100%', opacity: 0 }}
-                  animate={{ [isLeft ? 'right' : 'left']: '-10%', opacity: [0, 0.8, 0] }}
-                  transition={{ duration: 0.6, delay: 0.08, ease: 'linear' }}
-                  style={{ width: '40px', background: scanBeamColor }}
-                />
-
-                {/* Glowing edge seam */}
-                <motion.div
-                  className={`absolute top-0 ${isLeft ? 'right-0' : 'left-0'} w-[3px] h-full`}
-                  initial={{ opacity: 0.5 }}
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 0.5, repeat: 1 }}
-                  style={{ background: seamColor }}
-                />
-                {/* Secondary edge highlight */}
-                <div className={`absolute top-0 ${isLeft ? 'right-[3px]' : 'left-[3px]'} w-[1px] h-full`}
-                  style={{ background: isDark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.08)' }} />
-
-                {/* Horizontal lock bars — thicker, with glow trail */}
-                {[0.15, 0.3, 0.45, 0.55, 0.7, 0.85].map((pos, i) => (
-                  <motion.div
-                    key={`lb-${side[0]}-${i}`}
-                    className={`absolute ${isLeft ? 'right-0' : 'left-0'}`}
-                    initial={{ width: '80px', opacity: 0.6 }}
-                    animate={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, delay: 0.05 + i * 0.04, ease: 'easeIn' }}
-                    style={{
-                      top: `${pos * 100}%`,
-                      height: '4px',
-                      borderRadius: '2px',
-                      background: `linear-gradient(${isLeft ? 'to left' : 'to right'}, ${lockBarBg}, transparent)`,
-                      boxShadow: `${lockBarShadow}, 0 0 16px ${isDark ? 'rgba(6,182,212,0.15)' : 'rgba(79,70,229,0.1)'}`,
-                    }}
-                  />
-                ))}
-
-                {/* Corner bolt decorations */}
-                {[[16, 16], [16, null], [null, 16], [null, null]].map(([top, left], i) => (
-                  <div key={`bolt-${side[0]}-${i}`} className="absolute" style={{
-                    top: top != null ? `${top}px` : 'auto',
-                    bottom: top == null ? '16px' : 'auto',
-                    left: left != null ? `${left}px` : 'auto',
-                    right: left == null ? '16px' : 'auto',
-                  }}>
-                    <div className="w-4 h-4 rounded-full border" style={{ borderColor: boltColor }}>
-                      <div className="w-2 h-2 rounded-full m-[3px]" style={{ background: boltInner }} />
-                    </div>
-                  </div>
-                ))}
-
-                {/* Tech readout text */}
-                <div className={`absolute ${isLeft ? 'right-8' : 'left-8'} top-1/2 -translate-y-1/2 flex flex-col gap-3 ${isLeft ? 'items-end text-right' : 'items-start text-left'}`}>
-                  {[
-                    { label: 'RANK', value: 'OPERATIVE' },
-                    { label: 'CLEARANCE', value: 'LEVEL 3' },
-                    { label: 'THREAT LVL', value: 'NOMINAL' },
-                    { label: 'SHIELDS', value: '100%' },
-                  ].map((item, i) => (
-                    <motion.div
-                      key={`tech-${side[0]}-${i}`}
-                      initial={{ opacity: 0, x: isLeft ? 10 : -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2, delay: 0.02 + i * 0.04 }}
-                      className="font-mono"
-                    >
-                      <div className="text-[8px] tracking-[0.2em] uppercase" style={{ color: techTextColor }}>{item.label}</div>
-                      <div className="text-[10px] tracking-[0.15em] font-semibold" style={{ color: isDark ? 'rgba(6,182,212,0.4)' : 'rgba(79,70,229,0.45)' }}>{item.value}</div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Chevron marks near seam */}
-                <div className={`absolute top-1/2 -translate-y-1/2 ${isLeft ? 'right-3' : 'left-3'} flex flex-col gap-1 ${isLeft ? 'items-end' : 'items-start'} opacity-15`}>
-                  {[...Array(7)].map((_, i) => (
-                    <motion.div
-                      key={`ch-${side[0]}-${i}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.1, delay: i * 0.02 }}
-                      className={`${chevronClass} text-[10px] font-mono`}
-                    >{isLeft ? '\u203A' : '\u2039'}</motion.div>
-                  ))}
-                </div>
-
-                {/* Warning stripes */}
-                <div className="absolute bottom-0 left-0 right-0 h-6"
-                  style={{ opacity: stripeOpacity, background: `repeating-linear-gradient(${isLeft ? '135deg' : '45deg'}, #f59e0b 0, #f59e0b 8px, transparent 8px, transparent 16px)` }} />
-                <div className="absolute top-0 left-0 right-0 h-6"
-                  style={{ opacity: stripeOpacity, background: `repeating-linear-gradient(${isLeft ? '135deg' : '45deg'}, #f59e0b 0, #f59e0b 8px, transparent 8px, transparent 16px)` }} />
-
-                {/* Panel ID label */}
-                <div className={`absolute bottom-10 ${isLeft ? 'left-6' : 'right-6'} font-mono text-[8px] tracking-[0.3em] uppercase`}
-                  style={{ color: isDark ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.15)' }}>
-                  {isLeft ? 'GATE-L :: SECTOR-7G' : 'GATE-R :: SECTOR-7G'}
-                </div>
-              </div>
-            );
-          };
-
-          return (
-          <>
-            {/* Solid backdrop */}
-            <motion.div
-              className="fixed inset-0 z-[99]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.15 }}
-              style={{ background: bg }}
-            />
-
-            {/* Ambient particle field behind gates */}
-            <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-              {[...Array(40)].map((_, i) => (
-                <motion.div
-                  key={`p-${i}`}
-                  className="absolute rounded-full"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{
-                    opacity: [0, 0.9, 0],
-                    scale: [0, 1.2, 0.3],
-                    x: [0, (Math.random() - 0.5) * 500],
-                    y: [0, (Math.random() - 0.5) * 500],
-                  }}
-                  transition={{ duration: 0.7 + Math.random() * 0.5, delay: 0.1 + Math.random() * 0.35, ease: 'easeOut' }}
-                  style={{
-                    width: `${1.5 + Math.random() * 3}px`,
-                    height: `${1.5 + Math.random() * 3}px`,
-                    left: '50%',
-                    top: '50%',
-                    background: i % 4 === 0 ? (isDark ? '#06b6d4' : '#6366f1') : i % 4 === 1 ? '#6366f1' : i % 4 === 2 ? '#8b5cf6' : (isDark ? '#22d3ee' : '#a78bfa'),
-                    boxShadow: `0 0 ${4 + Math.random() * 10}px ${i % 3 === 0 ? (isDark ? 'rgba(6,182,212,0.7)' : 'rgba(99,102,241,0.6)') : 'rgba(99,102,241,0.5)'}`,
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Left gate panel — heavy blast door */}
-            <motion.div
-              className="fixed top-0 left-0 z-[101] h-full w-1/2"
-              initial={{ x: 0 }}
-              animate={{ x: '-102%' }}
-              transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                background: panelBgL,
-                borderRight: `2px solid ${panelBorder}`,
-                boxShadow: panelShadowL,
-              }}
-            >
-              <PanelInner side="left" />
-            </motion.div>
-
-            {/* Right gate panel — heavy blast door */}
-            <motion.div
-              className="fixed top-0 right-0 z-[101] h-full w-1/2"
-              initial={{ x: 0 }}
-              animate={{ x: '102%' }}
-              transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                background: panelBgR,
-                borderLeft: `2px solid ${panelBorder}`,
-                boxShadow: panelShadowR,
-              }}
-            >
-              <PanelInner side="right" />
-            </motion.div>
-
-            {/* Flash burst at the moment gates start separating */}
-            <motion.div
-              className="fixed inset-0 z-[102] pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0.7, 0] }}
-              transition={{ duration: 0.35, delay: 0.28, ease: 'easeOut' }}
-              style={{ background: isDark
-                ? 'radial-gradient(circle at 50% 50%, rgba(99,102,241,0.4) 0%, rgba(6,182,212,0.15) 30%, transparent 65%)'
-                : 'radial-gradient(circle at 50% 50%, rgba(99,102,241,0.25) 0%, rgba(79,70,229,0.1) 30%, transparent 65%)' }}
-            />
-
-            {/* Center seam glow — bright line where gates meet */}
-            <motion.div
-              className="fixed top-0 left-1/2 z-[102] -translate-x-1/2 pointer-events-none"
-              initial={{ opacity: 1, scaleY: 1 }}
-              animate={{ opacity: [1, 1, 0], scaleY: [1, 1, 0.8] }}
-              transition={{ duration: 1.0, delay: 0.2, times: [0, 0.5, 1], ease: 'easeInOut' }}
-              style={{
-                width: '4px',
-                height: '100%',
-                background: centerSeamBg,
-                filter: 'blur(1.5px)',
-                boxShadow: centerSeamShadow,
-              }}
-            />
-            {/* Wide glow aura around seam */}
-            <motion.div
-              className="fixed top-0 left-1/2 z-[100] -translate-x-1/2 pointer-events-none"
-              initial={{ opacity: 0.6 }}
-              animate={{ opacity: [0.6, 0.3, 0] }}
-              transition={{ duration: 1.0, delay: 0.2, ease: 'easeInOut' }}
-              style={{
-                width: '120px',
-                height: '100%',
-                background: auraBg,
-                filter: 'blur(30px)',
-              }}
-            />
-
-            {/* Energy ring burst from center */}
-            <motion.div
-              className="fixed top-1/2 left-1/2 z-[102] -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
-              initial={{ width: 0, height: 0, opacity: 0.9 }}
-              animate={{ width: '150vh', height: '150vh', opacity: 0 }}
-              transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                border: `2px solid ${ringBorder}`,
-                boxShadow: ringShadow,
-              }}
-            />
-            {/* Second ring, delayed */}
-            <motion.div
-              className="fixed top-1/2 left-1/2 z-[102] -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
-              initial={{ width: 0, height: 0, opacity: 0.6 }}
-              animate={{ width: '120vh', height: '120vh', opacity: 0 }}
-              transition={{ duration: 0.7, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                border: `1px solid ${isDark ? 'rgba(99,102,241,0.4)' : 'rgba(79,70,229,0.25)'}`,
-                boxShadow: `0 0 20px ${isDark ? 'rgba(99,102,241,0.15)' : 'rgba(79,70,229,0.1)'}`,
-              }}
-            />
-            {/* Third ring — widest, faintest */}
-            <motion.div
-              className="fixed top-1/2 left-1/2 z-[102] -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
-              initial={{ width: 0, height: 0, opacity: 0.3 }}
-              animate={{ width: '180vh', height: '180vh', opacity: 0 }}
-              transition={{ duration: 1.0, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                border: `1px solid ${isDark ? 'rgba(6,182,212,0.2)' : 'rgba(99,102,241,0.12)'}`,
-              }}
-            />
-
-            {/* Central hexagonal shield icon + GAMIFIED ACCESS */}
-            <motion.div
-              className="fixed top-1/2 left-1/2 z-[103] -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1, 1, 1.05] }}
-              transition={{ duration: 1.8, delay: 0.05, times: [0, 0.1, 0.8, 1], ease: 'easeOut' }}
-            >
-              {/* Shield / lock icon */}
-              <motion.div
-                initial={{ rotate: 0 }}
-                animate={{ rotate: [0, 0, 180] }}
-                transition={{ duration: 0.8, delay: 0.05, times: [0, 0.3, 1], ease: [0.22, 1, 0.36, 1] }}
-                className="mb-3"
-              >
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <motion.path
-                    d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"
-                    stroke="url(#shield-grad)" strokeWidth="1.5" fill="none"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.5, delay: 0.05, ease: 'easeInOut' }}
-                  />
-                  <motion.path
-                    d="M9 12l2 2 4-4"
-                    stroke={isDark ? '#06b6d4' : '#6366f1'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 0.25, delay: 0.35 }}
-                  />
-                  <defs>
-                    <linearGradient id="shield-grad" x1="3" y1="2" x2="21" y2="24">
-                      <stop offset="0%" stopColor="#6366f1"/>
-                      <stop offset="100%" stopColor={isDark ? '#06b6d4' : '#8b5cf6'}/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </motion.div>
-
-              {/* ACCESS GRANTED title */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.15 }}
-                className="text-center"
-              >
-                <div className="text-sm font-bold tracking-[0.4em] uppercase"
-                  style={{
-                    background: isDark
-                      ? 'linear-gradient(135deg, #6366f1, #06b6d4)'
-                      : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    filter: isDark
-                      ? 'drop-shadow(0 0 12px rgba(99,102,241,0.5))'
-                      : 'drop-shadow(0 0 12px rgba(79,70,229,0.3))',
-                  }}>
-                  Access Granted
-                </div>
-
-                {/* ── XP Counter ──────────────────────── */}
-                <motion.div
-                  className="mt-3 flex items-center justify-center gap-2"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
-                >
-                  <div className="px-3 py-1 rounded-md border font-mono text-center"
-                    style={{
-                      borderColor: isDark ? 'rgba(245,158,11,0.4)' : 'rgba(245,158,11,0.3)',
-                      background: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.06)',
-                    }}>
-                    <div className="text-[8px] tracking-[0.2em] uppercase" style={{ color: isDark ? 'rgba(245,158,11,0.6)' : 'rgba(217,119,6,0.7)' }}>XP EARNED</div>
-                    <motion.div
-                      className="text-lg font-bold tabular-nums"
-                      style={{ color: isDark ? '#f59e0b' : '#d97706' }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                    >
-                      <XPCounter />
-                    </motion.div>
-                  </div>
-                </motion.div>
-
-                {/* ── Agent Rank Badge ─────────────────── */}
-                <motion.div
-                  className="mt-3 flex items-center justify-center gap-1.5"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.3 }}
-                >
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border"
-                    style={{
-                      borderColor: isDark ? 'rgba(139,92,246,0.4)' : 'rgba(139,92,246,0.3)',
-                      background: isDark ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.06)',
-                      boxShadow: isDark ? '0 0 15px rgba(139,92,246,0.15)' : '0 0 15px rgba(139,92,246,0.08)',
-                    }}>
-                    <span className="text-[10px]">{'★'.repeat(3)}</span>
-                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase"
-                      style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}>
-                      Agent Operative
-                    </span>
-                  </div>
-                </motion.div>
-
-                {/* ── Power Bars (equalizer) ───────────── */}
-                <motion.div
-                  className="mt-3 flex items-end justify-center gap-[3px]"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.55 }}
-                >
-                  {[0.6, 0.9, 0.4, 1.0, 0.7, 0.5, 0.85, 0.3, 0.75, 0.95, 0.5, 0.8].map((h, i) => (
-                    <motion.div
-                      key={`bar-${i}`}
-                      className="rounded-sm"
-                      style={{
-                        width: '3px',
-                        background: isDark
-                          ? `linear-gradient(to top, #6366f1, #06b6d4)`
-                          : `linear-gradient(to top, #4f46e5, #7c3aed)`,
-                        boxShadow: isDark ? '0 0 4px rgba(99,102,241,0.4)' : '0 0 4px rgba(79,70,229,0.3)',
-                      }}
-                      initial={{ height: 0 }}
-                      animate={{ height: [0, h * 20, h * 12, h * 18, h * 14] }}
-                      transition={{
-                        duration: 0.8,
-                        delay: 0.6 + i * 0.03,
-                        ease: 'easeOut',
-                        times: [0, 0.3, 0.5, 0.7, 1],
-                      }}
-                    />
-                  ))}
-                </motion.div>
-
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 0.35, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className="mx-auto mt-3 h-[1px] w-40"
-                  style={{ background: isDark
-                    ? 'linear-gradient(to right, transparent, rgba(6,182,212,0.6), transparent)'
-                    : 'linear-gradient(to right, transparent, rgba(99,102,241,0.4), transparent)' }}
-                />
-
-                {/* ── Achievement Unlock ───────────────── */}
-                <motion.div
-                  className="mt-3 flex items-center justify-center gap-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: [0, 1, 1, 0.8], x: 0 }}
-                  transition={{ delay: 0.8, duration: 0.5, ease: 'easeOut' }}
-                >
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border"
-                    style={{
-                      borderColor: isDark ? 'rgba(16,185,129,0.4)' : 'rgba(16,185,129,0.3)',
-                      background: isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.05)',
-                    }}>
-                    <span className="text-sm">🏆</span>
-                    <span className="text-[9px] font-mono tracking-wider uppercase"
-                      style={{ color: isDark ? '#34d399' : '#059669' }}>
-                      Achievement: Gateway Breached
-                    </span>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.25, delay: 0.35 }}
-                  className="mt-2 text-[10px] tracking-[0.25em] uppercase font-medium"
-                  style={{ color: subtitleColor }}
-                >
-                  Entering Command Center
-                </motion.div>
-
-                {/* Loading dots */}
-                <div className="flex justify-center gap-1.5 mt-2">
-                  {[0, 1, 2].map((i) => (
-                    <motion.div
-                      key={`dot-${i}`}
-                      className="w-1 h-1 rounded-full"
-                      initial={{ opacity: 0.2 }}
-                      animate={{ opacity: [0.2, 1, 0.2] }}
-                      transition={{ duration: 0.5, delay: 0.4 + i * 0.1, repeat: 2, ease: 'easeInOut' }}
-                      style={{ background: dotBg, boxShadow: dotShadow }}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
-          );
-        })()}
+        {gateOpen && <VaultGate />}
       </AnimatePresence>
+    </>
+  );
+}
+
+/* ── Post-login 4-panel vault gate ─────────────────────── */
+function VaultGate() {
+  const isDark = document.documentElement.classList.contains('dark');
+
+  // 4 quadrant panels: each flies to its own corner
+  const panels = [
+    { origin: 'top-left',     animate: { x: '-100%', y: '-100%' }, style: { top: 0, left: 0, width: '50%', height: '50%' } },
+    { origin: 'top-right',    animate: { x: '100%',  y: '-100%' }, style: { top: 0, right: 0, width: '50%', height: '50%' } },
+    { origin: 'bottom-left',  animate: { x: '-100%', y: '100%'  }, style: { bottom: 0, left: 0, width: '50%', height: '50%' } },
+    { origin: 'bottom-right', animate: { x: '100%',  y: '100%'  }, style: { bottom: 0, right: 0, width: '50%', height: '50%' } },
+  ];
+
+  const gridColor = isDark ? 'rgba(99,102,241,1)' : 'rgba(99,102,241,1)';
+  const panelBg   = isDark ? '#0d1117' : '#f1f5f9';
+
+  return (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        className="fixed inset-0 z-[99]"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ duration: 0.1 }}
+        style={{ background: isDark ? '#070b14' : '#e2e8f0' }}
+      />
+
+      {/* Biometric scan beam — sweeps top to bottom before panels open */}
+      <motion.div
+        className="fixed left-0 right-0 z-[103] pointer-events-none"
+        initial={{ top: '-4px', opacity: 0 }}
+        animate={{ top: ['0%', '105%'], opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 0.55, delay: 0.05, ease: 'linear', times: [0, 0.05, 0.95, 1] }}
+        style={{ height: '3px', background: isDark ? 'linear-gradient(90deg,transparent 0%,rgba(6,182,212,0.0) 10%,rgba(6,182,212,0.9) 50%,rgba(99,102,241,0.9) 50%,rgba(6,182,212,0.0) 90%,transparent 100%)' : 'linear-gradient(90deg,transparent 0%,rgba(99,102,241,0.0) 10%,rgba(79,70,229,0.9) 50%,rgba(99,102,241,0.9) 50%,rgba(99,102,241,0.0) 90%,transparent 100%)',
+          boxShadow: isDark ? '0 0 20px rgba(6,182,212,0.5), 0 0 60px rgba(99,102,241,0.2)' : '0 0 20px rgba(79,70,229,0.4), 0 0 60px rgba(99,102,241,0.15)',
+        }}
+      />
+      {/* Scan glow trail */}
+      <motion.div
+        className="fixed left-0 right-0 z-[102] pointer-events-none"
+        initial={{ top: '-20px', opacity: 0 }}
+        animate={{ top: ['-2%', '103%'], opacity: [0, 0.4, 0] }}
+        transition={{ duration: 0.55, delay: 0.05, ease: 'linear' }}
+        style={{ height: '40px', background: isDark ? 'linear-gradient(to bottom,transparent,rgba(6,182,212,0.08),transparent)' : 'linear-gradient(to bottom,transparent,rgba(79,70,229,0.06),transparent)', filter: 'blur(8px)' }}
+      />
+
+      {/* 4 quadrant panels */}
+      {panels.map((p, i) => (
+        <motion.div
+          key={i}
+          className="fixed z-[101] overflow-hidden"
+          style={{ ...p.style, background: panelBg }}
+          initial={{ x: 0, y: 0 }}
+          animate={p.animate}
+          transition={{ duration: 0.7, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* Grid texture */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `linear-gradient(${gridColor} 1px,transparent 1px),linear-gradient(90deg,${gridColor} 1px,transparent 1px)`,
+            backgroundSize: '32px 32px', opacity: isDark ? 0.025 : 0.04,
+          }} />
+          {/* Scanlines */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(99,102,241,0.02) 3px,rgba(99,102,241,0.02) 4px)`,
+          }} />
+          {/* Diagonal warning stripes near seam edges */}
+          {(p.origin === 'top-left' || p.origin === 'bottom-left') && (
+            <div className="absolute top-0 right-0 bottom-0 w-4" style={{ background: 'repeating-linear-gradient(135deg,transparent 0,transparent 4px,rgba(245,158,11,0.08) 4px,rgba(245,158,11,0.08) 8px)' }} />
+          )}
+          {(p.origin === 'top-right' || p.origin === 'bottom-right') && (
+            <div className="absolute top-0 left-0 bottom-0 w-4" style={{ background: 'repeating-linear-gradient(45deg,transparent 0,transparent 4px,rgba(245,158,11,0.08) 4px,rgba(245,158,11,0.08) 8px)' }} />
+          )}
+          {(p.origin === 'top-left' || p.origin === 'top-right') && (
+            <div className="absolute bottom-0 left-0 right-0 h-4" style={{ background: 'repeating-linear-gradient(135deg,transparent 0,transparent 4px,rgba(245,158,11,0.08) 4px,rgba(245,158,11,0.08) 8px)' }} />
+          )}
+          {(p.origin === 'bottom-left' || p.origin === 'bottom-right') && (
+            <div className="absolute top-0 left-0 right-0 h-4" style={{ background: 'repeating-linear-gradient(45deg,transparent 0,transparent 4px,rgba(245,158,11,0.08) 4px,rgba(245,158,11,0.08) 8px)' }} />
+          )}
+          {/* Inner seam glow */}
+          <div className="absolute inset-0" style={{
+            background: p.origin === 'top-left'     ? 'linear-gradient(135deg,transparent 50%,rgba(99,102,241,0.06) 100%)' :
+                        p.origin === 'top-right'    ? 'linear-gradient(225deg,transparent 50%,rgba(99,102,241,0.06) 100%)' :
+                        p.origin === 'bottom-left'  ? 'linear-gradient(45deg,transparent 50%,rgba(99,102,241,0.06) 100%)' :
+                                                      'linear-gradient(315deg,transparent 50%,rgba(99,102,241,0.06) 100%)',
+          }} />
+          {/* Corner bolt */}
+          <div className="absolute" style={{
+            top: p.origin.includes('top') ? 12 : 'auto', bottom: p.origin.includes('bottom') ? 12 : 'auto',
+            left: p.origin.includes('left') ? 12 : 'auto', right: p.origin.includes('right') ? 12 : 'auto',
+          }}>
+            <div className="w-3.5 h-3.5 rounded-full border border-indigo-500/20 flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/25" />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+
+      {/* Center seam cross — horizontal + vertical lines where 4 panels meet */}
+      <motion.div className="fixed inset-0 z-[104] pointer-events-none flex items-center justify-center"
+        initial={{ opacity: 1 }} animate={{ opacity: [1, 1, 0] }} transition={{ duration: 0.4, delay: 0.65, times: [0, 0.5, 1] }}>
+        {/* Horizontal seam */}
+        <div className="absolute left-0 right-0" style={{ top: '50%', height: '2px', background: isDark ? 'linear-gradient(90deg,transparent,rgba(6,182,212,0.8) 20%,rgba(99,102,241,1) 50%,rgba(6,182,212,0.8) 80%,transparent)' : 'linear-gradient(90deg,transparent,rgba(79,70,229,0.6) 20%,rgba(99,102,241,0.9) 50%,rgba(79,70,229,0.6) 80%,transparent)', boxShadow: isDark ? '0 0 12px rgba(99,102,241,0.5)' : '0 0 12px rgba(79,70,229,0.35)' }} />
+        {/* Vertical seam */}
+        <div className="absolute top-0 bottom-0" style={{ left: '50%', width: '2px', background: isDark ? 'linear-gradient(180deg,transparent,rgba(99,102,241,0.8) 20%,rgba(6,182,212,1) 50%,rgba(99,102,241,0.8) 80%,transparent)' : 'linear-gradient(180deg,transparent,rgba(99,102,241,0.6) 20%,rgba(79,70,229,0.9) 50%,rgba(99,102,241,0.6) 80%,transparent)', boxShadow: isDark ? '0 0 12px rgba(6,182,212,0.5)' : '0 0 12px rgba(99,102,241,0.35)' }} />
+      </motion.div>
+
+      {/* Expansion ring burst from center */}
+      {[0, 1, 2].map((i) => (
+        <motion.div key={`ring-${i}`}
+          className="fixed top-1/2 left-1/2 z-[104] -translate-x-1/2 -translate-y-1/2 pointer-events-none rounded-full"
+          initial={{ width: 0, height: 0, opacity: 0.8 - i * 0.2 }}
+          animate={{ width: '200vmax', height: '200vmax', opacity: 0 }}
+          transition={{ duration: 0.65, delay: 0.68 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            border: `${2 - i * 0.5}px solid ${isDark ? `rgba(99,102,241,${0.5 - i * 0.12})` : `rgba(79,70,229,${0.35 - i * 0.08})`}`,
+            boxShadow: i === 0 ? (isDark ? '0 0 30px rgba(6,182,212,0.15)' : '0 0 30px rgba(79,70,229,0.1)') : 'none',
+          }}
+        />
+      ))}
+
+      {/* Particle burst from center */}
+      <div className="fixed inset-0 z-[103] pointer-events-none overflow-hidden">
+        {[...Array(50)].map((_, i) => (
+          <motion.div key={`pt-${i}`} className="absolute rounded-full"
+            initial={{ opacity: 0, scale: 0, left: '50%', top: '50%' }}
+            animate={{ opacity: [0, 1, 0], scale: [0, 1, 0.5], x: (Math.random() - 0.5) * 700, y: (Math.random() - 0.5) * 600 }}
+            transition={{ duration: 0.5 + Math.random() * 0.4, delay: 0.66 + Math.random() * 0.15, ease: 'easeOut' }}
+            style={{
+              width: `${1.5 + Math.random() * 3.5}px`, height: `${1.5 + Math.random() * 3.5}px`,
+              background: i % 3 === 0 ? (isDark ? '#06b6d4' : '#6366f1') : i % 3 === 1 ? '#8b5cf6' : '#6366f1',
+              boxShadow: `0 0 ${6 + Math.random() * 8}px rgba(99,102,241,0.6)`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Center ACCESS GRANTED HUD */}
+      <motion.div
+        className="fixed inset-0 z-[105] flex items-center justify-center pointer-events-none"
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: [0, 1, 1, 0], scale: [0.6, 1, 1, 1.04] }}
+        transition={{ duration: 1.6, delay: 0.05, times: [0, 0.12, 0.78, 1], ease: 'easeOut' }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          {/* Shield */}
+          <motion.div
+            initial={{ rotate: -15, scale: 0.5 }} animate={{ rotate: 0, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+          >
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
+              <motion.path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"
+                stroke="url(#vg-grad)" strokeWidth="1.5" fill="none"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.45, delay: 0.1 }} />
+              <motion.path d="M9 12l2 2 4-4" stroke={isDark ? '#06b6d4' : '#6366f1'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"
+                initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 0.25, delay: 0.4 }} />
+              <defs>
+                <linearGradient id="vg-grad" x1="3" y1="2" x2="21" y2="24">
+                  <stop offset="0%" stopColor="#6366f1" />
+                  <stop offset="100%" stopColor={isDark ? '#06b6d4' : '#8b5cf6'} />
+                </linearGradient>
+              </defs>
+            </svg>
+          </motion.div>
+
+          {/* ACCESS GRANTED */}
+          <motion.div className="font-bold tracking-[0.45em] uppercase text-base"
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.3 }}
+            style={{ background: isDark ? 'linear-gradient(135deg,#6366f1,#22d3ee)' : 'linear-gradient(135deg,#4f46e5,#7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: isDark ? 'drop-shadow(0 0 14px rgba(99,102,241,0.5))' : 'drop-shadow(0 0 14px rgba(79,70,229,0.35))' }}>
+            Access Granted
+          </motion.div>
+
+          {/* Equalizer bars */}
+          <motion.div className="flex items-end gap-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}>
+            {[0.5,0.9,0.4,1.0,0.65,0.5,0.85,0.3,0.75,0.95,0.55,0.8].map((h, i) => (
+              <motion.div key={i} className="rounded-sm"
+                style={{ width: '3px', background: isDark ? 'linear-gradient(to top,#6366f1,#06b6d4)' : 'linear-gradient(to top,#4f46e5,#7c3aed)', boxShadow: isDark ? '0 0 4px rgba(99,102,241,0.4)' : '0 0 4px rgba(79,70,229,0.3)' }}
+                initial={{ height: 0 }}
+                animate={{ height: [0, h*20, h*12, h*18] }}
+                transition={{ duration: 0.7, delay: 0.5 + i * 0.03, ease: 'easeOut', times: [0,0.35,0.6,1] }}
+              />
+            ))}
+          </motion.div>
+
+          {/* XP + Rank */}
+          <motion.div className="flex items-center gap-3" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.3 }}>
+            <div className="px-3 py-1.5 rounded-lg border text-center font-mono"
+              style={{ borderColor: isDark ? 'rgba(245,158,11,0.4)' : 'rgba(217,119,6,0.3)', background: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.06)' }}>
+              <div className="text-[8px] tracking-[0.2em] uppercase" style={{ color: isDark ? 'rgba(245,158,11,0.6)' : 'rgba(217,119,6,0.7)' }}>XP EARNED</div>
+              <div className="text-lg font-bold tabular-nums" style={{ color: isDark ? '#f59e0b' : '#d97706' }}><XPCounter /></div>
+            </div>
+            <div className="px-3 py-1.5 rounded-full border flex items-center gap-1.5"
+              style={{ borderColor: isDark ? 'rgba(139,92,246,0.4)' : 'rgba(139,92,246,0.3)', background: isDark ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.06)', boxShadow: isDark ? '0 0 15px rgba(139,92,246,0.15)' : '0 0 15px rgba(139,92,246,0.08)' }}>
+              <span className="text-[11px]">★★★</span>
+              <span className="font-bold text-[10px] tracking-[0.15em] uppercase" style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}>Agent Operative</span>
+            </div>
+          </motion.div>
+
+          {/* Achievement */}
+          <motion.div className="flex items-center gap-1.5 px-3 py-1 rounded-md border"
+            initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7, duration: 0.35 }}
+            style={{ borderColor: isDark ? 'rgba(16,185,129,0.4)' : 'rgba(16,185,129,0.3)', background: isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.05)' }}>
+            <span className="text-sm">🏆</span>
+            <span className="font-mono text-[9px] tracking-wider uppercase" style={{ color: isDark ? '#34d399' : '#059669' }}>
+              Achievement: Gateway Breached
+            </span>
+          </motion.div>
+
+          {/* Separator + "Entering Command Center" */}
+          <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.3, delay: 0.3, ease: [0.22,1,0.36,1] }}
+            style={{ height: '1px', width: '160px', background: isDark ? 'linear-gradient(90deg,transparent,rgba(6,182,212,0.5),transparent)' : 'linear-gradient(90deg,transparent,rgba(99,102,241,0.4),transparent)' }} />
+          <motion.div className="text-[10px] tracking-[0.25em] uppercase font-medium"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.25 }}
+            style={{ color: isDark ? 'rgba(6,182,212,0.6)' : 'rgba(79,70,229,0.6)' }}>
+            Entering Command Center
+          </motion.div>
+          <div className="flex gap-1.5 mt-0.5">
+            {[0,1,2].map(i => (
+              <motion.div key={i} className="w-1 h-1 rounded-full"
+                initial={{ opacity: 0.2 }} animate={{ opacity: [0.2,1,0.2] }}
+                transition={{ duration: 0.5, delay: 0.4 + i*0.1, repeat: 2, ease: 'easeInOut' }}
+                style={{ background: isDark ? '#06b6d4' : '#6366f1', boxShadow: isDark ? '0 0 6px rgba(6,182,212,0.5)' : '0 0 6px rgba(99,102,241,0.4)' }}
+              />
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Flash at panels opening */}
+      <motion.div className="fixed inset-0 z-[106] pointer-events-none"
+        initial={{ opacity: 0 }} animate={{ opacity: [0, 0.6, 0] }}
+        transition={{ duration: 0.3, delay: 0.68, ease: 'easeOut' }}
+        style={{ background: isDark ? 'radial-gradient(circle at 50% 50%,rgba(99,102,241,0.3) 0%,rgba(6,182,212,0.1) 35%,transparent 70%)' : 'radial-gradient(circle at 50% 50%,rgba(99,102,241,0.2) 0%,rgba(79,70,229,0.08) 35%,transparent 70%)' }}
+      />
     </>
   );
 }
@@ -1387,6 +1097,7 @@ export default function LoginPage() {
 function GoogleIcon({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z" fill="#4285F4" />
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z" fill="#4285F4" />
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23Z" fill="#34A853" />
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84Z" fill="#FBBC05" />
