@@ -65,19 +65,19 @@
 
   <!-- User Stats Summary -->
   <div id="user-stats-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
-    <div class="card" style="text-align:center;padding:1rem">
+    <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.18s" onclick="filterUsers('all')" title="Show all users">
       <div style="font-size:1.8rem;font-weight:700;color:var(--text-1)" id="user-count-total">—</div>
       <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Total Users</div>
     </div>
-    <div class="card" style="text-align:center;padding:1rem">
+    <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.18s" onclick="filterUsers('active')" title="Show active users">
       <div style="font-size:1.8rem;font-weight:700;color:var(--success)" id="user-count-active">—</div>
       <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Active</div>
     </div>
-    <div class="card" style="text-align:center;padding:1rem">
+    <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.18s" onclick="filterUsers('verified')" title="Show verified users">
       <div style="font-size:1.8rem;font-weight:700;color:var(--accent-text)" id="user-count-verified">—</div>
       <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Verified</div>
     </div>
-    <div class="card" style="text-align:center;padding:1rem">
+    <div class="card" style="text-align:center;padding:1rem;cursor:pointer;transition:all 0.18s" onclick="filterUsers('admin')" title="Show admin users">
       <div style="font-size:1.8rem;font-weight:700;color:var(--danger)" id="user-count-admins">—</div>
       <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Admins</div>
     </div>
@@ -844,6 +844,21 @@ document.getElementById('admin-content').style.display = 'block';
 
 /* ═══ USER MANAGEMENT ═══ */
 var _usersCache = [];
+function filterUsers(filter) {
+  if (filter === 'all') { renderUsersTable(_usersCache); return; }
+  var filtered = _usersCache.filter(function(u) {
+    if (filter === 'active') return u.is_active !== false;
+    if (filter === 'verified') return u.email_verified;
+    if (filter === 'admin') return u.role === 'admin';
+    return true;
+  });
+  renderUsersTable(filtered);
+  /* Highlight the active stat card */
+  document.querySelectorAll('#user-stats-bar .card').forEach(function(c) { c.style.boxShadow = ''; });
+  var idx = { all: 0, active: 1, verified: 2, admin: 3 }[filter];
+  var cards = document.querySelectorAll('#user-stats-bar .card');
+  if (cards[idx]) cards[idx].style.boxShadow = '0 0 0 2px var(--accent)';
+}
 async function loadUsers() {
   try {
     var r = await fetch('/api/users');
@@ -1221,7 +1236,9 @@ async function loadServiceHealth() {
       var typeBadge = s.type === 'core' ? '<span class="badge badge-info" style="font-size:0.62rem">core</span>' :
                       s.type === 'integration' ? '<span class="badge badge-warning" style="font-size:0.62rem">integration</span>' :
                       '<span class="badge" style="font-size:0.62rem;background:rgba(139,92,246,0.1);color:#a78bfa">observability</span>';
-      return '<div class="health-card">' +
+      var url = s.url || '';
+      var clickAttr = url ? ' style="cursor:pointer" onclick="window.open(\'' + escapeHtml(url) + '\',\'_blank\')" title="Open ' + escapeHtml(s.name) + '"' : '';
+      return '<div class="health-card"' + clickAttr + '>' +
         '<div class="health-dot ' + s.status + '"></div>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:0.5rem">' +
@@ -1229,6 +1246,7 @@ async function loadServiceHealth() {
             typeBadge +
           '</div>' +
           '<div style="font-size:0.72rem;color:' + statusColor + ';font-weight:600;text-transform:uppercase;margin-top:0.15rem">' + s.status + '</div>' +
+          (url ? '<div class="mono" style="font-size:0.65rem;color:var(--text-3);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(url) + '</div>' : '') +
         '</div>' +
         '<div style="text-align:right">' +
           '<div class="mono" style="font-size:0.72rem;color:var(--text-3)">' + s.latency + 'ms</div>' +
@@ -1248,19 +1266,23 @@ async function loadOverviewCounts() {
     var d = await r.json();
     var el = document.getElementById('overview-counts');
     var items = [
-      { key: 'agents', label: 'Agents', icon: '&#x1F916;' },
-      { key: 'skills', label: 'Skills', icon: '&#x26A1;' },
-      { key: 'prompts', label: 'Prompts', icon: '&#x1F4DD;' },
-      { key: 'tools', label: 'Tools', icon: '&#x1F527;' },
-      { key: 'custom_tools', label: 'Custom Tools', icon: '&#x1F6E0;' },
-      { key: 'sessions', label: 'Sessions', icon: '&#x1F4AC;' },
-      { key: 'guardrails', label: 'Guardrails', icon: '&#x1F6E1;' },
-      { key: 'a2a_peers', label: 'A2A Peers', icon: '&#x1F310;' },
-      { key: 'mcp_servers', label: 'MCP Servers', icon: '&#x1F50C;' },
-      { key: 'connectors', label: 'Connectors', icon: '&#x1F517;' },
+      { key: 'agents',      label: 'Agents',       icon: '&#x1F916;', href: '/agents' },
+      { key: 'skills',      label: 'Skills',        icon: '&#x26A1;',  href: '/skills' },
+      { key: 'prompts',     label: 'Prompts',       icon: '&#x1F4DD;', href: '/prompts' },
+      { key: 'tools',       label: 'Tools',         icon: '&#x1F527;', href: '/tools' },
+      { key: 'custom_tools',label: 'Custom Tools',  icon: '&#x1F6E0;', href: '/tools' },
+      { key: 'sessions',    label: 'Sessions',      icon: '&#x1F4AC;', href: '/chat' },
+      { key: 'guardrails',  label: 'Guardrails',    icon: '&#x1F6E1;', href: '/admin#config' },
+      { key: 'a2a_peers',   label: 'A2A Peers',     icon: '&#x1F310;', href: '/tools' },
+      { key: 'mcp_servers', label: 'MCP Servers',   icon: '&#x1F50C;', href: '/tools' },
+      { key: 'connectors',  label: 'Connectors',    icon: '&#x1F517;', href: '/data' },
     ];
     el.innerHTML = items.map(function(it) {
-      return '<div class="count-card"><div class="count-num">' + (d[it.key] || 0) + '</div><div class="count-label">' + it.icon + ' ' + it.label + '</div></div>';
+      return '<a href="' + it.href + '" style="text-decoration:none">'
+        + '<div class="count-card" style="cursor:pointer;transition:all 0.18s" onmouseover="this.style.borderColor=\'var(--accent-border)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'\';this.style.transform=\'\'">'
+        + '<div class="count-num">' + (d[it.key] || 0) + '</div>'
+        + '<div class="count-label">' + it.icon + ' ' + it.label + '</div>'
+        + '</div></a>';
     }).join('');
   } catch(e) {
     document.getElementById('overview-counts').innerHTML = '<div style="color:var(--danger)">Failed to load overview</div>';
