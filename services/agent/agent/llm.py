@@ -2,15 +2,18 @@
 LangChain LLM & Embeddings wrappers — multi-provider support.
 
 Providers:
-  1. Ollama       — local models (llama3, mistral, deepseek-r1, etc.)
-  2. Azure OpenAI — via API key (gpt-4o, gpt-4o-mini, gpt-35-turbo, etc.)
-  3. OpenAI       — via API key (gpt-4o, gpt-4o-mini, gpt-3.5-turbo, etc.)
-  4. Azure Foundry — via API key
+  1. Ollama          — local models (llama3, mistral, deepseek-r1, qwen3, etc.)
+  2. Azure OpenAI    — via API key (gpt-4o, gpt-4.1, gpt-4.1-mini, etc.)
+  3. OpenAI          — via API key (gpt-4o, gpt-4.1, o3, o4-mini, etc.)
+  4. Azure Foundry   — via Azure AI Foundry endpoint
+  5. Anthropic       — via API key (claude-3-5-sonnet, claude-3-7-sonnet, claude-4-opus, etc.)
+  6. Groq            — via API key (llama-3.3-70b, qwen-qwq-32b, deepseek-r1 at ~500 tok/s)
 
 Provides:
-  get_llm(provider, model, temperature) → ChatOllama | AzureChatOpenAI | ChatOpenAI
+  get_llm(provider, model, temperature) → ChatOllama | AzureChatOpenAI | ChatOpenAI | ChatAnthropic | ChatGroq
+  get_structured_llm(schema, provider, model) → LLM with .with_structured_output(schema)
   get_embeddings(provider)              → OllamaEmbeddings | AzureOpenAIEmbeddings | OpenAIEmbeddings
-  list_available_models()               → list of model dicts
+  list_available_models()               → list of model dicts with real pricing
   get_active_model()                    → current provider + model + embedding info
 """
 
@@ -73,6 +76,14 @@ AZURE_FOUNDRY_MODELS = [
 AZURE_FOUNDRY_API_VERSION = os.getenv("AZURE_FOUNDRY_API_VERSION", "2024-10-21")
 AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT", "")
 
+# ── Anthropic config ────────────────────────────────────────────────────────
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
+
+# ── Groq config ─────────────────────────────────────────────────────────────
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
 # ── Embedding provider override (defaults to LLM provider) ─────────────────
 EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "")  # "" = follow LLM provider
 
@@ -101,7 +112,17 @@ _env_default_model = (
         OPENAI_MODEL
         if _active_provider == "openai"
         else (
-            AZURE_FOUNDRY_MODEL if _active_provider == "azure-foundry" else OLLAMA_MODEL
+            AZURE_FOUNDRY_MODEL
+            if _active_provider == "azure-foundry"
+            else (
+                ANTHROPIC_MODEL
+                if _active_provider == "anthropic"
+                else (
+                    GROQ_MODEL
+                    if _active_provider == "groq"
+                    else OLLAMA_MODEL
+                )
+            )
         )
     )
 )
@@ -226,6 +247,47 @@ def get_llm(
                 t,
                 tp,
             )
+    elif p == "anthropic":
+        m = model or ANTHROPIC_MODEL
+        if rebuild:
+            if not _is_real_key(ANTHROPIC_API_KEY):
+                raise ValueError(
+                    "Anthropic requires a valid ANTHROPIC_API_KEY env var"
+                )
+            from langchain_anthropic import ChatAnthropic
+
+            _llm = ChatAnthropic(
+                model=m,
+                api_key=ANTHROPIC_API_KEY,
+                temperature=t,
+                top_p=tp,
+                max_tokens=mct,
+                streaming=True,
+                timeout=60,
+            )
+            _active_provider = "anthropic"
+            _active_model = m
+            logger.info("ChatAnthropic initialised: model=%s temp=%.2f", m, t)
+    elif p == "groq":
+        m = model or GROQ_MODEL
+        if rebuild:
+            if not _is_real_key(GROQ_API_KEY):
+                raise ValueError(
+                    "Groq requires a valid GROQ_API_KEY env var"
+                )
+            from langchain_groq import ChatGroq
+
+            _llm = ChatGroq(
+                model=m,
+                api_key=GROQ_API_KEY,
+                temperature=t,
+                max_tokens=mct,
+                streaming=True,
+                timeout=30,
+            )
+            _active_provider = "groq"
+            _active_model = m
+            logger.info("ChatGroq initialised: model=%s temp=%.2f", m, t)
     else:
         m = model or OLLAMA_MODEL
         if rebuild:
@@ -249,6 +311,27 @@ def get_llm(
             )
 
     return _llm
+
+
+def get_structured_llm(schema, provider: str | None = None, model: str | None = None):
+    """Return a structured-output LLM bound to the given Pydantic schema.
+
+    Uses LangChain's .with_structured_output() which automatically picks the
+    best strategy per provider:
+      - OpenAI / Azure OpenAI / Groq  → JSON mode / function calling
+      - Anthropic                      → tool_use binding
+      - Ollama                         → JSON mode (requires model support)
+
+    Args:
+        schema: A Pydantic BaseModel class or JSON schema dict.
+        provider: Optional provider override (defaults to active provider).
+        model:    Optional model override.
+
+    Returns:
+        A Runnable that returns parsed schema instances instead of raw strings.
+    """
+    llm = get_llm(provider=provider, model=model)
+    return llm.with_structured_output(schema)
 
 
 def get_embeddings(provider: str | None = None):
@@ -356,6 +439,7 @@ def list_available_embedding_providers() -> list[str]:
         available.append("azure-openai")
     if _is_real_key(AZURE_FOUNDRY_API_KEY) and AZURE_FOUNDRY_ENDPOINT:
         available.append("azure-foundry")
+    # Anthropic and Groq do not provide embedding endpoints — use Ollama fallback
     return available
 
 
@@ -363,70 +447,108 @@ def list_available_models() -> list[dict]:
     """List all available models across all configured providers."""
     models = []
 
-    # Model capability metadata: which features each model/provider supports
+    # Model capability metadata + real pricing (USD per 1K tokens, as of mid-2026)
     # temperature_supported=False means the API only allows default (1.0)
-    _MODEL_CAPS = {
-        "gpt-5-nano": {
-            "temperature": False,
-            "top_p": True,
-            "max_tokens": 16384,
-            "streaming": True,
-        },
-        "gpt-4o": {
-            "temperature": True,
-            "top_p": True,
-            "max_tokens": 128000,
-            "streaming": True,
-        },
-        "gpt-4o-mini": {
-            "temperature": True,
-            "top_p": True,
-            "max_tokens": 128000,
-            "streaming": True,
-        },
+    _MODEL_CAPS: dict[str, dict] = {
+        # ── OpenAI ──────────────────────────────────────────────────────────
         "gpt-4.1": {
-            "temperature": True,
-            "top_p": True,
-            "max_tokens": 32768,
-            "streaming": True,
+            "temperature": True, "top_p": True, "max_tokens": 32768, "streaming": True,
+            "cost_per_1k_input": 0.002, "cost_per_1k_output": 0.008,
         },
         "gpt-4.1-mini": {
-            "temperature": True,
-            "top_p": True,
-            "max_tokens": 32768,
-            "streaming": True,
+            "temperature": True, "top_p": True, "max_tokens": 32768, "streaming": True,
+            "cost_per_1k_input": 0.0004, "cost_per_1k_output": 0.0016,
         },
         "gpt-4.1-nano": {
-            "temperature": True,
-            "top_p": True,
-            "max_tokens": 32768,
-            "streaming": True,
+            "temperature": True, "top_p": True, "max_tokens": 32768, "streaming": True,
+            "cost_per_1k_input": 0.0001, "cost_per_1k_output": 0.0004,
+        },
+        "gpt-4o": {
+            "temperature": True, "top_p": True, "max_tokens": 128000, "streaming": True,
+            "cost_per_1k_input": 0.0025, "cost_per_1k_output": 0.01,
+        },
+        "gpt-4o-mini": {
+            "temperature": True, "top_p": True, "max_tokens": 128000, "streaming": True,
+            "cost_per_1k_input": 0.00015, "cost_per_1k_output": 0.0006,
+        },
+        "gpt-5-nano": {
+            "temperature": False, "top_p": True, "max_tokens": 16384, "streaming": True,
+            "cost_per_1k_input": 0.00015, "cost_per_1k_output": 0.0006,
+        },
+        "o3": {
+            "temperature": False, "top_p": False, "max_tokens": 100000, "streaming": True,
+            "cost_per_1k_input": 0.01, "cost_per_1k_output": 0.04,
+        },
+        "o4-mini": {
+            "temperature": False, "top_p": False, "max_tokens": 100000, "streaming": True,
+            "cost_per_1k_input": 0.0011, "cost_per_1k_output": 0.0044,
         },
         "gpt-3.5-turbo": {
-            "temperature": True,
-            "top_p": True,
-            "max_tokens": 16384,
-            "streaming": True,
+            "temperature": True, "top_p": True, "max_tokens": 16384, "streaming": True,
+            "cost_per_1k_input": 0.0005, "cost_per_1k_output": 0.0015,
+        },
+        # ── Anthropic ────────────────────────────────────────────────────────
+        "claude-4-opus": {
+            "temperature": True, "top_p": True, "max_tokens": 32000, "streaming": True,
+            "cost_per_1k_input": 0.015, "cost_per_1k_output": 0.075,
+        },
+        "claude-4-sonnet": {
+            "temperature": True, "top_p": True, "max_tokens": 32000, "streaming": True,
+            "cost_per_1k_input": 0.003, "cost_per_1k_output": 0.015,
+        },
+        "claude-3-7-sonnet": {
+            "temperature": True, "top_p": True, "max_tokens": 32000, "streaming": True,
+            "cost_per_1k_input": 0.003, "cost_per_1k_output": 0.015,
+        },
+        "claude-3-5-sonnet": {
+            "temperature": True, "top_p": True, "max_tokens": 8096, "streaming": True,
+            "cost_per_1k_input": 0.003, "cost_per_1k_output": 0.015,
+        },
+        "claude-3-5-haiku": {
+            "temperature": True, "top_p": True, "max_tokens": 8096, "streaming": True,
+            "cost_per_1k_input": 0.0008, "cost_per_1k_output": 0.004,
+        },
+        "claude-3-haiku": {
+            "temperature": True, "top_p": True, "max_tokens": 4096, "streaming": True,
+            "cost_per_1k_input": 0.00025, "cost_per_1k_output": 0.00125,
+        },
+        # ── Groq (billed per token, very low cost) ───────────────────────────
+        "llama-3.3-70b-versatile": {
+            "temperature": True, "top_p": True, "max_tokens": 32768, "streaming": True,
+            "cost_per_1k_input": 0.00059, "cost_per_1k_output": 0.00079,
+        },
+        "llama-3.1-8b-instant": {
+            "temperature": True, "top_p": True, "max_tokens": 131072, "streaming": True,
+            "cost_per_1k_input": 0.00005, "cost_per_1k_output": 0.00008,
+        },
+        "mixtral-8x7b-32768": {
+            "temperature": True, "top_p": True, "max_tokens": 32768, "streaming": True,
+            "cost_per_1k_input": 0.00024, "cost_per_1k_output": 0.00024,
+        },
+        "qwen-qwq-32b": {
+            "temperature": True, "top_p": True, "max_tokens": 131072, "streaming": True,
+            "cost_per_1k_input": 0.00029, "cost_per_1k_output": 0.00039,
+        },
+        "deepseek-r1-distill-llama-70b": {
+            "temperature": True, "top_p": True, "max_tokens": 131072, "streaming": True,
+            "cost_per_1k_input": 0.00075, "cost_per_1k_output": 0.00099,
         },
     }
     _OLLAMA_CAPS = {
-        "temperature": True,
-        "top_p": True,
-        "max_tokens": 32768,
-        "streaming": True,
+        "temperature": True, "top_p": True, "max_tokens": 32768, "streaming": True,
+        "cost_per_1k_input": 0.0, "cost_per_1k_output": 0.0,
     }
     _DEFAULT_CAPS = {
-        "temperature": True,
-        "top_p": True,
-        "max_tokens": 4096,
-        "streaming": True,
+        "temperature": True, "top_p": True, "max_tokens": 4096, "streaming": True,
+        "cost_per_1k_input": 0.0, "cost_per_1k_output": 0.0,
     }
 
     def _caps(model_name: str, provider: str) -> dict:
         m = model_name.lower()
-        for key, caps in _MODEL_CAPS.items():
+        # Sort keys longest-first so "gpt-4o-mini" matches before "gpt-4o"
+        for key in sorted(_MODEL_CAPS.keys(), key=len, reverse=True):
             if key in m:
-                return caps
+                return _MODEL_CAPS[key]
         if provider == "ollama":
             return _OLLAMA_CAPS
         return _DEFAULT_CAPS
@@ -459,17 +581,17 @@ def list_available_models() -> list[dict]:
                 name = m.get("name", "").split(":")[0]
                 if _is_embedding_model(name):
                     continue
+                c = _caps(name, "ollama")
                 models.append(
                     {
                         "provider": "ollama",
                         "model": name,
                         "full_name": m.get("name", name),
                         "size": m.get("size", 0),
-                        "active": _active_provider == "ollama"
-                        and _active_model == name,
-                        "capabilities": _caps(name, "ollama"),
-                        "cost_per_1k_input": 0.0,
-                        "cost_per_1k_output": 0.0,
+                        "active": _active_provider == "ollama" and _active_model == name,
+                        "capabilities": c,
+                        "cost_per_1k_input": c.get("cost_per_1k_input", 0.0),
+                        "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
                     }
                 )
     except Exception as e:
@@ -481,33 +603,33 @@ def list_available_models() -> list[dict]:
             {"model": AZURE_OPENAI_DEPLOYMENT, "description": "Configured deployment"},
         ]
         for am in azure_models:
+            c = _caps(am["model"], "azure-openai")
             models.append(
                 {
                     "provider": "azure-openai",
                     "model": am["model"],
                     "full_name": am["model"],
                     "size": 0,
-                    "active": _active_provider == "azure-openai"
-                    and _active_model == am["model"],
-                    "capabilities": _caps(am["model"], "azure-openai"),
-                    "cost_per_1k_input": 0.0,
-                    "cost_per_1k_output": 0.0,
+                    "active": _active_provider == "azure-openai" and _active_model == am["model"],
+                    "capabilities": c,
+                    "cost_per_1k_input": c.get("cost_per_1k_input", 0.0),
+                    "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
                 }
             )
 
     # ── OpenAI models ───────────────────────────────────────────────────
     if _is_real_key(OPENAI_API_KEY):
+        c = _caps(OPENAI_MODEL, "openai")
         models.append(
             {
                 "provider": "openai",
                 "model": OPENAI_MODEL,
                 "full_name": OPENAI_MODEL,
                 "size": 0,
-                "active": _active_provider == "openai"
-                and _active_model == OPENAI_MODEL,
-                "capabilities": _caps(OPENAI_MODEL, "openai"),
-                "cost_per_1k_input": 0.0,
-                "cost_per_1k_output": 0.0,
+                "active": _active_provider == "openai" and _active_model == OPENAI_MODEL,
+                "capabilities": c,
+                "cost_per_1k_input": c.get("cost_per_1k_input", 0.0),
+                "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
             }
         )
 
@@ -518,21 +640,77 @@ def list_available_models() -> list[dict]:
             if AZURE_FOUNDRY_MODELS
             else ([AZURE_FOUNDRY_MODEL] if AZURE_FOUNDRY_MODEL else [])
         )
-        seen = set()
+        seen: set[str] = set()
         for fm in foundry_list:
             if fm and fm not in seen:
                 seen.add(fm)
+                c = _caps(fm, "azure-foundry")
                 models.append(
                     {
                         "provider": "azure-foundry",
                         "model": fm,
                         "full_name": fm,
                         "size": 0,
-                        "active": _active_provider == "azure-foundry"
-                        and _active_model == fm,
-                        "capabilities": _caps(fm, "azure-foundry"),
-                        "cost_per_1k_input": 0.0,
-                        "cost_per_1k_output": 0.0,
+                        "active": _active_provider == "azure-foundry" and _active_model == fm,
+                        "capabilities": c,
+                        "cost_per_1k_input": c.get("cost_per_1k_input", 0.0),
+                        "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
+                    }
+                )
+
+    # ── Anthropic models ────────────────────────────────────────────────
+    if _is_real_key(ANTHROPIC_API_KEY):
+        anthropic_models = [
+            ANTHROPIC_MODEL,
+            "claude-4-opus-20250514",
+            "claude-4-sonnet-20250514",
+            "claude-3-7-sonnet-20250219",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+        ]
+        seen_a: set[str] = set()
+        for am in anthropic_models:
+            if am and am not in seen_a:
+                seen_a.add(am)
+                c = _caps(am, "anthropic")
+                models.append(
+                    {
+                        "provider": "anthropic",
+                        "model": am,
+                        "full_name": am,
+                        "size": 0,
+                        "active": _active_provider == "anthropic" and _active_model == am,
+                        "capabilities": c,
+                        "cost_per_1k_input": c.get("cost_per_1k_input", 0.003),
+                        "cost_per_1k_output": c.get("cost_per_1k_output", 0.015),
+                    }
+                )
+
+    # ── Groq models ─────────────────────────────────────────────────────
+    if _is_real_key(GROQ_API_KEY):
+        groq_models = [
+            GROQ_MODEL,
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "mixtral-8x7b-32768",
+            "qwen-qwq-32b",
+            "deepseek-r1-distill-llama-70b",
+        ]
+        seen_g: set[str] = set()
+        for gm in groq_models:
+            if gm and gm not in seen_g:
+                seen_g.add(gm)
+                c = _caps(gm, "groq")
+                models.append(
+                    {
+                        "provider": "groq",
+                        "model": gm,
+                        "full_name": gm,
+                        "size": 0,
+                        "active": _active_provider == "groq" and _active_model == gm,
+                        "capabilities": c,
+                        "cost_per_1k_input": c.get("cost_per_1k_input", 0.0),
+                        "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
                     }
                 )
 
@@ -542,12 +720,14 @@ def list_available_models() -> list[dict]:
 def get_active_model() -> dict:
     """Return the currently active provider, model, and embedding info."""
     embed_p = _embedding_provider or EMBEDDING_PROVIDER or _active_provider
+    # Anthropic and Groq don't have embeddings — always use Ollama for those
+    if embed_p in ("anthropic", "groq"):
+        embed_p = "ollama"
     embed_models = {
         "ollama": OLLAMA_EMBED_MODEL,
         "azure-openai": AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
         "openai": OPENAI_EMBEDDING_MODEL,
-        "azure-foundry": AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT
-        or AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
+        "azure-foundry": AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT or AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
     }
     return {
         "provider": _active_provider,

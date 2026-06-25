@@ -25,7 +25,7 @@
 
 </div>
 
-> **TL;DR** — 16 services, 145 API endpoints, 26-page dashboard, 4 LLM providers, full RAG pipeline, multi-agent orchestration, persona-based RBAC, end-to-end observability — all running locally with one command.
+> **TL;DR** — 16 services, 145 API endpoints, 26-page dashboard, 4 LLM providers (+ Anthropic/Gemini/Groq/Mistral on the roadmap), full RAG pipeline, multi-agent orchestration, persona-based RBAC, end-to-end observability with LLM cost tracking — all running locally with one command.
 
 ---
 
@@ -254,13 +254,13 @@ curl -X POST http://localhost:8010/run \
 | A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                                                                                           |
 | MCP Registry     | Create, host, and manage MCP tool servers — config mode (no-code), code mode (Python), or register external servers                                                                                                                                       |
 | REST Console     | Interactive API console — test all 145 endpoints                                                                                                                                                                                                          |
-| Intelligence Hub | Operational intelligence overview                                                                                                                                                                                                                         |
+| Intelligence Hub | Operational intelligence — traces, LLM cost & token analytics, guardrail status, model breakdown chart, recent call table, 8-stat dashboard                                                                                                               |
 | Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                                                                                     |
 | Evaluation       | Agent quality scoring and model comparison                                                                                                                                                                                                                |
 | Observability    | Stack health — Prometheus, Grafana, Loki status                                                                                                                                                                                                           |
 | Guardrails       | Runtime safety controls and policy enforcement                                                                                                                                                                                                            |
 | Data Ingestion   | ETL pipeline — Extract (5 connectors), Transform (chunking, embedding), Load (ChromaDB)                                                                                                                                                                   |
-| LLM Activity     | Token usage tracking, cost analysis, per-model breakdown                                                                                                                                                                                                  |
+| LLM Activity     | Full token usage log — per-call provider/model/tokens/cost/latency, cost trend chart, model comparison breakdown                                                                                                                                          |
 | Marketplace      | Browse and install templates                                                                                                                                                                                                                              |
 | Admin            | 8-tab admin plane — service health, **user & access management**, **persona definitions & user persona assignments**, platform overview, LLM management, DB & data, config (security, best practices), audit log. Role-gated: only admin users can access |
 | Documentation    | Auto-generated API & architecture docs                                                                                                                                                                                                                    |
@@ -399,6 +399,22 @@ agentic-platform/
 - **Runtime switching**: click a persona chip in the sidebar → nav adapts instantly, no page reload
 - **Admin UI**: dedicated Personas tab in admin panel for creating/editing personas and managing user assignments
 
+### Intelligence Hub & LLM Observability Upgrade
+
+- **8-stat dashboard** — expanded from 4 to 8 KPI cards: traces, agents, health, + LLM calls, total tokens, estimated cost, guardrail status
+- **LLM Activity & Cost Analysis** — new section with per-model token breakdown bar chart, cost/token trend (Chart.js), and last-8-calls table
+- **Real-time cost tracking** — `estimated_cost` computed per call from token counts and stored in the `llm_usage_log` table
+- **Guardrail status widget** — shows active/total guardrails inline in the hub
+
+### Architecture Section Refresh
+
+- **Overview page architecture diagram** updated with 2025/2026 roadmap technologies
+- Added planned providers: `Anthropic Claude`, `Google Gemini`, `Groq`, `Mistral AI`
+- Added planned frameworks: `LangGraph HITL`, `Checkpointing`, `Structured Output`
+- Added planned protocols: `Google A2A (open)`, `MCP 1.x Streamable HTTP Transport`
+- Added planned knowledge: `Hybrid Search (BM25+Vec)`, `Re-Ranking`
+- Added planned guardrails: `Azure AI Content Safety`, `Jailbreak Detection`
+
 ### Platform Expansion
 
 - **16 containers** (up from 14) — added PostgreSQL datastore, Brave Search MCP, Open Tools MCP
@@ -422,6 +438,18 @@ Have ideas? [Open an issue](https://github.com/rachit0412/agentic-platform/issue
 - [ ] Kubernetes deployment manifests
 - [ ] OAuth2 / SSO integration (Google, GitHub, Microsoft)
 - [ ] Mobile-responsive dashboard
+- [ ] Anthropic Claude, Google Gemini, Groq, Mistral AI providers
+- [ ] LangGraph HITL (human-in-the-loop interrupt nodes)
+- [ ] LangGraph Checkpointing (persistent state across runs)
+- [ ] Structured Output mode (JSON enforcement via Pydantic)
+- [ ] Google A2A interoperability standard
+- [ ] MCP 1.x Streamable HTTP transport
+- [ ] Hybrid Search (BM25 + vector) + Re-ranking
+- [ ] Response Feedback UI (thumbs up/down)
+- [ ] Prompt Auto-Optimizer
+- [ ] Azure AI Content Safety + Jailbreak Detection
+- [ ] LLM-as-Judge evaluation
+- [ ] Policy-as-Code (OPA/Rego), AI Governance Framework (ISO 42001)
 
 ---
 

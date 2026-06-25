@@ -80,6 +80,10 @@
             <span class="arch-pill arch-pill-active">Azure OpenAI</span>
             <span class="arch-pill arch-pill-active">OpenAI</span>
             <span class="arch-pill arch-pill-active">Azure AI Foundry</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: via LangChain ChatAnthropic">Anthropic Claude</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: via LangChain ChatGoogleGenerativeAI">Google Gemini</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: ultra-fast inference via Groq API">Groq</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: via LangChain ChatMistralAI">Mistral AI</span>
           </div>
           <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Agent Factory</div>
           <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
@@ -94,6 +98,9 @@
             <span class="arch-pill arch-pill-active">LangGraph (ReAct)</span>
             <span class="arch-pill arch-pill-active">LlamaIndex (RAG)</span>
             <span class="arch-pill arch-pill-active">Langfuse Tracing</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: LangGraph interrupt nodes for human approval workflows">LangGraph HITL</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: LangGraph checkpoint-based state persistence across runs">LangGraph Checkpointing</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: JSON mode / structured output enforcement via Pydantic models">Structured Output</span>
           </div>
         </div>
         <!-- Right: Tools, Data & Connectivity -->
@@ -107,6 +114,8 @@
             <span class="arch-pill arch-pill-active">Code Execution</span>
             <span class="arch-pill arch-pill-active">APIs & Connectors</span>
             <span class="arch-pill arch-pill-active">Marketplace</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: Google's open A2A interoperability protocol for cross-framework agent communication">Google A2A (open)</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: MCP 1.x Streamable HTTP transport (replaces SSE transport)">MCP 1.x Transport</span>
           </div>
           <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Knowledge & Grounding</div>
           <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
@@ -115,6 +124,8 @@
             <span class="arch-pill arch-pill-active">Structured Data (SQL/CSV)</span>
             <span class="arch-pill arch-pill-active">RAG Evaluation</span>
             <span class="arch-pill arch-pill-warn">Grounding / Citations</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: BM25 + vector hybrid retrieval for higher precision">Hybrid Search (BM25+Vec)</span>
+            <span class="arch-pill arch-pill-warn" title="Planned: Re-ranking retrieved chunks via cross-encoder for quality">Re-Ranking</span>
           </div>
           <div style="font-size:0.72rem;color:#a78bfa;font-weight:600;margin:0.75rem 0 0.5rem;letter-spacing:0.3px">Workflow Orchestration</div>
           <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
@@ -142,6 +153,9 @@
         <span class="arch-pill arch-pill-warn">Agent Sandbox</span>
         <span class="arch-pill arch-pill-warn">Semantic Memory Bank</span>
         <span class="arch-pill arch-pill-warn">Multi-Tenant</span>
+        <span class="arch-pill arch-pill-warn" title="Planned: LangGraph interrupt nodes — pause mid-run for human review/approval">Interrupt / HITL</span>
+        <span class="arch-pill arch-pill-warn" title="Planned: Checkpoint-based state persistence — resume long-running agents after interruption">LangGraph Checkpoints</span>
+        <span class="arch-pill arch-pill-warn" title="Planned: Enforce JSON output schema via Pydantic models with .with_structured_output()">Structured Output Mode</span>
       </div>
     </div>
 
@@ -169,6 +183,8 @@
               <span class="arch-pill arch-pill-active">Topic Restriction</span>
               <span class="arch-pill arch-pill-active">Data Leak Prevention</span>
               <span class="arch-pill arch-pill-active">10 Guardrails (runtime)</span>
+              <span class="arch-pill arch-pill-warn" title="Planned: Azure AI Content Safety integration for enterprise-grade content moderation">Azure AI Content Safety</span>
+              <span class="arch-pill arch-pill-warn" title="Planned: Jailbreak detection patterns for adversarial prompt resistance">Jailbreak Detection</span>
             </div>
           </div>
           <!-- Traceability -->
@@ -212,8 +228,11 @@
             <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
               <span class="arch-pill arch-pill-active">Agent Evaluation</span>
               <span class="arch-pill arch-pill-active">RAG Evaluation</span>
+              <span class="arch-pill arch-pill-active">LLM Activity Tracking</span>
+              <span class="arch-pill arch-pill-active">Cost per Run</span>
               <span class="arch-pill arch-pill-warn">Agent Simulation</span>
               <span class="arch-pill arch-pill-warn">A/B Testing</span>
+              <span class="arch-pill arch-pill-warn" title="Planned: LLM-as-judge for automated faithfulness and relevance scoring">LLM-as-Judge</span>
             </div>
           </div>
         </div>
@@ -227,6 +246,8 @@
           <span class="arch-pill arch-pill-warn">Anomaly Detection</span>
           <span class="arch-pill arch-pill-warn">Compliance Audit</span>
           <span class="arch-pill arch-pill-warn">Auto-Optimizer</span>
+          <span class="arch-pill arch-pill-warn" title="Planned: Policy-as-code enforcement for agent outputs (OPA/Rego)">Policy-as-Code</span>
+          <span class="arch-pill arch-pill-warn" title="Planned: ISO 42001 / NIST AI RMF alignment for enterprise AI governance">AI Governance Framework</span>
         </div>
       </div>
     </div>
@@ -243,9 +264,12 @@
         <span class="arch-pill arch-pill-active">Model Comparison</span>
         <span class="arch-pill arch-pill-active">Cost Tracking</span>
         <span class="arch-pill arch-pill-active">Latency Profiling</span>
+        <span class="arch-pill arch-pill-active">Token Usage Analytics</span>
         <span class="arch-pill arch-pill-warn">Agent Simulation</span>
         <span class="arch-pill arch-pill-warn">A/B Testing</span>
         <span class="arch-pill arch-pill-warn">Auto-Optimizer</span>
+        <span class="arch-pill arch-pill-warn" title="Planned: Thumbs up/down rating on responses with feedback storage">Response Feedback UI</span>
+        <span class="arch-pill arch-pill-warn" title="Planned: Automated prompt improvement using Langfuse DSPy-style optimizer">Prompt Auto-Optimizer</span>
       </div>
     </div>
 

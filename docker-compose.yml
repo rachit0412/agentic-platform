@@ -168,6 +168,12 @@ services:
       - AZURE_FOUNDRY_API_VERSION=${AZURE_FOUNDRY_API_VERSION:-2024-10-21}
       - AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT=${AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT:-}
       - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-ollama}
+      # ── Anthropic (Claude 3.5 Sonnet, Claude 4 Opus, etc.) ───────────────
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
+      # ── Groq (llama-3.3-70b, qwen-qwq-32b, ~500 tok/s) ─────────────────
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
       - TOOLS_SERVICE_URL=http://tools-service:8001
       - MEMORY_DIR=/data
       - CHROMA_URL=${CHROMA_URL:-http://chromadb:8000}
