@@ -32,7 +32,7 @@ def _load_persisted_config() -> dict:
     try:
         with open(_CONFIG_PATH) as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
         return {}
 
 

@@ -501,7 +501,17 @@
           filterEl.value = '';
           _allEntries = _allEntries.filter(function(e) { return e.request_id === rid; });
           _renderTable(_allEntries);
-          _renderSummaryCards(_allEntries);
+          // Update summary stat cards for filtered entries
+          var totalTokens = 0, totalCost = 0, totalLatency = 0;
+          _allEntries.forEach(function(e) {
+            totalTokens += e.total_tokens || 0;
+            totalCost += e.estimated_cost || 0;
+            totalLatency += e.latency_ms || 0;
+          });
+          document.getElementById('stat-requests').textContent = _fmtNum(_allEntries.length);
+          document.getElementById('stat-tokens').textContent = _fmtNum(totalTokens);
+          document.getElementById('stat-cost').textContent = '$' + totalCost.toFixed(4);
+          document.getElementById('stat-latency').textContent = (_allEntries.length ? Math.round(totalLatency / _allEntries.length) : 0) + 'ms';
         }
       }, 1200);
     }

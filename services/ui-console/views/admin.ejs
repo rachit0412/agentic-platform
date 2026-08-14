@@ -1237,7 +1237,7 @@ async function loadServiceHealth() {
                       s.type === 'integration' ? '<span class="badge badge-warning" style="font-size:0.62rem">integration</span>' :
                       '<span class="badge" style="font-size:0.62rem;background:rgba(139,92,246,0.1);color:#a78bfa">observability</span>';
       var url = s.url || '';
-      var clickAttr = url ? ' style="cursor:pointer" onclick="window.open(\'' + escapeHtml(url) + '\',\'_blank\')" title="Open ' + escapeHtml(s.name) + '"' : '';
+      var clickAttr = url ? ' style="cursor:pointer" onclick="window.open(&#39;' + escapeHtml(url) + '&#39;,&#39;_blank&#39;)" title="Open ' + escapeHtml(s.name) + '"' : '';
       return '<div class="health-card"' + clickAttr + '>' +
         '<div class="health-dot ' + s.status + '"></div>' +
         '<div style="flex:1;min-width:0">' +
@@ -1279,7 +1279,7 @@ async function loadOverviewCounts() {
     ];
     el.innerHTML = items.map(function(it) {
       return '<a href="' + it.href + '" style="text-decoration:none">'
-        + '<div class="count-card" style="cursor:pointer;transition:all 0.18s" onmouseover="this.style.borderColor=\'var(--accent-border)\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'\';this.style.transform=\'\'">'
+        + '<div class="count-card" style="cursor:pointer;transition:all 0.18s" onmouseover="this.style.borderColor=&#39;var(--accent-border)&#39;;this.style.transform=&#39;translateY(-2px)&#39;" onmouseout="this.style.borderColor=&#39;&#39;;this.style.transform=&#39;&#39;">'
         + '<div class="count-num">' + (d[it.key] || 0) + '</div>'
         + '<div class="count-label">' + it.icon + ' ' + it.label + '</div>'
         + '</div></a>';

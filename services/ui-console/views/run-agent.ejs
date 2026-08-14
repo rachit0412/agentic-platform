@@ -426,7 +426,7 @@
         metaParts.push('\u{1F4CA} ' + usageData.prompt_tokens + ' in / ' + usageData.completion_tokens + ' out (' + usageData.total_tokens + ' total)');
         var cost = estimatedCost != null ? estimatedCost : _estimateCost(usageData, modelInfo);
         if (cost !== null && cost > 0) metaParts.push('\u{1F4B0} ~$' + cost.toFixed(6));
-        else if (cost === 0 || cost === null) metaParts.push('\u{1F4B0} Free (local)');
+        else metaParts.push('\u{1F4B0} $0.000000');
       }
       metaParts.push('Tools: ' + (toolsUsed.join(', ') || 'none'));
       metaParts.push('Request: ' + requestId);
@@ -482,18 +482,39 @@
     if (!usage || !usage.total_tokens) return null;
     const m = (modelStr || '').toLowerCase();
     // Pricing: [input_per_1M, output_per_1M]
-    const pricing = {
-      'gpt-4o': [2.50, 10.00],
-      'gpt-4o-mini': [0.15, 0.60],
-      'gpt-4.1': [2.00, 8.00],
-      'gpt-4.1-mini': [0.40, 1.60],
-      'gpt-4.1-nano': [0.10, 0.40],
-      'gpt-5-nano': [0.10, 0.40],
-      'gpt-5.4-mini': [0.40, 1.60],
-      'gpt-3.5-turbo': [0.50, 1.50],
-    };
+    // Ordered longest-key-first to avoid substring collisions (e.g. gpt-4o vs gpt-4o-mini)
+    const pricing = [
+      ['gpt-4o-mini', [0.15, 0.60]],
+      ['gpt-4o', [2.50, 10.00]],
+      ['gpt-4.1-nano', [0.10, 0.40]],
+      ['gpt-4.1-mini', [0.40, 1.60]],
+      ['gpt-4.1', [2.00, 8.00]],
+      ['gpt-5.4-mini', [0.40, 1.60]],
+      ['gpt-5-nano', [0.10, 0.40]],
+      ['gpt-4-turbo', [10.00, 30.00]],
+      ['gpt-4', [30.00, 60.00]],
+      ['gpt-3.5-turbo', [0.50, 1.50]],
+      ['o4-mini', [1.10, 4.40]],
+      ['o3-mini', [1.10, 4.40]],
+      ['o3', [10.00, 40.00]],
+      ['o1-mini', [3.00, 12.00]],
+      ['o1', [15.00, 60.00]],
+      ['phi-4', [0.07, 0.14]],
+      ['phi-3', [0.05, 0.10]],
+      ['mistral-large', [2.00, 6.00]],
+      ['mistral-medium', [2.70, 8.10]],
+      ['mistral-small', [0.10, 0.30]],
+      ['command-r-plus', [3.00, 15.00]],
+      ['command-r', [0.50, 1.50]],
+      ['jamba-1.5-large', [2.00, 8.00]],
+      ['jamba-1.5-mini', [0.20, 0.40]],
+      ['deepseek-r1', [0.55, 2.19]],
+      ['deepseek-v3', [0.27, 1.10]],
+      ['llama-4-maverick', [0.20, 0.60]],
+      ['llama-4-scout', [0.15, 0.40]],
+    ];
     let rate = null;
-    for (const [key, val] of Object.entries(pricing)) {
+    for (const [key, val] of pricing) {
       if (m.includes(key)) { rate = val; break; }
     }
     if (!rate) return null;
@@ -508,7 +529,7 @@
     card.style.display = 'block';
     var elapsed = backendLatency ? (backendLatency / 1000).toFixed(1) : ((Date.now() - startTime) / 1000).toFixed(1);
     var cost = backendCost != null ? backendCost : _estimateCost(usage, modelStr);
-    var costStr = (cost !== null && cost > 0) ? '$' + cost.toFixed(6) : 'Free (local)';
+    var costStr = (cost !== null && cost > 0) ? '$' + cost.toFixed(6) : '$0.000000';
     var tokensPerSec = usage && usage.completion_tokens && elapsed > 0 ? (usage.completion_tokens / elapsed).toFixed(1) : '-';
 
     function _tile(label, value, color) {

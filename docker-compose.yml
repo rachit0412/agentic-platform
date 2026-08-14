@@ -186,7 +186,7 @@ services:
       - RACHIT_SEED_PASSWORD=${RACHIT_SEED_PASSWORD:-}
     volumes:
       - ./services/agent:/app
-      - ./data:/data
+      - agent-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - ./services/managed-mcp-base:/managed-mcp-base
     depends_on:
@@ -424,6 +424,7 @@ services:
       retries: 3
 
 volumes:
+  agent-data:
   n8n-data:
   ollama-data:
   chroma-data:
