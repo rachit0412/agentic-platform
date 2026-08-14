@@ -2097,9 +2097,15 @@ const externalUrls = {
 };
 
 // Helper: render with user context
+const pkgVersion = require("./package.json").version;
 function renderPage(view) {
   return (req, res) => {
-    res.render(view, { urls: externalUrls, user: req.session.user || {} });
+    res.render(view, {
+      urls: externalUrls,
+      user: req.session.user || {},
+      version: `v${pkgVersion}`,
+      env: process.env.NODE_ENV || "local",
+    });
   };
 }
 

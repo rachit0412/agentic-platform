@@ -87,7 +87,7 @@
       </li>
       <!-- ── Agent Configuration ── -->
       <li class="rail-group">
-        <a href="/agent-hub" class="rail-item <%= ['agent-hub','agents','skills','prompts','tools'].includes(page) ? 'active' : '' %>">
+        <a href="/agent-hub" class="rail-item <%= ['agent-hub','agents','skills','prompts','tools'].includes(page) ? 'active' : '' %>" aria-label="Agent Factory" title="Agent Factory">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
           <span class="rail-tooltip">Agent Factory</span>
         </a>
@@ -150,7 +150,7 @@
       <!-- ── Protocols ── -->
       <li><div class="rail-divider"></div></li>
       <li class="rail-group">
-        <a href="/a2a" class="rail-item <%= ['a2a','mcp','rest'].includes(page) ? 'active' : '' %>">
+        <a href="/a2a" class="rail-item <%= ['a2a','mcp','rest'].includes(page) ? 'active' : '' %>" aria-label="Protocols" title="Protocols">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M12 17v5"/><path d="M5 8h14a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="7.5" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16.5" cy="11" r="1"/></svg>
           <span class="rail-tooltip">Protocols</span>
         </a>
@@ -173,7 +173,7 @@
       <!-- ── Monitoring ── -->
       <li><div class="rail-divider"></div></li>
       <li class="rail-group">
-        <a href="/intelligence-hub" class="rail-item <%= ['intelligence-hub','traceability','evaluation','observability','llm-activity'].includes(page) ? 'active' : '' %>">
+        <a href="/intelligence-hub" class="rail-item <%= ['intelligence-hub','traceability','evaluation','observability','llm-activity'].includes(page) ? 'active' : '' %>" aria-label="Intelligence Hub" title="Intelligence Hub">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span class="rail-tooltip">Intelligence Hub</span>
         </a>
@@ -225,7 +225,7 @@
       </a>
       <% if (typeof user !== 'undefined' && user.role === 'admin') { %>
       <div class="rail-group rail-admin-group">
-        <a href="/admin" class="rail-item <%= page === 'admin' ? 'active' : '' %>">
+        <a href="/admin" class="rail-item <%= page === 'admin' ? 'active' : '' %>" aria-label="Admin Plane" title="Admin Plane">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span class="rail-tooltip">Admin Plane</span>
         </a>
@@ -307,14 +307,14 @@
         <span class="topbar-page"><%= title %></span>
       </div>
       <div class="topbar-right">
-        <span class="badge badge-info" style="font-size:0.62rem;padding:2px 8px">local</span>
+        <span class="badge badge-info" style="font-size:0.62rem;padding:2px 8px"><%= typeof env !== 'undefined' && env || 'local' %></span>
         <div class="topbar-divider"></div>
         <div class="topbar-status">
           <span class="pulse-dot-emerald" id="topbar-health-dot"></span>
-          <span class="topbar-status-text" id="topbar-health-text">Connecting...</span>
+          <span class="topbar-status-text" id="topbar-health-text">Checking...</span>
         </div>
         <div class="topbar-divider"></div>
-        <span class="topbar-version">v2.1.0</span>
+        <span class="topbar-version"><%= typeof version !== 'undefined' && version || 'v2.1.0' %></span>
         <div class="topbar-divider"></div>
         <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
           <svg id="theme-icon-sun" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;flex-shrink:0"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -624,21 +624,27 @@
     }
 
     // ── Topbar Health Indicator ──
-    fetch('/api/health-check').then(r=>r.json()).then(d=>{
-      const allHealthy = d.services.every(s => s.status === 'healthy');
-      const dot = document.getElementById('topbar-health-dot');
-      const text = document.getElementById('topbar-health-text');
-      if (allHealthy) {
-        dot.className = 'pulse-dot-emerald';
-        text.textContent = 'All Systems Healthy';
-      } else {
-        dot.className = 'pulse-dot-rose';
-        text.textContent = d.services.filter(s=>s.status!=='healthy').length + ' service(s) down';
-      }
-    }).catch(()=>{
-      document.getElementById('topbar-health-dot').className = 'pulse-dot-rose';
-      document.getElementById('topbar-health-text').textContent = 'Disconnected';
-    });
+    (function checkHealth(retries) {
+      fetch('/api/health-check').then(r=>r.json()).then(d=>{
+        const allHealthy = d.services.every(s => s.status === 'healthy');
+        const dot = document.getElementById('topbar-health-dot');
+        const text = document.getElementById('topbar-health-text');
+        if (allHealthy) {
+          dot.className = 'pulse-dot-emerald';
+          text.textContent = 'All Systems Healthy';
+        } else {
+          dot.className = 'pulse-dot-rose';
+          text.textContent = d.services.filter(s=>s.status!=='healthy').length + ' service(s) down';
+        }
+      }).catch(()=>{
+        if (retries > 0) {
+          setTimeout(() => checkHealth(retries - 1), 3000);
+        } else {
+          document.getElementById('topbar-health-dot').className = 'pulse-dot-rose';
+          document.getElementById('topbar-health-text').textContent = 'Disconnected';
+        }
+      });
+    })(3);
 
     // ── Toast Notifications ──
     function showToast(message, type = 'info', duration = 3500) {

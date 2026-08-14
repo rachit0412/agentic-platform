@@ -340,7 +340,7 @@ html:not(.dark) .sidebar-expanded .rail-logo:hover > .rail-tooltip {
 
 /* ─── Rail Group Flyout ─── */
 .rail-group { position: relative; }
-.rail-group > .rail-item > .rail-tooltip { display: none; }
+.rail-group:hover > .rail-item > .rail-tooltip { opacity: 0; pointer-events: none; }
 .rail-submenu {
   position: absolute;
   left: calc(100% + 8px);
@@ -401,8 +401,9 @@ html:not(.dark) .sidebar-expanded .rail-logo:hover > .rail-tooltip {
 
 html:not(.dark) .rail-submenu,
 html:not(.dark) .rail-profile-group .rail-profile-menu {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-  border-color: rgba(255,255,255,0.16);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.88));
+  border-color: rgba(15,23,42,0.12);
+  box-shadow: 0 4px 16px rgba(15,23,42,0.1), 0 1px 3px rgba(15,23,42,0.06);
 }
 
 /* ─── Rail Bottom ─── */
@@ -433,7 +434,7 @@ html:not(.dark) .rail-profile-group .rail-profile-menu {
   padding: 6px 10px;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: var(--text-2);
   font-size: 0.72rem;
   font-weight: 500;
   border-radius: 8px;
@@ -442,24 +443,24 @@ html:not(.dark) .rail-profile-group .rail-profile-menu {
   text-align: left;
 }
 .persona-chip:hover {
-  background: rgba(255,255,255,0.06);
-  color: #e2e8f0;
+  background: var(--rail-hover-bg);
+  color: var(--text-1);
 }
 .persona-chip-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #475569;
+  background: var(--text-3);
   flex-shrink: 0;
   transition: all 0.15s ease;
 }
 .persona-active .persona-chip-dot {
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
 }
 .persona-active {
-  background: rgba(16,185,129,0.08);
-  color: #e2e8f0;
+  background: var(--success-bg);
+  color: var(--text-1);
   font-weight: 600;
 }
 .persona-chip-name {
@@ -468,27 +469,13 @@ html:not(.dark) .rail-profile-group .rail-profile-menu {
 }
 .rail-divider {
   height: 1px;
-  background: rgba(255,255,255,0.06);
+  background: var(--divider);
   margin: 0.2rem 0.85rem;
 }
 
 /* ─── Persona Switcher — Light Mode Overrides ─── */
 html:not(.dark) .persona-switcher-section {
   border-bottom-color: var(--glass-border);
-}
-html:not(.dark) .rail-divider {
-  background: var(--glass-border);
-}
-html:not(.dark) .persona-chip {
-  color: var(--text-2);
-}
-html:not(.dark) .persona-chip:hover {
-  background: rgba(0,0,0,0.05);
-  color: var(--text-1);
-}
-html:not(.dark) .persona-active {
-  background: rgba(16,185,129,0.1);
-  color: var(--text-1);
 }
 
 /* ─── Theme Toggle ─── */
@@ -498,9 +485,9 @@ html:not(.dark) .persona-active {
   gap: 8px;
   padding: 6px 16px;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text-primary);
+  border: 1px solid var(--border-base);
+  background: var(--glass-bg);
+  color: var(--text-1);
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
@@ -510,7 +497,7 @@ html:not(.dark) .persona-active {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .theme-toggle:hover {
-  background: var(--hover);
+  background: var(--glass-hover-bg);
   border-color: var(--accent);
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
@@ -1010,7 +997,7 @@ iframe { border: none; border-radius: 12px; width: 100%; background: var(--glass
 .rail-divider {
   width: 24px; height: 1px;
   background: var(--divider);
-  margin: 4px 0;
+  margin: 6px auto;
 }
 
 /* ─── Mobile Hamburger ─── */
@@ -1354,9 +1341,9 @@ iframe { border: none; border-radius: 12px; width: 100%; background: var(--glass
     padding: 1rem 0.75rem;
   }
   .icon-rail.mobile-open { left: 0; }
-  .icon-rail .nav-item { width: 100%; justify-content: flex-start; gap: 0.75rem; padding: 0.6rem 0.75rem; }
-  .icon-rail .tooltip { position: static; visibility: visible; opacity: 1; pointer-events: auto; transform: none; background: none; padding: 0; border: none; box-shadow: none; font-size: 0.82rem; color: var(--text-2); }
-  .icon-rail .nav-group-header { padding: 0.4rem 0.75rem; }
+  .icon-rail .rail-item { width: 100%; justify-content: flex-start; gap: 0.75rem; padding: 0.6rem 0.75rem; }
+  .icon-rail .rail-tooltip { position: static; visibility: visible; opacity: 1; pointer-events: auto; transform: none; background: none; padding: 0; border: none; box-shadow: none; font-size: 0.82rem; color: var(--text-2); }
+  .icon-rail .rail-group { padding: 0.4rem 0.75rem; }
   .main-wrapper { margin-left: 0; }
   .content-container { padding: 1rem 0.75rem; max-width: 100%; }
   .topbar { padding: 0 0.75rem; }
