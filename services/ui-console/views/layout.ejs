@@ -277,7 +277,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Change Password
           </a>
-          <a href="/auth/logout" class="rail-profile-logout">
+          <a href="javascript:void(0)" onclick="performSignOut()" class="rail-profile-logout">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
           </a>
@@ -700,6 +700,60 @@
       document.removeEventListener('keydown', _modalEscHandler);
     }
     function _modalEscHandler(e) { if (e.key === 'Escape') closeDetailModal(); }
+
+    // ── Sign-Out Animation ──
+    function performSignOut() {
+      const overlay = document.createElement('div');
+      overlay.id = 'signout-overlay';
+      overlay.innerHTML = `
+        <div class="signout-content">
+          <div class="signout-icon">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </div>
+          <div class="signout-title">Signing Out</div>
+          <div class="signout-steps">
+            <div class="signout-step" id="so-step-1"><span class="signout-dot"></span>Clearing session data</div>
+            <div class="signout-step" id="so-step-2"><span class="signout-dot"></span>Revoking tokens</div>
+            <div class="signout-step" id="so-step-3"><span class="signout-dot"></span>Disconnecting services</div>
+          </div>
+          <div class="signout-bar-track"><div class="signout-bar-fill" id="so-bar"></div></div>
+          <div class="signout-status" id="so-status">Initializing...</div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('active'));
+
+      const steps = [
+        { id: 'so-step-1', text: 'Clearing session data...', pct: 30 },
+        { id: 'so-step-2', text: 'Revoking tokens...', pct: 65 },
+        { id: 'so-step-3', text: 'Disconnecting services...', pct: 100 },
+      ];
+      const bar = document.getElementById('so-bar');
+      const status = document.getElementById('so-status');
+      let i = 0;
+
+      function nextStep() {
+        if (i < steps.length) {
+          const s = steps[i];
+          document.getElementById(s.id).classList.add('done');
+          bar.style.width = s.pct + '%';
+          status.textContent = s.text;
+          i++;
+          setTimeout(nextStep, 500 + Math.random() * 300);
+        } else {
+          status.textContent = 'Session terminated. Redirecting...';
+          fetch('/auth/logout', { method: 'POST' })
+            .finally(() => {
+              setTimeout(() => { window.location.href = '/login'; }, 600);
+            });
+        }
+      }
+      setTimeout(nextStep, 400);
+    }
   </script>
 
   <!-- ── Test Agent Chat Panel ── -->

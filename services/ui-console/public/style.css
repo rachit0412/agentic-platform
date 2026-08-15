@@ -420,6 +420,121 @@ html:not(.dark) .rail-profile-group .rail-profile-menu {
 }
 .rail-profile-logout:hover { color: #f87171 !important; background: rgba(239,68,68,0.08) !important; }
 
+/* ─── Sign-Out Overlay ─── */
+#signout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: background 0.5s ease, backdrop-filter 0.5s ease, -webkit-backdrop-filter 0.5s ease;
+}
+#signout-overlay.active {
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+html:not(.dark) #signout-overlay.active {
+  background: rgba(15, 23, 42, 0.7);
+}
+.signout-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2.5rem 3rem;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+html:not(.dark) .signout-content {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 25px 80px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+#signout-overlay.active .signout-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+.signout-icon {
+  color: var(--accent);
+  animation: signout-pulse 1.5s ease-in-out infinite;
+}
+@keyframes signout-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+.signout-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+.signout-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 240px;
+}
+.signout-step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-3);
+  transition: color 0.3s ease;
+}
+.signout-step.done {
+  color: var(--success);
+}
+.signout-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-3);
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.signout-step.done .signout-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+.signout-bar-track {
+  width: 100%;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+html:not(.dark) .signout-bar-track {
+  background: rgba(15, 23, 42, 0.08);
+}
+.signout-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.signout-status {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
 /* ─── Persona Switcher ─── */
 .persona-switcher-section {
   border-bottom: 1px solid rgba(255,255,255,0.06);
