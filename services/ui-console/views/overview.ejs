@@ -1,11 +1,60 @@
 <%- include('layout', { title: 'Overview', page: 'overview', body: `
 
-<h1 class="text-glow-cyan" style="font-size:1.75rem;margin-bottom:0.25rem">Agentic Platform</h1>
-<p style="color:var(--text-3);margin-bottom:1.75rem;font-size:0.92rem;max-width:640px">An <strong style="color:var(--text-1)">agent factory</strong> — build, register, and run hundreds of autonomous AI agents, each with its own model, tools, memory, and control logic.</p>
+<!-- Hero Banner -->
+<style>
+  .overview-hero { position:relative; border-radius:20px; padding:2.25rem 2rem; margin-bottom:1.75rem; overflow:hidden; backdrop-filter:blur(20px); }
+  .hero-orb { position:absolute; border-radius:50%; filter:blur(60px); pointer-events:none; z-index:0; }
+  .hero-orb-1 { width:200px; height:200px; background:rgba(139,92,246,0.12); top:-50px; right:10%; animation:heroFloat 8s ease-in-out infinite; }
+  .hero-orb-2 { width:150px; height:150px; background:rgba(6,182,212,0.1); bottom:-40px; left:15%; animation:heroFloat 10s ease-in-out infinite reverse; }
+  .hero-orb-3 { width:100px; height:100px; background:rgba(16,185,129,0.08); top:30%; right:30%; animation:heroFloat 12s ease-in-out infinite; animation-delay:-4s; }
+  @keyframes heroFloat { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-18px) scale(1.06); } }
+  .hero-cta { display:inline-flex; align-items:center; gap:0.4rem; padding:0.5rem 1.1rem; border-radius:10px; font-size:0.8rem; font-weight:600; text-decoration:none; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); cursor:pointer; }
+  .hero-cta-primary { background:linear-gradient(135deg,#8b5cf6,#06b6d4); color:#fff; box-shadow:0 4px 16px rgba(139,92,246,0.25); border:none; }
+  .hero-cta-primary:hover { box-shadow:0 8px 28px rgba(139,92,246,0.35); transform:translateY(-2px); }
+  .hero-cta-outline { background:transparent; border:1px solid var(--glass-border); color:var(--text-1); backdrop-filter:blur(8px); }
+  .hero-cta-outline:hover { border-color:rgba(139,92,246,0.35); background:rgba(139,92,246,0.05); transform:translateY(-1px); }
+  .overview-stats .stat-card:nth-child(1) { border-top:2.5px solid rgba(139,92,246,0.5); }
+  .overview-stats .stat-card:nth-child(2) { border-top:2.5px solid rgba(245,158,11,0.5); }
+  .overview-stats .stat-card:nth-child(3) { border-top:2.5px solid rgba(139,92,246,0.5); }
+  .overview-stats .stat-card:nth-child(4) { border-top:2.5px solid rgba(6,182,212,0.5); }
+  .overview-stats .stat-card:nth-child(5) { border-top:2.5px solid rgba(139,92,246,0.5); }
+  .overview-stats .stat-card:nth-child(6) { border-top:2.5px solid rgba(16,185,129,0.5); }
+  .overview-stats .stat-card:nth-child(7) { border-top:2.5px solid rgba(16,185,129,0.5); }
+</style>
+
+<div class="overview-hero animate-fade-up" style="background:linear-gradient(135deg, rgba(139,92,246,0.05), rgba(6,182,212,0.035), rgba(16,185,129,0.025));border:1px solid var(--glass-border)">
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-orb hero-orb-3"></div>
+  <div style="position:relative;z-index:2">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(139,92,246,0.3)">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+      </div>
+      <span style="font-size:0.68rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:20px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:#8b5cf6;letter-spacing:0.04em">ENTERPRISE AI</span>
+    </div>
+    <h1 class="animate-fade-up" style="font-size:2.1rem;font-weight:800;margin-bottom:0.4rem;line-height:1.15;letter-spacing:-0.025em;background:linear-gradient(135deg,var(--text-1) 30%,#8b5cf6 65%,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Agentic Platform</h1>
+    <p class="animate-fade-up delay-100" style="color:var(--text-2);font-size:0.92rem;line-height:1.6;margin-bottom:1.25rem;max-width:600px">An <strong style="color:var(--text-1)">agent factory</strong> — build, register, and run hundreds of autonomous AI agents, each with its own model, tools, memory, and control logic.</p>
+    <div class="animate-fade-up delay-200" style="display:flex;gap:0.6rem;flex-wrap:wrap">
+      <a href="/run-agent" class="hero-cta hero-cta-primary">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run Agent
+      </a>
+      <a href="/agent-builder" class="hero-cta hero-cta-outline">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Build Agent
+      </a>
+      <a href="/docs" class="hero-cta hero-cta-outline">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Docs
+      </a>
+    </div>
+  </div>
+</div>
 
 
 <!-- Stats Row -->
-<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:0.75rem;margin-bottom:1.5rem">
+<div class="overview-stats" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:0.65rem;margin-bottom:1.75rem">
   <a href="/agents" class="stat-card animate-fade-up" style="text-decoration:none;color:inherit;cursor:pointer">
     <div class="stat-icon stat-icon-violet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
@@ -637,25 +686,91 @@
 
 <!-- What is an Agent? -->
 <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem;border:1px solid rgba(124,58,237,0.12)">
-  <h3 style="margin-bottom:0.25rem">What is an Agent?</h3>
-  <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1rem">An agent is <strong style="color:var(--text-1)">not</strong> a model. It is <strong style="color:#8b5cf6">LLM + Tools + Memory + Control Logic + Context</strong> wrapped into a loop that keeps working until the task is done or it hits a stop condition.</p>
+  <h3 style="margin-bottom:0.75rem">What is an Agent?</h3>
 
-  <!-- Agent formula -->
-  <div style="background:linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.06));border:1px solid rgba(139,92,246,0.2);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;text-align:center">
-    <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.02em;color:var(--text-1);margin-bottom:0.5rem">
-      Agent&nbsp; =&nbsp; <span style="color:#8b5cf6">LLM</span>&nbsp; +&nbsp; <span style="color:#06b6d4">Tools</span>&nbsp; +&nbsp; <span style="color:#f43f5e">Memory</span>&nbsp; +&nbsp; <span style="color:#f59e0b">Control Logic</span>&nbsp; +&nbsp; <span style="color:#10b981">Context</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:stretch">
+    <!-- Left: Formula breakdown -->
+    <div style="background:linear-gradient(135deg, rgba(139,92,246,0.06), rgba(6,182,212,0.04));border:1px solid rgba(139,92,246,0.15);border-radius:14px;padding:1.25rem">
+      <p style="color:var(--text-3);font-size:0.78rem;margin-bottom:0.85rem;line-height:1.5">An agent is <strong style="color:var(--text-1)">not</strong> a model. It is a composition of capabilities wrapped into an autonomous loop.</p>
+      <div style="display:flex;flex-direction:column;gap:0.4rem">
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4"/></svg>
+          </div>
+          <span style="font-size:0.78rem;font-weight:600;color:#8b5cf6">LLM</span>
+          <span style="font-size:0.72rem;color:var(--text-3)">reasoning engine</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <span style="font-size:0.78rem;font-weight:600;color:#06b6d4">Tools</span>
+          <span style="font-size:0.72rem;color:var(--text-3)">actions in the world</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(244,63,94,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f43f5e" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <span style="font-size:0.78rem;font-weight:600;color:#f43f5e">Memory</span>
+          <span style="font-size:0.72rem;color:var(--text-3)">short &amp; long-term</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <span style="font-size:0.78rem;font-weight:600;color:#f59e0b">Control Logic</span>
+          <span style="font-size:0.72rem;color:var(--text-3)">ReAct / planning</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <span style="font-size:0.78rem;font-weight:600;color:#10b981">Context</span>
+          <span style="font-size:0.72rem;color:var(--text-3)">RAG / knowledge base</span>
+        </div>
+      </div>
     </div>
-    <div style="display:flex;justify-content:center;gap:0.35rem;align-items:center;margin-bottom:0.6rem">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-    </div>
-    <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap">
-      <span style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#8b5cf6;font-weight:600">Observe</span>
-      <span style="color:var(--text-3);font-size:0.78rem;display:flex;align-items:center">→</span>
-      <span style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#06b6d4;font-weight:600">Reason</span>
-      <span style="color:var(--text-3);font-size:0.78rem;display:flex;align-items:center">→</span>
-      <span style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#f59e0b;font-weight:600">Act</span>
-      <span style="color:var(--text-3);font-size:0.78rem;display:flex;align-items:center">→</span>
-      <span style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);padding:0.3rem 0.8rem;border-radius:20px;font-size:0.78rem;color:#10b981;font-weight:600">Repeat until done</span>
+
+    <!-- Right: ReAct cycle visual -->
+    <div style="background:linear-gradient(135deg, rgba(6,182,212,0.06), rgba(16,185,129,0.04));border:1px solid rgba(6,182,212,0.15);border-radius:14px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <div style="font-size:0.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem">ReAct Loop</div>
+      <div style="position:relative;width:180px;height:180px">
+        <svg viewBox="0 0 180 180" width="180" height="180" style="position:absolute;inset:0">
+          <circle cx="90" cy="90" r="70" fill="none" stroke="var(--glass-border)" stroke-width="2" stroke-dasharray="8 4" opacity="0.5"/>
+          <path d="M90 20 A70 70 0 0 1 160 90" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+          <path d="M160 90 A70 70 0 0 1 90 160" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+          <path d="M90 160 A70 70 0 0 1 20 90" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+          <path d="M20 90 A70 70 0 0 1 90 20" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+        </svg>
+        <div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);text-align:center">
+          <div style="width:32px;height:32px;margin:0 auto;border-radius:8px;background:rgba(139,92,246,0.12);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <span style="font-size:0.65rem;font-weight:600;color:#8b5cf6;margin-top:2px;display:block">Observe</span>
+        </div>
+        <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);text-align:center">
+          <div style="width:32px;height:32px;margin:0 auto;border-radius:8px;background:rgba(6,182,212,0.12);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M12 2a9 9 0 0 1 9 9"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <span style="font-size:0.65rem;font-weight:600;color:#06b6d4;margin-top:2px;display:block">Reason</span>
+        </div>
+        <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center">
+          <div style="width:32px;height:32px;margin:0 auto;border-radius:8px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <span style="font-size:0.65rem;font-weight:600;color:#f59e0b;margin-top:2px;display:block">Act</span>
+        </div>
+        <div style="position:absolute;left:0;top:50%;transform:translateY(-50%);text-align:center">
+          <div style="width:32px;height:32px;margin:0 auto;border-radius:8px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </div>
+          <span style="font-size:0.65rem;font-weight:600;color:#10b981;margin-top:2px;display:block">Repeat</span>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text-1)">Agent</div>
+          <div style="font-size:0.58rem;color:var(--text-3)">autonomous</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
