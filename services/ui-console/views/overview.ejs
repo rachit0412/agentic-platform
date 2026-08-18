@@ -297,69 +297,71 @@
   <p style="color:var(--text-3);font-size:0.82rem;margin-bottom:1.25rem">16 containerized services across 5 layers on <code style="font-size:0.75rem">platform-net</code> — hover any node for details, watch the data flow animate.</p>
 
   <style>
-    .topo-canvas { position:relative; min-height:540px; overflow:hidden; border-radius:14px; background:linear-gradient(180deg, rgba(139,92,246,0.02), rgba(6,182,212,0.02), rgba(16,185,129,0.02)); border:1px solid var(--glass-border); padding:1rem 1.5rem; }
-    .topo-node { position:absolute; border-radius:12px; padding:0.5rem 0.7rem; cursor:pointer; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); z-index:2; min-width:105px; text-align:center; backdrop-filter:blur(8px); }
-    .topo-node:hover { transform:translateY(-3px) scale(1.04); z-index:10; box-shadow:0 8px 32px rgba(0,0,0,0.15); }
-    .topo-node .tn-name { font-size:0.75rem; font-weight:700; display:block; margin-bottom:0.1rem; }
-    .topo-node .tn-tech { font-size:0.6rem; color:var(--text-3); display:block; }
-    .topo-node .tn-port { font-size:0.56rem; font-weight:600; opacity:0.7; display:block; margin-top:0.1rem; }
-    .topo-node .tn-pulse { position:absolute; top:0.4rem; right:0.4rem; width:6px; height:6px; border-radius:50%; }
-    .topo-node .tn-pulse::after { content:''; position:absolute; inset:-3px; border-radius:50%; animation:topoPulse 2s ease-in-out infinite; }
-    .topo-node .tn-pulse.live { background:#10b981; }
-    .topo-node .tn-pulse.live::after { border:1.5px solid rgba(16,185,129,0.4); }
-    @keyframes topoPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.8);opacity:0} }
+    .topo-canvas { position:relative; min-height:680px; overflow:hidden; border-radius:16px; background: radial-gradient(ellipse at 50% 30%, rgba(139,92,246,0.04) 0%, transparent 60%), radial-gradient(circle, rgba(99,102,241,0.04) 1px, transparent 1px), linear-gradient(180deg, rgba(139,92,246,0.015), rgba(6,182,212,0.015), rgba(16,185,129,0.015)); background-size: 100% 100%, 24px 24px, 100% 100%; border:1px solid var(--glass-border); padding:1rem 1.5rem; }
+    .topo-node { position:absolute; border-radius:14px; padding:0.55rem 0.8rem; cursor:pointer; transition:all 0.3s cubic-bezier(0.4,0,0.2,1); z-index:2; min-width:110px; text-align:center; backdrop-filter:blur(12px) saturate(1.2); }
+    .topo-node:hover { transform:translateY(-4px) scale(1.06); z-index:10; box-shadow:0 12px 40px rgba(0,0,0,0.12), 0 0 20px var(--topo-glow, rgba(99,102,241,0.15)); }
+    .topo-node .tn-name { font-size:0.76rem; font-weight:700; display:block; margin-bottom:0.12rem; }
+    .topo-node .tn-tech { font-size:0.62rem; color:var(--text-3); display:block; line-height:1.4; }
+    .topo-node .tn-port { font-size:0.58rem; font-weight:600; opacity:0.65; display:block; margin-top:0.15rem; font-family:'JetBrains Mono', monospace; letter-spacing:0.02em; }
+    .topo-node .tn-pulse { position:absolute; top:0.45rem; right:0.45rem; width:7px; height:7px; border-radius:50%; }
+    .topo-node .tn-pulse::after { content:''; position:absolute; inset:-3px; border-radius:50%; animation:topoPulse 2.5s ease-in-out infinite; }
+    .topo-node .tn-pulse.live { background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.4); }
+    .topo-node .tn-pulse.live::after { border:1.5px solid rgba(16,185,129,0.35); }
+    @keyframes topoPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(2);opacity:0} }
+    .topo-node--hero { padding:0.65rem 1.1rem; border-width:2px !important; box-shadow:0 4px 20px rgba(0,0,0,0.06); }
+    .topo-node--hero .tn-name { font-size:0.84rem; }
 
-    .topo-tooltip { position:fixed; z-index:9999; background:var(--bg); border:1px solid var(--glass-border); border-radius:12px; padding:0.85rem 1rem; max-width:260px; box-shadow:0 12px 40px rgba(0,0,0,0.25); backdrop-filter:blur(16px); pointer-events:none; opacity:0; transform:translateY(6px); transition:all 0.2s ease; }
-    .topo-tooltip.active { opacity:1; transform:translateY(0); }
-    .topo-tooltip .tt-title { font-size:0.82rem; font-weight:700; color:var(--text-1); margin-bottom:0.2rem; }
-    .topo-tooltip .tt-desc { font-size:0.72rem; color:var(--text-2); line-height:1.5; margin-bottom:0.25rem; }
-    .topo-tooltip .tt-meta { font-size:0.65rem; color:var(--text-3); }
+    .topo-tooltip { position:fixed; z-index:9999; background:var(--bg); border:1px solid var(--glass-border); border-radius:14px; padding:0.9rem 1.1rem; max-width:280px; box-shadow:0 16px 48px rgba(0,0,0,0.2); backdrop-filter:blur(20px); pointer-events:none; opacity:0; transform:translateY(8px) scale(0.97); transition:all 0.25s cubic-bezier(0.4,0,0.2,1); }
+    .topo-tooltip.active { opacity:1; transform:translateY(0) scale(1); }
+    .topo-tooltip .tt-title { font-size:0.85rem; font-weight:700; color:var(--text-1); margin-bottom:0.25rem; }
+    .topo-tooltip .tt-desc { font-size:0.74rem; color:var(--text-2); line-height:1.55; margin-bottom:0.3rem; }
+    .topo-tooltip .tt-meta { font-size:0.66rem; color:var(--text-3); font-family:'JetBrains Mono', monospace; }
 
     /* Connection lines via SVG overlay */
     .topo-svg { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
-    .topo-line { stroke-width:1.5; fill:none; }
-    .topo-line-bg { stroke:var(--glass-border); stroke-width:2; fill:none; }
+    .topo-line { stroke-width:1.8; fill:none; stroke-linecap:round; }
+    .topo-line-bg { stroke:var(--glass-border); stroke-width:2.5; fill:none; stroke-linecap:round; opacity:0.6; }
     @keyframes topoFlowDash { to { stroke-dashoffset:-40; } }
     .topo-flow { stroke-dasharray:8 6; animation:topoFlowDash 1.5s linear infinite; }
-    .topo-flow-slow { stroke-dasharray:4 8; animation:topoFlowDash 3s linear infinite; }
+    .topo-flow-slow { stroke-dasharray:5 8; animation:topoFlowDash 2.5s linear infinite; }
     .topo-flow.paused, .topo-flow-slow.paused { animation-play-state:paused; }
 
     /* Horizontal layer bands */
-    .topo-band { position:absolute; left:0; right:0; z-index:0; border-bottom:1px dashed; display:flex; align-items:flex-start; }
-    .topo-band-label { position:absolute; left:0.75rem; font-size:0.58rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; z-index:1; }
+    .topo-band { position:absolute; left:0; right:0; z-index:0; border-bottom:1px dashed; }
+    .topo-band-label { position:absolute; left:1.1rem; top:7px; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; z-index:1; }
   </style>
 
   <div class="topo-canvas" id="topoCanvas">
     <!-- ═══ 5 HORIZONTAL LAYER BANDS ═══ -->
-    <div class="topo-band" style="top:0;height:90px;background:rgba(139,92,246,0.03);border-color:rgba(139,92,246,0.12);border-radius:14px 14px 0 0">
-      <span class="topo-band-label" style="top:4px;color:rgba(139,92,246,0.5)">PRESENTATION</span>
+    <div class="topo-band" style="top:0;height:105px;background:rgba(139,92,246,0.035);border-color:rgba(139,92,246,0.15);border-left:3px solid rgba(139,92,246,0.4);border-radius:16px 16px 0 0">
+      <span class="topo-band-label" style="color:rgba(139,92,246,0.55)">PRESENTATION</span>
     </div>
-    <div class="topo-band" style="top:90px;height:100px;background:rgba(6,182,212,0.03);border-color:rgba(6,182,212,0.12)">
-      <span class="topo-band-label" style="top:4px;color:rgba(6,182,212,0.5)">APPLICATION</span>
+    <div class="topo-band" style="top:105px;height:120px;background:rgba(6,182,212,0.035);border-color:rgba(6,182,212,0.15);border-left:3px solid rgba(6,182,212,0.4)">
+      <span class="topo-band-label" style="color:rgba(6,182,212,0.55)">APPLICATION</span>
     </div>
-    <div class="topo-band" style="top:190px;height:90px;background:rgba(245,158,11,0.03);border-color:rgba(245,158,11,0.12)">
-      <span class="topo-band-label" style="top:4px;color:rgba(245,158,11,0.5)">INTELLIGENCE</span>
+    <div class="topo-band" style="top:225px;height:135px;background:rgba(245,158,11,0.035);border-color:rgba(245,158,11,0.15);border-left:3px solid rgba(245,158,11,0.4)">
+      <span class="topo-band-label" style="color:rgba(245,158,11,0.55)">INTELLIGENCE</span>
     </div>
-    <div class="topo-band" style="top:280px;height:90px;background:rgba(16,185,129,0.03);border-color:rgba(16,185,129,0.12)">
-      <span class="topo-band-label" style="top:4px;color:rgba(16,185,129,0.5)">DATA</span>
+    <div class="topo-band" style="top:360px;height:100px;background:rgba(16,185,129,0.035);border-color:rgba(16,185,129,0.15);border-left:3px solid rgba(16,185,129,0.4)">
+      <span class="topo-band-label" style="color:rgba(16,185,129,0.55)">DATA</span>
     </div>
-    <div class="topo-band" style="top:370px;height:calc(100% - 370px);background:rgba(99,102,241,0.03);border-color:transparent;border-radius:0 0 14px 14px">
-      <span class="topo-band-label" style="top:4px;color:rgba(99,102,241,0.5)">OBSERVABILITY</span>
+    <div class="topo-band" style="top:460px;height:calc(100% - 460px);background:rgba(99,102,241,0.035);border-color:transparent;border-left:3px solid rgba(99,102,241,0.4);border-radius:0 0 16px 16px">
+      <span class="topo-band-label" style="color:rgba(99,102,241,0.55)">OBSERVABILITY</span>
     </div>
 
     <!-- ═══ LAYER 1: PRESENTATION ═══ -->
-    <div class="topo-node" style="left:100px;top:20px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3)" data-tip="user">
+    <div class="topo-node" style="left:80px;top:28px;background:rgba(139,92,246,0.08);border:1.5px solid rgba(139,92,246,0.3);--topo-glow:rgba(139,92,246,0.2)" data-tip="user">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#8b5cf6">User</span>
       <span class="tn-tech">Browser / API</span>
     </div>
-    <div class="topo-node" style="left:280px;top:18px;min-width:130px;background:rgba(6,182,212,0.08);border:2px solid rgba(6,182,212,0.35)" data-tip="ui">
+    <div class="topo-node topo-node--hero" style="left:290px;top:24px;min-width:140px;background:rgba(6,182,212,0.08);border:2px solid rgba(6,182,212,0.35);--topo-glow:rgba(6,182,212,0.2)" data-tip="ui">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#06b6d4">UI Console</span>
       <span class="tn-tech">Express + EJS</span>
       <span class="tn-port">:3000</span>
     </div>
-    <div class="topo-node" style="right:80px;top:20px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8nproxy">
+    <div class="topo-node" style="right:80px;top:28px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3);--topo-glow:rgba(245,158,11,0.2)" data-tip="n8nproxy">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f59e0b">n8n Proxy</span>
       <span class="tn-tech">Nginx</span>
@@ -367,19 +369,19 @@
     </div>
 
     <!-- ═══ LAYER 2: APPLICATION ═══ -->
-    <div class="topo-node" style="left:100px;top:108px;min-width:210px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.4);padding:0.6rem 1rem" data-tip="agent">
+    <div class="topo-node topo-node--hero" style="left:80px;top:133px;min-width:220px;background:rgba(139,92,246,0.1);border:2px solid rgba(139,92,246,0.4);--topo-glow:rgba(139,92,246,0.25)" data-tip="agent">
       <span class="tn-pulse live"></span>
-      <span class="tn-name" style="color:#8b5cf6;font-size:0.82rem">Agent Service</span>
+      <span class="tn-name" style="color:#8b5cf6">Agent Service</span>
       <span class="tn-tech">FastAPI + LangGraph ReAct</span>
       <span class="tn-port">:8010</span>
     </div>
-    <div class="topo-node" style="left:370px;top:110px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="tools">
+    <div class="topo-node" style="left:380px;top:135px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3);--topo-glow:rgba(6,182,212,0.2)" data-tip="tools">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#06b6d4">Tools Service</span>
       <span class="tn-tech">FastAPI Sandbox</span>
       <span class="tn-port">:8011</span>
     </div>
-    <div class="topo-node" style="right:80px;top:110px;min-width:120px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="n8n">
+    <div class="topo-node" style="right:80px;top:135px;min-width:125px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3);--topo-glow:rgba(245,158,11,0.2)" data-tip="n8n">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f59e0b">n8n</span>
       <span class="tn-tech">Workflow Engine</span>
@@ -387,25 +389,25 @@
     </div>
 
     <!-- ═══ LAYER 3: INTELLIGENCE ═══ -->
-    <div class="topo-node" style="left:120px;top:208px;min-width:130px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3)" data-tip="ollama">
+    <div class="topo-node" style="left:50px;top:258px;min-width:130px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.3);--topo-glow:rgba(245,158,11,0.2)" data-tip="ollama">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f59e0b">Ollama</span>
       <span class="tn-tech">Local LLM Runtime</span>
       <span class="tn-port">:11436</span>
     </div>
-    <div class="topo-node" style="left:330px;top:208px;min-width:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3)" data-tip="chroma">
+    <div class="topo-node" style="left:255px;top:258px;min-width:130px;background:rgba(6,182,212,0.08);border:1.5px solid rgba(6,182,212,0.3);--topo-glow:rgba(6,182,212,0.2)" data-tip="chroma">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#06b6d4">ChromaDB</span>
       <span class="tn-tech">Vector Store (RAG)</span>
       <span class="tn-port">:8200</span>
     </div>
-    <div class="topo-node" style="right:80px;top:200px;min-width:120px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="openmcp">
+    <div class="topo-node" style="left:460px;top:252px;min-width:130px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);--topo-glow:rgba(16,185,129,0.2)" data-tip="openmcp">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#10b981">Open Tools MCP</span>
       <span class="tn-tech">Wiki / Weather / Dict</span>
       <span class="tn-port">:8080</span>
     </div>
-    <div class="topo-node" style="right:80px;top:240px;min-width:120px;background:rgba(245,158,11,0.06);border:1.5px dashed rgba(245,158,11,0.3)" data-tip="bravemcp">
+    <div class="topo-node" style="right:50px;top:308px;min-width:140px;background:rgba(245,158,11,0.06);border:1.5px dashed rgba(245,158,11,0.3);--topo-glow:rgba(245,158,11,0.15)" data-tip="bravemcp">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f59e0b">Brave Search MCP</span>
       <span class="tn-tech">Web Search (key req)</span>
@@ -413,19 +415,19 @@
     </div>
 
     <!-- ═══ LAYER 4: DATA ═══ -->
-    <div class="topo-node" style="left:80px;top:298px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="sqlite">
+    <div class="topo-node" style="left:80px;top:385px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);--topo-glow:rgba(16,185,129,0.2)" data-tip="sqlite">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#10b981">SQLite</span>
       <span class="tn-tech">Platform DB</span>
       <span class="tn-port">embedded</span>
     </div>
-    <div class="topo-node" style="left:250px;top:298px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3)" data-tip="postgres">
+    <div class="topo-node" style="left:280px;top:385px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);--topo-glow:rgba(16,185,129,0.2)" data-tip="postgres">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#10b981">PostgreSQL</span>
       <span class="tn-tech">Datastore DB</span>
       <span class="tn-port">:5433</span>
     </div>
-    <div class="topo-node" style="left:420px;top:298px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25)" data-tip="langfusedb">
+    <div class="topo-node" style="left:480px;top:385px;background:rgba(16,185,129,0.06);border:1.5px solid rgba(16,185,129,0.25);--topo-glow:rgba(16,185,129,0.15)" data-tip="langfusedb">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#10b981">Langfuse DB</span>
       <span class="tn-tech">PostgreSQL</span>
@@ -433,31 +435,31 @@
     </div>
 
     <!-- ═══ LAYER 5: OBSERVABILITY ═══ -->
-    <div class="topo-node" style="left:50px;top:395px;min-width:120px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)" data-tip="otel">
+    <div class="topo-node" style="left:40px;top:495px;min-width:125px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3);--topo-glow:rgba(99,102,241,0.2)" data-tip="otel">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#6366f1">OTel Collector</span>
       <span class="tn-tech">Traces + Metrics</span>
       <span class="tn-port">:4317</span>
     </div>
-    <div class="topo-node" style="left:220px;top:395px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)" data-tip="prometheus">
+    <div class="topo-node" style="left:215px;top:495px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3);--topo-glow:rgba(99,102,241,0.2)" data-tip="prometheus">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#6366f1">Prometheus</span>
       <span class="tn-tech">Metrics Store</span>
       <span class="tn-port">:9090</span>
     </div>
-    <div class="topo-node" style="left:370px;top:395px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3)" data-tip="loki">
+    <div class="topo-node" style="left:385px;top:495px;background:rgba(99,102,241,0.08);border:1.5px solid rgba(99,102,241,0.3);--topo-glow:rgba(99,102,241,0.2)" data-tip="loki">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#6366f1">Loki</span>
       <span class="tn-tech">Log Aggregation</span>
       <span class="tn-port">:3100</span>
     </div>
-    <div class="topo-node" style="right:40px;top:385px;min-width:110px;background:rgba(244,63,94,0.08);border:1.5px solid rgba(244,63,94,0.3)" data-tip="langfuse">
+    <div class="topo-node" style="right:50px;top:490px;min-width:115px;background:rgba(244,63,94,0.08);border:1.5px solid rgba(244,63,94,0.3);--topo-glow:rgba(244,63,94,0.2)" data-tip="langfuse">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#f43f5e">Langfuse</span>
       <span class="tn-tech">LLM Tracing</span>
       <span class="tn-port">:3014</span>
     </div>
-    <div class="topo-node" style="left:220px;top:465px;min-width:130px;background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.35)" data-tip="grafana">
+    <div class="topo-node topo-node--hero" style="left:230px;top:585px;min-width:140px;background:rgba(99,102,241,0.1);border:2px solid rgba(99,102,241,0.35);--topo-glow:rgba(99,102,241,0.2)" data-tip="grafana">
       <span class="tn-pulse live"></span>
       <span class="tn-name" style="color:#6366f1">Grafana</span>
       <span class="tn-tech">Unified Dashboards</span>
@@ -477,11 +479,11 @@
     </svg>
 
     <!-- Legend -->
-    <div style="position:absolute;bottom:0.6rem;left:50%;transform:translateX(-50%);display:flex;gap:1rem;padding:0.35rem 0.85rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:0.62rem;color:var(--text-3);z-index:3;backdrop-filter:blur(8px)">
-      <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span> Live</div>
-      <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;background:#06b6d4;display:inline-block;border-radius:1px"></span> Data flow</div>
-      <div style="display:flex;align-items:center;gap:0.25rem"><span style="width:14px;height:2px;display:inline-block;border-radius:1px;background-image:repeating-linear-gradient(90deg,#f59e0b 0 3px,transparent 3px 6px)"></span> Async</div>
-      <span>16 containers &middot; 5 layers</span>
+    <div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);display:flex;gap:1.25rem;padding:0.4rem 1rem;border-radius:12px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:0.64rem;color:var(--text-3);z-index:3;backdrop-filter:blur(12px)">
+      <div style="display:flex;align-items:center;gap:0.3rem"><span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;box-shadow:0 0 4px rgba(16,185,129,0.4)"></span> Live</div>
+      <div style="display:flex;align-items:center;gap:0.3rem"><svg width="18" height="8" viewBox="0 0 18 8"><path d="M1 4 C5 1, 13 7, 17 4" fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-linecap="round"/></svg> Data flow</div>
+      <div style="display:flex;align-items:center;gap:0.3rem"><svg width="18" height="8" viewBox="0 0 18 8"><path d="M1 4 C5 1, 13 7, 17 4" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 3"/></svg> Async</div>
+      <span style="opacity:0.7">16 containers &middot; 5 layers</span>
     </div>
   </div>
 
@@ -555,16 +557,37 @@
     lines.forEach(function(l) {
       var a = nodes[l.from], b = nodes[l.to];
       if (!a || !b) return;
-      var x1 = a.cx, y1 = a.cy, x2 = b.cx, y2 = b.cy;
-      // Adjust endpoints to node edges
-      var dx = x2-x1, dy = y2-y1, dist = Math.sqrt(dx*dx+dy*dy);
-      if (dist < 1) return;
-      var nx = dx/dist, ny = dy/dist;
-      x1 += nx*Math.min(50, dist*0.3); y1 += ny*Math.min(25, dist*0.3);
-      x2 -= nx*Math.min(50, dist*0.3); y2 -= ny*Math.min(25, dist*0.3);
+      var x1, y1, x2, y2;
+      // Determine connection direction and pick edge points
+      var goesDown = (b.t - a.b) > -20;
+      if (goesDown) {
+        x1 = a.cx; y1 = a.b;
+        x2 = b.cx; y2 = b.t;
+      } else {
+        // Horizontal / same-level connection
+        x1 = (b.cx > a.cx) ? a.r : a.l;
+        y1 = a.cy;
+        x2 = (b.cx > a.cx) ? b.l : b.r;
+        y2 = b.cy;
+      }
+      var dy = y2 - y1, dx = x2 - x1;
+      if (Math.abs(dy) < 2 && Math.abs(dx) < 2) return;
+      // Cubic bezier control points for smooth curves
+      var cpOff = Math.max(Math.abs(dy) * 0.4, 25);
+      var cp1x, cp1y, cp2x, cp2y;
+      if (Math.abs(dx) > Math.abs(dy) * 1.8) {
+        // Mostly horizontal
+        cp1x = x1 + dx * 0.35; cp1y = y1;
+        cp2x = x2 - dx * 0.35; cp2y = y2;
+      } else {
+        // Mostly vertical — smooth S-curve
+        cp1x = x1; cp1y = y1 + cpOff;
+        cp2x = x2; cp2y = y2 - cpOff;
+      }
+      var d = 'M'+x1.toFixed(1)+','+y1.toFixed(1)+' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+x2.toFixed(1)+','+y2.toFixed(1);
       var pauseClass = topoAnimate ? '' : ' paused';
-      html += '<line class="topo-line-bg" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
-      html += '<line class="topo-line '+l.cls+pauseClass+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+l.color+'" marker-end="url(#'+l.marker+')"/>';
+      html += '<path class="topo-line-bg" d="'+d+'"/>';
+      html += '<path class="topo-line '+l.cls+pauseClass+'" d="'+d+'" stroke="'+l.color+'" marker-end="url(#'+l.marker+')"/>';
     });
     // Keep existing defs
     var defs = svg.querySelector('defs');
