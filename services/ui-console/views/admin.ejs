@@ -1429,19 +1429,36 @@ async function loadModels() {
     var r = await fetch('/api/models');
     var d = await r.json();
     var el = document.getElementById('models-list');
+    var ollamaMsg = '';
+    if (d.ollama_status && !d.ollama_status.enabled) {
+      var reason = escapeHtml(d.ollama_status.reason || 'Configured model is not pulled');
+      var cmd = escapeHtml(d.ollama_status.pull_command || 'docker compose exec -T ollama ollama pull llama3');
+      ollamaMsg = '<div style="margin-bottom:0.65rem;padding:0.6rem 0.75rem;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#b45309">' +
+        '<strong>Ollama not enabled:</strong> ' + reason + '<br>' +
+        '<span style="font-size:0.75rem">Enable with: <code style="color:#92400e">' + cmd + '</code></span>' +
+        '</div>';
+    }
     if (!d.models || d.models.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker exec ollama ollama pull llama3</code></p>';
+      el.innerHTML = ollamaMsg + '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker compose exec -T ollama ollama pull llama3</code></p>';
       return;
     }
-    el.innerHTML = '<table><tr><th>Model</th><th>Provider</th><th>Size</th><th>Status</th><th style="width:1%"></th></tr>' +
+    el.innerHTML = ollamaMsg + '<table><tr><th>Model</th><th>Provider</th><th>Size</th><th>Status</th><th style="width:1%"></th></tr>' +
       d.models.map(function(m) {
         var name = escapeHtml(m.full_name || m.model || '');
         var provider = escapeHtml(m.provider || '');
         var model = escapeHtml(m.model || '');
         var size = m.size ? (m.size / 1e9).toFixed(1) + ' GB' : String.fromCharCode(0x2014);
-        var badge = m.active ? '<span class="badge badge-success">active</span>' : '<span class="badge" style="font-size:0.68rem">available</span>';
-        var action = m.active ? '' : '<button class="btn btn-primary btn-sm" style="padding:0.2rem 0.6rem;font-size:0.7rem;white-space:nowrap" onclick="activateModel(&apos;' + provider + '&apos;,&apos;' + model + '&apos;)">Use</button>';
-        return '<tr><td>' + name + '</td><td class="mono" style="font-size:0.78rem">' + provider + '</td><td class="mono">' + size + '</td><td>' + badge + '</td><td>' + action + '</td></tr>';
+        var ollamaUnavailable = m.provider === 'ollama' && (m.installed === false || m.status === 'not_pulled');
+        var badge = m.active
+          ? '<span class="badge badge-success">active</span>'
+          : (ollamaUnavailable
+            ? '<span class="badge" style="font-size:0.68rem;background:rgba(244,63,94,0.12);color:#f43f5e">not enabled</span>'
+            : '<span class="badge" style="font-size:0.68rem">available</span>');
+        var action = (m.active || ollamaUnavailable)
+          ? ''
+          : '<button class="btn btn-primary btn-sm" style="padding:0.2rem 0.6rem;font-size:0.7rem;white-space:nowrap" onclick="activateModel(&apos;' + provider + '&apos;,&apos;' + model + '&apos;)">Use</button>';
+        var note = m.note ? '<div style="font-size:0.68rem;color:#b45309;margin-top:0.2rem">' + escapeHtml(m.note) + '</div>' : '';
+        return '<tr><td>' + name + note + '</td><td class="mono" style="font-size:0.78rem">' + provider + '</td><td class="mono">' + size + '</td><td>' + badge + '</td><td>' + action + '</td></tr>';
       }).join('') + '</table>';
   } catch(e) {
     document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';

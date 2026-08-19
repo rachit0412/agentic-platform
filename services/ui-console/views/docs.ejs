@@ -1429,6 +1429,27 @@ flowchart LR
 
       <h2>Configuration</h2>
       <p>Configure guardrails via the <a href="/guardrails" style="color:#06b6d4">Guardrails</a> page. Each guardrail can be individually enabled/disabled and its severity level adjusted.</p>
+
+      <h2>Must-Have Production Controls</h2>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;margin-bottom:0.75rem">
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>🛡️ Prompt Injection + Jailbreak Defense</strong>
+          <p style="font-size:0.76rem;margin:0.25rem 0 0;color:var(--text-3)">Detect role hijack and instruction override attempts before tool calls.</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>🔐 PII + Secret Leak Blocking</strong>
+          <p style="font-size:0.76rem;margin:0.25rem 0 0;color:var(--text-3)">Block personal data and internal credentials from appearing in responses.</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>📚 Groundedness + Citation Checks</strong>
+          <p style="font-size:0.76rem;margin:0.25rem 0 0;color:var(--text-3)">Reduce hallucinations by enforcing source-backed answers.</p>
+        </div>
+        <div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:0.75rem">
+          <strong>⚖️ Toxicity/Bias + Compliance Gate</strong>
+          <p style="font-size:0.76rem;margin:0.25rem 0 0;color:var(--text-3)">Keep outputs safe, non-discriminatory, and policy-compliant.</p>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-3)">Use <a href="/intelligence-hub" style="color:#06b6d4">Intelligence Hub</a> → <strong>AI Safety Posture</strong> to track control coverage and identify missing protections.</p>
     </div>
 
     <!-- ── Tools & MCP ── -->

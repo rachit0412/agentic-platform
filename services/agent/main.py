@@ -13,7 +13,9 @@ from agent.connectors import (CONNECTOR_CATALOG, generate_connector_id,
                               generate_job_id)
 from agent.connectors.sync_engine import run_sync, test_connector
 from agent.graph import run_agent, run_agent_stream
-from agent.llm import (get_active_model, list_available_embedding_providers,
+from agent.llm import (get_active_model, get_ollama_status,
+                       is_ollama_model_installed,
+                       list_available_embedding_providers,
                        list_available_models, set_active_model)
 from agent.memory import _get_conn  # Persona management
 from agent.memory import (add_workspace_member, assign_persona,
@@ -885,10 +887,12 @@ async def models_list():
     models = list_available_models()
     active = get_active_model()
     embed_providers = list_available_embedding_providers()
+    ollama_status = get_ollama_status()
     return {
         "models": models,
         "active": active,
         "available_embedding_providers": embed_providers,
+        "ollama_status": ollama_status,
     }
 
 
@@ -901,6 +905,19 @@ class ModelSwitchRequest(BaseModel):
 @app.post("/models/switch")
 async def models_switch(body: ModelSwitchRequest):
     """Switch the active LLM provider and model."""
+    if body.provider == "ollama" and not is_ollama_model_installed(body.model):
+        from fastapi import HTTPException
+
+        status = get_ollama_status()
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Ollama is not enabled for this model. "
+                + (status.get("reason") or "Configured model is not pulled")
+                + ". Run: "
+                + status.get("pull_command", "docker compose exec -T ollama ollama pull llama3")
+            ),
+        )
     active = set_active_model(body.provider, body.model, body.temperature)
     logger.info("Model switched to %s/%s", active["provider"], active["model"])
     return {"status": "switched", "active": active}

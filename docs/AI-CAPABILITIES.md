@@ -493,6 +493,21 @@ flowchart LR
 3. **Azure content filter** — When Azure OpenAI rejects content, toxicity/bias guardrails auto-trigger
 4. **Per-agent assignment** — Each agent can have different guardrail sets via `guardrail_ids`
 
+### Must-Have Production Controls (Safety Posture)
+
+The Intelligence Hub now includes a **Safety Posture** view that checks control coverage and surfaces gaps.
+
+| Control                       | Why It Matters                                 | Coverage Signal (Intelligence Hub)                    |
+| ----------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| Prompt Injection Defense      | Prevent role hijack/jailbreak behavior         | Guardrail names/descriptions include injection checks |
+| PII & Secret Leakage          | Avoid regulated/sensitive data exposure        | PII + data-leak/secret controls enabled               |
+| Groundedness & Citations      | Reduce fabricated claims in responses          | Hallucination/citation controls enabled               |
+| Toxicity & Bias Moderation    | Prevent harmful/discriminatory output          | Toxicity/fairness controls enabled                    |
+| Policy Compliance Gate        | Enforce org/regulatory response constraints    | Compliance category controls enabled                  |
+| Operational Fallback Rules    | Keep protections on during model outages/errors | Operational category controls enabled               |
+
+> Target: enable all six controls before production rollout.
+
 ### Source Files
 
 - [`services/agent/agent/graph.py`](../services/agent/agent/graph.py) — Guardrail evaluation logic, classification prompt generation, fallback patterns

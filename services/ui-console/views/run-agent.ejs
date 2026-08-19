@@ -49,6 +49,7 @@
         <select id="model-select" style="width:auto;min-width:180px;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:10px;background:var(--glass-bg);border:1px solid var(--divider);color:var(--text-1)">
           <option value="">Default Model</option>
         </select>
+        <span id="model-status-msg" style="display:none;font-size:0.72rem;padding:0.35rem 0.6rem;border-radius:8px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:#b45309"></span>
         <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;color:var(--text-2);cursor:pointer;user-select:none;padding:0.35rem 0.6rem;background:var(--glass-bg);border:1px solid var(--divider);border-radius:8px" title="Toggle Knowledge Base retrieval. Disable for faster responses when KB context is not needed.">
           <input type="checkbox" id="use-kb-toggle" checked style="accent-color:#06b6d4;width:15px;height:15px;cursor:pointer" />
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -957,10 +958,19 @@
       const r = await fetch('/api/models', { signal: AbortSignal.timeout(5000) });
       const d = await r.json();
       const sel = document.getElementById('model-select');
+      const msg = document.getElementById('model-status-msg');
       sel.innerHTML = '';
+      if (msg) {
+        msg.style.display = 'none';
+        msg.textContent = '';
+      }
       if (!d.models || d.models.length === 0) {
         sel.innerHTML = '<option value="">Default Model</option>';
         return;
+      }
+      if (d.ollama_status && !d.ollama_status.enabled && msg) {
+        msg.textContent = 'Ollama not enabled: ' + (d.ollama_status.reason || 'model not pulled') + '. Run: ' + (d.ollama_status.pull_command || 'docker compose exec -T ollama ollama pull llama3');
+        msg.style.display = 'inline-flex';
       }
       d.models.forEach(function(m) {
         var key = m.provider + ':' + m.model;
@@ -968,10 +978,20 @@
         var opt = document.createElement('option');
         opt.value = key;
         var provLabel = m.provider === 'azure-openai' ? '\\u2601\\uFE0F Azure' : m.provider === 'openai' ? '\\uD83D\\uDD11 OpenAI' : m.provider === 'azure-foundry' ? '\\uD83C\\uDFED Foundry' : '\\uD83E\\uDD99 Ollama';
-        opt.textContent = provLabel + ' \\u2014 ' + m.model;
-        if (m.active) opt.selected = true;
+        var unavailable = m.provider === 'ollama' && (m.installed === false || m.status === 'not_pulled');
+        opt.textContent = provLabel + ' \\u2014 ' + m.model + (unavailable ? ' (not enabled)' : '');
+        if (unavailable) opt.disabled = true;
+        if (m.active && !unavailable) opt.selected = true;
         sel.appendChild(opt);
       });
+      if (!sel.value || (sel.selectedOptions[0] && sel.selectedOptions[0].disabled)) {
+        for (var i = 0; i < sel.options.length; i++) {
+          if (!sel.options[i].disabled) {
+            sel.selectedIndex = i;
+            break;
+          }
+        }
+      }
       _updateSettingsForModel();
       sel.addEventListener('change', _updateSettingsForModel);
     } catch(e) {

@@ -26,6 +26,7 @@
 | 16  | Admin Plane                | 6-tab control centre: service health, LLM management, DB ops, config (security considerations, best practices), audit. Hash-based tab navigation. Platform-wide settings editable here only (read-only elsewhere) | `admin.ejs`, `server.js`                      |
 | 17  | Authentication & IAM       | PBKDF2-SHA256 password hashing, session auth, RBAC (admin/member/viewer), email verification, password reset, workspace scoping                                                                                   | `memory.py`, `main.py`, `server.js`           |
 | 18  | Login UI                   | React 18 + Vite SPA — login, register, email verify, forgot/reset password                                                                                                                                        | `ui-login/`, `public/login-app/`              |
+| 19  | AI Safety Posture          | Intelligence Hub coverage checks for must-have controls: injection/jailbreak, PII+secrets, grounding/citations, toxicity+bias, compliance, operational fallback                                                   | `intelligence-hub.ejs`                         |
 
 ## Detail: Agent Reasoning Engine
 

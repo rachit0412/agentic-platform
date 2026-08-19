@@ -178,6 +178,23 @@
   </div>
 </div>
 
+<!-- AI Safety Posture -->
+<div class="card animate-fade-up delay-300" style="margin-top:1.25rem">
+  <div class="section-header mb-1">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(139,92,246,0.08));display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:0.95rem">AI Safety Posture</h3>
+        <p style="margin:0.15rem 0 0;color:var(--text-3);font-size:0.78rem">Must-have controls coverage for production readiness</p>
+      </div>
+    </div>
+    <a href="/guardrails" class="btn btn-primary btn-sm">Harden</a>
+  </div>
+  <div id="ih-safety-posture" style="font-size:0.82rem;color:var(--text-3)">Loading...</div>
+</div>
+
 <!-- Platform Health Monitoring -->
 <div class="card animate-fade-up delay-300" style="margin-top:1.25rem">
   <div class="section-header mb-1">
@@ -363,6 +380,94 @@ function loadGrActivity() {
 
 function ihRefresh() { ihLoad(); }
 
+function ihGuardrailCoverage(guardrailsData) {
+  var enabled = guardrailsData.filter(function(g) { return g.enabled; });
+  function hasCategory(cat) {
+    return enabled.some(function(g) { return (g.category || '').toLowerCase() === cat; });
+  }
+  function hasPattern(re) {
+    return enabled.some(function(g) {
+      var txt = [g.id || '', g.name || '', g.description || '', g.category || ''].join(' ').toLowerCase();
+      return re.test(txt);
+    });
+  }
+  return [
+    {
+      id: 'prompt-injection',
+      label: 'Prompt Injection Defense',
+      status: hasPattern(/injection|jailbreak|prompt attack/) ? 'active' : 'missing',
+      hint: 'Detect role hijack, ignore-instruction, and jailbreak prompts.'
+    },
+    {
+      id: 'pii-secrets',
+      label: 'PII & Secret Leakage',
+      status: hasPattern(/pii|data leak|secret|credential|api key|password/) ? 'active' : 'missing',
+      hint: 'Block sensitive identifiers and secret exfiltration in outputs.'
+    },
+    {
+      id: 'grounding',
+      label: 'Groundedness & Citations',
+      status: hasPattern(/hallucination|citation|ground/) ? 'active' : 'missing',
+      hint: 'Reduce fabricated claims and require source-backed responses.'
+    },
+    {
+      id: 'toxicity-bias',
+      label: 'Toxicity & Bias Moderation',
+      status: hasPattern(/toxicity|bias|hate|fairness/) ? 'active' : 'missing',
+      hint: 'Prevent harmful language and discriminatory outputs.'
+    },
+    {
+      id: 'policy-compliance',
+      label: 'Policy Compliance Gate',
+      status: hasCategory('compliance') ? 'active' : 'missing',
+      hint: 'Enforce org/regulatory policy checks before final response.'
+    },
+    {
+      id: 'operational-fallback',
+      label: 'Operational Fallback Rules',
+      status: hasCategory('operational') ? 'active' : 'missing',
+      hint: 'Add deterministic fallback rules when model checks fail.'
+    }
+  ];
+}
+
+function ihRenderSafetyPosture(guardrailsData, traces) {
+  var el = document.getElementById('ih-safety-posture');
+  if (!el) return;
+  if (!guardrailsData || guardrailsData.length === 0) {
+    el.innerHTML = '<p>No guardrails configured yet. Start with baseline controls in <a href="/guardrails">Guardrails</a>.</p>';
+    return;
+  }
+  var controls = ihGuardrailCoverage(guardrailsData);
+  var activeCount = controls.filter(function(c) { return c.status === 'active'; }).length;
+  var score = Math.round((activeCount / controls.length) * 100);
+  var scoreColor = score >= 85 ? '#10b981' : score >= 60 ? '#f59e0b' : '#f43f5e';
+  var blocked = (traces || []).filter(function(t) { return (t.guardrail_status || '').toLowerCase() === 'blocked'; }).length;
+
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.7rem">' +
+      '<div style="display:flex;align-items:center;gap:0.5rem">' +
+        '<span class="badge" style="background:rgba(6,182,212,0.12);color:#06b6d4">Coverage ' + activeCount + '/' + controls.length + '</span>' +
+        '<span class="badge" style="background:rgba(245,158,11,0.12);color:#f59e0b">Blocked Events ' + blocked + '</span>' +
+      '</div>' +
+      '<strong style="font-size:1rem;color:' + scoreColor + '">' + score + '%</strong>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">' +
+      controls.map(function(c) {
+        var badge = c.status === 'active'
+          ? '<span class="badge" style="font-size:0.62rem;background:rgba(16,185,129,0.15);color:#10b981">active</span>'
+          : '<span class="badge" style="font-size:0.62rem;background:rgba(244,63,94,0.15);color:#f43f5e">missing</span>';
+        return '<div style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:0.65rem">' +
+          '<div style="display:flex;justify-content:space-between;gap:0.5rem;align-items:center">' +
+            '<strong style="font-size:0.76rem;color:var(--text-1)">' + c.label + '</strong>' + badge +
+          '</div>' +
+          '<p style="margin:0.35rem 0 0;font-size:0.72rem;color:var(--text-3);line-height:1.4">' + c.hint + '</p>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    '<p style="margin:0.7rem 0 0;font-size:0.72rem;color:var(--text-3)">Tip: enable all missing controls before production rollout.</p>';
+}
+
 function ihLoad() {
   Promise.all([
     fetch('/api/traces').then(function(r) { return r.json(); }).catch(function() { return { traces: [] }; }),
@@ -501,6 +606,8 @@ function ihLoad() {
         '<a href="/guardrails" style="display:block;text-align:center;padding:0.5rem;font-size:0.78rem;color:#f59e0b">Manage guardrails</a>';
     }
 
+      ihRenderSafetyPosture(guardrailsData, traces);
+
     /* Agent table */
     if (agents.length === 0) {
       document.getElementById('ih-agent-table').innerHTML = '<p>No agents registered yet. <a href="/agents">Create one</a></p>';
@@ -539,6 +646,8 @@ function ihLoad() {
       var el = document.getElementById(id);
       if (el && el.textContent.trim() === 'Loading...') el.innerHTML = errMsg;
     });
+    var postureEl = document.getElementById('ih-safety-posture');
+    if (postureEl && postureEl.textContent.trim() === 'Loading...') postureEl.innerHTML = errMsg;
   });
 }
 

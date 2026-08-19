@@ -98,6 +98,53 @@ def _is_real_key(value: str) -> bool:
     )
 
 
+def get_ollama_status() -> dict:
+    """Return Ollama readiness and installed model information."""
+    configured = (OLLAMA_MODEL or "llama3").split(":")[0]
+    status = {
+        "enabled": False,
+        "reachable": False,
+        "configured_model": configured,
+        "installed_models": [],
+        "reason": "",
+        "pull_command": f"docker compose exec -T ollama ollama pull {configured}",
+    }
+    try:
+        import httpx
+
+        resp = httpx.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5)
+        if resp.status_code != 200:
+            status["reason"] = f"Ollama tags endpoint returned HTTP {resp.status_code}"
+            return status
+
+        status["reachable"] = True
+        data = resp.json()
+        installed = []
+        for m in data.get("models", []):
+            name = (m.get("name", "") or "").split(":")[0]
+            if name:
+                installed.append(name)
+        status["installed_models"] = sorted(set(installed))
+
+        if configured in status["installed_models"]:
+            status["enabled"] = True
+        else:
+            status["reason"] = (
+                f"Configured Ollama model '{configured}' is not pulled in this environment"
+            )
+        return status
+    except Exception as exc:
+        status["reason"] = str(exc)
+        return status
+
+
+def is_ollama_model_installed(model: str) -> bool:
+    """Return True when the given Ollama model is currently installed."""
+    status = get_ollama_status()
+    want = (model or "").split(":")[0]
+    return bool(want) and want in set(status.get("installed_models") or [])
+
+
 # ── Active model state ──────────────────────────────────────────────────────
 # Persisted config (written by set_active_model) takes precedence over env vars.
 _persisted = _load_persisted_config()
@@ -446,6 +493,8 @@ def list_available_embedding_providers() -> list[str]:
 def list_available_models() -> list[dict]:
     """List all available models across all configured providers."""
     models = []
+    ollama_models_found = 0
+    ollama_list_error: str | None = None
 
     # Model capability metadata + real pricing (USD per 1K tokens, as of mid-2026)
     # temperature_supported=False means the API only allows default (1.0)
@@ -594,8 +643,37 @@ def list_available_models() -> list[dict]:
                         "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
                     }
                 )
+                ollama_models_found += 1
+        else:
+            ollama_list_error = f"Ollama /api/tags returned HTTP {resp.status_code}"
     except Exception as e:
+        ollama_list_error = str(e)
         logger.warning("Failed to list Ollama models: %s", e)
+
+    # If Ollama is configured but has no pulled chat models, expose configured model
+    # so users can see/select it and understand why it is not running yet.
+    if ollama_models_found == 0:
+        fallback_ollama_model = (OLLAMA_MODEL or "llama3").strip()
+        if fallback_ollama_model and not _is_embedding_model(fallback_ollama_model):
+            c = _caps(fallback_ollama_model, "ollama")
+            models.append(
+                {
+                    "provider": "ollama",
+                    "model": fallback_ollama_model,
+                    "full_name": fallback_ollama_model,
+                    "size": 0,
+                    "active": _active_provider == "ollama" and _active_model == fallback_ollama_model,
+                    "capabilities": c,
+                    "cost_per_1k_input": c.get("cost_per_1k_input", 0.0),
+                    "cost_per_1k_output": c.get("cost_per_1k_output", 0.0),
+                    "installed": False,
+                    "status": "not_pulled",
+                    "note": (
+                        f"Ollama model '{fallback_ollama_model}' is configured but not pulled yet"
+                        + (f" ({ollama_list_error})" if ollama_list_error else "")
+                    ),
+                }
+            )
 
     # ── Azure OpenAI models ─────────────────────────────────────────────
     if _is_real_key(AZURE_OPENAI_API_KEY) and AZURE_OPENAI_ENDPOINT:
