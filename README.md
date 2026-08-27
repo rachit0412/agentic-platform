@@ -16,7 +16,7 @@
 [![LangGraph](https://img.shields.io/badge/LangGraph-ReAct%20Agent-1C3C3C?logo=langchain&logoColor=white)](#the-stack--why-every-piece-matters)
 [![Ollama](https://img.shields.io/badge/Ollama-Local%20LLMs-000000?logo=ollama&logoColor=white)](#the-stack--why-every-piece-matters)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![145 API Endpoints](https://img.shields.io/badge/API-145%20Endpoints-orange)](#-whats-inside)
+[![157 API Endpoints](https://img.shields.io/badge/API-157%20Endpoints-orange)](#-whats-inside)
 [![16 Services](https://img.shields.io/badge/Services-16%20Containers-purple)](#-whats-inside)
 
 **One `docker compose up` → 16 containers → your own AI agent factory, running locally, with zero API costs.**
@@ -25,7 +25,7 @@
 
 </div>
 
-> **TL;DR** — 16 services, 145 API endpoints, 26-page dashboard, 4 LLM providers (+ Anthropic/Gemini/Groq/Mistral on the roadmap), full RAG pipeline, multi-agent orchestration, persona-based RBAC, end-to-end observability with LLM cost tracking — all running locally with one command.
+> **TL;DR** — 16 services, 157 API endpoints, 27-page dashboard, 6 LLM providers (Ollama, OpenAI, Azure OpenAI, Azure AI Foundry, Anthropic, Groq), full RAG pipeline, multi-agent orchestration, persona-based RBAC, end-to-end observability with LLM cost tracking — all running locally with one command.
 
 ---
 
@@ -47,7 +47,7 @@ If you're the kind of person who'd rather understand the full picture than glue 
 
 | Feature                   | Agentic Platform | LangServe | Dify | AutoGen | CrewAI |
 | ------------------------- | :--------------: | :-------: | :--: | :-----: | :----: |
-| Full UI dashboard         |   ✅ 26 pages    |    ❌     |  ✅  |   ❌    |   ❌   |
+| Full UI dashboard         |   ✅ 27 pages    |    ❌     |  ✅  |   ❌    |   ❌   |
 | Local LLMs (zero cost)    |    ✅ Ollama     |    ❌     |  ✅  |   ❌    |   ❌   |
 | Multi-agent orchestration |        ✅        |    ❌     |  ⚠️  |   ✅    |   ✅   |
 | RAG pipeline              |   ✅ Auto-RAG    |    ❌     |  ✅  |   ❌    |   ⚠️   |
@@ -82,7 +82,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 | **Agent Registry**             | Create dozens of agents, each with its own model, skills, tools, knowledge, and personality — not just one hardcoded bot                                                                                               |
 | **Multi-Agent Orchestration**  | One orchestrator agent delegates to specialist sub-agents at runtime. LLM decides who handles what. Plus n8n pipelines for sequential/parallel flows                                                                   |
 | **Skills System**              | Package a prompt + tools + constraints + file attachments (scripts, references, assets) into a reusable skill. Input parameters let skills prompt for structured data at runtime                                       |
-| **4 LLM Providers**            | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry — switch models from the UI, no code changes                                                                                                              |
+| **6 LLM Providers**            | Ollama (free, local), OpenAI, Azure OpenAI, Azure AI Foundry, Anthropic, Groq — switch models from the UI, no code changes                                                                                               |
 | **Auto-RAG**                   | Upload a PDF → it's chunked, embedded, stored in ChromaDB → every prompt auto-retrieves relevant context. Per-agent isolated KB                                                                                        |
 | **A2A Protocol**               | Agents can delegate sub-tasks to other agents over HTTP. Build hierarchies, not monoliths                                                                                                                              |
 | **MCP Registry + Managed MCP** | Connect to external tool servers, or **create and host** your own from the UI — config mode (no-code HTTP proxies) or code mode (custom Python functions). Each managed server deploys as an isolated Docker container |
@@ -128,10 +128,10 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  🖥️  UI Console (Express.js + EJS)                :3005        │
-│  26 pages — build, run, evaluate, trace agents from the browser│
+│  27 pages — build, run, evaluate, trace agents from the browser│
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Agent Service (FastAPI + LangGraph)            :8010        │
-│  ReAct agent loop, 145 endpoints, skill/agent/persona registry │
+│  ReAct agent loop, 157 endpoints, skill/agent/persona registry │
 ├──────────────────────┬──────────────────────────────────────────┤
 │  🔧 Tools Service    │  📚 ChromaDB        │  💾 SQLite         │
 │  :8011               │  :8200              │  (embedded)        │
@@ -154,14 +154,14 @@ This isn't a random grab bag of tools. Every layer was chosen because it solves 
 | Layer             | Tech                            | Why                                                                                       |
 | ----------------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
 | **Agent runtime** | LangGraph + LangChain           | State-machine agent with full control over the ReAct loop — not a black-box `agent.run()` |
-| **API layer**     | FastAPI                         | Async, typed, auto-docs — 145 endpoints. Agents need to be APIs, not scripts              |
+| **API layer**     | FastAPI                         | Async, typed, auto-docs — 157 endpoints. Agents need to be APIs, not scripts              |
 | **Local LLMs**    | Ollama                          | Zero API costs during development. Pull a model, use it instantly                         |
 | **Cloud LLMs**    | OpenAI / Azure OpenAI / Foundry | When you need GPT-4o or enterprise compliance — just set env vars                         |
 | **Vector store**  | ChromaDB                        | Embedded, no external infra, persists across restarts. RAG that just works                |
 | **Tracing**       | Langfuse                        | See every LLM call: prompt, response, cost, latency. Non-negotiable for production        |
 | **Observability** | Prometheus + Grafana + Loki     | Industry-standard monitoring. Not a toy dashboard — real SRE tooling                      |
 | **Workflows**     | n8n                             | Visual automation — schedule RAG ingestion, chain agents, trigger webhooks                |
-| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 26 pages for full platform control                  |
+| **Dashboard**     | Express.js + EJS                | Server-rendered, fast, no build step. 27 pages for full platform control                  |
 | **Identity**      | bcrypt + express-session        | Enterprise IAM with persona-based RBAC, not just simple API keys                          |
 
 ---
@@ -219,8 +219,8 @@ curl -X POST http://localhost:8010/run \
 
 | Service              | Port    | Purpose                                                                                     |
 | -------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| **ui-console**       | `3005`  | Platform dashboard — 26 pages for building, running, monitoring agents                      |
-| **agent-service**    | `8010`  | FastAPI + LangGraph — 145 endpoints: ReAct agent, registry, auto-RAG, personas, managed MCP |
+| **ui-console**       | `3005`  | Platform dashboard — 27 pages for building, running, monitoring agents                      |
+| **agent-service**    | `8010`  | FastAPI + LangGraph — 157 endpoints: ReAct agent, registry, auto-RAG, personas, managed MCP |
 | **tools-service**    | `8011`  | 32 endpoints: web search, code exec, HTTP fetch, file I/O, text transforms, more            |
 | **ollama**           | `11436` | Local LLM runtime — llama3, mistral, deepseek-r1, and more                                  |
 | **chromadb**         | `8200`  | Vector store for knowledge base and RAG retrieval                                           |
@@ -253,7 +253,7 @@ curl -X POST http://localhost:8010/run \
 | Workflows        | n8n workflow monitoring                                                                                                                                                                                                                                   |
 | A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                                                                                           |
 | MCP Registry     | Create, host, and manage MCP tool servers — config mode (no-code), code mode (Python), or register external servers                                                                                                                                       |
-| REST Console     | Interactive API console — test all 145 endpoints                                                                                                                                                                                                          |
+| REST Console     | Interactive API console — test all 157 endpoints                                                                                                                                                                                                          |
 | Intelligence Hub | Operational intelligence — traces, LLM cost & token analytics, guardrail status, model breakdown chart, recent call table, 8-stat dashboard                                                                                                               |
 | Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                                                                                     |
 | Evaluation       | Agent quality scoring and model comparison                                                                                                                                                                                                                |
@@ -418,7 +418,7 @@ agentic-platform/
 ### Platform Expansion
 
 - **16 containers** (up from 14) — added PostgreSQL datastore, Brave Search MCP, Open Tools MCP
-- **145 API endpoints** (up from 117) — personas, structured query, enhanced connectors
+- **157 API endpoints** (up from 145) — personas, structured query, enhanced connectors, MCP
 - **26 dashboard pages** (up from 25)
 - **Dark & light themes** with full CSS custom property support
 - **Login rate limiting** — 5 attempts per 5-minute window per IP

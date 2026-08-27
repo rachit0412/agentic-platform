@@ -68,6 +68,15 @@
         <mxCell id="s_prometheus" value="&lt;b&gt;prometheus&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;Metrics TSDB&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;:9090&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;shadow=1;fontSize=10;arcSize=12;" vertex="1" parent="phase2">
           <mxGeometry x="540" y="38" width="130" height="55" as="geometry" />
         </mxCell>
+        <mxCell id="s_n8n_storage" value="&lt;b&gt;n8n-storage&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;SQLite (Embedded)&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;volume&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#AB47BC;strokeWidth=1;dashed=1;shadow=1;fontSize=9;arcSize=12;" vertex="1" parent="phase2">
+          <mxGeometry x="200" y="95" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="d_n8n_storage" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#AB47BC;strokeWidth=1;dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="phase2" source="s_n8n_storage" target="s_n8n">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_n8n_storage_lbl" value="persistence" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#AB47BC;" vertex="1" connectable="0" parent="d_n8n_storage">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
         <mxCell id="phase2badge" value="⬤" style="text;html=1;fontSize=18;fontColor=#2D7600;align=center;" vertex="1" parent="phase2">
           <mxGeometry x="1400" y="50" width="30" height="30" as="geometry" />
         </mxCell>
@@ -81,7 +90,16 @@
         <mxCell id="s_agent" value="&lt;b&gt;agent-service&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;FastAPI + LangGraph&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;:8000 — depends on: ollama,&lt;br/&gt;tools, chromadb, datastore-db&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2E5A88;shadow=1;fontSize=10;arcSize=12;strokeWidth=2;" vertex="1" parent="phase3">
           <mxGeometry x="15" y="38" width="260" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="phase3badge" value="⬤" style="text;html=1;fontSize=18;fontColor=#4A90D9;align=center;" vertex="1" parent="phase3">
+        <mxCell id="s_agent_storage" value="&lt;b&gt;agent-storage&lt;/b&gt;&lt;hr size=&quot;1&quot;/&gt;SQLite (Embedded)&lt;br/&gt;&lt;font color=&quot;#888&quot;&gt;app data&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor:#AB47BC;strokeWidth=1;dashed=1;shadow=1;fontSize=9;arcSize=12;" vertex="1" parent="phase3">
+          <mxGeometry x="330" y="38" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="d_agent_storage" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor:#AB47BC;strokeWidth=1;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="phase3" source="s_agent_storage" target="s_agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_agent_storage_lbl" value="persistence" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#AB47BC;" vertex="1" connectable="0" parent="d_agent_storage">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+        <mxCell id="phase3badge" value="⬭" style="text;html=1;fontSize=18;fontColor:#4A90D9;align=center;" vertex="1" parent="phase3">
           <mxGeometry x="1400" y="50" width="30" height="30" as="geometry" />
         </mxCell>
 
@@ -390,7 +408,7 @@
         <mxCell id="r7e" value="2" style="text;html=1;fontSize=8;fontColor=#2D7600;align=left;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="490" y="230" width="30" height="14" as="geometry" />
         </mxCell>
-        <mxCell id="r7f" value="—" style="text;html=1;fontSize=8;fontColor=#888;align=left;" vertex="1" parent="1">
+        <mxCell id="r7f" value="SQLite (embedded in container)" style="text;html=1;fontSize=8;fontColor:#333;align=left;" vertex="1" parent="1">
           <mxGeometry x="540" y="230" width="200" height="14" as="geometry" />
         </mxCell>
 

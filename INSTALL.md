@@ -330,7 +330,7 @@ After successful installation:
 5. Pull additional models: `docker exec ollama ollama pull mistral`
 6. Ingest documents into the knowledge base
 7. Explore API docs at http://localhost:8010/docs
-8. Use the **REST Console** at http://localhost:3005/rest to test all 145 endpoints
+8. Use the **REST Console** at http://localhost:3005/rest to test all 157 endpoints
 9. Create workflows in n8n at http://localhost:5678
 10. Review LLM traces in Langfuse at http://localhost:3012
 11. Monitor platform health in Grafana at http://localhost:3013

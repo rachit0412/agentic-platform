@@ -203,7 +203,7 @@
       <p>The Agentic Platform is a production-grade, full-stack framework for building, deploying, and managing AI agents with enterprise-grade observability, guardrails, and multi-provider LLM support.</p>
 
       <div class="docs-callout info">
-        <strong>What you can do:</strong> Build ReAct agents with tools, connect to 4 LLM providers, manage knowledge bases, enforce safety guardrails, monitor via Prometheus/Grafana/Langfuse, and orchestrate workflows — all from a unified dashboard.
+        <strong>What you can do:</strong> Build ReAct agents with tools, connect to 6 LLM providers (Ollama, OpenAI, Azure OpenAI, Azure AI Foundry, Anthropic, Groq), manage knowledge bases, enforce safety guardrails, monitor via Prometheus/Grafana/Langfuse, and orchestrate workflows — all from a unified dashboard.
       </div>
 
       <h2>Key Capabilities</h2>
@@ -1268,7 +1268,7 @@ stateDiagram-v2
     <div id="doc-llm" class="docs-section">
       <div class="docs-breadcrumb"><a href="/docs">Docs</a> / Core Features</div>
       <h1>LLM Providers</h1>
-      <p>The platform supports 4 LLM providers with automatic fallback. A multi-provider LLM factory (<code>agent/llm.py</code>) abstracts provider differences behind a unified interface — agents never interact with provider APIs directly.</p>
+      <p>The platform supports 6 LLM providers with automatic fallback: Ollama, OpenAI, Azure OpenAI, Azure AI Foundry, Anthropic, and Groq. A multi-provider LLM factory (<code>agent/llm.py</code>) abstracts provider differences behind a unified interface — agents never interact with provider APIs directly.</p>
 
       <h2>Provider Matrix</h2>
       <table class="docs-table">
