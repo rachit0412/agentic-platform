@@ -1495,7 +1495,7 @@ async function showVersionsModal(varName, currentVersion) {
  */
 async function getAvailableVersions(imageName) {
   try {
-    // Mock versions - in production this would call a real API to Docker Hub
+    // Mock versions - in production this would call a real API to Docker Hub/registries
     const versionMap = {
       'python': ['3.12.4', '3.12.3', '3.12.2', '3.11.10', '3.11.9'],
       'node': ['22.1.0', '22.0.0', '20.15.1', '20.14.0', '20.13.0'],
@@ -1507,14 +1507,23 @@ async function getAvailableVersions(imageName) {
       'datastore': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
       'tools': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
       'agent': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+      'n8n': ['2.37.4', '2.37.3', '2.37.2', '2.36.5', '2.36.4'],
+      'n8n_image_tag': ['2.37.4', '2.37.3', '2.37.2', '2.36.5', '2.36.4'],
     };
     
-    const versions = versionMap[imageName.toLowerCase()] || ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'];
-    console.log('Returning versions for', imageName + ':', versions);
-    return versions;
+    const versions = versionMap[imageName.toLowerCase()] || versionMap[imageName.replace(/_image_tag$|_image$/i, '').toLowerCase()];
+    
+    if (versions) {
+      console.log('Found versions for', imageName + ':', versions);
+      return versions;
+    }
+    
+    // If still not found, return empty array to trigger "no versions" message
+    console.warn('No versions found for:', imageName, '- returning empty array');
+    return [];
   } catch (error) {
     console.error('Error getting versions:', error);
-    return ['latest', 'v1.0.0', 'v0.9.9'];
+    return [];
   }
 }
 
@@ -1552,9 +1561,22 @@ async function pullSelectedVersion(varName) {
     }
     
     const oldVersion = input.value;
+    const envVarRow = input.closest('[id^="env-var-"]');
     
     // Close the modal
     document.querySelector('.modal')?.remove();
+    
+    // Show visual tracking - highlight the row and show loading state
+    if (envVarRow) {
+      envVarRow.style.background = 'rgba(59, 130, 246, 0.1)';
+      envVarRow.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+      
+      // Show loading indicator in the row
+      const label = envVarRow.querySelector('label');
+      if (label) {
+        label.innerHTML += ' <span style="display: inline-block; margin-left: 0.5rem; font-size: 1rem; animation: spin 1s linear infinite;">⚙️</span>';
+      }
+    }
     
     // Check if this version change might impact storage
     const storageWarning = checkStorageImpact(varName, oldVersion, selectedVersion);
@@ -1562,23 +1584,44 @@ async function pullSelectedVersion(varName) {
     if (storageWarning) {
       const confirmed = confirm(`⚠️ Warning:\n\n${storageWarning}\n\nDo you want to proceed?`);
       if (!confirmed) {
+        // Revert the visual state
+        if (envVarRow) {
+          envVarRow.style.background = 'var(--input-bg)';
+          envVarRow.style.borderColor = 'var(--border)';
+          const spinner = envVarRow.querySelector('span[style*="animation"]');
+          if (spinner) spinner.remove();
+        }
         return;
       }
     }
     
-    showNotification(`✓ ${varName} updated to ${selectedVersion}`, 'success');
-    
     // Update the input value
     input.value = selectedVersion;
+    input.style.background = 'rgba(16, 185, 129, 0.1)';
+    input.style.borderColor = 'rgba(16, 185, 129, 0.4)';
     
     // Track the change
     trackEnvVarChange(varName, selectedVersion);
     
-    // Show helpful next steps
+    // Show success notification with version details
     showNotification(
-      `Run 'docker-compose up --build' to apply changes.`,
-      'info'
+      `✓ ${varName}: ${oldVersion} → ${selectedVersion}`,
+      'success'
     );
+    
+    // Show next steps
+    setTimeout(() => {
+      showNotification(
+        `Run 'docker-compose up --build' to deploy`,
+        'info'
+      );
+    }, 1500);
+    
+    // Remove loading indicator after a brief moment
+    setTimeout(() => {
+      const spinner = envVarRow?.querySelector('span[style*="animation"]');
+      if (spinner) spinner.remove();
+    }, 1000);
     
   } catch (error) {
     console.error('Error pulling version:', error);
