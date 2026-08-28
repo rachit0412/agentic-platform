@@ -608,10 +608,6 @@
 </div>
 
 <script src="/docker-management.js"><\/script>
-<script>
-// Register Docker management tab handlers
-document.addEventListener('DOMContentLoaded', function() {
-  initDockerManagement();
 <!-- TAB 5: CONFIGURATION                                   -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="tab-config" class="admin-tab-content" style="display:none">
@@ -1375,8 +1371,8 @@ function highlightThemeCard() {
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
-  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database' };
-  var validTabs = ['health','users','personas','overview','llm','database','config','audit'];
+  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database', infrastructure: 'docker-images' };
+  var validTabs = ['health','users','personas','overview','llm','database','config','audit','docker-images','environment-vars'];
   var startTab;
   if (sectionDefaults[hash]) {
     startTab = sectionDefaults[hash];
@@ -1386,6 +1382,10 @@ function adminLoadAll() {
     startTab = 'health';
   }
   switchTab(startTab);
+  /* Initialize docker management if available */
+  if (typeof initDockerManagement === 'function') {
+    setTimeout(initDockerManagement, 100);
+  }
 }
 
 /* ═══ SERVICE HEALTH ═══ */
