@@ -57,7 +57,7 @@ services:
 
   # ── Workflow Orchestrator — n8n ───────────────────────────────────────────
   n8n:
-    image: n8nio/n8n:${N8N_IMAGE_TAG:-2.37.4-dacee6c-arm64}
+    image: n8nio/n8n:${N8N_IMAGE_TAG:-latest}
     container_name: n8n
     ports:
       - "${N8N_PORT:-5678}:5678"
@@ -104,7 +104,7 @@ services:
 
   # ── LLM Runtime — Ollama ─────────────────────────────────────────────────
   ollama:
-    image: ollama/ollama:${OLLAMA_IMAGE_TAG:-0.4.2}
+    image: ollama/ollama:${OLLAMA_IMAGE_TAG:-latest}
     container_name: ollama
     ports:
       - "${OLLAMA_PORT:-11436}:11434"
@@ -284,7 +284,7 @@ services:
       retries: 5
 
   langfuse:
-    image: langfuse/langfuse:${LANGFUSE_IMAGE_TAG:-2.185.0}
+    image: langfuse/langfuse:${LANGFUSE_IMAGE_TAG:-latest}
     container_name: langfuse
     ports:
       - "${LANGFUSE_PORT:-3012}:3000"
@@ -339,7 +339,7 @@ services:
 
   # ── Prometheus ───────────────────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-2.50.1}
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-latest}
     container_name: prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
