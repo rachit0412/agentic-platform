@@ -1607,7 +1607,7 @@ function switchTab(tab, fromSection) {
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
   if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); setTimeout(function() { switchConfigTab('appearance'); }, 50); }
   if (tab === 'docker-images') { loadDockerImages(); loadDockerSecuritySummary(); }
-  if (tab === 'environment-vars') { loadEnvVars(); }
+  if (tab === 'environment-vars') { loadEnvVars(); loadLLMProviderSelection(); }
   if (tab === 'audit') loadAuditLog();
   if (tab === 'compliance-rules') { loadComplianceSettings(); }
   if (tab === 'compliance-audit') { loadAuditLog('compliance'); }

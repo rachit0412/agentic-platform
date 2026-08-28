@@ -1208,6 +1208,200 @@ async function applyBatchVersionUpdates() {
 }
 
 /**
+ * Load LLM Provider Selection options
+ */
+async function loadLLMProviderSelection() {
+  try {
+    const container = document.getElementById('llm-config-vars');
+    if (!container) {
+      console.warn('LLM config container not found');
+      return;
+    }
+
+    // Set loading state
+    container.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem">Loading LLM configuration...</div>';
+
+    const response = await fetch('/api/models');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to load LLM models`);
+    }
+    
+    const data = await response.json();
+    console.log('LLM models loaded:', data);
+
+    if (!data.models || data.models.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-3); padding: 1rem;">No LLM models available</p>';
+      return;
+    }
+
+    const active = data.active || {};
+    const modelsByProvider = {};
+
+    // Group models by provider
+    data.models.forEach(model => {
+      if (!modelsByProvider[model.provider]) {
+        modelsByProvider[model.provider] = [];
+      }
+      modelsByProvider[model.provider].push(model);
+    });
+
+    // Build provider cards with model selection
+    const providerCards = Object.entries(modelsByProvider).map(([provider, models]) => {
+      const isActive = active.provider === provider;
+      const activeModel = active.model;
+      
+      const modelOptions = models.map(m => `
+        <option value="${m.model}" ${activeModel === m.model ? 'selected' : ''}>
+          ${m.model}${m.capabilities ? ' (' + m.capabilities.join(', ') + ')' : ''}
+        </option>
+      `).join('');
+
+      return `
+        <div style="
+          padding: 1rem;
+          background: ${isActive ? 'rgba(16, 185, 129, 0.08)' : 'var(--input-bg)'};
+          border: 2px solid ${isActive ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'};
+          border-radius: 8px;
+          transition: all 0.2s;
+          cursor: pointer;
+        " onclick="selectLLMProvider('${provider}')" style="cursor: pointer;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 1.2rem;
+            ">
+              ${provider === 'ollama' ? '🦙' : provider === 'openai' ? '🔥' : '☁️'}
+            </div>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: var(--text-1); text-transform: capitalize;">
+                ${provider}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-3);">
+                ${models.length} model(s) available
+              </div>
+            </div>
+            ${isActive ? '<div style="background: rgba(16, 185, 129, 0.3); color: #10b981; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">ACTIVE</div>' : ''}
+          </div>
+          
+          <div style="margin-top: 0.75rem;">
+            <label style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem;">
+              Select Model
+            </label>
+            <select 
+              onchange="switchLLMModel('${provider}', this.value); event.stopPropagation();"
+              style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-1); font-size: 0.9rem;"
+            >
+              ${modelOptions}
+            </select>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Show Ollama status if available
+    let ollamaStatusHtml = '';
+    if (data.ollama_status) {
+      const status = data.ollama_status;
+      const isHealthy = status.status === 'healthy';
+      ollamaStatusHtml = `
+        <div style="
+          margin-top: 1rem;
+          padding: 0.75rem;
+          background: ${isHealthy ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)'};
+          border-left: 3px solid ${isHealthy ? '#10b981' : '#ef4444'};
+          border-radius: 4px;
+        ">
+          <div style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; margin-bottom: 0.25rem;">
+            Ollama Status
+          </div>
+          <div style="font-size: 0.9rem; color: ${isHealthy ? '#10b981' : '#ef4444'}; font-weight: 500;">
+            ${isHealthy ? '✓ Running' : '✗ Not Available'}
+          </div>
+          ${status.reason ? '<div style="font-size: 0.8rem; color: var(--text-3); margin-top: 0.25rem;">' + status.reason + '</div>' : ''}
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="display: grid; gap: 1rem;">
+        ${providerCards}
+        ${ollamaStatusHtml}
+      </div>
+      
+      <div style="
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid #3b82f6;
+        border-radius: 6px;
+      ">
+        <p style="margin: 0; font-size: 0.9rem; color: var(--text-2); line-height: 1.5;">
+          💡 <strong>LLM Configuration:</strong> Select your preferred LLM provider and model. Changes take effect immediately for new conversations.
+        </p>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Error loading LLM provider selection:', error);
+    const container = document.getElementById('llm-config-vars');
+    if (container) {
+      container.innerHTML = '<p style="color: var(--danger); padding: 1rem;">Failed to load LLM configuration: ' + error.message + '</p>';
+    }
+  }
+}
+
+/**
+ * Select LLM provider
+ */
+async function selectLLMProvider(provider) {
+  // The model selection dropdown handles the actual switch
+  const dropdown = event.target.closest('[onclick*="selectLLMProvider"]').querySelector('select');
+  if (dropdown) {
+    dropdown.focus();
+  }
+}
+
+/**
+ * Switch to a different LLM model
+ */
+async function switchLLMModel(provider, model) {
+  try {
+    showNotification(`Switching to ${provider}/${model}...`, 'success');
+    
+    const response = await fetch('/api/models/switch', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        provider: provider,
+        model: model
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || error.error || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    showNotification(`✓ Switched to ${provider}/${model}`, 'success');
+    
+    // Reload to show updated state
+    loadLLMProviderSelection();
+  } catch (error) {
+    console.error('Error switching LLM model:', error);
+    showNotification('Failed to switch model: ' + error.message, 'error');
+  }
+}
+
+/**
  * Copy text to clipboard
  */
 function copyToClipboard(text) {
