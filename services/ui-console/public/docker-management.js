@@ -1030,6 +1030,184 @@ function resetEnvVars() {
 }
 
 /**
+ * Show batch version update modal - allows selecting and updating multiple images
+ */
+async function showBatchVersionUpdateModal() {
+  try {
+    // Use cached security summary to get latest versions
+    const summary = dockerImageState.securitySummary;
+    if (!summary || !summary.recommended_updates) {
+      showNotification('No image data available. Refresh the panel first.', 'warning');
+      return;
+    }
+
+    const updates = summary.recommended_updates || [];
+    if (updates.length === 0) {
+      showNotification('All images are up to date!', 'success');
+      return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    
+    const updatesList = updates.map((update, idx) => `
+      <div style="
+        padding: 1rem;
+        background: rgba(245, 158, 11, 0.05);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      ">
+        <input 
+          type="checkbox" 
+          class="update-checkbox" 
+          data-image="${update.image}"
+          data-version="${update.latest}"
+          checked
+          style="width: 20px; height: 20px; cursor: pointer;"
+        />
+        <div style="flex: 1;">
+          <div style="font-weight: 600; color: var(--text-1); margin-bottom: 0.25rem;">
+            ${update.image}
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-2); font-family: monospace; display: flex; gap: 1rem;">
+            <span>Current: <strong>${update.current}</strong></span>
+            <span style="color: #f59e0b;">→</span>
+            <span>Latest: <strong>${update.latest}</strong></span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3>🐳 Pull Latest Docker Image Versions</h3>
+          <button class="btn btn-close" onclick="this.closest('.modal').remove()">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-2); margin-bottom: 1rem;">
+            Select which images you want to update to their latest versions. This will update environment variables and require rebuilding containers.
+          </p>
+          
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll('.update-checkbox').forEach(cb => cb.checked = true)">
+              Select All
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll('.update-checkbox').forEach(cb => cb.checked = false)">
+              Deselect All
+            </button>
+          </div>
+
+          <div style="max-height: 400px; overflow-y: auto;">
+            ${updatesList}
+          </div>
+
+          <div style="
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            border-radius: 6px;
+          ">
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-2); line-height: 1.5;">
+              💡 <strong>Next Steps:</strong> After updating, you'll need to run <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">docker-compose up --build</code> to pull the new images and rebuild containers.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+          <button class="btn btn-primary" onclick="applyBatchVersionUpdates(); this.closest('.modal').remove();" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            Apply Updates
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  } catch (error) {
+    console.error('Error showing batch update modal:', error);
+    showNotification('Error loading update options: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Apply batch version updates for selected images
+ */
+async function applyBatchVersionUpdates() {
+  try {
+    const selected = Array.from(document.querySelectorAll('.update-checkbox:checked')).map(cb => ({
+      image: cb.dataset.image,
+      version: cb.dataset.version
+    }));
+
+    if (selected.length === 0) {
+      showNotification('No images selected for update', 'warning');
+      return;
+    }
+
+    showNotification(`Updating ${selected.length} image(s)...`, 'success');
+    
+    let successCount = 0;
+    let failureCount = 0;
+    const errors = [];
+
+    // Update each image sequentially
+    for (const update of selected) {
+      try {
+        const response = await fetch('/api/admin/docker/update-version', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: update.image,
+            version: update.version
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          successCount++;
+          console.log(`✓ ${update.image} updated to ${update.version}`);
+        } else {
+          failureCount++;
+          errors.push(`${update.image}: ${result.error}`);
+        }
+      } catch (error) {
+        failureCount++;
+        errors.push(`${update.image}: ${error.message}`);
+      }
+    }
+
+    // Show summary
+    let message = `✓ Updated ${successCount} image(s)`;
+    if (failureCount > 0) {
+      message += ` | ✗ Failed: ${failureCount}`;
+      if (errors.length > 0) {
+        console.error('Update errors:', errors);
+      }
+      showNotification(message, 'warning');
+    } else {
+      showNotification(message + '. Refresh to see changes.', 'success');
+    }
+
+    // Refresh the UI
+    loadDockerImages();
+    loadDockerSecuritySummary();
+  } catch (error) {
+    console.error('Error applying batch updates:', error);
+    showNotification('Batch update failed: ' + error.message, 'error');
+  }
+}
+
+/**
  * Copy text to clipboard
  */
 function copyToClipboard(text) {
