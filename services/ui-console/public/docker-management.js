@@ -324,23 +324,31 @@ async function scanDockerImage(imageName) {
  */
 async function loadDockerSecuritySummary() {
   try {
+    console.log('Loading Docker security summary...');
     const response = await fetch('/api/admin/docker/security-summary');
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: Failed to load security summary`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
     const summary = await response.json();
     console.log('Security summary loaded:', summary);
     
+    // Validate response structure
+    if (!summary || typeof summary !== 'object') {
+      throw new Error('Invalid response format: expected object');
+    }
+    
     dockerImageState.securitySummary = summary;
     renderDockerSecuritySummary(summary);
+    
   } catch (error) {
     console.error('Error loading security summary:', error);
     const container = document.getElementById('docker-security-cards');
     if (container) {
       container.innerHTML = `<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; color: #ef4444;">
-        Failed to load security summary: ${error.message}
+        <strong>Failed to load security summary:</strong> ${error.message}
+        <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #cbd5e1;">Check browser console for details</p>
       </div>`;
     }
   }
@@ -351,13 +359,29 @@ async function loadDockerSecuritySummary() {
  */
 function renderDockerSecuritySummary(summary) {
   const container = document.getElementById('docker-security-cards');
-  if (!container) return;
+  if (!container) {
+    console.warn('Docker security cards container not found');
+    return;
+  }
 
-  // Handle various data formats
-  const safe = (summary.security_status?.safe || summary.safe || 0);
-  const warning = (summary.security_status?.warning || summary.warning || 0);
-  const critical = (summary.security_status?.critical || summary.critical || 0);
-  const total = (summary.total_vulnerabilities || (safe + warning + critical) || 0);
+  // Safely extract and convert values to numbers
+  let safe = 0, warning = 0, critical = 0, total = 0;
+  
+  if (summary && typeof summary === 'object') {
+    // Try different data format options
+    if (summary.security_status && typeof summary.security_status === 'object') {
+      safe = parseInt(summary.security_status.safe) || 0;
+      warning = parseInt(summary.security_status.warning) || 0;
+      critical = parseInt(summary.security_status.critical) || 0;
+    } else {
+      safe = parseInt(summary.safe) || 0;
+      warning = parseInt(summary.warning) || 0;
+      critical = parseInt(summary.critical) || 0;
+    }
+    total = parseInt(summary.total_vulnerabilities) || (safe + warning + critical) || 0;
+  }
+  
+  console.log('Security summary values:', { safe, warning, critical, total });
   
   const html = `
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
@@ -369,7 +393,7 @@ function renderDockerSecuritySummary(summary) {
         border-radius: 8px;
       ">
         <div style="font-size: 2.2rem; font-weight: 700; color: #10b981; line-height: 1;">${safe}</div>
-        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">✓ Safe</div>
+        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">✓ Safe Images</div>
       </div>
       <div class="card" style="
         text-align: center;
@@ -379,7 +403,7 @@ function renderDockerSecuritySummary(summary) {
         border-radius: 8px;
       ">
         <div style="font-size: 2.2rem; font-weight: 700; color: #f59e0b; line-height: 1;">${warning}</div>
-        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">⚠ Warning</div>
+        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">⚠ Warnings</div>
       </div>
       <div class="card" style="
         text-align: center;
@@ -404,21 +428,33 @@ function renderDockerSecuritySummary(summary) {
     </div>
   `;
 
-  container.innerHTML = html;
+  try {
+    container.innerHTML = html;
+  } catch (e) {
+    console.error('Error rendering security cards:', e);
+    container.innerHTML = `<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; color: #ef4444;">
+      Error rendering security summary: ${e.message}
+    </div>`;
+    return;
+  }
 
   // Render needs attention list
-  if (summary.needs_immediate_attention.length > 0) {
+  if (summary && Array.isArray(summary.needs_immediate_attention) && summary.needs_immediate_attention.length > 0) {
     const attentionContainer = document.getElementById('docker-attention-needed');
     if (attentionContainer) {
       const attentionHtml = `
         <div class="card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
-          <h4 style="color: #ef4444; margin-top: 0;">⚠ Needs Immediate Attention</h4>
+          <h4 style="color: #ef4444; margin-top: 0;">⚠️ Needs Immediate Attention</h4>
           <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
             ${summary.needs_immediate_attention.map(img => `<li>${img}</li>`).join('')}
           </ul>
         </div>
       `;
-      attentionContainer.innerHTML = attentionHtml;
+      try {
+        attentionContainer.innerHTML = attentionHtml;
+      } catch (e) {
+        console.error('Error rendering attention needed:', e);
+      }
     }
   }
 }
