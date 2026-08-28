@@ -21,7 +21,7 @@ async function loadDockerImages() {
     const container = document.getElementById('docker-images-table');
     if (!container) return;
     
-    const response = await fetch('/admin/docker/images', {
+    const response = await fetch('/api/admin/docker/images', {
       headers: {
         'x-workspace-id': window.currentWorkspace?.id || 'default',
         'x-user-id': window.currentUser?.id || 'system',
@@ -139,7 +139,7 @@ async function scanAllDockerImages() {
     button.textContent = 'Scanning...';
     button.disabled = true;
 
-    const response = await fetch('/admin/docker/scan', {
+    const response = await fetch('/api/admin/docker/scan', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ async function scanDockerImage(imageName) {
     const button = event.target.closest('button');
     button.disabled = true;
 
-    const response = await fetch(`/admin/docker/scan/${imageName}`, {
+    const response = await fetch(`/api/admin/docker/scan/${imageName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -204,7 +204,7 @@ async function scanDockerImage(imageName) {
  */
 async function loadDockerSecuritySummary() {
   try {
-    const response = await fetch('/admin/docker/security-summary', {
+    const response = await fetch('/api/admin/docker/security-summary', {
       headers: {
         'x-workspace-id': window.currentWorkspace?.id || 'default',
         'x-user-id': window.currentUser?.id || 'system',
@@ -305,7 +305,7 @@ function showUpdateImageModal(imageName, currentVersion, latestVersion) {
  */
 async function updateDockerImage(imageName, newVersion) {
   try {
-    const response = await fetch('/admin/docker/update-version', {
+    const response = await fetch('/api/admin/docker/update-version', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -383,7 +383,7 @@ async function checkDockerUpdates() {
     button.disabled = true;
     button.textContent = 'Checking...';
 
-    const response = await fetch('/admin/docker/check-updates', {
+    const response = await fetch('/api/admin/docker/check-updates', {
       method: 'POST',
       headers: {
         'x-workspace-id': window.currentWorkspace?.id || 'default',
@@ -446,7 +446,7 @@ async function loadEnvVars() {
     const container = document.getElementById('docker-env-vars');
     if (!container) return;
 
-    const response = await fetch('/admin/docker/env-vars', {
+    const response = await fetch('/api/admin/docker/env-vars', {
       headers: {
         'x-workspace-id': window.currentWorkspace?.id || 'default',
         'x-user-id': window.currentUser?.id || 'system',
