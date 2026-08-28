@@ -2241,6 +2241,7 @@ adminLoadAll();
 <\/script>
 ` }) %>
 
+<script>
 // Config subtab switching
 function switchConfigTab(tabName) {
   document.querySelectorAll('[id^="config-"]').forEach(function(el) { el.style.display = 'none'; });
@@ -2258,3 +2259,4 @@ document.querySelectorAll('#subtabs-config .admin-subtab').forEach(function(btn)
     switchConfigTab(tabName);
   });
 });
+</script>
