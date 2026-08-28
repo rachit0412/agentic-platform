@@ -1251,11 +1251,25 @@ async function loadLLMProviderSelection() {
       const isActive = active.provider === provider;
       const activeModel = active.model;
       
-      const modelOptions = models.map(m => `
-        <option value="${m.model}" ${activeModel === m.model ? 'selected' : ''}>
-          ${m.model}${m.capabilities ? ' (' + m.capabilities.join(', ') + ')' : ''}
-        </option>
-      `).join('');
+      const modelOptions = models.map(m => {
+        // Format model display: show capability tags if available
+        let displayName = m.model;
+        if (m.capabilities && typeof m.capabilities === 'object') {
+          // Build capability tags from the capabilities dict
+          const caps = [];
+          if (m.capabilities.streaming) caps.push('streaming');
+          if (m.capabilities.temperature) caps.push('temperature');
+          if (m.capabilities.max_tokens) caps.push(`${m.capabilities.max_tokens}K tokens`);
+          if (caps.length > 0) {
+            displayName += ` (${caps.join(', ')})`;
+          }
+        }
+        return `
+          <option value="${m.model}" ${activeModel === m.model ? 'selected' : ''}>
+            ${displayName}
+          </option>
+        `;
+      }).join('');
 
       return `
         <div style="
