@@ -1271,13 +1271,15 @@ var SECTION_TABS = {
   operations: ['health', 'overview', 'audit'],
   identity: ['users', 'personas'],
   ai: ['llm', 'config'],
-  data: ['database']
+  data: ['database'],
+  infrastructure: ['docker-images', 'environment-vars']
 };
 var TAB_SECTION = {
   health: 'operations', overview: 'operations', audit: 'operations',
   users: 'identity', personas: 'identity',
   llm: 'ai', config: 'ai',
-  database: 'data'
+  database: 'data',
+  'docker-images': 'infrastructure', 'environment-vars': 'infrastructure'
 };
 
 function switchSection(section) {
@@ -1325,7 +1327,9 @@ function switchTab(tab, fromSection) {
   if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
   if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
-  if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
+  if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); setTimeout(function() { switchConfigTab('appearance'); }, 50); }
+  if (tab === 'docker-images') { loadDockerImages(); loadDockerSecuritySummary(); }
+  if (tab === 'environment-vars') { loadEnvVars(); }
   if (tab === 'audit') loadAuditLog();
 }
 
