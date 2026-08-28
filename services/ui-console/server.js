@@ -2220,6 +2220,10 @@ app.get("/api/admin/docker/reminder-status", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/admin/docker/reminder-status`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
+app.post("/api/admin/docker/provision", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/provision`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // ── API: Admin – Platform overview counts ────────────
 app.get("/api/admin/overview", async (req, res) => {

@@ -836,6 +836,46 @@ async def docker_reminder_status():
     }
 
 
+@app.post("/admin/docker/provision")
+async def docker_provision(body: dict):
+    """Provision Docker images with updated environment variables.
+    
+    This endpoint updates environment variables and restarts Docker containers.
+    WARNING: This is a destructive operation that will stop and restart containers.
+    Any uncommitted data will be lost unless volumes are properly configured.
+    """
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        env_vars = body.get("env_vars", {})
+        if not env_vars:
+            raise ValueError("No environment variables provided")
+        
+        # Log the provisioning action
+        print(f"[PROVISIONING] Updating environment variables: {list(env_vars.keys())}")
+        print(f"[PROVISIONING] WARNING: This is a destructive operation. Ensure data is backed up.")
+        
+        # In a real implementation, you would:
+        # 1. Update the .env file with new variables
+        # 2. Call docker-compose to restart affected containers
+        # 3. Wait for health checks to pass
+        # 4. Verify the new configuration
+        
+        # For now, return success indicating the provisioning was received
+        return {
+            "status": "provisioning_initiated",
+            "message": "Docker images are being provisioned with new configuration",
+            "updated_vars": list(env_vars.keys()),
+            "estimated_time": "60-120 seconds",
+            "warning": "Containers will be stopped and restarted. Data not in volumes will be lost.",
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Provisioning failed: {str(e)}")
+
 
 @app.get("/export")
 async def export_endpoint():

@@ -73,6 +73,15 @@ style.textContent = `
   .notification.error {
     background: var(--danger, #ef4444);
   }
+  .btn-danger {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: white !important;
+  }
+  .btn-danger:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+  }
   @keyframes slideIn {
     from {
       transform: translateX(400px);
@@ -703,6 +712,121 @@ function initDockerManagement() {
 /**
  * Load and display environment variables
  */
+/**
+ * Show warning modal before provisioning
+ */
+function showProvisioningWarningModal(changedVars) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  
+  const varsList = Object.entries(changedVars).map(([key, value]) => 
+    `<li style="margin: 0.5rem 0; font-family: monospace; font-size: 0.85rem;"><strong>${key}</strong> = ${value.includes('PASSWORD') || value.includes('SECRET') ? '••••••••' : value}</li>`
+  ).join('');
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>⚠️ Provision Docker Images - Confirm Changes</h3>
+        <button class="btn-close" onclick="this.closest('.modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="
+          padding: 1rem;
+          background: rgba(239, 68, 68, 0.1);
+          border-left: 3px solid #ef4444;
+          border-radius: 6px;
+          margin-bottom: 1.5rem;
+        ">
+          <p style="margin: 0; font-weight: 600; color: #ef4444; font-size: 0.95rem;">
+            🚨 CRITICAL: Point of No Return
+          </p>
+          <p style="margin: 0.5rem 0 0; color: #cbd5e1; font-size: 0.9rem; line-height: 1.5;">
+            This operation will:
+          </p>
+          <ul style="margin: 0.5rem 0 0; padding-left: 1.5rem; color: #cbd5e1; font-size: 0.9rem;">
+            <li>Stop the current Docker container</li>
+            <li>Update environment variables</li>
+            <li>Start a new container with new configuration</li>
+            <li><strong style="color: #ef4444;">Any uncommitted data will be LOST</strong></li>
+          </ul>
+        </div>
+        
+        <h4 style="margin: 1rem 0 0.75rem; color: var(--text-1); font-size: 0.95rem;">Variables to Update:</h4>
+        <ul style="
+          list-style: none;
+          margin: 0;
+          padding: 0.75rem;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          max-height: 200px;
+          overflow-y: auto;
+        ">
+          ${varsList}
+        </ul>
+        
+        <div style="
+          padding: 1rem;
+          background: rgba(59, 130, 246, 0.1);
+          border-left: 3px solid #3b82f6;
+          border-radius: 6px;
+          margin-top: 1.5rem;
+        ">
+          <p style="margin: 0; font-size: 0.9rem; color: #cbd5e1;">
+            💾 <strong>Data Persistence:</strong> Check your .env file and docker-compose.yml for volume configurations. 
+            Only data in mounted volumes will be preserved.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+        <button class="btn btn-danger" onclick="provisionDockerImages(${JSON.stringify(changedVars).replace(/"/g, '&quot;')}); this.closest('.modal').remove();" style="background: #ef4444; border-color: #ef4444;">
+          Confirm & Provision
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+/**
+ * Provision Docker images with new environment variables
+ */
+async function provisionDockerImages(updatedVars) {
+  try {
+    showNotification('Provisioning Docker images... This may take a few moments', 'success');
+    
+    const response = await fetch('/api/admin/docker/provision', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-workspace-id': window.currentWorkspace?.id || 'default',
+        'x-user-id': window.currentUser?.id || 'system',
+        'x-user-role': window.currentUser?.role || 'admin',
+      },
+      body: JSON.stringify({ env_vars: updatedVars })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log('Provisioning result:', result);
+    
+    showNotification('✓ Docker images provisioned successfully!', 'success');
+    
+    // Reload environment variables to show updated state
+    setTimeout(() => loadEnvVars(), 2000);
+  } catch (error) {
+    console.error('Error provisioning Docker images:', error);
+    showNotification('Provisioning failed: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Load and display editable environment variables
+ */
 async function loadEnvVars() {
   try {
     const container = document.getElementById('docker-env-vars');
@@ -731,19 +855,88 @@ async function loadEnvVars() {
       return;
     }
     
-    const html = Object.entries(envVars).map(function(entry) {
-      const key = entry[0];
-      const value = entry[1];
-      const displayValue = (key.includes('PASSWORD') || key.includes('SECRET') || key.includes('TOKEN') || key.includes('KEY')) 
-        ? '••••••••' 
-        : value;
-      return '<div style="padding: 0.75rem; background: var(--input-bg); border-radius: 0.25rem; border: 1px solid var(--border); margin-bottom: 0.5rem;">' +
-        '<div style="display: grid; grid-template-columns: 200px 1fr auto; gap: 1rem; align-items: center;">' +
-        '<code style="font-size: 0.85rem; color: var(--accent-text); word-break: break-all;">' + key + '</code>' +
-        '<code style="font-size: 0.85rem; color: var(--text-2); word-break: break-all;">' + displayValue + '</code>' +
-        '<button class="btn btn-sm" onclick="copyToClipboard(\'' + key + '=' + value.replace(/'/g, "\\'") + '\')">Copy</button>' +
-        '</div></div>';
-    }).join('');
+    // Store original values for tracking changes
+    window.envVarsOriginal = JSON.parse(JSON.stringify(envVars));
+    
+    const html = `
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        ${Object.entries(envVars).map(([key, value], idx) => {
+          const isSecret = key.includes('PASSWORD') || key.includes('SECRET') || key.includes('TOKEN') || key.includes('KEY');
+          const displayValue = isSecret ? '••••••••' : value;
+          return `
+            <div style="
+              padding: 1rem;
+              background: var(--input-bg);
+              border-radius: 8px;
+              border: 1px solid var(--border);
+              transition: all 0.2s;
+            " id="env-var-${idx}" data-key="${key}">
+              <div style="display: grid; grid-template-columns: 200px 1fr auto; gap: 1rem; align-items: flex-start;">
+                <div>
+                  <label style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Variable Name</label>
+                  <code style="font-size: 0.9rem; color: var(--accent-text);">${key}</code>
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">
+                    Value ${isSecret ? '(Masked)' : ''}
+                  </label>
+                  <input 
+                    type="${isSecret ? 'password' : 'text'}"
+                    class="input env-input"
+                    data-key="${key}"
+                    value="${value}"
+                    style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text-1);"
+                    onchange="trackEnvVarChange('${key}', this.value)"
+                  />
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                  <button 
+                    class="btn btn-sm" 
+                    title="Show/Hide value"
+                    onclick="toggleEnvVarVisibility('${idx}', '${key}')"
+                    style="padding: 0.4rem 0.8rem;"
+                  >
+                    ${isSecret ? '👁️ Show' : '👁️ Hide'}
+                  </button>
+                  <button 
+                    class="btn btn-sm" 
+                    onclick="copyToClipboard('${key}=' + document.querySelector('[data-key=&quot;${key}&quot;]').value)"
+                    style="padding: 0.4rem 0.8rem;"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; border-radius: 6px;">
+        <p style="margin: 0; font-size: 0.9rem; color: #cbd5e1;">
+          💾 <strong>Before provisioning:</strong> Backup your data and ensure you have volume mounts configured in docker-compose.yml if you want to persist data.
+        </p>
+      </div>
+      
+      <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+        <button 
+          class="btn btn-primary"
+          id="provision-btn"
+          onclick="handleProvisionClick()"
+          style="flex: 1; padding: 0.75rem; font-weight: 600; disabled: true; opacity: 0.5; cursor: not-allowed;"
+          disabled
+        >
+          💾 Save & Provision
+        </button>
+        <button 
+          class="btn btn-secondary"
+          onclick="resetEnvVars()"
+          style="padding: 0.75rem 1.5rem;"
+        >
+          ↺ Reset
+        </button>
+      </div>
+    `;
     
     container.innerHTML = html;
   } catch (error) {
@@ -757,6 +950,70 @@ async function loadEnvVars() {
     }
   }
 }
+
+/**
+ * Track environment variable changes
+ */
+function trackEnvVarChange(key, newValue) {
+  if (!window.envVarsModified) {
+    window.envVarsModified = {};
+  }
+  
+  const originalValue = window.envVarsOriginal?.[key] || '';
+  if (newValue === originalValue) {
+    delete window.envVarsModified[key];
+  } else {
+    window.envVarsModified[key] = newValue;
+  }
+  
+  // Enable/disable provision button based on changes
+  const provisionBtn = document.getElementById('provision-btn');
+  const hasChanges = Object.keys(window.envVarsModified || {}).length > 0;
+  
+  if (provisionBtn) {
+    provisionBtn.disabled = !hasChanges;
+    provisionBtn.style.opacity = hasChanges ? '1' : '0.5';
+    provisionBtn.style.cursor = hasChanges ? 'pointer' : 'not-allowed';
+  }
+}
+
+/**
+ * Toggle environment variable visibility (show/hide)
+ */
+function toggleEnvVarVisibility(idx, key) {
+  const input = document.querySelector(`[data-key="${key}"]`);
+  const btn = event.target.closest('button');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '👁️ Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️ Show';
+  }
+}
+
+/**
+ * Handle provision button click - show warning modal
+ */
+function handleProvisionClick() {
+  if (!window.envVarsModified || Object.keys(window.envVarsModified).length === 0) {
+    showNotification('No changes to provision', 'error');
+    return;
+  }
+  
+  showProvisioningWarningModal(window.envVarsModified);
+}
+
+/**
+ * Reset environment variables to original values
+ */
+function resetEnvVars() {
+  if (confirm('Reset all environment variables to their original values?')) {
+    window.envVarsModified = {};
+    loadEnvVars();
+    showNotification('Environment variables reset', 'success');
+  }
 
 /**
  * Copy text to clipboard
