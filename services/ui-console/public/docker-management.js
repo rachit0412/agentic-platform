@@ -648,11 +648,16 @@ function showImageScanResults(imageName, results) {
 /**
  * Check for available updates
  */
-async function checkDockerUpdates() {
+async function checkDockerUpdates(evt) {
   try {
-    const button = event.target.closest('button');
-    button.disabled = true;
-    button.textContent = 'Checking...';
+    let button = null;
+    if (evt && evt.target) {
+      button = evt.target.closest('button');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Checking...';
+      }
+    }
 
     const response = await fetch('/api/admin/docker/check-updates', {
       method: 'POST',
@@ -688,9 +693,13 @@ async function checkDockerUpdates() {
     console.error('Error checking updates:', error);
     showNotification('Update check failed: ' + error.message, 'error');
   } finally {
-    const button = event.target.closest('button');
-    button.disabled = false;
-    button.textContent = 'Check for Updates';
+    if (evt && evt.target) {
+      const button = evt.target.closest('button');
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Check for Updates';
+      }
+    }
   }
 }
 
