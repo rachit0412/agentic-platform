@@ -142,13 +142,7 @@ async function loadDockerImages() {
       return;
     }
     
-    const response = await fetch('/api/admin/docker/images', {
-      headers: {
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
-      }
-    });
+    const response = await fetch('/api/admin/docker/images');
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -274,10 +268,7 @@ async function scanAllDockerImages() {
     const response = await fetch('/api/admin/docker/scan', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
+        'Content-Type': 'application/json'
       }
     });
 
@@ -310,10 +301,7 @@ async function scanDockerImage(imageName) {
     const response = await fetch(`/api/admin/docker/scan/${imageName}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
+        'Content-Type': 'application/json'
       }
     });
 
@@ -336,13 +324,7 @@ async function scanDockerImage(imageName) {
  */
 async function loadDockerSecuritySummary() {
   try {
-    const response = await fetch('/api/admin/docker/security-summary', {
-      headers: {
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
-      }
-    });
+    const response = await fetch('/api/admin/docker/security-summary');
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: Failed to load security summary`);
@@ -480,10 +462,7 @@ async function updateDockerImage(imageName, newVersion) {
     const response = await fetch('/api/admin/docker/update-version', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         image: imageName,
@@ -662,9 +641,7 @@ async function checkDockerUpdates(evt) {
     const response = await fetch('/api/admin/docker/check-updates', {
       method: 'POST',
       headers: {
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
+        'Content-Type': 'application/json'
       }
     });
 
@@ -808,10 +785,7 @@ async function provisionDockerImages(updatedVars) {
     const response = await fetch('/api/admin/docker/provision', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ env_vars: updatedVars })
     });
@@ -844,13 +818,7 @@ async function loadEnvVars() {
       return;
     }
 
-    const response = await fetch('/api/admin/docker/env-vars', {
-      headers: {
-        'x-workspace-id': window.currentWorkspace?.id || 'default',
-        'x-user-id': window.currentUser?.id || 'system',
-        'x-user-role': window.currentUser?.role || 'admin',
-      }
-    });
+    const response = await fetch('/api/admin/docker/env-vars');
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: Failed to load environment variables`);
