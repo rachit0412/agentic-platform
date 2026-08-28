@@ -1491,38 +1491,30 @@ async function showVersionsModal(varName, currentVersion) {
 }
 
 /**
- * Get available versions for an image (simulated - in production would query registry)
+ * Get available versions for an image from backend API
  */
 async function getAvailableVersions(imageName) {
   try {
-    // Mock versions - in production this would call a real API to Docker Hub/registries
-    const versionMap = {
-      'python': ['3.12.4', '3.12.3', '3.12.2', '3.11.10', '3.11.9'],
-      'node': ['22.1.0', '22.0.0', '20.15.1', '20.14.0', '20.13.0'],
-      'ollama': ['0.3.10', '0.3.9', '0.3.8', '0.3.7', '0.3.6'],
-      'postgres': ['17.0', '16.3', '16.2', '15.7', '15.6'],
-      'postgresql': ['17.0', '16.3', '16.2', '15.7', '15.6'],
-      'redis': ['7.2.4', '7.2.3', '7.2.2', '7.0.15', '7.0.14'],
-      'chromadb': ['0.4.24', '0.4.23', '0.4.22', '0.4.21', '0.4.20'],
-      'datastore': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
-      'tools': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
-      'agent': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
-      'n8n': ['2.37.4', '2.37.3', '2.37.2', '2.36.5', '2.36.4'],
-      'n8n_image_tag': ['2.37.4', '2.37.3', '2.37.2', '2.36.5', '2.36.4'],
-    };
+    console.log('Fetching versions from API for:', imageName);
     
-    const versions = versionMap[imageName.toLowerCase()] || versionMap[imageName.replace(/_image_tag$|_image$/i, '').toLowerCase()];
+    const response = await fetch(`/api/admin/docker/versions/${encodeURIComponent(imageName)}`);
     
-    if (versions) {
-      console.log('Found versions for', imageName + ':', versions);
-      return versions;
+    if (!response.ok) {
+      console.warn(`Failed to fetch versions for ${imageName}: HTTP ${response.status}`);
+      return [];
     }
     
-    // If still not found, return empty array to trigger "no versions" message
-    console.warn('No versions found for:', imageName, '- returning empty array');
+    const data = await response.json();
+    console.log('Versions received from API:', data);
+    
+    if (data.versions && data.versions.length > 0) {
+      return data.versions;
+    }
+    
+    console.warn('No versions found for:', imageName);
     return [];
   } catch (error) {
-    console.error('Error getting versions:', error);
+    console.error('Error fetching versions from API:', error);
     return [];
   }
 }

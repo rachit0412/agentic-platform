@@ -836,6 +836,31 @@ async def docker_reminder_status():
     }
 
 
+@app.get("/admin/docker/versions/{image_name}")
+async def get_image_versions(image_name: str):
+    """Get available versions for a Docker image.
+    
+    Returns a list of available versions from known registries.
+    Uses predefined version maps and can be extended with Docker Hub API.
+    """
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    
+    # Try to get versions from image manager first
+    versions = manager.get_available_versions(image_name)
+    
+    return {
+        "image": image_name,
+        "versions": versions,
+        "count": len(versions)
+    }
+
+
 @app.post("/admin/docker/provision")
 async def docker_provision(body: dict):
     """Provision Docker images with updated environment variables.

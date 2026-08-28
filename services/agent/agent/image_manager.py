@@ -346,6 +346,66 @@ class DockerImageManager:
                 env_vars[image.env_var] = image.current_version
         return env_vars
 
+    def get_available_versions(self, image_name: str) -> list[str]:
+        """Get available versions for a Docker image.
+        
+        Comprehensive version map for all supported images.
+        Falls back gracefully for unknown images.
+        """
+        # Comprehensive version mapping
+        version_map = {
+            # Development bases
+            'python': ['3.12.4', '3.12.3', '3.12.2', '3.11.10', '3.11.9'],
+            'node': ['22.1.0', '22.0.0', '20.15.1', '20.14.0', '20.13.0'],
+            
+            # Orchestration & Workflow
+            'n8n': ['2.37.4', '2.37.3', '2.37.2', '2.36.5', '2.36.4'],
+            'n8n_image_tag': ['2.37.4', '2.37.3', '2.37.2', '2.36.5', '2.36.4'],
+            
+            # Data & Storage
+            'postgres': ['17.0', '16.3', '16.2', '15.7', '15.6'],
+            'postgresql': ['17.0', '16.3', '16.2', '15.7', '15.6'],
+            'redis': ['7.2.4', '7.2.3', '7.2.2', '7.0.15', '7.0.14'],
+            'chromadb': ['0.4.24', '0.4.23', '0.4.22', '0.4.21', '0.4.20'],
+            
+            # ML/LLM
+            'ollama': ['0.3.10', '0.3.9', '0.3.8', '0.3.7', '0.3.6'],
+            
+            # Platform services
+            'datastore': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+            'datastore_db': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+            'tools': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+            'tools_service': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+            'agent': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+            'agent_service': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+            
+            # Observability
+            'prometheus': ['v2.53.0', 'v2.52.0', 'v2.51.2', 'v2.51.1', 'v2.51.0'],
+            'grafana': ['11.0.0', '10.4.1', '10.4.0', '10.3.3', '10.3.2'],
+            'loki': ['3.0.0', '2.9.7', '2.9.6', '2.9.5', '2.9.4'],
+            
+            # Message queue
+            'rabbitmq': ['3.13.0', '3.12.13', '3.12.12', '3.11.28', '3.11.27'],
+            
+            # Utilities
+            'nginx': ['1.27.0', '1.26.2', '1.26.1', '1.26.0', '1.25.5'],
+        }
+        
+        # Normalize the image name (handle _image_tag, _image, etc. suffixes)
+        normalized_name = image_name.lower()
+        normalized_name = normalized_name.replace('_image_tag', '').replace('_image', '').replace('_service', '').replace('_db', '')
+        
+        # First try exact match
+        if image_name.lower() in version_map:
+            return version_map[image_name.lower()]
+        
+        # Then try normalized match
+        if normalized_name in version_map:
+            return version_map[normalized_name]
+        
+        # Return empty list - frontend will show "no versions found" instead of generic fallback
+        return []
+
     def should_show_security_reminder(self) -> bool:
         """Check if monthly security reminder should be shown."""
         if self.last_reminder_check is None:
