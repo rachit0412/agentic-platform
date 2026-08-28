@@ -619,112 +619,226 @@
 
 <!-- TAB: COMPLIANCE RULES & POLICIES                        -->
 <div id="tab-compliance-rules" class="admin-tab-content" style="display:none">
-  <div class="card">
-    <h2 style="margin:0 0 1.5rem">🛡️ Compliance Rules & Ethical Guidelines</h2>
-    
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-bottom:1.5rem">
-      <!-- Enable Compliance -->
-      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
-        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
-          <input type="checkbox" id="enable-compliance" checked />
-          Enable Compliance Filtering
-        </label>
-        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-          Filter responses based on configured compliance rules
-        </p>
-      </div>
+  <div style="max-width:1200px">
+    <!-- Header -->
+    <div style="margin-bottom:2rem">
+      <h2 style="margin:0 0 0.5rem;font-size:1.8rem;font-weight:600">🛡️ Compliance & Ethical Controls</h2>
+      <p style="margin:0;color:var(--text-3);font-size:0.95rem">Configure filtering rules, compliance levels, and ethical guidelines for all agent interactions</p>
+    </div>
 
-      <!-- Audit Logging -->
-      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
-        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
-          <input type="checkbox" id="enable-audit" checked />
-          Enable Audit Logging
-        </label>
-        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-          Log all agent interactions for compliance review
-        </p>
+    <!-- Status Overview Card -->
+    <div style="padding:1.5rem;background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(14,165,233,0.05));border:1px solid rgba(6,182,212,0.2);border-radius:12px;margin-bottom:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.5rem">
+      <div>
+        <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Status</div>
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text-1)">
+          <span id="compliance-status-badge" style="background:rgba(16,185,129,0.2);color:#10b981;padding:0.25rem 0.75rem;border-radius:20px;font-size:0.9rem">Enabled</span>
+        </div>
       </div>
-
-      <!-- PII Filtering -->
-      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
-        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
-          <input type="checkbox" id="enable-pii-filter" checked />
-          Filter PII Data
-        </label>
-        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-          Mask emails, phone numbers, SSNs, and sensitive data
-        </p>
+      <div>
+        <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Active Level</div>
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text-1)" id="active-compliance-level">Medium</div>
       </div>
-
-      <!-- Harmful Content Filter -->
-      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
-        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
-          <input type="checkbox" id="enable-harmful-content" checked />
-          Filter Harmful Content
-        </label>
-        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-          Block responses containing illegal or harmful instructions
-        </p>
-      </div>
-
-      <!-- Profanity Filter -->
-      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
-        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
-          <input type="checkbox" id="enable-profanity" checked />
-          Filter Profanity
-        </label>
-        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-          Remove offensive language from responses
-        </p>
-      </div>
-
-      <!-- Rate Limiting -->
-      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
-        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
-          <input type="checkbox" id="enable-rate-limit" checked />
-          Enable Rate Limiting
-        </label>
-        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-          Prevent abuse through request rate limits
-        </p>
+      <div>
+        <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">Filters Active</div>
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text-1)" id="active-filters-count">4</div>
       </div>
     </div>
 
-    <!-- Compliance Level -->
-    <div style="padding:1.25rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider);margin-bottom:1.5rem">
-      <label style="display:block;margin-bottom:0.75rem;font-weight:600">Compliance Level</label>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-bottom:1rem">
-        <div style="padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.2s" data-level="low">
-          <div style="font-weight:500;color:var(--text-2)">🟢 Low</div>
-          <div style="font-size:0.85rem;color:var(--text-3)">Basic filtering only</div>
+    <!-- Compliance Level Selection -->
+    <div style="margin-bottom:2rem">
+      <div style="margin-bottom:1rem">
+        <h3 style="margin:0 0 0.5rem;font-size:1.1rem;font-weight:600">Compliance Level</h3>
+        <p style="margin:0;color:var(--text-3);font-size:0.9rem">Choose the strictness of compliance enforcement</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1rem">
+        <!-- Low Level -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:2px solid transparent;border-radius:10px;cursor:pointer;transition:all 0.3s" data-level="low" onclick="selectComplianceLevel('low')">
+          <div style="display:flex;align-items:flex-start;gap:1rem;margin-bottom:0.75rem">
+            <div style="font-size:1.5rem;line-height:1">🟢</div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text-1);font-size:1rem;margin-bottom:0.25rem">Low</div>
+              <div style="color:var(--text-3);font-size:0.85rem">Minimal protection</div>
+            </div>
+          </div>
+          <ul style="margin:0;padding-left:1.5rem;color:var(--text-2);font-size:0.85rem;line-height:1.6">
+            <li>Basic content filtering only</li>
+            <li>No PII masking</li>
+            <li>Audit logging optional</li>
+          </ul>
         </div>
-        <div style="padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;border:2px solid rgba(59,130,246,0.5)" data-level="medium">
-          <div style="font-weight:500;color:var(--text-2)">🟡 Medium (Default)</div>
-          <div style="font-size:0.85rem;color:var(--text-3)">Standard protection</div>
+
+        <!-- Medium Level (Default) -->
+        <div style="padding:1.25rem;background:linear-gradient(135deg,rgba(14,165,233,0.1),rgba(59,130,246,0.05));border:2px solid rgba(59,130,246,0.5);border-radius:10px;cursor:pointer;transition:all 0.3s" data-level="medium" onclick="selectComplianceLevel('medium')">
+          <div style="display:flex;align-items:flex-start;gap:1rem;margin-bottom:0.75rem">
+            <div style="font-size:1.5rem;line-height:1">🟡</div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text-1);font-size:1rem;margin-bottom:0.25rem">Medium <span style="background:rgba(59,130,246,0.2);color:#3b82f6;font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:3px;margin-left:0.5rem">DEFAULT</span></div>
+              <div style="color:var(--text-3);font-size:0.85rem">Recommended for production</div>
+            </div>
+          </div>
+          <ul style="margin:0;padding-left:1.5rem;color:var(--text-2);font-size:0.85rem;line-height:1.6">
+            <li>PII masking enabled</li>
+            <li>Harmful content blocking</li>
+            <li>Comprehensive audit trail</li>
+          </ul>
         </div>
-        <div style="padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.2s" data-level="high">
-          <div style="font-weight:500;color:var(--text-2)">🔴 High</div>
-          <div style="font-size:0.85rem;color:var(--text-3)">Strict enforcement</div>
+
+        <!-- High Level -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:2px solid transparent;border-radius:10px;cursor:pointer;transition:all 0.3s" data-level="high" onclick="selectComplianceLevel('high')">
+          <div style="display:flex;align-items:flex-start;gap:1rem;margin-bottom:0.75rem">
+            <div style="font-size:1.5rem;line-height:1">🔴</div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text-1);font-size:1rem;margin-bottom:0.25rem">High</div>
+              <div style="color:var(--text-3);font-size:0.85rem">Strict enforcement</div>
+            </div>
+          </div>
+          <ul style="margin:0;padding-left:1.5rem;color:var(--text-2);font-size:0.85rem;line-height:1.6">
+            <li>All filters enabled</li>
+            <li>Strict content blocking</li>
+            <li>Rate limiting enforced</li>
+          </ul>
         </div>
       </div>
       <input type="hidden" id="compliance-level" value="medium" />
-      <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-        <strong>Medium:</strong> PII filtering + harmful content blocking + audit logging
-      </p>
     </div>
 
-    <!-- Ethical Guidelines -->
-    <div style="padding:1.25rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider);margin-bottom:1.5rem">
-      <label style="display:block;margin-bottom:0.75rem;font-weight:600">Ethical Guidelines</label>
-      <textarea id="ethical-guidelines" placeholder="Enter ethical guidelines for the AI agent..." style="width:100%;min-height:120px;margin-bottom:0.75rem"></textarea>
-      <p style="margin:0;color:var(--text-3);font-size:0.85rem">
-        These guidelines will be sent with each agent request to reinforce ethical behavior
-      </p>
+    <!-- Filter Controls Section -->
+    <div style="margin-bottom:2rem">
+      <div style="margin-bottom:1rem">
+        <h3 style="margin:0 0 0.5rem;font-size:1.1rem;font-weight:600">Filter Configuration</h3>
+        <p style="margin:0;color:var(--text-3);font-size:0.9rem">Enable or disable individual compliance filters</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem">
+        <!-- Compliance Filtering Toggle -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px;display:flex;align-items:flex-start;gap:1rem">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+              <span style="font-size:1.2rem">🔒</span>
+              <label style="font-weight:600;color:var(--text-1);margin:0;cursor:pointer">Enable Compliance Filtering</label>
+            </div>
+            <p style="margin:0;color:var(--text-3);font-size:0.85rem;line-height:1.5">Master toggle for all compliance rules. When disabled, all filters are bypassed.</p>
+          </div>
+          <div style="width:50px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <input type="checkbox" id="enable-compliance" checked style="width:24px;height:24px;cursor:pointer" onchange="updateFilterCount()"/>
+          </div>
+        </div>
+
+        <!-- Audit Logging Toggle -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px;display:flex;align-items:flex-start;gap:1rem">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+              <span style="font-size:1.2rem">📝</span>
+              <label style="font-weight:600;color:var(--text-1);margin:0;cursor:pointer">Enable Audit Logging</label>
+            </div>
+            <p style="margin:0;color:var(--text-3);font-size:0.85rem;line-height:1.5">Log all agent interactions for compliance review and audit trails.</p>
+          </div>
+          <div style="width:50px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <input type="checkbox" id="enable-audit" checked style="width:24px;height:24px;cursor:pointer" onchange="updateFilterCount()"/>
+          </div>
+        </div>
+
+        <!-- PII Filtering Toggle -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px;display:flex;align-items:flex-start;gap:1rem">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+              <span style="font-size:1.2rem">🔐</span>
+              <label style="font-weight:600;color:var(--text-1);margin:0;cursor:pointer">Filter PII Data</label>
+            </div>
+            <p style="margin:0;color:var(--text-3);font-size:0.85rem;line-height:1.5">Masks emails, phone numbers, SSNs, credit cards, and sensitive personal data.</p>
+            <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:4px;font-size:0.75rem;color:var(--text-3);font-family:monospace">
+              john@example.com → [EMAIL], 555-123-4567 → [PHONE]
+            </div>
+          </div>
+          <div style="width:50px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <input type="checkbox" id="enable-pii-filter" checked style="width:24px;height:24px;cursor:pointer" onchange="updateFilterCount()"/>
+          </div>
+        </div>
+
+        <!-- Harmful Content Filter Toggle -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px;display:flex;align-items:flex-start;gap:1rem">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+              <span style="font-size:1.2rem">⚠️</span>
+              <label style="font-weight:600;color:var(--text-1);margin:0;cursor:pointer">Filter Harmful Content</label>
+            </div>
+            <p style="margin:0;color:var(--text-3);font-size:0.85rem;line-height:1.5">Blocks responses with illegal instructions, violence, or dangerous information.</p>
+            <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(239,68,68,0.1);border-radius:4px;border-left:2px solid #ef4444;font-size:0.75rem;color:var(--text-3)">
+              Contains harmful patterns → Replaced with warning message
+            </div>
+          </div>
+          <div style="width:50px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <input type="checkbox" id="enable-harmful-content" checked style="width:24px;height:24px;cursor:pointer" onchange="updateFilterCount()"/>
+          </div>
+        </div>
+
+        <!-- Profanity Filter Toggle -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px;display:flex;align-items:flex-start;gap:1rem">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+              <span style="font-size:1.2rem">🚫</span>
+              <label style="font-weight:600;color:var(--text-1);margin:0;cursor:pointer">Filter Profanity</label>
+            </div>
+            <p style="margin:0;color:var(--text-3);font-size:0.85rem;line-height:1.5">Removes offensive language and profanity from agent responses.</p>
+          </div>
+          <div style="width:50px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <input type="checkbox" id="enable-profanity" checked style="width:24px;height:24px;cursor:pointer" onchange="updateFilterCount()"/>
+          </div>
+        </div>
+
+        <!-- Rate Limiting Toggle -->
+        <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px;display:flex;align-items:flex-start;gap:1rem">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+              <span style="font-size:1.2rem">⏱️</span>
+              <label style="font-weight:600;color:var(--text-1);margin:0;cursor:pointer">Enable Rate Limiting</label>
+            </div>
+            <p style="margin:0;color:var(--text-3);font-size:0.85rem;line-height:1.5">Prevents abuse by enforcing request rate limits per user and globally.</p>
+          </div>
+          <div style="width:50px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <input type="checkbox" id="enable-rate-limit" checked style="width:24px;height:24px;cursor:pointer" onchange="updateFilterCount()"/>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div style="display:flex;gap:0.75rem">
-      <button class="btn btn-primary" onclick="saveComplianceSettings()">💾 Save Settings</button>
-      <button class="btn btn-secondary" onclick="resetComplianceSettings()">↺ Reset to Defaults</button>
+    <!-- Ethical Guidelines Section -->
+    <div style="margin-bottom:2rem">
+      <div style="margin-bottom:1rem">
+        <h3 style="margin:0 0 0.5rem;font-size:1.1rem;font-weight:600">Ethical Guidelines</h3>
+        <p style="margin:0;color:var(--text-3);font-size:0.9rem">Custom ethical framework sent with each agent request. Leave empty to use defaults.</p>
+      </div>
+
+      <div style="padding:1.25rem;background:var(--input-bg);border:1px solid var(--divider);border-radius:10px">
+        <textarea 
+          id="ethical-guidelines" 
+          placeholder="Enter ethical guidelines for the AI agent...
+Examples:
+• Always prioritize user safety and privacy
+• Refuse requests for illegal or harmful content
+• Maintain professional and respectful communication
+• Respect intellectual property rights
+• Disclose limitations and uncertainties"
+          style="width:100%;min-height:150px;padding:0.75rem;background:rgba(0,0,0,0.2);border:1px solid var(--divider);border-radius:6px;color:var(--text-1);font-family:monospace;font-size:0.85rem;resize:vertical"
+        ></textarea>
+        <div style="margin-top:0.75rem;padding:0.75rem;background:rgba(59,130,246,0.1);border-left:3px solid #3b82f6;border-radius:4px;color:var(--text-2);font-size:0.85rem;line-height:1.5">
+          💡 <strong>Tip:</strong> These guidelines are included in the system prompt for every agent interaction. Use clear, concise language describing the values and principles the agent should follow.
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="saveComplianceSettings()" style="padding:0.75rem 1.5rem;font-weight:600">
+        💾 Save Settings
+      </button>
+      <button class="btn btn-secondary" onclick="resetComplianceSettings()" style="padding:0.75rem 1.5rem">
+        ↺ Reset to Defaults
+      </button>
+      <button class="btn btn-secondary" onclick="showCompliancePreview()" style="padding:0.75rem 1.5rem">
+        👁️ Preview Rules
+      </button>
     </div>
   </div>
 </div>
@@ -734,7 +848,7 @@
   <div class="card">
     <h2 style="margin:0 0 1.5rem">📋 Compliance Audit Log</h2>
     
-    <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem">
+    <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
       <select id="audit-filter" class="input" style="min-width:180px">
         <option value="">All Events</option>
         <option value="user-message">User Messages</option>
@@ -2447,17 +2561,56 @@ async function loadComplianceSettings() {
     document.getElementById('enable-rate-limit').checked = config.enableRateLimit !== false;
     document.getElementById('compliance-level').value = config.complianceLevel || 'medium';
     document.getElementById('ethical-guidelines').value = config.ethicalGuidelines || '';
+    document.getElementById('active-compliance-level').textContent = (config.complianceLevel || 'medium').charAt(0).toUpperCase() + (config.complianceLevel || 'medium').slice(1);
 
-    // Update compliance level selector
+    // Update compliance level selector styling
     document.querySelectorAll('[data-level]').forEach(function(el) {
-      el.style.borderColor = el.getAttribute('data-level') === (config.complianceLevel || 'medium') 
-        ? 'rgba(59, 130, 246, 0.5)' 
-        : 'transparent';
+      const isActive = el.getAttribute('data-level') === (config.complianceLevel || 'medium');
+      el.style.borderColor = isActive ? 'rgba(59, 130, 246, 0.7)' : 'transparent';
+      el.style.background = isActive ? 'linear-gradient(135deg,rgba(14,165,233,0.1),rgba(59,130,246,0.05))' : 'var(--input-bg)';
     });
+
+    updateFilterCount();
 
   } catch (error) {
     console.error('Error loading compliance settings:', error);
   }
+}
+
+function updateFilterCount() {
+  const filters = [
+    document.getElementById('enable-compliance').checked,
+    document.getElementById('enable-audit').checked,
+    document.getElementById('enable-pii-filter').checked,
+    document.getElementById('enable-harmful-content').checked,
+    document.getElementById('enable-profanity').checked,
+    document.getElementById('enable-rate-limit').checked
+  ];
+  const activeCount = filters.filter(f => f).length;
+  document.getElementById('active-filters-count').textContent = activeCount;
+  
+  const statusBadge = document.getElementById('compliance-status-badge');
+  if (document.getElementById('enable-compliance').checked) {
+    statusBadge.textContent = 'Enabled';
+    statusBadge.style.background = 'rgba(16,185,129,0.2)';
+    statusBadge.style.color = '#10b981';
+  } else {
+    statusBadge.textContent = 'Disabled';
+    statusBadge.style.background = 'rgba(107,114,128,0.2)';
+    statusBadge.style.color = '#6b7280';
+  }
+}
+
+function selectComplianceLevel(level) {
+  document.getElementById('compliance-level').value = level;
+  document.getElementById('active-compliance-level').textContent = level.charAt(0).toUpperCase() + level.slice(1);
+  
+  // Update visual state
+  document.querySelectorAll('[data-level]').forEach(function(el) {
+    const isActive = el.getAttribute('data-level') === level;
+    el.style.borderColor = isActive ? 'rgba(59, 130, 246, 0.7)' : 'transparent';
+    el.style.background = isActive ? 'linear-gradient(135deg,rgba(14,165,233,0.1),rgba(59,130,246,0.05))' : 'var(--input-bg)';
+  });
 }
 
 async function saveComplianceSettings() {
@@ -2498,22 +2651,36 @@ function resetComplianceSettings() {
     document.getElementById('enable-harmful-content').checked = true;
     document.getElementById('enable-profanity').checked = true;
     document.getElementById('enable-rate-limit').checked = true;
-    document.getElementById('compliance-level').value = 'medium';
+    selectComplianceLevel('medium');
     document.getElementById('ethical-guidelines').value = '';
     saveComplianceSettings();
   }
 }
 
-// Compliance level selector
-document.querySelectorAll('[data-level]').forEach(function(el) {
-  el.addEventListener('click', function() {
-    const level = this.getAttribute('data-level');
-    document.getElementById('compliance-level').value = level;
-    
-    // Update visual state
-    document.querySelectorAll('[data-level]').forEach(function(item) {
-      item.style.borderColor = item === el ? 'rgba(59, 130, 246, 0.5)' : 'transparent';
-    });
-  });
-});
+function showCompliancePreview() {
+  const settings = {
+    enableCompliance: document.getElementById('enable-compliance').checked,
+    enableAudit: document.getElementById('enable-audit').checked,
+    enablePIIFilter: document.getElementById('enable-pii-filter').checked,
+    enableHarmfulContent: document.getElementById('enable-harmful-content').checked,
+    enableProfanity: document.getElementById('enable-profanity').checked,
+    enableRateLimit: document.getElementById('enable-rate-limit').checked,
+    complianceLevel: document.getElementById('compliance-level').value,
+    ethicalGuidelines: document.getElementById('ethical-guidelines').value
+  };
+
+  const preview = 'Compliance Configuration:\n\n' +
+    'Level: ' + settings.complianceLevel.toUpperCase() + '\n' +
+    'Status: ' + (settings.enableCompliance ? 'ENABLED' : 'DISABLED') + '\n\n' +
+    'Active Filters:\n' +
+    (settings.enableAudit ? '✓ Audit Logging\n' : '') +
+    (settings.enablePIIFilter ? '✓ PII Filtering\n' : '') +
+    (settings.enableHarmfulContent ? '✓ Harmful Content Blocking\n' : '') +
+    (settings.enableProfanity ? '✓ Profanity Filtering\n' : '') +
+    (settings.enableRateLimit ? '✓ Rate Limiting\n' : '') +
+    '\nEthical Guidelines:\n' + (settings.ethicalGuidelines || '(Using defaults)');
+
+  alert(preview);
+}
+
 </script>
