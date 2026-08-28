@@ -908,11 +908,11 @@ async function loadEnvVars() {
                   ${isImageVar ? `
                     <button 
                       class="btn btn-primary btn-sm" 
-                      title="Pull latest versions"
+                      title="Show latest versions"
                       onclick="showVersionsModal('${key}', '${value}')"
                       style="padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb);"
                     >
-                      📦 Pull
+                      👁️ Show
                     </button>
                   ` : ''}
                 </div>
@@ -1377,11 +1377,12 @@ async function showVersionsModal(varName, currentVersion) {
     
     // Extract image name from variable (e.g., PYTHON_IMAGE -> python)
     const imageName = varName.replace(/_IMAGE$/i, '').replace(/_VERSION$/i, '').toLowerCase();
+    console.log('Opening versions modal for:', imageName, 'current:', currentVersion);
     
     modal.innerHTML = `
       <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
-          <h3>📦 Pull Latest Version - ${imageName}</h3>
+          <h3>📦 Latest Versions - ${imageName}</h3>
           <button class="btn btn-close" onclick="this.closest('.modal').remove()">×</button>
         </div>
         <div class="modal-body">
@@ -1397,30 +1398,48 @@ async function showVersionsModal(varName, currentVersion) {
     `;
     document.body.appendChild(modal);
     
-    // Fetch available versions (this is a simulated list - you'd need an API for this)
-    // For now, show mock versions
+    // Fetch available versions
+    console.log('Fetching versions for:', imageName);
     const versions = await getAvailableVersions(imageName);
+    console.log('Versions received:', versions);
     
-    const versionsList = versions.slice(0, 5).map((version, idx) => `
-      <div style="
-        padding: 0.75rem;
-        background: ${version === currentVersion ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.02)'};
-        border: 1px solid ${version === currentVersion ? 'rgba(16, 185, 129, 0.3)' : 'var(--border)'};
-        border-radius: 6px;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        cursor: pointer;
-        transition: all 0.2s;
-      " onclick="selectVersion(this, '${version}')" data-version="${version}">
-        <input type="radio" name="version-select" value="${version}" ${version === currentVersion ? 'checked' : ''} style="cursor: pointer;">
-        <div style="flex: 1;">
-          <div style="font-weight: 500; color: var(--text-1);">${version}</div>
-          ${version === currentVersion ? '<div style="font-size: 0.75rem; color: var(--text-3);">Currently deployed</div>' : ''}
+    if (!versions || versions.length === 0) {
+      console.warn('No versions found for:', imageName);
+      const modalBody = modal.querySelector('.modal-body');
+      modalBody.innerHTML = `
+        <p style="color: var(--text-2); margin-bottom: 1rem;">
+          Current version: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">${currentVersion}</code>
+        </p>
+        <div style="text-align: center; padding: 2rem; color: var(--text-3);">
+          No versions available for ${imageName}
         </div>
-      </div>
-    `).join('');
+      `;
+      return;
+    }
+    
+    const versionsList = versions.slice(0, 5).map((version, idx) => {
+      const isCurrentVersion = version === currentVersion;
+      return `
+        <div style="
+          padding: 0.75rem;
+          background: ${isCurrentVersion ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.02)'};
+          border: 1px solid ${isCurrentVersion ? 'rgba(16, 185, 129, 0.3)' : 'var(--border)'};
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        " onclick="selectVersion(this, '${version}')" data-version="${version}">
+          <input type="radio" name="version-select-${varName}" value="${version}" ${isCurrentVersion ? 'checked' : ''} style="cursor: pointer; width: 18px; height: 18px;">
+          <div style="flex: 1;">
+            <div style="font-weight: 500; color: var(--text-1);">${version}</div>
+            ${isCurrentVersion ? '<div style="font-size: 0.75rem; color: #10b981;">✓ Currently deployed</div>' : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
     
     const modalBody = modal.querySelector('.modal-body');
     modalBody.innerHTML = `
@@ -1454,19 +1473,16 @@ async function showVersionsModal(varName, currentVersion) {
       </div>
     `;
     
-    // Update footer with pull button
-    const footer = modal.querySelector('.modal-footer');
-    if (!footer) {
-      const newFooter = document.createElement('div');
-      newFooter.className = 'modal-footer';
-      newFooter.innerHTML = `
-        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
-        <button class="btn btn-primary" onclick="pullSelectedVersion('${varName}'); this.closest('.modal').remove();" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-          Pull Version
-        </button>
-      `;
-      modal.querySelector('.modal-content').appendChild(newFooter);
-    }
+    // Add footer with pull button
+    const newFooter = document.createElement('div');
+    newFooter.className = 'modal-footer';
+    newFooter.innerHTML = `
+      <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+      <button class="btn btn-primary" onclick="pullSelectedVersion('${varName}');" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+        📥 Pull
+      </button>
+    `;
+    modal.querySelector('.modal-content').appendChild(newFooter);
     
   } catch (error) {
     console.error('Error showing versions modal:', error);
@@ -1478,23 +1494,38 @@ async function showVersionsModal(varName, currentVersion) {
  * Get available versions for an image (simulated - in production would query registry)
  */
 async function getAvailableVersions(imageName) {
-  // Mock versions - in production this would call a real API
-  const versionMap = {
-    'python': ['3.12.4', '3.12.3', '3.12.2', '3.11.10', '3.11.9'],
-    'node': ['22.1.0', '22.0.0', '20.15.1', '20.14.0', '20.13.0'],
-    'ollama': ['0.3.10', '0.3.9', '0.3.8', '0.3.7', '0.3.6'],
-    'postgres': ['17.0', '16.3', '16.2', '15.7', '15.6'],
-    'redis': ['7.2.4', '7.2.3', '7.2.2', '7.0.15', '7.0.14'],
-  };
-  
-  return versionMap[imageName] || ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'];
+  try {
+    // Mock versions - in production this would call a real API to Docker Hub
+    const versionMap = {
+      'python': ['3.12.4', '3.12.3', '3.12.2', '3.11.10', '3.11.9'],
+      'node': ['22.1.0', '22.0.0', '20.15.1', '20.14.0', '20.13.0'],
+      'ollama': ['0.3.10', '0.3.9', '0.3.8', '0.3.7', '0.3.6'],
+      'postgres': ['17.0', '16.3', '16.2', '15.7', '15.6'],
+      'postgresql': ['17.0', '16.3', '16.2', '15.7', '15.6'],
+      'redis': ['7.2.4', '7.2.3', '7.2.2', '7.0.15', '7.0.14'],
+      'chromadb': ['0.4.24', '0.4.23', '0.4.22', '0.4.21', '0.4.20'],
+      'datastore': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+      'tools': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+      'agent': ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'],
+    };
+    
+    const versions = versionMap[imageName.toLowerCase()] || ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'];
+    console.log('Returning versions for', imageName + ':', versions);
+    return versions;
+  } catch (error) {
+    console.error('Error getting versions:', error);
+    return ['latest', 'v1.0.0', 'v0.9.9'];
+  }
 }
 
 /**
  * Select a version in the modal
  */
 function selectVersion(element, version) {
-  document.querySelectorAll('[name="version-select"]').forEach(radio => {
+  // Get the parent modal to find the right radio group
+  const modal = element.closest('.modal');
+  const radios = modal.querySelectorAll('input[type="radio"]');
+  radios.forEach(radio => {
     radio.checked = false;
   });
   element.querySelector('input[type="radio"]').checked = true;
@@ -1505,7 +1536,8 @@ function selectVersion(element, version) {
  */
 async function pullSelectedVersion(varName) {
   try {
-    const selectedRadio = document.querySelector('[name="version-select"]:checked');
+    // Find the selected radio button in the current modal
+    const selectedRadio = document.querySelector(`input[name="version-select-${varName}"]:checked`);
     if (!selectedRadio) {
       showNotification('Please select a version', 'warning');
       return;
@@ -1521,6 +1553,9 @@ async function pullSelectedVersion(varName) {
     
     const oldVersion = input.value;
     
+    // Close the modal
+    document.querySelector('.modal')?.remove();
+    
     // Check if this version change might impact storage
     const storageWarning = checkStorageImpact(varName, oldVersion, selectedVersion);
     
@@ -1531,7 +1566,7 @@ async function pullSelectedVersion(varName) {
       }
     }
     
-    showNotification(`Updating ${varName} from ${oldVersion} to ${selectedVersion}...`, 'success');
+    showNotification(`✓ ${varName} updated to ${selectedVersion}`, 'success');
     
     // Update the input value
     input.value = selectedVersion;
@@ -1541,8 +1576,8 @@ async function pullSelectedVersion(varName) {
     
     // Show helpful next steps
     showNotification(
-      `✓ ${varName} updated to ${selectedVersion}. Run 'docker-compose up --build' to apply.`,
-      'success'
+      `Run 'docker-compose up --build' to apply changes.`,
+      'info'
     );
     
   } catch (error) {
