@@ -3,6 +3,115 @@
  * Handles version updates, security scanning, and vulnerability management
  */
 
+// CSS for modals and notifications
+const style = document.createElement('style');
+style.textContent = `
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background: var(--modal-bg, #1e293b);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--modal-border, #334155);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--modal-border, #334155);
+  }
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-1, #f1f5f9);
+  }
+  .modal-body {
+    padding: 1.5rem;
+    color: var(--text-1, #f1f5f9);
+  }
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--modal-border, #334155);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+  .btn-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-2, #cbd5e1);
+  }
+  .btn-close:hover {
+    color: var(--text-1, #f1f5f9);
+  }
+  .notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    background: var(--success, #10b981);
+    color: white;
+    z-index: 1001;
+    animation: slideIn 0.3s ease-out;
+  }
+  .notification.error {
+    background: var(--danger, #ef4444);
+  }
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
+
+/**
+ * Show notification toast message
+ */
+function showNotification(message, type = 'success') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type === 'error' ? 'error' : ''}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out forwards';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+
 // Global state
 let dockerImageState = {
   images: [],
@@ -19,7 +128,10 @@ async function loadDockerImages() {
   try {
     document.getElementById('docker-loading')?.classList.add('hidden');
     const container = document.getElementById('docker-images-table');
-    if (!container) return;
+    if (!container) {
+      console.warn('Docker images table container not found');
+      return;
+    }
     
     const response = await fetch('/api/admin/docker/images', {
       headers: {
@@ -29,17 +141,28 @@ async function loadDockerImages() {
       }
     });
 
-    if (!response.ok) throw new Error('Failed to load Docker images');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     
     const images = await response.json();
+    console.log('Docker images loaded:', images);
+    
+    if (!Array.isArray(images)) {
+      console.error('Expected array of images, got:', typeof images);
+      throw new Error('Invalid response format from Docker images API');
+    }
+    
     dockerImageState.images = images;
-
     renderDockerImagesTable(images, container);
   } catch (error) {
     console.error('Error loading Docker images:', error);
     const container = document.getElementById('docker-images-table');
     if (container) {
-      container.innerHTML = `<div class="error-message">Error loading images: ${error.message}</div>`;
+      container.innerHTML = `<div style="padding: 1.5rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; color: #ef4444;">
+        <strong>Error loading images:</strong> ${error.message}
+        <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #cbd5e1;">Check console for details</p>
+      </div>`;
     }
   }
 }
@@ -212,13 +335,23 @@ async function loadDockerSecuritySummary() {
       }
     });
 
-    if (!response.ok) throw new Error('Failed to load summary');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to load security summary`);
+    }
     
     const summary = await response.json();
+    console.log('Security summary loaded:', summary);
+    
     dockerImageState.securitySummary = summary;
     renderDockerSecuritySummary(summary);
   } catch (error) {
     console.error('Error loading security summary:', error);
+    const container = document.getElementById('docker-security-cards');
+    if (container) {
+      container.innerHTML = `<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; color: #ef4444;">
+        Failed to load security summary: ${error.message}
+      </div>`;
+    }
   }
 }
 
@@ -229,23 +362,53 @@ function renderDockerSecuritySummary(summary) {
   const container = document.getElementById('docker-security-cards');
   if (!container) return;
 
+  // Handle various data formats
+  const safe = (summary.security_status?.safe || summary.safe || 0);
+  const warning = (summary.security_status?.warning || summary.warning || 0);
+  const critical = (summary.security_status?.critical || summary.critical || 0);
+  const total = (summary.total_vulnerabilities || (safe + warning + critical) || 0);
+  
   const html = `
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-      <div class="card" style="text-align: center; padding: 1rem;">
-        <div style="font-size: 1.8rem; font-weight: 700; color: #10b981;">${summary.security_status.safe}</div>
-        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em;">Safe</div>
+      <div class="card" style="
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 8px;
+      ">
+        <div style="font-size: 2.2rem; font-weight: 700; color: #10b981; line-height: 1;">${safe}</div>
+        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">✓ Safe</div>
       </div>
-      <div class="card" style="text-align: center; padding: 1rem;">
-        <div style="font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${summary.security_status.warning}</div>
-        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em;">Warning</div>
+      <div class="card" style="
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 8px;
+      ">
+        <div style="font-size: 2.2rem; font-weight: 700; color: #f59e0b; line-height: 1;">${warning}</div>
+        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">⚠ Warning</div>
       </div>
-      <div class="card" style="text-align: center; padding: 1rem;">
-        <div style="font-size: 1.8rem; font-weight: 700; color: #ef4444;">${summary.security_status.critical}</div>
-        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em;">Critical</div>
+      <div class="card" style="
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 8px;
+      ">
+        <div style="font-size: 2.2rem; font-weight: 700; color: #ef4444; line-height: 1;">${critical}</div>
+        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">🔴 Critical</div>
       </div>
-      <div class="card" style="text-align: center; padding: 1rem;">
-        <div style="font-size: 1.8rem; font-weight: 700; color: var(--text-1);">${summary.total_vulnerabilities}</div>
-        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em;">Total CVEs</div>
+      <div class="card" style="
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+      ">
+        <div style="font-size: 2.2rem; font-weight: 700; color: #3b82f6; line-height: 1;">${total}</div>
+        <div style="font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">📊 Total CVEs</div>
       </div>
     </div>
   `;
@@ -342,27 +505,126 @@ async function updateDockerImage(imageName, newVersion) {
 function showImageScanResults(imageName, results) {
   const modal = document.createElement('div');
   modal.className = 'modal';
+  
   const vulnHtml = results.vulnerabilities && results.vulnerabilities.length > 0
-    ? results.vulnerabilities.map(v => `
-        <div style="margin: 0.5rem 0; padding: 0.5rem; background: var(--card-bg); border-left: 3px solid ${getSecurityStatusColor(v.severity)};">
-          <strong>${v.id}</strong> - ${v.severity.toUpperCase()}
-          <p style="margin: 0.25rem 0 0; color: var(--text-2); font-size: 0.9rem;">${v.description}</p>
-          <p style="margin: 0.25rem 0 0; color: var(--success); font-size: 0.85rem;">Fixed in: ${v.fixed_in}</p>
-        </div>
-      `).join('')
-    : '<p style="color: var(--text-3);">No known vulnerabilities</p>';
+    ? results.vulnerabilities.map(v => {
+        const severityColor = getSecurityStatusColor(v.severity || v.level || 'unknown');
+        return `
+          <div style="
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 4px solid ${severityColor};
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          ">
+            <div style="display: flex; align-items: start; gap: 1rem;">
+              <div style="
+                flex-shrink: 0;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: ${severityColor};
+                margin-top: 4px;
+              "></div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">
+                  ${v.id || 'Unknown Vulnerability'}
+                  <span style="
+                    display: inline-block;
+                    padding: 0.1rem 0.5rem;
+                    margin-left: 0.5rem;
+                    font-size: 0.75rem;
+                    background: ${severityColor};
+                    color: white;
+                    border-radius: 3px;
+                    font-weight: 600;
+                  ">${(v.severity || v.level || 'unknown').toUpperCase()}</span>
+                </div>
+                <p style="margin: 0.5rem 0 0; color: #cbd5e1; font-size: 0.9rem; line-height: 1.5;">
+                  ${v.description || v.title || 'No description available'}
+                </p>
+                ${v.fixed_in ? `
+                  <p style="margin: 0.5rem 0 0; color: var(--success); font-size: 0.85rem;">
+                    ✓ Fixed in: ${v.fixed_in}
+                  </p>
+                ` : '<p style="margin: 0.5rem 0 0; color: #f59e0b; font-size: 0.85rem;">⚠ No fix available</p>'}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : '<div style="padding: 2rem; text-align: center; color: var(--success); font-size: 1.1rem;">✓ No known vulnerabilities found</div>';
 
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 700px;">
       <div class="modal-header">
-        <h3>${imageName} Security Scan Results</h3>
-        <button class="btn btn-close" onclick="this.closest('.modal').remove()">×</button>
+        <h3>🔍 ${imageName} - Security Scan Results</h3>
+        <button class="btn-close" onclick="this.closest('.modal').remove()">×</button>
       </div>
       <div class="modal-body">
-        <p><strong>Status:</strong> <span style="color: ${getSecurityStatusColor(results.status)}">${results.status.toUpperCase()}</span></p>
-        <p><strong>Vulnerabilities Found:</strong> ${results.vulnerability_count}</p>
-        <p><strong>Last Checked:</strong> ${new Date(results.last_checked).toLocaleString()}</p>
-        <div style="margin-top: 1rem; max-height: 300px; overflow-y: auto;">
+        <div style="
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        ">
+          <div style="
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          ">
+            <div style="font-size: 1.5rem; font-weight: 600; color: ${getSecurityStatusColor(results.status || 'unknown')};">
+              ${results.status || 'UNKNOWN'}
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Overall Status
+            </div>
+          </div>
+          <div style="
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          ">
+            <div style="font-size: 1.5rem; font-weight: 600; color: ${results.vulnerability_count > 0 ? '#ef4444' : '#10b981'};">
+              ${results.vulnerability_count || 0}
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Vulnerabilities
+            </div>
+          </div>
+          <div style="
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          ">
+            <div style="font-size: 0.85rem; font-weight: 600; color: #94a3b8;">
+              ${results.last_checked ? new Date(results.last_checked).toLocaleString() : 'Never'}
+            </div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Last Checked
+            </div>
+          </div>
+        </div>
+        <div style="
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 8px;
+          border-left: 3px solid #3b82f6;
+          margin-bottom: 1.5rem;
+        ">
+          <p style="margin: 0; font-size: 0.9rem; color: #cbd5e1;">
+            💡 <strong>Tip:</strong> Update to the latest stable version to patch known vulnerabilities.
+          </p>
+        </div>
+        <h4 style="margin: 0 0 1rem; color: var(--text-1); font-size: 0.95rem;">Detected Issues:</h4>
+        <div style="max-height: 400px; overflow-y: auto;">
           ${vulnHtml}
         </div>
       </div>
@@ -444,7 +706,10 @@ function initDockerManagement() {
 async function loadEnvVars() {
   try {
     const container = document.getElementById('docker-env-vars');
-    if (!container) return;
+    if (!container) {
+      console.warn('Environment variables container not found');
+      return;
+    }
 
     const response = await fetch('/api/admin/docker/env-vars', {
       headers: {
@@ -454,27 +719,41 @@ async function loadEnvVars() {
       }
     });
     
-    if (!response.ok) throw new Error('Failed to load env vars');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to load environment variables`);
+    }
     
     const envVars = await response.json();
+    console.log('Environment variables loaded:', envVars);
+    
+    if (!envVars || Object.keys(envVars).length === 0) {
+      container.innerHTML = '<p style="color: var(--text-3); padding: 1rem;">No environment variables found</p>';
+      return;
+    }
     
     const html = Object.entries(envVars).map(function(entry) {
       const key = entry[0];
       const value = entry[1];
-      const displayValue = key.includes('PASSWORD') || key.includes('SECRET') ? '••••••••' : value;
+      const displayValue = (key.includes('PASSWORD') || key.includes('SECRET') || key.includes('TOKEN') || key.includes('KEY')) 
+        ? '••••••••' 
+        : value;
       return '<div style="padding: 0.75rem; background: var(--input-bg); border-radius: 0.25rem; border: 1px solid var(--border); margin-bottom: 0.5rem;">' +
-        '<div style="display: grid; grid-template-columns: 150px 1fr auto; gap: 1rem; align-items: center;">' +
-        '<code style="font-size: 0.85rem; color: var(--accent-text);">' + key + '</code>' +
-        '<code style="font-size: 0.85rem; color: var(--text-2);">' + displayValue + '</code>' +
+        '<div style="display: grid; grid-template-columns: 200px 1fr auto; gap: 1rem; align-items: center;">' +
+        '<code style="font-size: 0.85rem; color: var(--accent-text); word-break: break-all;">' + key + '</code>' +
+        '<code style="font-size: 0.85rem; color: var(--text-2); word-break: break-all;">' + displayValue + '</code>' +
         '<button class="btn btn-sm" onclick="copyToClipboard(\'' + key + '=' + value.replace(/'/g, "\\'") + '\')">Copy</button>' +
         '</div></div>';
     }).join('');
     
-    container.innerHTML = html || '<p style="color: var(--text-3);">No environment variables found</p>';
+    container.innerHTML = html;
   } catch (error) {
+    console.error('Error loading env vars:', error);
     const container = document.getElementById('docker-env-vars');
     if (container) {
-      container.innerHTML = '<div class="error-message">' + error.message + '</div>';
+      container.innerHTML = `<div style="padding: 1.5rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 6px; color: #ef4444;">
+        <strong>Failed to load environment variables:</strong> ${error.message}
+        <p style="margin: 0.5rem 0 0; font-size: 0.85rem; color: #cbd5e1;">Check console for details</p>
+      </div>`;
     }
   }
 }
