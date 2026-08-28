@@ -874,8 +874,10 @@ async function loadEnvVars() {
     const html = `
       <div style="display: flex; flex-direction: column; gap: 1rem;">
         ${Object.entries(envVars).map(([key, value], idx) => {
+          // Check if this is an editable image version variable
+          const isImageVar = key.includes('_IMAGE') || key.includes('_VERSION');
           const isSecret = key.includes('PASSWORD') || key.includes('SECRET') || key.includes('TOKEN') || key.includes('KEY');
-          const displayValue = isSecret ? '••••••••' : value;
+          
           return `
             <div style="
               padding: 1rem;
@@ -903,21 +905,16 @@ async function loadEnvVars() {
                   />
                 </div>
                 <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                  <button 
-                    class="btn btn-sm" 
-                    title="Show/Hide value"
-                    onclick="toggleEnvVarVisibility('${idx}', '${key}')"
-                    style="padding: 0.4rem 0.8rem;"
-                  >
-                    ${isSecret ? '👁️ Show' : '👁️ Hide'}
-                  </button>
-                  <button 
-                    class="btn btn-sm" 
-                    onclick="copyToClipboard('${key}=' + document.querySelector('[data-key=&quot;${key}&quot;]').value)"
-                    style="padding: 0.4rem 0.8rem;"
-                  >
-                    Copy
-                  </button>
+                  ${isImageVar ? `
+                    <button 
+                      class="btn btn-primary btn-sm" 
+                      title="Pull latest versions"
+                      onclick="showVersionsModal('${key}', '${value}')"
+                      style="padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb);"
+                    >
+                      📦 Pull
+                    </button>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -1371,6 +1368,431 @@ async function loadLLMProviderSelection() {
 }
 
 /**
+ * Show top 5 versions for a Docker image variable
+ */
+async function showVersionsModal(varName, currentVersion) {
+  try {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    
+    // Extract image name from variable (e.g., PYTHON_IMAGE -> python)
+    const imageName = varName.replace(/_IMAGE$/i, '').replace(/_VERSION$/i, '').toLowerCase();
+    
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+          <h3>📦 Pull Latest Version - ${imageName}</h3>
+          <button class="btn btn-close" onclick="this.closest('.modal').remove()">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-2); margin-bottom: 1rem;">
+            Current version: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">${currentVersion}</code>
+          </p>
+          
+          <div style="color: var(--text-3); font-size: 0.9rem; text-align: center; padding: 2rem;">
+            ⏳ Loading available versions...
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Fetch available versions (this is a simulated list - you'd need an API for this)
+    // For now, show mock versions
+    const versions = await getAvailableVersions(imageName);
+    
+    const versionsList = versions.slice(0, 5).map((version, idx) => `
+      <div style="
+        padding: 0.75rem;
+        background: ${version === currentVersion ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.02)'};
+        border: 1px solid ${version === currentVersion ? 'rgba(16, 185, 129, 0.3)' : 'var(--border)'};
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      " onclick="selectVersion(this, '${version}')" data-version="${version}">
+        <input type="radio" name="version-select" value="${version}" ${version === currentVersion ? 'checked' : ''} style="cursor: pointer;">
+        <div style="flex: 1;">
+          <div style="font-weight: 500; color: var(--text-1);">${version}</div>
+          ${version === currentVersion ? '<div style="font-size: 0.75rem; color: var(--text-3);">Currently deployed</div>' : ''}
+        </div>
+      </div>
+    `).join('');
+    
+    const modalBody = modal.querySelector('.modal-body');
+    modalBody.innerHTML = `
+      <p style="color: var(--text-2); margin-bottom: 1rem;">
+        Current version: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">${currentVersion}</code>
+      </p>
+      
+      <div style="margin-bottom: 1rem;">
+        <label style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.75rem; font-weight: 600;">
+          📋 Top 5 Available Versions
+        </label>
+        <div style="max-height: 300px; overflow-y: auto;">
+          ${versionsList}
+        </div>
+      </div>
+      
+      <div style="
+        padding: 0.75rem;
+        background: rgba(251, 146, 60, 0.1);
+        border-left: 3px solid #fb923c;
+        border-radius: 4px;
+        margin-top: 1rem;
+      ">
+        <div style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600;">
+          ⚠️ Important
+        </div>
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-2); line-height: 1.4;">
+          Changing the image version will require running <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 2px;">docker-compose up --build</code> to apply changes. 
+          Check if the new version impacts persistent storage.
+        </p>
+      </div>
+    `;
+    
+    // Update footer with pull button
+    const footer = modal.querySelector('.modal-footer');
+    if (!footer) {
+      const newFooter = document.createElement('div');
+      newFooter.className = 'modal-footer';
+      newFooter.innerHTML = `
+        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="pullSelectedVersion('${varName}'); this.closest('.modal').remove();" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+          Pull Version
+        </button>
+      `;
+      modal.querySelector('.modal-content').appendChild(newFooter);
+    }
+    
+  } catch (error) {
+    console.error('Error showing versions modal:', error);
+    showNotification('Failed to load versions: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Get available versions for an image (simulated - in production would query registry)
+ */
+async function getAvailableVersions(imageName) {
+  // Mock versions - in production this would call a real API
+  const versionMap = {
+    'python': ['3.12.4', '3.12.3', '3.12.2', '3.11.10', '3.11.9'],
+    'node': ['22.1.0', '22.0.0', '20.15.1', '20.14.0', '20.13.0'],
+    'ollama': ['0.3.10', '0.3.9', '0.3.8', '0.3.7', '0.3.6'],
+    'postgres': ['17.0', '16.3', '16.2', '15.7', '15.6'],
+    'redis': ['7.2.4', '7.2.3', '7.2.2', '7.0.15', '7.0.14'],
+  };
+  
+  return versionMap[imageName] || ['latest', 'v1.0.0', 'v0.9.9', 'v0.9.8', 'v0.9.7'];
+}
+
+/**
+ * Select a version in the modal
+ */
+function selectVersion(element, version) {
+  document.querySelectorAll('[name="version-select"]').forEach(radio => {
+    radio.checked = false;
+  });
+  element.querySelector('input[type="radio"]').checked = true;
+}
+
+/**
+ * Pull the selected version and update the environment variable
+ */
+async function pullSelectedVersion(varName) {
+  try {
+    const selectedRadio = document.querySelector('[name="version-select"]:checked');
+    if (!selectedRadio) {
+      showNotification('Please select a version', 'warning');
+      return;
+    }
+    
+    const selectedVersion = selectedRadio.value;
+    const input = document.querySelector(`input[data-key="${varName}"]`);
+    
+    if (!input) {
+      showNotification('Could not find variable input', 'error');
+      return;
+    }
+    
+    const oldVersion = input.value;
+    
+    // Check if this version change might impact storage
+    const storageWarning = checkStorageImpact(varName, oldVersion, selectedVersion);
+    
+    if (storageWarning) {
+      const confirmed = confirm(`⚠️ Warning:\n\n${storageWarning}\n\nDo you want to proceed?`);
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    showNotification(`Updating ${varName} from ${oldVersion} to ${selectedVersion}...`, 'success');
+    
+    // Update the input value
+    input.value = selectedVersion;
+    
+    // Track the change
+    trackEnvVarChange(varName, selectedVersion);
+    
+    // Show helpful next steps
+    showNotification(
+      `✓ ${varName} updated to ${selectedVersion}. Run 'docker-compose up --build' to apply.`,
+      'success'
+    );
+    
+  } catch (error) {
+    console.error('Error pulling version:', error);
+    showNotification('Failed to pull version: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Check if version change might impact persistent storage
+ */
+function checkStorageImpact(varName, oldVersion, newVersion) {
+  // Parse major/minor versions
+  const oldMajor = oldVersion.split('.')[0];
+  const newMajor = newVersion.split('.')[0];
+  
+  // Map of known storage-breaking changes
+  const storageImpacts = {
+    'POSTGRES_IMAGE': {
+      '16': ['15', '14', '13'], // PG 16 has different storage format
+      '15': ['14', '13', '12'],
+      '17': ['16', '15'],
+    },
+    'REDIS_IMAGE': {
+      '7': ['6', '5'], // Redis 7 has different RDB format
+    },
+    'CHROMADB_IMAGE': {
+      '0.4': ['0.3'], // Chroma 0.4 has breaking storage changes
+    },
+  };
+  
+  if (storageImpacts[varName] && storageImpacts[varName][newMajor]) {
+    if (storageImpacts[varName][newMajor].includes(oldMajor)) {
+      return `Upgrading from ${oldVersion} to ${newVersion} may require database migration or data loss if persistent storage is not properly backed up.`;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Track environment variable changes
+ */
+function trackEnvVarChange(key, value) {
+  // Mark as changed in the UI
+  const row = document.querySelector(`[data-key="${key}"]`).closest('[id^="env-var-"]');
+  if (row) {
+    row.style.background = 'rgba(251, 146, 60, 0.1)';
+    row.style.borderColor = 'rgba(251, 146, 60, 0.3)';
+  }
+}
+
+/**
+ * Show batch version update modal - allows selecting and updating multiple images
+ */
+async function showBatchVersionUpdateModal() {
+  try {
+    // Use cached security summary to get latest versions
+    const summary = dockerImageState.securitySummary;
+    if (!summary || !summary.recommended_updates) {
+      showNotification('No image data available. Refresh the panel first.', 'warning');
+      return;
+    }
+
+    const updates = summary.recommended_updates || [];
+    if (updates.length === 0) {
+      showNotification('All images are up to date!', 'success');
+      return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    
+    const updatesList = updates.map((update, idx) => `
+      <div style="
+        padding: 1rem;
+        background: rgba(245, 158, 11, 0.05);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      ">
+        <input 
+          type="checkbox" 
+          class="update-checkbox" 
+          data-image="${update.image}"
+          data-version="${update.latest}"
+          checked
+          style="width: 20px; height: 20px; cursor: pointer;"
+        />
+        <div style="flex: 1;">
+          <div style="font-weight: 600; color: var(--text-1); margin-bottom: 0.25rem;">
+            ${update.image}
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-2); font-family: monospace; display: flex; gap: 1rem;">
+            <span>Current: <strong>${update.current}</strong></span>
+            <span style="color: #f59e0b;">→</span>
+            <span>Latest: <strong>${update.latest}</strong></span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3>🐳 Pull Latest Docker Image Versions</h3>
+          <button class="btn btn-close" onclick="this.closest('.modal').remove()">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--text-2); margin-bottom: 1rem;">
+            Select which images you want to update to their latest versions. This will update environment variables and require rebuilding containers.
+          </p>
+          
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll('.update-checkbox').forEach(cb => cb.checked = true)">
+              Select All
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="document.querySelectorAll('.update-checkbox').forEach(cb => cb.checked = false)">
+              Deselect All
+            </button>
+          </div>
+
+          <div style="max-height: 400px; overflow-y: auto;">
+            ${updatesList}
+          </div>
+
+          <div style="
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            border-radius: 6px;
+          ">
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-2); line-height: 1.5;">
+              💡 <strong>Next Steps:</strong> After updating, you'll need to run <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">docker-compose up --build</code> to pull the new images and rebuild containers.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+          <button class="btn btn-primary" onclick="applyBatchVersionUpdates(); this.closest('.modal').remove();" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            Apply Updates
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  } catch (error) {
+    console.error('Error showing batch update modal:', error);
+    showNotification('Error loading update options: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Apply batch version updates for selected images
+ */
+async function applyBatchVersionUpdates() {
+  try {
+    const selected = Array.from(document.querySelectorAll('.update-checkbox:checked')).map(cb => ({
+      image: cb.dataset.image,
+      version: cb.dataset.version
+    }));
+
+    if (selected.length === 0) {
+      showNotification('No images selected for update', 'warning');
+      return;
+    }
+
+    showNotification(`Updating ${selected.length} image(s)...`, 'success');
+    
+    let successCount = 0;
+    let failureCount = 0;
+    const errors = [];
+
+    // Update each image sequentially
+    for (const update of selected) {
+      try {
+        const response = await fetch('/api/admin/docker/update-version', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: update.image,
+            version: update.version
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          successCount++;
+          console.log(`✓ ${update.image} updated to ${update.version}`);
+        } else {
+          failureCount++;
+          errors.push(`${update.image}: ${result.error}`);
+        }
+      } catch (error) {
+        failureCount++;
+        errors.push(`${update.image}: ${error.message}`);
+      }
+    }
+
+    // Show summary
+    let message = `✓ Updated ${successCount} image(s)`;
+    if (failureCount > 0) {
+      message += ` | ✗ Failed: ${failureCount}`;
+      if (errors.length > 0) {
+        console.error('Update errors:', errors);
+      }
+      showNotification(message, 'warning');
+    } else {
+      showNotification(message + '. Refresh to see changes.', 'success');
+    }
+
+    // Refresh the UI
+    loadDockerImages();
+    loadDockerSecuritySummary();
+  } catch (error) {
+    console.error('Error applying batch updates:', error);
+    showNotification('Batch update failed: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Copy text to clipboard
+ */
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    showNotification('Copied to clipboard', 'success');
+  }).catch(function(err) {
+    console.error('Failed to copy:', err);
+    showNotification('Failed to copy', 'error');
+  });
+}
+
+// Clean up on unload
+window.addEventListener('beforeunload', () => {
+  if (dockerImageState.autoRefreshInterval) {
+    clearInterval(dockerImageState.autoRefreshInterval);
+  }
+});
+
+/**
  * Select LLM provider
  */
 async function selectLLMProvider(provider) {
@@ -1416,20 +1838,164 @@ async function switchLLMModel(provider, model) {
 }
 
 /**
- * Copy text to clipboard
+ * Load LLM Provider Selection options
  */
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(function() {
-    showNotification('Copied to clipboard', 'success');
-  }).catch(function(err) {
-    console.error('Failed to copy:', err);
-    showNotification('Failed to copy', 'error');
-  });
-}
+async function loadLLMProviderSelection() {
+  try {
+    const container = document.getElementById('llm-config-vars');
+    if (!container) {
+      console.warn('LLM config container not found');
+      return;
+    }
 
-// Clean up on unload
-window.addEventListener('beforeunload', () => {
-  if (dockerImageState.autoRefreshInterval) {
-    clearInterval(dockerImageState.autoRefreshInterval);
+    // Set loading state
+    container.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem">Loading LLM configuration...</div>';
+
+    const response = await fetch('/api/models');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to load LLM models`);
+    }
+    
+    const data = await response.json();
+    console.log('LLM models loaded:', data);
+
+    if (!data.models || data.models.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-3); padding: 1rem;">No LLM models available</p>';
+      return;
+    }
+
+    const active = data.active || {};
+    const modelsByProvider = {};
+
+    // Group models by provider
+    data.models.forEach(model => {
+      if (!modelsByProvider[model.provider]) {
+        modelsByProvider[model.provider] = [];
+      }
+      modelsByProvider[model.provider].push(model);
+    });
+
+    // Build provider cards with model selection
+    const providerCards = Object.entries(modelsByProvider).map(([provider, models]) => {
+      const isActive = active.provider === provider;
+      const activeModel = active.model;
+      
+      const modelOptions = models.map(m => {
+        // Format model display: show capability tags if available
+        let displayName = m.model;
+        if (m.capabilities && typeof m.capabilities === 'object') {
+          // Build capability tags from the capabilities dict
+          const caps = [];
+          if (m.capabilities.streaming) caps.push('streaming');
+          if (m.capabilities.temperature) caps.push('temperature');
+          if (m.capabilities.max_tokens) caps.push(`${m.capabilities.max_tokens}K tokens`);
+          if (caps.length > 0) {
+            displayName += ` (${caps.join(', ')})`;
+          }
+        }
+        return `
+          <option value="${m.model}" ${activeModel === m.model ? 'selected' : ''}>
+            ${displayName}
+          </option>
+        `;
+      }).join('');
+
+      return `
+        <div style="
+          padding: 1rem;
+          background: ${isActive ? 'rgba(16, 185, 129, 0.08)' : 'var(--input-bg)'};
+          border: 2px solid ${isActive ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'};
+          border-radius: 8px;
+          transition: all 0.2s;
+          cursor: pointer;
+        " onclick="selectLLMProvider('${provider}')" style="cursor: pointer;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 1.2rem;
+            ">
+              ${provider === 'ollama' ? '🦙' : provider === 'openai' ? '🔥' : '☁️'}
+            </div>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: var(--text-1); text-transform: capitalize;">
+                ${provider}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-3);">
+                ${models.length} model(s) available
+              </div>
+            </div>
+            ${isActive ? '<div style="background: rgba(16, 185, 129, 0.3); color: #10b981; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">ACTIVE</div>' : ''}
+          </div>
+          
+          <div style="margin-top: 0.75rem;">
+            <label style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem;">
+              Select Model
+            </label>
+            <select 
+              onchange="switchLLMModel('${provider}', this.value); event.stopPropagation();"
+              style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-1); font-size: 0.9rem;"
+            >
+              ${modelOptions}
+            </select>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Show Ollama status if available
+    let ollamaStatusHtml = '';
+    if (data.ollama_status) {
+      const status = data.ollama_status;
+      const isHealthy = status.status === 'healthy';
+      ollamaStatusHtml = `
+        <div style="
+          margin-top: 1rem;
+          padding: 0.75rem;
+          background: ${isHealthy ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)'};
+          border-left: 3px solid ${isHealthy ? '#10b981' : '#ef4444'};
+          border-radius: 4px;
+        ">
+          <div style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; margin-bottom: 0.25rem;">
+            Ollama Status
+          </div>
+          <div style="font-size: 0.9rem; color: ${isHealthy ? '#10b981' : '#ef4444'}; font-weight: 500;">
+            ${isHealthy ? '✓ Running' : '✗ Not Available'}
+          </div>
+          ${status.reason ? '<div style="font-size: 0.8rem; color: var(--text-3); margin-top: 0.25rem;">' + status.reason + '</div>' : ''}
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="display: grid; gap: 1rem;">
+        ${providerCards}
+        ${ollamaStatusHtml}
+      </div>
+      
+      <div style="
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid #3b82f6;
+        border-radius: 6px;
+      ">
+        <p style="margin: 0; font-size: 0.9rem; color: var(--text-2); line-height: 1.5;">
+          💡 <strong>LLM Configuration:</strong> Select your preferred LLM provider and model. Changes take effect immediately for new conversations.
+        </p>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Error loading LLM provider selection:', error);
+    const container = document.getElementById('llm-config-vars');
+    if (container) {
+      container.innerHTML = '<p style="color: var(--danger); padding: 1rem;">Failed to load LLM configuration: ' + error.message + '</p>';
+    }
   }
-});
+}
