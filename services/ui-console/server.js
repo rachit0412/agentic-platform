@@ -2179,6 +2179,48 @@ app.get("/api/admin/n8n/workflows", async (req, res) => {
   } catch (e) { res.json({ data: [], error: e.message }); }
 });
 
+// ── API: Admin – Docker Management ─────────────────
+app.get("/api/admin/docker/images", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/images`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get("/api/admin/docker/images/:name", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/images/${req.params.name}`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post("/api/admin/docker/scan", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/scan`, { method: "POST", headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post("/api/admin/docker/scan/:name", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/scan/${req.params.name}`, { method: "POST", headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post("/api/admin/docker/check-updates", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/check-updates`, { method: "POST", headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get("/api/admin/docker/check-updates/:name", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/check-updates/${req.params.name}`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get("/api/admin/docker/security-summary", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/security-summary`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get("/api/admin/docker/env-vars", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/env-vars`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post("/api/admin/docker/update-version", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/update-version`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get("/api/admin/docker/reminder-status", async (req, res) => {
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/reminder-status`, { headers: wsHeaders(req) }); res.status(r.status).json(await r.json()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── API: Admin – Platform overview counts ────────────
 app.get("/api/admin/overview", async (req, res) => {
   const counts = {};
