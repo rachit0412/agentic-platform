@@ -1014,6 +1014,7 @@ function resetEnvVars() {
     loadEnvVars();
     showNotification('Environment variables reset', 'success');
   }
+}
 
 /**
  * Copy text to clipboard
