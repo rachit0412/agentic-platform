@@ -41,6 +41,10 @@
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="17" x2="22" y2="17"/><line x1="6" y1="21" x2="6" y2="17"/><line x1="12" y1="21" x2="12" y2="17"/><line x1="18" y1="21" x2="18" y2="17"/></svg>
       Infrastructure
     </button>
+    <button class="admin-stab" data-section="compliance">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      Compliance & Ethics
+    </button>
   </div>
   <div class="admin-subtab-row">
     <div class="admin-subtabs" id="subtabs-operations">
@@ -62,6 +66,10 @@
     <div class="admin-subtabs" id="subtabs-infrastructure" style="display:none">
       <button class="admin-subtab" data-tab="docker-images">Docker Images</button>
       <button class="admin-subtab" data-tab="environment-vars">Environment Variables</button>
+    </div>
+    <div class="admin-subtabs" id="subtabs-compliance" style="display:none">
+      <button class="admin-subtab" data-tab="compliance-rules">Rules &amp; Policies</button>
+      <button class="admin-subtab" data-tab="compliance-audit">Audit Log</button>
     </div>
     <div class="admin-subtabs" id="subtabs-config" style="display:none">
       <button class="admin-subtab" data-tab="config-appearance">Appearance</button>
@@ -608,6 +616,158 @@
 </div>
 
 <script src="/docker-management.js"><\/script>
+
+<!-- TAB: COMPLIANCE RULES & POLICIES                        -->
+<div id="tab-compliance-rules" class="admin-tab-content" style="display:none">
+  <div class="card">
+    <h2 style="margin:0 0 1.5rem">🛡️ Compliance Rules & Ethical Guidelines</h2>
+    
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-bottom:1.5rem">
+      <!-- Enable Compliance -->
+      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
+        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
+          <input type="checkbox" id="enable-compliance" checked />
+          Enable Compliance Filtering
+        </label>
+        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+          Filter responses based on configured compliance rules
+        </p>
+      </div>
+
+      <!-- Audit Logging -->
+      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
+        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
+          <input type="checkbox" id="enable-audit" checked />
+          Enable Audit Logging
+        </label>
+        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+          Log all agent interactions for compliance review
+        </p>
+      </div>
+
+      <!-- PII Filtering -->
+      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
+        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
+          <input type="checkbox" id="enable-pii-filter" checked />
+          Filter PII Data
+        </label>
+        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+          Mask emails, phone numbers, SSNs, and sensitive data
+        </p>
+      </div>
+
+      <!-- Harmful Content Filter -->
+      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
+        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
+          <input type="checkbox" id="enable-harmful-content" checked />
+          Filter Harmful Content
+        </label>
+        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+          Block responses containing illegal or harmful instructions
+        </p>
+      </div>
+
+      <!-- Profanity Filter -->
+      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
+        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
+          <input type="checkbox" id="enable-profanity" checked />
+          Filter Profanity
+        </label>
+        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+          Remove offensive language from responses
+        </p>
+      </div>
+
+      <!-- Rate Limiting -->
+      <div style="padding:1rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider)">
+        <label style="display:flex;align-items:center;gap:0.75rem;font-weight:600;margin-bottom:0.5rem">
+          <input type="checkbox" id="enable-rate-limit" checked />
+          Enable Rate Limiting
+        </label>
+        <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+          Prevent abuse through request rate limits
+        </p>
+      </div>
+    </div>
+
+    <!-- Compliance Level -->
+    <div style="padding:1.25rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider);margin-bottom:1.5rem">
+      <label style="display:block;margin-bottom:0.75rem;font-weight:600">Compliance Level</label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-bottom:1rem">
+        <div style="padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.2s" data-level="low">
+          <div style="font-weight:500;color:var(--text-2)">🟢 Low</div>
+          <div style="font-size:0.85rem;color:var(--text-3)">Basic filtering only</div>
+        </div>
+        <div style="padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;border:2px solid rgba(59,130,246,0.5)" data-level="medium">
+          <div style="font-weight:500;color:var(--text-2)">🟡 Medium (Default)</div>
+          <div style="font-size:0.85rem;color:var(--text-3)">Standard protection</div>
+        </div>
+        <div style="padding:0.75rem;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.2s" data-level="high">
+          <div style="font-weight:500;color:var(--text-2)">🔴 High</div>
+          <div style="font-size:0.85rem;color:var(--text-3)">Strict enforcement</div>
+        </div>
+      </div>
+      <input type="hidden" id="compliance-level" value="medium" />
+      <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+        <strong>Medium:</strong> PII filtering + harmful content blocking + audit logging
+      </p>
+    </div>
+
+    <!-- Ethical Guidelines -->
+    <div style="padding:1.25rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--divider);margin-bottom:1.5rem">
+      <label style="display:block;margin-bottom:0.75rem;font-weight:600">Ethical Guidelines</label>
+      <textarea id="ethical-guidelines" placeholder="Enter ethical guidelines for the AI agent..." style="width:100%;min-height:120px;margin-bottom:0.75rem"></textarea>
+      <p style="margin:0;color:var(--text-3);font-size:0.85rem">
+        These guidelines will be sent with each agent request to reinforce ethical behavior
+      </p>
+    </div>
+
+    <div style="display:flex;gap:0.75rem">
+      <button class="btn btn-primary" onclick="saveComplianceSettings()">💾 Save Settings</button>
+      <button class="btn btn-secondary" onclick="resetComplianceSettings()">↺ Reset to Defaults</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: COMPLIANCE AUDIT LOG                               -->
+<div id="tab-compliance-audit" class="admin-tab-content" style="display:none">
+  <div class="card">
+    <h2 style="margin:0 0 1.5rem">📋 Compliance Audit Log</h2>
+    
+    <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem">
+      <select id="audit-filter" class="input" style="min-width:180px">
+        <option value="">All Events</option>
+        <option value="user-message">User Messages</option>
+        <option value="compliance-block">Compliance Blocks</option>
+        <option value="pii-filtered">PII Filtered</option>
+        <option value="harmful-blocked">Harmful Content Blocked</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadAuditLog()">🔄 Refresh</button>
+      <button class="btn btn-secondary" onclick="exportAuditLog()">📥 Export</button>
+    </div>
+
+    <div id="audit-log-table" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:0.9rem">
+        <thead>
+          <tr style="border-bottom:2px solid var(--divider)">
+            <th style="text-align:left;padding:0.75rem;font-weight:600">Timestamp</th>
+            <th style="text-align:left;padding:0.75rem;font-weight:600">User</th>
+            <th style="text-align:left;padding:0.75rem;font-weight:600">Event Type</th>
+            <th style="text-align:left;padding:0.75rem;font-weight:600">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--divider);color:var(--text-3)">
+            <td colspan="4" style="padding:2rem;text-align:center">
+              No audit events yet
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- TAB 5: CONFIGURATION                                   -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="tab-config" class="admin-tab-content" style="display:none">
@@ -1268,14 +1428,16 @@ var SECTION_TABS = {
   identity: ['users', 'personas'],
   ai: ['llm', 'config'],
   data: ['database'],
-  infrastructure: ['docker-images', 'environment-vars']
+  infrastructure: ['docker-images', 'environment-vars'],
+  compliance: ['compliance-rules', 'compliance-audit']
 };
 var TAB_SECTION = {
   health: 'operations', overview: 'operations', audit: 'operations',
   users: 'identity', personas: 'identity',
   llm: 'ai', config: 'ai',
   database: 'data',
-  'docker-images': 'infrastructure', 'environment-vars': 'infrastructure'
+  'docker-images': 'infrastructure', 'environment-vars': 'infrastructure',
+  'compliance-rules': 'compliance', 'compliance-audit': 'compliance'
 };
 
 function switchSection(section) {
@@ -1327,6 +1489,8 @@ function switchTab(tab, fromSection) {
   if (tab === 'docker-images') { loadDockerImages(); loadDockerSecuritySummary(); }
   if (tab === 'environment-vars') { loadEnvVars(); }
   if (tab === 'audit') loadAuditLog();
+  if (tab === 'compliance-rules') { loadComplianceSettings(); }
+  if (tab === 'compliance-audit') { loadAuditLog('compliance'); }
 }
 
 /* Wire up nav via event delegation (avoids inline onclick in template literal) */
@@ -1371,8 +1535,8 @@ function highlightThemeCard() {
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
-  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database', infrastructure: 'docker-images' };
-  var validTabs = ['health','users','personas','overview','llm','database','config','audit','docker-images','environment-vars'];
+  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database', infrastructure: 'docker-images', compliance: 'compliance-rules' };
+  var validTabs = ['health','users','personas','overview','llm','database','config','audit','docker-images','environment-vars','compliance-rules','compliance-audit'];
   var startTab;
   if (sectionDefaults[hash]) {
     startTab = sectionDefaults[hash];
@@ -2261,6 +2425,95 @@ document.querySelectorAll('#subtabs-config .admin-subtab').forEach(function(btn)
   btn.addEventListener('click', function() {
     var tabName = this.getAttribute('data-tab').replace('config-', '');
     switchConfigTab(tabName);
+  });
+});
+
+// ────────────────────────────────────────────────────────
+// COMPLIANCE & ETHICS MANAGEMENT
+// ────────────────────────────────────────────────────────
+
+async function loadComplianceSettings() {
+  try {
+    const response = await fetch('/api/admin/compliance/config');
+    const data = await response.json();
+    const config = data.config || {};
+
+    // Update UI with current settings
+    document.getElementById('enable-compliance').checked = config.enableCompliance !== false;
+    document.getElementById('enable-audit').checked = config.enableAudit !== false;
+    document.getElementById('enable-pii-filter').checked = config.enablePIIFilter !== false;
+    document.getElementById('enable-harmful-content').checked = config.enableHarmfulContent !== false;
+    document.getElementById('enable-profanity').checked = config.enableProfanity !== false;
+    document.getElementById('enable-rate-limit').checked = config.enableRateLimit !== false;
+    document.getElementById('compliance-level').value = config.complianceLevel || 'medium';
+    document.getElementById('ethical-guidelines').value = config.ethicalGuidelines || '';
+
+    // Update compliance level selector
+    document.querySelectorAll('[data-level]').forEach(function(el) {
+      el.style.borderColor = el.getAttribute('data-level') === (config.complianceLevel || 'medium') 
+        ? 'rgba(59, 130, 246, 0.5)' 
+        : 'transparent';
+    });
+
+  } catch (error) {
+    console.error('Error loading compliance settings:', error);
+  }
+}
+
+async function saveComplianceSettings() {
+  try {
+    const settings = {
+      enableCompliance: document.getElementById('enable-compliance').checked,
+      enableAudit: document.getElementById('enable-audit').checked,
+      enablePIIFilter: document.getElementById('enable-pii-filter').checked,
+      enableHarmfulContent: document.getElementById('enable-harmful-content').checked,
+      enableProfanity: document.getElementById('enable-profanity').checked,
+      enableRateLimit: document.getElementById('enable-rate-limit').checked,
+      complianceLevel: document.getElementById('compliance-level').value,
+      ethicalGuidelines: document.getElementById('ethical-guidelines').value
+    };
+
+    const response = await fetch('/api/admin/compliance/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+
+    if (response.ok) {
+      showNotification('✓ Compliance settings saved successfully', 'success');
+    } else {
+      throw new Error('Failed to save settings');
+    }
+  } catch (error) {
+    console.error('Error saving compliance settings:', error);
+    showNotification('✗ Error saving settings: ' + error.message, 'error');
+  }
+}
+
+function resetComplianceSettings() {
+  if (confirm('Reset all compliance settings to defaults?')) {
+    document.getElementById('enable-compliance').checked = true;
+    document.getElementById('enable-audit').checked = true;
+    document.getElementById('enable-pii-filter').checked = true;
+    document.getElementById('enable-harmful-content').checked = true;
+    document.getElementById('enable-profanity').checked = true;
+    document.getElementById('enable-rate-limit').checked = true;
+    document.getElementById('compliance-level').value = 'medium';
+    document.getElementById('ethical-guidelines').value = '';
+    saveComplianceSettings();
+  }
+}
+
+// Compliance level selector
+document.querySelectorAll('[data-level]').forEach(function(el) {
+  el.addEventListener('click', function() {
+    const level = this.getAttribute('data-level');
+    document.getElementById('compliance-level').value = level;
+    
+    // Update visual state
+    document.querySelectorAll('[data-level]').forEach(function(item) {
+      item.style.borderColor = item === el ? 'rgba(59, 130, 246, 0.5)' : 'transparent';
+    });
   });
 });
 </script>

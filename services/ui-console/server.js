@@ -2304,10 +2304,223 @@ app.get("/admin", (req, res) => {
   if (!hasAdminAccess(user)) return res.redirect("/");
   res.render("admin", { urls: externalUrls, user });
 });
+app.get("/chat", requireAuth, (req, res) => {
+  const user = req.session.user || {};
+  res.render("chat", { urls: externalUrls, user });
+});
 app.get("/docs", renderPage("docs"));
 app.get("/docs/architecture-diagram", (req, res) => {
   res.sendFile(path.join(__dirname, "docs-static", "architecture-diagram.html"));
 });
+
+// ── API: Chat Interface ────────────────────────────────────────────────────
+const chatConversations = new Map(); // In-memory store (replace with DB in production)
+const complianceRules = {
+  enableCompliance: true,
+  enableAudit: true,
+  enablePIIFilter: true,
+  enableHarmfulContent: true,
+  complianceLevel: 'medium'
+};
+
+app.get("/api/chat/conversations", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user?.id || 'default';
+    const userConvs = Array.from(chatConversations.entries())
+      .filter(([_, conv]) => conv.userId === userId)
+      .map(([id, conv]) => ({
+        id,
+        title: conv.title,
+        createdAt: conv.createdAt,
+        messageCount: conv.messages.length
+      }))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    res.json({ conversations: userConvs });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/chat/conversations/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const conv = chatConversations.get(req.params.conversationId);
+    if (!conv) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    // Check access
+    if (conv.userId !== (req.session.user?.id || 'default')) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    res.json({
+      id: req.params.conversationId,
+      title: conv.title,
+      messages: conv.messages,
+      createdAt: conv.createdAt,
+      updatedAt: conv.updatedAt
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/chat/message", requireAuth, async (req, res) => {
+  try {
+    const { message, conversationId, agentId, model, useKB, compliance } = req.body;
+    const userId = req.session.user?.id || 'default';
+    
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ error: "Message cannot be empty" });
+    }
+
+    // Create or get conversation
+    let convId = conversationId;
+    if (!convId) {
+      convId = 'conv-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      chatConversations.set(convId, {
+        userId,
+        title: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        config: { agentId, model, useKB }
+      });
+    }
+
+    const conv = chatConversations.get(convId);
+    
+    // Add user message
+    conv.messages.push({
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
+    });
+
+    // Log to audit if enabled
+    if (compliance?.enableAudit) {
+      console.log(`[AUDIT] User ${userId} sent: ${message.substring(0, 100)}`);
+    }
+
+    // Send to agent backend
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+      const response = await fetch(`${AGENT_URL}/run/stream`, {
+        method: 'POST',
+        headers: {
+          ...wsHeaders(req, { 'Content-Type': 'application/json' }),
+        },
+        body: JSON.stringify({
+          prompt: message,
+          sessionId: convId,
+          agent_id: agentId || null,
+          model: model || null,
+          use_kb: useKB !== false,
+          temperature: 0.7,
+          top_p: 0.9
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend returned ${response.status}`);
+      }
+
+      let assistantResponse = '';
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        assistantResponse += chunk;
+        res.write(chunk);
+      }
+
+      // Apply compliance filters
+      if (compliance?.enableCompliance) {
+        assistantResponse = applyComplianceFilter(assistantResponse, compliance);
+      }
+
+      // Store assistant response
+      conv.messages.push({
+        role: 'assistant',
+        content: assistantResponse,
+        timestamp: new Date().toISOString()
+      });
+
+      conv.updatedAt = new Date().toISOString();
+
+      res.end();
+    } catch (error) {
+      res.write(`Error: ${error.message}`);
+      res.end();
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/admin/compliance/config", async (req, res) => {
+  try {
+    res.json({ config: complianceRules });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/admin/compliance/config", async (req, res) => {
+  try {
+    const role = req.session.user?.role || 'user';
+    if (role !== 'admin') {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    Object.assign(complianceRules, req.body);
+    console.log('[CONFIG] Compliance rules updated:', complianceRules);
+    
+    res.json({ success: true, config: complianceRules });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * Apply compliance filtering to responses
+ */
+function applyComplianceFilter(text, settings) {
+  let filtered = text;
+
+  // Filter PII (emails, phone numbers, SSNs, etc.)
+  if (settings.enablePIIFilter) {
+    filtered = filtered
+      .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '[EMAIL]')
+      .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN]')
+      .replace(/\b\d{10}\b/g, '[PHONE]');
+  }
+
+  // Filter harmful content patterns
+  if (settings.enableHarmfulContent) {
+    const harmfulPatterns = [
+      /how to (kill|hurt|harm|abuse)/gi,
+      /instructions for (bomb|weapon|explosive)/gi,
+      /(illegal|unlawful) (drug|activity|hack)/gi
+    ];
+    
+    harmfulPatterns.forEach(pattern => {
+      if (pattern.test(filtered)) {
+        filtered = '[Content filtered due to compliance policy]';
+      }
+    });
+  }
+
+  return filtered;
+}
 
 app.listen(PORT, () => {
   console.log(`UI Console listening on :${PORT}`);
