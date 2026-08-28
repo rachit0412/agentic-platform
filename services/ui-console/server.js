@@ -487,14 +487,135 @@ app.get("/api/me", (req, res) => {
 app.post("/api/update-profile", async (req, res) => {
   const userId = req.session.user.id;
   try {
+    const body = {};
+    if (req.body.display_name) body.display_name = req.body.display_name;
+    if (req.body.bio !== undefined) body.bio = req.body.bio;
+    if (req.body.avatar_url !== undefined) body.avatar_url = req.body.avatar_url;
+    if (req.body.notification_preferences !== undefined) body.notification_preferences = req.body.notification_preferences;
+    
     const r = await fetch(`${AGENT_URL}/users/${userId}`, {
       method: "PUT",
       headers: { ...wsHeaders(req), "Content-Type": "application/json" },
-      body: JSON.stringify({ display_name: req.body.display_name }),
+      body: JSON.stringify(body),
     });
     const data = await r.json();
-    if (r.ok && data.display_name) {
-      req.session.user.display_name = data.display_name;
+    if (r.ok) {
+      if (data.display_name) req.session.user.display_name = data.display_name;
+      if (data.bio !== undefined) req.session.user.bio = data.bio;
+      if (data.avatar_url !== undefined) req.session.user.avatar_url = data.avatar_url;
+      if (data.notification_preferences !== undefined) req.session.user.notification_preferences = data.notification_preferences;
+    }
+    return res.status(r.status).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: "Service unavailable" });
+  }
+});
+
+// ── Setup 2FA ────────────────────────────────────────────
+app.post("/api/setup-2fa", async (req, res) => {
+  const userId = req.session.user.id;
+  try {
+    const speakeasy = require("speakeasy");
+    const QRCode = require("qrcode");
+    
+    // Generate secret
+    const secret = speakeasy.generateSecret({
+      name: `AgenticPlatform (${req.session.user.username})`,
+      issuer: "AgenticPlatform",
+      length: 32
+    });
+    
+    // Generate QR code
+    const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+    
+    res.json({
+      secret: secret.base32,
+      qrCode: qrCode,
+      backupCodes: Array.from({length: 10}, () => Math.random().toString(36).substr(2, 8).toUpperCase())
+    });
+  } catch (e) {
+    return res.status(500).json({ error: "Failed to generate 2FA secret" });
+  }
+});
+
+// ── Confirm 2FA ──────────────────────────────────────────
+app.post("/api/confirm-2fa", async (req, res) => {
+  const userId = req.session.user.id;
+  const { token, secret } = req.body;
+  
+  if (!token || !secret) {
+    return res.status(400).json({ error: "Token and secret are required" });
+  }
+  
+  try {
+    const speakeasy = require("speakeasy");
+    
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: "base32",
+      token: token,
+      window: 2
+    });
+    
+    if (!verified) {
+      return res.status(400).json({ error: "Invalid token" });
+    }
+    
+    // Update user to enable 2FA
+    const r = await fetch(`${AGENT_URL}/users/${userId}`, {
+      method: "PUT",
+      headers: { ...wsHeaders(req), "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        two_factor_enabled: true,
+        two_factor_secret: secret
+      }),
+    });
+    
+    const data = await r.json();
+    if (r.ok) {
+      req.session.user.two_factor_enabled = true;
+    }
+    return res.status(r.status).json(data);
+  } catch (e) {
+    return res.status(500).json({ error: "Failed to confirm 2FA" });
+  }
+});
+
+// ── Disable 2FA ──────────────────────────────────────────
+app.post("/api/disable-2fa", async (req, res) => {
+  const userId = req.session.user.id;
+  const { password } = req.body;
+  
+  if (!password) {
+    return res.status(400).json({ error: "Password is required" });
+  }
+  
+  try {
+    // Verify current password
+    const authR = await fetch(`${AGENT_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: req.session.user.username, password }),
+    });
+    
+    if (!authR.ok) {
+      return res.status(401).json({ error: "Password is incorrect" });
+    }
+    
+    // Disable 2FA
+    const r = await fetch(`${AGENT_URL}/users/${userId}`, {
+      method: "PUT",
+      headers: { ...wsHeaders(req), "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        two_factor_enabled: false,
+        two_factor_secret: null
+      }),
+    });
+    
+    const data = await r.json();
+    if (r.ok) {
+      req.session.user.two_factor_enabled = false;
     }
     return res.status(r.status).json(data);
   } catch (e) {

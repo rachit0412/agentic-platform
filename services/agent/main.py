@@ -8,6 +8,7 @@ import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 from agent.connectors import (CONNECTOR_CATALOG, generate_connector_id,
                               generate_job_id)
@@ -62,7 +63,7 @@ from agent.memory import (add_workspace_member, assign_persona,
 from agent.observability import setup_otel
 from agent.workspace import (current_user_id, current_user_role,
                              current_workspace_id)
-from fastapi import BackgroundTasks, FastAPI, File, Form, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
@@ -474,6 +475,11 @@ class UserUpdate(BaseModel):
     password: str | None = None
     is_active: bool | None = None
     default_workspace: str | None = None
+    bio: str | None = None
+    avatar_url: str | None = None
+    notification_preferences: dict | None = None
+    two_factor_enabled: bool | None = None
+    two_factor_secret: str | None = None
 
 
 @app.put("/users/{user_id}")
@@ -682,6 +688,153 @@ async def remove_member_endpoint(workspace_id: str, user_id: str):
 @app.get("/db-stats")
 async def db_stats_endpoint():
     return get_db_stats()
+
+
+# ── Docker Image Management & Security Scanning ──────────────────────────────
+@app.get("/admin/docker/images")
+async def get_docker_images():
+    """Get all managed Docker images and their info."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.get_all_images_as_dicts()
+
+
+@app.get("/admin/docker/images/{image_name}")
+async def get_docker_image(image_name: str):
+    """Get info for a specific Docker image."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    image = manager.get_image_info(image_name)
+    if not image:
+        return {"error": "Image not found"}
+    return image.to_dict()
+
+
+@app.post("/admin/docker/scan")
+async def scan_docker_images():
+    """Scan all images for vulnerabilities."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.scan_all_images()
+
+
+@app.post("/admin/docker/scan/{image_name}")
+async def scan_docker_image(image_name: str):
+    """Scan specific image for vulnerabilities."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.scan_image_for_vulnerabilities(image_name)
+
+
+@app.post("/admin/docker/check-updates")
+async def check_docker_updates():
+    """Check all images for available updates."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.check_all_for_updates()
+
+
+@app.get("/admin/docker/check-updates/{image_name}")
+async def check_docker_image_updates(image_name: str):
+    """Check specific image for updates."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.check_for_updates(image_name)
+
+
+@app.get("/admin/docker/security-summary")
+async def docker_security_summary():
+    """Get overall security summary of all Docker images."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.get_security_summary()
+
+
+@app.get("/admin/docker/env-vars")
+async def get_docker_env_vars():
+    """Get all Docker image environment variables."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    return manager.get_environment_variables()
+
+
+@app.post("/admin/docker/update-version")
+async def update_docker_version(request: Request):
+    """Update a Docker image version."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    body = await request.json()
+    image_name = body.get("image")
+    new_version = body.get("version")
+    
+    if not image_name or not new_version:
+        return {"error": "image and version parameters required"}
+    
+    return manager.update_image_version(image_name, new_version)
+
+
+@app.get("/admin/docker/reminder-status")
+async def docker_reminder_status():
+    """Check if security reminder should be shown."""
+    # Verify admin role
+    role = current_user_role.get()
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    from agent.image_manager import get_image_manager
+    manager = get_image_manager()
+    show_reminder = manager.should_show_security_reminder()
+    return {
+        "show_reminder": show_reminder,
+        "reminder_interval_days": 30,
+        "next_check": (datetime.now() + timedelta(days=30)).isoformat(),
+    }
+
 
 
 @app.get("/export")

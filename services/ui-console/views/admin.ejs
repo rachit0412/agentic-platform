@@ -37,6 +37,10 @@
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
       Data Platform
     </button>
+    <button class="admin-stab" data-section="infrastructure">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="17" x2="22" y2="17"/><line x1="6" y1="21" x2="6" y2="17"/><line x1="12" y1="21" x2="12" y2="17"/><line x1="18" y1="21" x2="18" y2="17"/></svg>
+      Infrastructure
+    </button>
   </div>
   <div class="admin-subtab-row">
     <div class="admin-subtabs" id="subtabs-operations">
@@ -54,6 +58,17 @@
     </div>
     <div class="admin-subtabs" id="subtabs-data" style="display:none">
       <button class="admin-subtab" data-tab="database">Database &amp; Data</button>
+    </div>
+    <div class="admin-subtabs" id="subtabs-infrastructure" style="display:none">
+      <button class="admin-subtab" data-tab="docker-images">Docker Images</button>
+      <button class="admin-subtab" data-tab="environment-vars">Environment Variables</button>
+    </div>
+    <div class="admin-subtabs" id="subtabs-config" style="display:none">
+      <button class="admin-subtab" data-tab="config-appearance">Appearance</button>
+      <button class="admin-subtab" data-tab="config-access">Access Control</button>
+      <button class="admin-subtab" data-tab="config-system">System Config</button>
+      <button class="admin-subtab" data-tab="config-extensions">Guardrails &amp; Workflows</button>
+      <button class="admin-subtab" data-tab="config-links">External Links</button>
     </div>
   </div>
 </div>
@@ -478,244 +493,370 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB: DOCKER IMAGES                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-docker-images" class="admin-tab-content" style="display:none">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div>
+      <h2 style="margin:0;color:var(--text-1)">🐳 Docker Image Management</h2>
+      <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.82rem">Monitor image versions, scan for vulnerabilities, and manage updates</p>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-secondary btn-sm" onclick="loadDockerImages()">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 21 12"/></svg>
+        Refresh
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="scanAllDockerImages()">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Scan All
+      </button>
+    </div>
+  </div>
+
+  <!-- Security Summary Cards -->
+  <div id="docker-security-cards">
+    <div style="color:var(--text-3);font-size:0.82rem">Loading security summary...</div>
+  </div>
+
+  <!-- Needs Attention -->
+  <div id="docker-attention-needed" style="margin-bottom:1.5rem"></div>
+
+  <!-- Updates Available -->
+  <div id="docker-updates-available" style="margin-bottom:1.5rem"></div>
+
+  <!-- Docker Images Table -->
+  <div class="card animate-fade-up">
+    <div class="section-header">
+      <h3>Managed Images</h3>
+      <button class="btn btn-secondary btn-sm" onclick="checkDockerUpdates()">Check for Updates</button>
+    </div>
+    <div id="docker-images-table" style="margin-top:1rem">
+      <div id="docker-loading" style="color:var(--text-3);font-size:0.82rem">Loading images...</div>
+    </div>
+  </div>
+
+  <!-- Docker Documentation Link -->
+  <div class="card animate-fade-up" style="margin-top:1rem;border-left:4px solid var(--accent-text);background:rgba(6,182,212,0.05)">
+    <h4 style="margin:0 0 0.5rem">📚 Learn More</h4>
+    <p style="margin:0;font-size:0.9rem;color:var(--text-2)">
+      See <a href="/docs/DOCKER-SECURITY.md" target="_blank" style="color:var(--accent-text);text-decoration:underline">DOCKER-SECURITY.md</a> for:
+      <ul style="margin:0.5rem 0;padding-left:1.5rem">
+        <li>Vulnerability descriptions and fixes</li>
+        <li>Version update strategies</li>
+        <li>Security scanning procedures</li>
+        <li>Production deployment recommendations</li>
+      </ul>
+    </p>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB: ENVIRONMENT VARIABLES                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-environment-vars" class="admin-tab-content" style="display:none">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <div>
+      <h2 style="margin:0;color:var(--text-1)">⚙️ Environment Variables</h2>
+      <p style="margin:0.25rem 0 0;color:var(--text-3);font-size:0.82rem">Manage Docker image versions and platform configuration</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadEnvVars()">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15A9 9 0 1 1 21 12"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Docker Image Versions -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>🐳 Docker Image Versions</h3>
+      <p style="font-size:0.75rem;color:var(--text-3);margin:0">Configure which version of each Docker image to use</p>
+    </div>
+    <div id="docker-env-vars" style="margin-top:1rem">
+      <div style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+    </div>
+  </div>
+
+  <!-- LLM Configuration -->
+  <div class="card animate-fade-up">
+    <div class="section-header">
+      <h3>🤖 LLM Provider Selection</h3>
+      <p style="font-size:0.75rem;color:var(--text-3);margin:0">Choose which LLM provider to use as default</p>
+    </div>
+    <div id="llm-config-vars" style="margin-top:1rem">
+      <div style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Documentation -->
+  <div class="card animate-fade-up" style="margin-top:1rem;border-left:4px solid var(--success);background:rgba(16,185,129,0.05)">
+    <h4 style="margin:0 0 0.5rem">📖 Full Documentation</h4>
+    <p style="margin:0;font-size:0.9rem;color:var(--text-2)">
+      See <a href="/docs/ENVIRONMENT-VARIABLES.md" target="_blank" style="color:var(--success);text-decoration:underline">ENVIRONMENT-VARIABLES.md</a> for complete reference:
+      <ul style="margin:0.5rem 0;padding-left:1.5rem;font-size:0.85rem">
+        <li>All environment variables</li>
+        <li>LLM provider configuration</li>
+        <li>Database and auth settings</li>
+        <li>Production best practices</li>
+      </ul>
+    </p>
+  </div>
+
+</div>
+
+<script src="/docker-management.js"><\/script>
+<script>
+// Register Docker management tab handlers
+document.addEventListener('DOMContentLoaded', function() {
+  initDockerManagement();
 <!-- TAB 5: CONFIGURATION                                   -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="tab-config" class="admin-tab-content" style="display:none">
 
-  <!-- Design Theme -->
-  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
-    <div class="section-header">
-      <h3>Design Theme</h3>
-      <span style="font-size:0.72rem;color:var(--text-3)">Choose a visual style for the platform</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
-      <!-- Midnight Theme Card -->
-      <div id="theme-card-midnight" onclick="applyDesignTheme(&apos;midnight&apos;)" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:4px;background:#0a0a0f;display:flex;align-items:center;justify-content:center;border:1px solid rgba(16,185,129,0.3)">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#34d399" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Midnight</div>
-            <div style="font-size:0.72rem;color:var(--text-3)">Default</div>
-          </div>
-        </div>
-        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Dark terminal aesthetic, neon emerald accents, monospace type, sharp edges. Hacker-inspired and bold.</p>
-        <div style="display:flex;gap:6px;margin-top:0.75rem">
-          <span style="width:16px;height:16px;border-radius:50%;background:#10b981;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#34d399;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#0a0a0f;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#d1fae5;border:2px solid var(--glass-border)"></span>
-        </div>
+  <!-- APPEARANCE TAB -->
+  <div id="config-appearance" class="admin-tab-subcontent" style="display:none">
+    <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+      <div class="section-header">
+        <h3>Design Theme</h3>
+        <span style="font-size:0.72rem;color:var(--text-3)">Choose a visual style for the platform</span>
       </div>
-      <!-- Aurora Theme Card -->
-      <div id="theme-card-aurora" onclick="applyDesignTheme(&apos;aurora&apos;)" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#d97706,#f59e0b);display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+        <!-- Midnight Theme Card -->
+        <div id="theme-card-midnight" onclick="applyDesignTheme('midnight')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:4px;background:#0a0a0f;display:flex;align-items:center;justify-content:center;border:1px solid rgba(16,185,129,0.3)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#34d399" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Midnight</div>
+              <div style="font-size:0.72rem;color:var(--text-3)">Default</div>
+            </div>
           </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Aurora</div>
-            <div style="font-size:0.72rem;color:var(--text-3)">Warm</div>
-          </div>
-        </div>
-        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Warm amber gradients, soft rounded surfaces, organic curves, rose-gold palette. Friendly and elegant.</p>
-        <div style="display:flex;gap:6px;margin-top:0.75rem">
-          <span style="width:16px;height:16px;border-radius:50%;background:#d97706;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#f59e0b;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#1c1917;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#fef3c7;border:2px solid var(--glass-border)"></span>
-        </div>
-      </div>
-      <!-- shadcn Theme Card -->
-      <div id="theme-card-softui" onclick="applyDesignTheme('softui')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:8px;background:#18181b;display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fafafa" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">shadcn</div>
-            <div style="font-size:0.72rem;color:var(--text-3)">Minimal</div>
+          <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Dark terminal aesthetic, neon emerald accents, monospace type, sharp edges. Hacker-inspired and bold.</p>
+          <div style="display:flex;gap:6px;margin-top:0.75rem">
+            <span style="width:16px;height:16px;border-radius:50%;background:#10b981;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#34d399;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#0a0a0f;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#d1fae5;border:2px solid var(--glass-border)"></span>
           </div>
         </div>
-        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Clean borders, neutral palette, precise typography. Inspired by shadcn/ui design system.</p>
-        <div style="display:flex;gap:6px;margin-top:0.75rem">
-          <span style="width:16px;height:16px;border-radius:50%;background:#18181b;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#71717a;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#e4e4e7;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#fafafa;border:2px solid var(--glass-border)"></span>
+        <!-- Aurora Theme Card -->
+        <div id="theme-card-aurora" onclick="applyDesignTheme('aurora')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#d97706,#f59e0b);display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Aurora</div>
+              <div style="font-size:0.72rem;color:var(--text-3)">Warm</div>
+            </div>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Warm amber gradients, soft rounded surfaces, organic curves, rose-gold palette. Friendly and elegant.</p>
+          <div style="display:flex;gap:6px;margin-top:0.75rem">
+            <span style="width:16px;height:16px;border-radius:50%;background:#d97706;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#f59e0b;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#1c1917;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#fef3c7;border:2px solid var(--glass-border)"></span>
+          </div>
         </div>
-      </div>
-      <!-- Liquid Glass Theme Card -->
-      <div id="theme-card-horizon" onclick="applyDesignTheme(&apos;horizon&apos;)" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#007aff,#5ac8fa,#af52de);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M8 12c0-3 2-6 4-8"/><path d="M16 12c0 3-2 6-4 8"/></svg>
+        <!-- shadcn Theme Card -->
+        <div id="theme-card-softui" onclick="applyDesignTheme('softui')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:8px;background:#18181b;display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fafafa" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">shadcn</div>
+              <div style="font-size:0.72rem;color:var(--text-3)">Minimal</div>
+            </div>
           </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Liquid Glass</div>
-            <div style="font-size:0.72rem;color:var(--text-3)">Apple-inspired</div>
+          <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Clean borders, neutral palette, precise typography. Inspired by shadcn/ui design system.</p>
+          <div style="display:flex;gap:6px;margin-top:0.75rem">
+            <span style="width:16px;height:16px;border-radius:50%;background:#18181b;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#71717a;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#e4e4e7;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#fafafa;border:2px solid var(--glass-border)"></span>
           </div>
         </div>
-        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Frosted translucency, specular highlights, refractive surfaces, depth through light. Apple Liquid Glass inspired.</p>
-        <div style="display:flex;gap:6px;margin-top:0.75rem">
-          <span style="width:16px;height:16px;border-radius:50%;background:#007aff;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#5ac8fa;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:#af52de;border:2px solid var(--glass-border)"></span>
-          <span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.55);border:2px solid var(--glass-border)"></span>
+        <!-- Liquid Glass Theme Card -->
+        <div id="theme-card-horizon" onclick="applyDesignTheme('horizon')" style="cursor:pointer;padding:1.25rem;border-radius:12px;border:2px solid var(--glass-border);background:var(--glass-bg);transition:all 0.2s">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#007aff,#5ac8fa,#af52de);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M8 12c0-3 2-6 4-8"/><path d="M16 12c0 3-2 6-4 8"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--text-1);font-size:0.9rem">Liquid Glass</div>
+              <div style="font-size:0.72rem;color:var(--text-3)">Apple-inspired</div>
+            </div>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Frosted translucency, specular highlights, refractive surfaces, depth through light. Apple Liquid Glass inspired.</p>
+          <div style="display:flex;gap:6px;margin-top:0.75rem">
+            <span style="width:16px;height:16px;border-radius:50%;background:#007aff;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#5ac8fa;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:#af52de;border:2px solid var(--glass-border)"></span>
+            <span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.55);border:2px solid var(--glass-border)"></span>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SSO / OAuth Configuration -->
-  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
-    <div class="section-header">
-      <h3>SSO / OAuth Providers</h3>
-      <button class="btn btn-secondary btn-sm" onclick="loadSSOStatus()">Refresh</button>
-    </div>
-    <p style="font-size:0.78rem;color:var(--text-3);margin:0.5rem 0 1rem">Configure Single Sign-On providers for the login page. Credentials are <strong style="color:var(--success)">encrypted at rest</strong> (AES-256-GCM) and OAuth flows use <strong style="color:var(--success)">PKCE</strong> + time-limited state tokens for maximum security.</p>
-    <div id="sso-status-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
-      <!-- Google -->
-      <div id="sso-card-google" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-weight:600;color:var(--text-1);font-size:0.88rem">Google</div>
-            <div id="sso-google-status" style="font-size:0.72rem;color:var(--text-3)">Checking...</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" style="font-size:0.68rem;padding:3px 8px" onclick="toggleSSOForm('google')">Configure</button>
-        </div>
-        <div id="sso-form-google" style="display:none;margin-top:0.5rem">
-          <div style="margin-bottom:0.5rem">
-            <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client ID</label>
-            <input id="sso-google-id" class="input" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Google Client ID" autocomplete="off">
-          </div>
-          <div style="margin-bottom:0.65rem">
-            <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client Secret</label>
-            <input id="sso-google-secret" class="input" type="password" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Google Client Secret" autocomplete="off">
-          </div>
-          <button class="btn btn-primary btn-sm" style="width:100%;font-size:0.73rem" onclick="saveSSO('google')">Save Google SSO</button>
-        </div>
-        <div style="font-size:0.72rem;color:var(--text-3);line-height:1.5;margin-top:0.5rem">
-          <code style="font-size:0.68rem">SSO_GOOGLE_CLIENT_ID</code><br>
-          <code style="font-size:0.68rem">SSO_GOOGLE_CLIENT_SECRET</code>
-        </div>
-      </div>
-      <!-- GitHub -->
-      <div id="sso-card-github" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:10px;background:#24292e;display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-weight:600;color:var(--text-1);font-size:0.88rem">GitHub</div>
-            <div id="sso-github-status" style="font-size:0.72rem;color:var(--text-3)">Checking...</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" style="font-size:0.68rem;padding:3px 8px" onclick="toggleSSOForm('github')">Configure</button>
-        </div>
-        <div id="sso-form-github" style="display:none;margin-top:0.5rem">
-          <div style="margin-bottom:0.5rem">
-            <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client ID</label>
-            <input id="sso-github-id" class="input" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="GitHub Client ID" autocomplete="off">
-          </div>
-          <div style="margin-bottom:0.65rem">
-            <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client Secret</label>
-            <input id="sso-github-secret" class="input" type="password" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="GitHub Client Secret" autocomplete="off">
-          </div>
-          <button class="btn btn-primary btn-sm" style="width:100%;font-size:0.73rem" onclick="saveSSO('github')">Save GitHub SSO</button>
-        </div>
-        <div style="font-size:0.72rem;color:var(--text-3);line-height:1.5;margin-top:0.5rem">
-          <code style="font-size:0.68rem">SSO_GITHUB_CLIENT_ID</code><br>
-          <code style="font-size:0.68rem">SSO_GITHUB_CLIENT_SECRET</code>
-        </div>
-      </div>
-      <!-- Microsoft -->
-      <div id="sso-card-microsoft" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="13" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="13" width="10" height="10" fill="#00a4ef"/><rect x="13" y="13" width="10" height="10" fill="#ffb900"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-weight:600;color:var(--text-1);font-size:0.88rem">Microsoft</div>
-            <div id="sso-microsoft-status" style="font-size:0.72rem;color:var(--text-3)">Checking...</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" style="font-size:0.68rem;padding:3px 8px" onclick="toggleSSOForm('microsoft')">Configure</button>
-        </div>
-        <div id="sso-form-microsoft" style="display:none;margin-top:0.5rem">
-          <div style="margin-bottom:0.5rem">
-            <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client ID</label>
-            <input id="sso-microsoft-id" class="input" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Microsoft Client ID" autocomplete="off">
-          </div>
-          <div style="margin-bottom:0.65rem">
-            <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client Secret</label>
-            <input id="sso-microsoft-secret" class="input" type="password" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Microsoft Client Secret" autocomplete="off">
-          </div>
-          <button class="btn btn-primary btn-sm" style="width:100%;font-size:0.73rem" onclick="saveSSO('microsoft')">Save Microsoft SSO</button>
-        </div>
-        <div style="font-size:0.72rem;color:var(--text-3);line-height:1.5;margin-top:0.5rem">
-          <code style="font-size:0.68rem">SSO_MICROSOFT_CLIENT_ID</code><br>
-          <code style="font-size:0.68rem">SSO_MICROSOFT_CLIENT_SECRET</code>
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:1rem;padding:0.85rem 1rem;border-radius:8px;background:var(--badge-bg);border:1px solid var(--badge-border)">
-      <p style="font-size:0.75rem;color:var(--text-2);margin:0;line-height:1.6"><strong>Setup:</strong> Register an OAuth app with each provider, set the callback URL to <code style="font-size:0.68rem">&lt;your-domain&gt;/auth/sso/&lt;provider&gt;/callback</code>, then use the <strong>Configure</strong> button above to enter your credentials. Also set <code style="font-size:0.68rem">SSO_BASE_URL</code> to your public URL.</p>
-      <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--divider)">
-        <p style="font-size:0.72rem;color:var(--text-3);margin:0;line-height:1.6">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <strong>Security:</strong> Set <code style="font-size:0.66rem">SSO_ENCRYPTION_KEY</code> (64-char hex) for production encryption. Set <code style="font-size:0.66rem">SESSION_SECRET</code> for stable sessions. Enable <code style="font-size:0.66rem">secure: true</code> cookies behind HTTPS.
-        </p>
       </div>
     </div>
   </div>
 
-  <!-- Global Constraints -->
-  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
-    <div class="section-header">
-      <h3>Global Constraints</h3>
-      <div>
-        <button class="btn btn-secondary btn-sm" onclick="loadGlobalConstraints()">Refresh</button>
-        <button class="btn btn-primary btn-sm" onclick="saveGlobalConstraints()" style="margin-left:0.5rem">Save</button>
+  <!-- ACCESS CONTROL TAB -->
+  <div id="config-access" class="admin-tab-subcontent" style="display:none">
+    <!-- SSO / OAuth Configuration -->
+    <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+      <div class="section-header">
+        <h3>SSO / OAuth Providers</h3>
+        <button class="btn btn-secondary btn-sm" onclick="loadSSOStatus()">Refresh</button>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-3);margin:0.5rem 0 1rem">Configure Single Sign-On providers for the login page. Credentials are <strong style="color:var(--success)">encrypted at rest</strong> (AES-256-GCM) and OAuth flows use <strong style="color:var(--success)">PKCE</strong> + time-limited state tokens for maximum security.</p>
+      <div id="sso-status-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+        <!-- Google -->
+        <div id="sso-card-google" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text-1);font-size:0.88rem">Google</div>
+              <div id="sso-google-status" style="font-size:0.72rem;color:var(--text-3)">Checking...</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="font-size:0.68rem;padding:3px 8px" onclick="toggleSSOForm('google')">Configure</button>
+          </div>
+          <div id="sso-form-google" style="display:none;margin-top:0.5rem">
+            <div style="margin-bottom:0.5rem">
+              <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client ID</label>
+              <input id="sso-google-id" class="input" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Google Client ID" autocomplete="off">
+            </div>
+            <div style="margin-bottom:0.65rem">
+              <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client Secret</label>
+              <input id="sso-google-secret" class="input" type="password" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Google Client Secret" autocomplete="off">
+            </div>
+            <button class="btn btn-primary btn-sm" style="width:100%;font-size:0.73rem" onclick="saveSSO('google')">Save Google SSO</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-3);line-height:1.5;margin-top:0.5rem">
+            <code style="font-size:0.68rem">SSO_GOOGLE_CLIENT_ID</code><br>
+            <code style="font-size:0.68rem">SSO_GOOGLE_CLIENT_SECRET</code>
+          </div>
+        </div>
+        <!-- GitHub -->
+        <div id="sso-card-github" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:10px;background:#24292e;display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text-1);font-size:0.88rem">GitHub</div>
+              <div id="sso-github-status" style="font-size:0.72rem;color:var(--text-3)">Checking...</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="font-size:0.68rem;padding:3px 8px" onclick="toggleSSOForm('github')">Configure</button>
+          </div>
+          <div id="sso-form-github" style="display:none;margin-top:0.5rem">
+            <div style="margin-bottom:0.5rem">
+              <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client ID</label>
+              <input id="sso-github-id" class="input" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="GitHub Client ID" autocomplete="off">
+            </div>
+            <div style="margin-bottom:0.65rem">
+              <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client Secret</label>
+              <input id="sso-github-secret" class="input" type="password" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="GitHub Client Secret" autocomplete="off">
+            </div>
+            <button class="btn btn-primary btn-sm" style="width:100%;font-size:0.73rem" onclick="saveSSO('github')">Save GitHub SSO</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-3);line-height:1.5;margin-top:0.5rem">
+            <code style="font-size:0.68rem">SSO_GITHUB_CLIENT_ID</code><br>
+            <code style="font-size:0.68rem">SSO_GITHUB_CLIENT_SECRET</code>
+          </div>
+        </div>
+        <!-- Microsoft -->
+        <div id="sso-card-microsoft" style="padding:1.25rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+            <div style="width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 24 24" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="13" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="13" width="10" height="10" fill="#00a4ef"/><rect x="13" y="13" width="10" height="10" fill="#ffb900"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="font-weight:600;color:var(--text-1);font-size:0.88rem">Microsoft</div>
+              <div id="sso-microsoft-status" style="font-size:0.72rem;color:var(--text-3)">Checking...</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="font-size:0.68rem;padding:3px 8px" onclick="toggleSSOForm('microsoft')">Configure</button>
+          </div>
+          <div id="sso-form-microsoft" style="display:none;margin-top:0.5rem">
+            <div style="margin-bottom:0.5rem">
+              <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client ID</label>
+              <input id="sso-microsoft-id" class="input" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Microsoft Client ID" autocomplete="off">
+            </div>
+            <div style="margin-bottom:0.65rem">
+              <label style="font-size:0.7rem;color:var(--text-3);display:block;margin-bottom:3px">Client Secret</label>
+              <input id="sso-microsoft-secret" class="input" type="password" style="width:100%;font-size:0.75rem;padding:5px 8px" placeholder="Microsoft Client Secret" autocomplete="off">
+            </div>
+            <button class="btn btn-primary btn-sm" style="width:100%;font-size:0.73rem" onclick="saveSSO('microsoft')">Save Microsoft SSO</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-3);line-height:1.5;margin-top:0.5rem">
+            <code style="font-size:0.68rem">SSO_MICROSOFT_CLIENT_ID</code><br>
+            <code style="font-size:0.68rem">SSO_MICROSOFT_CLIENT_SECRET</code>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding:0.85rem 1rem;border-radius:8px;background:var(--badge-bg);border:1px solid var(--badge-border)">
+        <p style="font-size:0.75rem;color:var(--text-2);margin:0;line-height:1.6"><strong>Setup:</strong> Register an OAuth app with each provider, set the callback URL to <code style="font-size:0.68rem">&lt;your-domain&gt;/auth/sso/&lt;provider&gt;/callback</code>, then use the <strong>Configure</strong> button above to enter your credentials. Also set <code style="font-size:0.68rem">SSO_BASE_URL</code> to your public URL.</p>
+        <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--divider)">
+          <p style="font-size:0.72rem;color:var(--text-3);margin:0;line-height:1.6">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <strong>Security:</strong> Set <code style="font-size:0.66rem">SSO_ENCRYPTION_KEY</code> (64-char hex) for production encryption. Set <code style="font-size:0.66rem">SESSION_SECRET</code> for stable sessions. Enable <code style="font-size:0.66rem">secure: true</code> cookies behind HTTPS.
+          </p>
+        </div>
       </div>
     </div>
-    <div style="margin-top:0.75rem">
-      <textarea id="global-constraints-editor" class="input" style="width:100%;min-height:200px;font-family:var(--font-mono);font-size:0.78rem;resize:vertical" placeholder="Loading constraints..."></textarea>
-      <p style="font-size:0.68rem;color:var(--text-3);margin-top:0.35rem">JSON format. These constraints apply to all agents globally (e.g. content policies, response length limits).</p>
-    </div>
-  </div>
 
-  <!-- Security & Best Practices -->
-  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
-    <div class="section-header">
-      <h3>Security &amp; Best Practices</h3>
-      <div>
-        <button class="btn btn-secondary btn-sm" onclick="loadSecurityConsiderations();loadBestPractices()">Refresh</button>
-        <button class="btn btn-primary btn-sm" onclick="saveSecurityConsiderations();saveBestPractices()" style="margin-left:0.5rem">Save All</button>
+    <!-- Security Considerations -->
+    <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+      <div class="section-header">
+        <h3>Security Considerations</h3>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="loadSecurityConsiderations()">Refresh</button>
+          <button class="btn btn-primary btn-sm" onclick="saveSecurityConsiderations()" style="margin-left:0.5rem">Save</button>
+        </div>
       </div>
-    </div>
-    <div style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-      <!-- Security (editable) -->
-      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:0.75rem 1rem">
-        <h4 style="margin:0 0 0.5rem;font-size:0.82rem;color:#ef4444;display:flex;align-items:center;gap:0.35rem">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Security Considerations
-        </h4>
-        <textarea id="security-editor" class="input" rows="10" placeholder="One security consideration per line..." style="width:100%;font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--font-mono)"></textarea>
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:0.75rem 1rem;margin-top:0.75rem">
+        <textarea id="security-editor" class="input" rows="12" placeholder="One security consideration per line..." style="width:100%;font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--font-mono)"></textarea>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;align-items:center">
           <button class="btn btn-sm" onclick="resetSecurityConsiderations()" style="font-size:0.72rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef444444">Reset to Defaults</button>
-          <span style="margin-left:auto;font-size:0.68rem;color:var(--text-3)">One item per line.</span>
+          <span style="margin-left:auto;font-size:0.68rem;color:var(--text-3)">One item per line. These are security best practices displayed across the platform.</span>
         </div>
       </div>
-      <!-- Best Practices (editable) -->
-      <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:0.75rem 1rem">
-        <h4 style="margin:0 0 0.5rem;font-size:0.82rem;color:#22c55e;display:flex;align-items:center;gap:0.35rem">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Best Practices
-        </h4>
-        <textarea id="best-practices-editor" class="input" rows="10" placeholder="One best practice per line..." style="width:100%;font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--font-mono)"></textarea>
+    </div>
+  </div>
+
+  <!-- SYSTEM CONFIG TAB -->
+  <div id="config-system" class="admin-tab-subcontent" style="display:none">
+    <!-- Global Constraints -->
+    <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+      <div class="section-header">
+        <h3>Global Constraints</h3>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="loadGlobalConstraints()">Refresh</button>
+          <button class="btn btn-primary btn-sm" onclick="saveGlobalConstraints()" style="margin-left:0.5rem">Save</button>
+        </div>
+      </div>
+      <div style="margin-top:0.75rem">
+        <textarea id="global-constraints-editor" class="input" style="width:100%;min-height:200px;font-family:var(--font-mono);font-size:0.78rem;resize:vertical" placeholder="Loading constraints..."></textarea>
+        <p style="font-size:0.68rem;color:var(--text-3);margin-top:0.35rem">JSON format. These constraints apply to all agents globally (e.g. content policies, response length limits).</p>
+      </div>
+    </div>
+
+    <!-- Best Practices -->
+    <div class="card animate-fade-up">
+      <div class="section-header">
+        <h3>Best Practices</h3>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="loadBestPractices()">Refresh</button>
+          <button class="btn btn-primary btn-sm" onclick="saveBestPractices()" style="margin-left:0.5rem">Save</button>
+        </div>
+      </div>
+      <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:0.75rem 1rem;margin-top:0.75rem">
+        <textarea id="best-practices-editor" class="input" rows="12" placeholder="One best practice per line..." style="width:100%;font-size:0.78rem;line-height:1.6;resize:vertical;font-family:var(--font-mono)"></textarea>
         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;align-items:center">
           <button class="btn btn-sm" onclick="resetBestPractices()" style="font-size:0.72rem;padding:0.2rem 0.6rem;color:#ef4444;border-color:#ef444444">Reset to Defaults</button>
           <span style="margin-left:auto;font-size:0.68rem;color:var(--text-3)">One practice per line. These appear as guidance on the Skills page.</span>
@@ -724,58 +865,82 @@
     </div>
   </div>
 
-  <!-- Guardrails Overview -->
-  <div class="card animate-fade-up delay-100" style="margin-bottom:1.5rem">
-    <div class="section-header">
-      <h3>Guardrails Registry</h3>
-      <button class="btn btn-secondary btn-sm" onclick="loadGuardrails()">Refresh</button>
+  <!-- GUARDRAILS & WORKFLOWS TAB -->
+  <div id="config-extensions" class="admin-tab-subcontent" style="display:none">
+    <!-- Guardrails Registry -->
+    <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+      <div class="section-header">
+        <h3>Guardrails Registry</h3>
+        <button class="btn btn-secondary btn-sm" onclick="loadGuardrails()">Refresh</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-3);margin:0.5rem 0 1rem">Guardrails are rules that constrain agent behavior. Manage them from the <a href="/guardrails" style="color:var(--accent-text)">Guardrails</a> page.</p>
+      <div id="guardrails-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
     </div>
-    <div id="guardrails-list" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+
+    <!-- n8n Workflows -->
+    <div class="card animate-fade-up">
+      <div class="section-header">
+        <h3>n8n Workflows</h3>
+        <button class="btn btn-secondary btn-sm" onclick="loadN8nWorkflows()">Refresh</button>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-3);margin:0.5rem 0 1rem">Active workflows from n8n. Manage and build new workflows at <a href="http://localhost:5678" target="_blank" style="color:var(--accent-text)">n8n Console</a>.</p>
+      <div id="n8n-workflows" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
+    </div>
   </div>
 
-  <!-- n8n Workflows -->
-  <div class="card animate-fade-up delay-200" style="margin-bottom:1.5rem">
-    <div class="section-header">
-      <h3>n8n Workflows</h3>
-      <button class="btn btn-secondary btn-sm" onclick="loadN8nWorkflows()">Refresh</button>
+  <!-- EXTERNAL LINKS TAB -->
+  <div id="config-links" class="admin-tab-subcontent" style="display:none">
+    <div class="card animate-fade-up">
+      <h3>External Links & Services</h3>
+      <p style="font-size:0.75rem;color:var(--text-3);margin:0.5rem 0 1rem">Quick access to monitoring, logging, and configuration dashboards for external services.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75rem;margin-top:0.75rem">
+        <a href="${urls.grafana}" target="_blank" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+          <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            <span style="font-weight:600;color:var(--text-1);font-size:0.85rem">Grafana</span>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-3)">System metrics & dashboards</span>
+        </a>
+        <a href="${urls.langfuse}" target="_blank" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+          <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span style="font-weight:600;color:var(--text-1);font-size:0.85rem">Langfuse</span>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-3)">LLM tracing & evals</span>
+        </a>
+        <a href="${urls.n8n}" target="_blank" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+          <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            <span style="font-weight:600;color:var(--text-1);font-size:0.85rem">n8n</span>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-3)">Automation & workflows</span>
+        </a>
+        <a href="http://localhost:9090" target="_blank" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+          <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ef4444" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span style="font-weight:600;color:var(--text-1);font-size:0.85rem">Prometheus</span>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-3)">Metrics collection</span>
+        </a>
+        <a href="${urls.agent}/docs" target="_blank" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+          <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style="font-weight:600;color:var(--text-1);font-size:0.85rem">Agent API</span>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-3)">REST API documentation</span>
+        </a>
+        <a href="http://localhost:8011/docs" target="_blank" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;padding:1rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+          <div style="display:flex;align-items:center;gap:0.5rem;width:100%">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style="font-weight:600;color:var(--text-1);font-size:0.85rem">Tools API</span>
+          </div>
+          <span style="font-size:0.72rem;color:var(--text-3)">Tools service documentation</span>
+        </a>
+      </div>
     </div>
-    <div id="n8n-workflows" class="mt-1" style="color:var(--text-3);font-size:0.82rem">Loading...</div>
   </div>
 
-  <!-- External Links -->
-  <div class="card animate-fade-up delay-300">
-    <h3>Quick Links</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-top:0.75rem">
-      <a href="${urls.grafana}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-        Grafana Dashboards
-      </a>
-      <a href="${urls.langfuse}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Langfuse Traces
-      </a>
-      <a href="${urls.n8n}" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        n8n Workflows
-      </a>
-      <a href="http://localhost:9090" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        Prometheus
-      </a>
-      <a href="${urls.agent}/docs" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Agent API Docs
-      </a>
-      <a href="http://localhost:8011/docs" target="_blank" style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-decoration:none;color:var(--text-1);font-size:0.82rem;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent-border)'" onmouseout="this.style.borderColor='var(--glass-border)'">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Tools API Docs
-      </a>
-    </div>
-  </div>
 </div>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- TAB 6: AUDIT LOG                                       -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div id="tab-audit" class="admin-tab-content" style="display:none">
   <div class="card animate-fade-up">
@@ -2072,5 +2237,24 @@ async function removePersonaFromUser(userId, personaId) {
 
 /* ═══ INIT ═══ */
 adminLoadAll();
+
 <\/script>
 ` }) %>
+
+// Config subtab switching
+function switchConfigTab(tabName) {
+  document.querySelectorAll('[id^="config-"]').forEach(function(el) { el.style.display = 'none'; });
+  var tab = document.getElementById('config-' + tabName);
+  if (tab) tab.style.display = 'block';
+  document.querySelectorAll('#subtabs-config .admin-subtab').forEach(function(el) { el.classList.remove('active'); });
+  var btn = document.querySelector('#subtabs-config [data-tab="config-' + tabName + '"]');
+  if (btn) btn.classList.add('active');
+}
+
+/* Attach click handlers to config subtabs */
+document.querySelectorAll('#subtabs-config .admin-subtab').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var tabName = this.getAttribute('data-tab').replace('config-', '');
+    switchConfigTab(tabName);
+  });
+});

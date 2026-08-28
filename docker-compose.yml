@@ -57,7 +57,7 @@ services:
 
   # ── Workflow Orchestrator — n8n ───────────────────────────────────────────
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:${N8N_IMAGE_TAG:-2.37.4-dacee6c-arm64}
     container_name: n8n
     ports:
       - "${N8N_PORT:-5678}:5678"
@@ -84,7 +84,7 @@ services:
 
   # ── n8n Reverse Proxy (iframe embedding) ─────────────────────────────────
   n8n-proxy:
-    image: nginx:alpine
+    image: nginx:${NGINX_IMAGE_TAG:-1.27.0-alpine}
     container_name: n8n-proxy
     ports:
       - "${N8N_PROXY_PORT:-5679}:8080"
@@ -104,7 +104,7 @@ services:
 
   # ── LLM Runtime — Ollama ─────────────────────────────────────────────────
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:${OLLAMA_IMAGE_TAG:-0.4.2}
     container_name: ollama
     ports:
       - "${OLLAMA_PORT:-11436}:11434"
@@ -284,7 +284,7 @@ services:
       retries: 5
 
   langfuse:
-    image: langfuse/langfuse:2
+    image: langfuse/langfuse:${LANGFUSE_IMAGE_TAG:-2.185.0}
     container_name: langfuse
     ports:
       - "${LANGFUSE_PORT:-3012}:3000"
@@ -339,7 +339,7 @@ services:
 
   # ── Prometheus ───────────────────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG:-2.50.1}
     container_name: prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
