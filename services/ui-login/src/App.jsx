@@ -313,12 +313,21 @@ function IntroGate({ onComplete }) {
 
 export default function App() {
   const { mode, resolved, setMode } = useTheme();
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(() => {
+    // Only show intro gate on first-ever visit, not after logout
+    const hasSeenIntro = localStorage.getItem('agentic_intro_shown');
+    return !hasSeenIntro;
+  });
 
   useEffect(() => {
-    const t = setTimeout(() => setShowIntro(false), 3400);
-    return () => clearTimeout(t);
-  }, []);
+    if (showIntro) {
+      const t = setTimeout(() => {
+        setShowIntro(false);
+        localStorage.setItem('agentic_intro_shown', 'true');
+      }, 3400);
+      return () => clearTimeout(t);
+    }
+  }, [showIntro]);
 
   return (
     <div className="fixed inset-0 overflow-hidden font-sans text-gray-900 dark:text-white">
