@@ -2405,36 +2405,90 @@ async function loadN8nWorkflows() {
 /* ═══ AUDIT LOG ═══ */
 async function loadAuditLog(type) {
   try {
-    var typeFilter = document.getElementById('audit-filter-type');
-    var actionFilter = document.getElementById('audit-filter-action');
-    var typeVal = typeFilter ? typeFilter.value : '';
-    var actionVal = actionFilter ? actionFilter.value : '';
-    var params = new URLSearchParams({limit: '100'});
-    if (typeVal) params.set('entity_type', typeVal);
-    if (actionVal) params.set('action', actionVal);
-    var r = await fetch('/api/audit-log?' + params.toString());
-    var d = await r.json();
-    var el = document.getElementById('audit-log');
-    if (!el) return; // Element not in DOM yet
-    if (!d.entries || d.entries.length === 0) {
-      el.innerHTML = '<p style="color:var(--text-3)">No audit log entries yet. Changes to agents, skills, prompts, and other entities will appear here.</p>';
+    // Determine which container to use
+    const isComplianceTab = type === 'compliance' || document.getElementById('tab-compliance-audit').style.display !== 'none';
+    const tableContainer = isComplianceTab ? document.getElementById('audit-log-table') : document.getElementById('audit-log');
+    
+    if (!tableContainer) {
+      console.error('Audit log table container not found');
       return;
     }
-    var actionColors = {create:'var(--success)',update:'var(--info)',delete:'var(--danger)',rollback:'var(--warning)'};
-    el.innerHTML = '<table><tr><th>Time</th><th>Action</th><th>Type</th><th>Name</th><th>Details</th></tr>' +
-      d.entries.map(function(e) {
-        var time = new Date(e.created_at).toLocaleString();
-        var color = actionColors[e.action] || 'var(--text-3)';
-        var details = e.details && Object.keys(e.details).length > 0 ? escapeHtml(JSON.stringify(e.details)).substring(0, 120) : '';
-        return '<tr><td class="mono" style="font-size:0.72rem;white-space:nowrap">' + time + '</td>' +
-          '<td><span style="color:' + color + ';font-weight:600;text-transform:uppercase;font-size:0.72rem">' + escapeHtml(e.action) + '</span></td>' +
-          '<td style="font-size:0.78rem">' + escapeHtml(e.entity_type) + '</td>' +
-          '<td style="font-size:0.78rem">' + escapeHtml(e.entity_name || e.entity_id) + '</td>' +
-          '<td class="mono" style="font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + details + '">' + details + '</td></tr>';
-      }).join('') + '</table>';
-  } catch(e) { 
-    var el = document.getElementById('audit-log');
-    if (el) el.innerHTML = '<p style="color:var(--danger)">Failed to load audit log: ' + e.message + '</p>'; 
+    
+    // Get filter values
+    const typeFilterEl = document.getElementById('audit-filter-type');
+    const actionFilterEl = document.getElementById('audit-filter-action');
+    const complianceFilterEl = document.getElementById('audit-filter');
+    
+    const typeVal = typeFilterEl ? typeFilterEl.value : '';
+    const actionVal = actionFilterEl ? actionFilterEl.value : '';
+    const complianceVal = complianceFilterEl ? complianceFilterEl.value : '';
+    
+    // Build query parameters
+    const params = new URLSearchParams({ limit: '100' });
+    if (typeVal) params.set('entity_type', typeVal);
+    if (actionVal) params.set('action', actionVal);
+    if (complianceVal) params.set('event_type', complianceVal);
+    
+    // Fetch audit log
+    const response = await fetch('/api/audit-log?' + params.toString());
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    
+    if (!data.entries || data.entries.length === 0) {
+      if (isComplianceTab) {
+        tableContainer.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.9rem"><thead><tr style="border-bottom:2px solid var(--divider)"><th style="text-align:left;padding:0.75rem;font-weight:600">Timestamp</th><th style="text-align:left;padding:0.75rem;font-weight:600">User</th><th style="text-align:left;padding:0.75rem;font-weight:600">Event Type</th><th style="text-align:left;padding:0.75rem;font-weight:600">Details</th></tr></thead><tbody><tr style="border-bottom:1px solid var(--divider);color:var(--text-3)"><td colspan="4" style="padding:2rem;text-align:center">No audit events yet</td></tr></tbody></table>';
+      } else {
+        tableContainer.innerHTML = '<p style="color:var(--text-3)">No audit log entries yet. Changes will appear here.</p>';
+      }
+      return;
+    }
+    
+    if (isComplianceTab) {
+      // Render compliance audit table
+      let tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.9rem"><thead><tr style="border-bottom:2px solid var(--divider)"><th style="text-align:left;padding:0.75rem;font-weight:600">Timestamp</th><th style="text-align:left;padding:0.75rem;font-weight:600">User</th><th style="text-align:left;padding:0.75rem;font-weight:600">Event Type</th><th style="text-align:left;padding:0.75rem;font-weight:600">Details</th></tr></thead><tbody>';
+      
+      data.entries.forEach(function(entry) {
+        const time = new Date(entry.created_at).toLocaleString();
+        const user = entry.user_id || entry.username || 'System';
+        const eventType = entry.action || entry.event_type || 'Unknown';
+        const details = entry.details ? (typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details).substring(0, 150)) : '';
+        
+        tableHtml += '<tr style="border-bottom:1px solid var(--divider);color:var(--text-1)">'
+          + '<td style="padding:0.75rem;font-family:monospace;font-size:0.8rem;white-space:nowrap">' + escapeHtml(time) + '</td>'
+          + '<td style="padding:0.75rem">' + escapeHtml(user) + '</td>'
+          + '<td style="padding:0.75rem;font-weight:500">' + escapeHtml(eventType) + '</td>'
+          + '<td style="padding:0.75rem;font-size:0.85rem;color:var(--text-2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(details) + '">' + escapeHtml(details) + '</td>'
+          + '</tr>';
+      });
+      
+      tableHtml += '</tbody></table>';
+      tableContainer.innerHTML = tableHtml;
+    } else {
+      // Render regular audit log table
+      const actionColors = { create: 'var(--success)', update: 'var(--info)', delete: 'var(--danger)', rollback: 'var(--warning)' };
+      let html = '<table><tr><th>Time</th><th>Action</th><th>Type</th><th>Name</th><th>Details</th></tr>';
+      
+      html += data.entries.map(function(e) {
+        const time = new Date(e.created_at).toLocaleString();
+        const color = actionColors[e.action] || 'var(--text-3)';
+        const details = e.details && Object.keys(e.details).length > 0 ? escapeHtml(JSON.stringify(e.details)).substring(0, 120) : '';
+        return '<tr><td class="mono" style="font-size:0.72rem;white-space:nowrap">' + time + '</td>'
+          + '<td><span style="color:' + color + ';font-weight:600;text-transform:uppercase;font-size:0.72rem">' + escapeHtml(e.action) + '</span></td>'
+          + '<td style="font-size:0.78rem">' + escapeHtml(e.entity_type) + '</td>'
+          + '<td style="font-size:0.78rem">' + escapeHtml(e.entity_name || e.entity_id) + '</td>'
+          + '<td class="mono" style="font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + details + '">' + details + '</td></tr>';
+      }).join('');
+      
+      html += '</table>';
+      tableContainer.innerHTML = html;
+    }
+  } catch(e) {
+    console.error('Error loading audit log:', e);
+    const tableContainer = document.getElementById(type === 'compliance' ? 'audit-log-table' : 'audit-log');
+    if (tableContainer) {
+      tableContainer.innerHTML = '<p style="color:var(--danger)">Failed to load audit log: ' + escapeHtml(e.message) + '</p>';
+    }
   }
 }
 
@@ -2442,9 +2496,53 @@ async function loadAuditLog(type) {
 setTimeout(function() {
   var typeFilter = document.getElementById('audit-filter-type');
   var actionFilter = document.getElementById('audit-filter-action');
-  if (typeFilter) typeFilter.addEventListener('change', loadAuditLog);
-  if (actionFilter) actionFilter.addEventListener('change', loadAuditLog);
+  var complianceFilter = document.getElementById('audit-filter');
+  
+  if (typeFilter) typeFilter.addEventListener('change', function() { loadAuditLog(); });
+  if (actionFilter) actionFilter.addEventListener('change', function() { loadAuditLog(); });
+  if (complianceFilter) complianceFilter.addEventListener('change', function() { loadAuditLog('compliance'); });
 }, 100);
+
+function exportAuditLog() {
+  try {
+    const table = document.getElementById('audit-log-table');
+    if (!table) throw new Error('Table not found');
+    
+    const rows = table.querySelectorAll('tr');
+    if (rows.length < 2) {
+      showToast('No audit entries to export', 'warning');
+      return;
+    }
+    
+    // Extract table data to CSV
+    let csvContent = 'Timestamp,User,Event Type,Details\n';
+    for (let i = 1; i < rows.length; i++) {
+      const cells = rows[i].querySelectorAll('td');
+      if (cells.length >= 4) {
+        const time = cells[0].textContent.trim();
+        const user = cells[1].textContent.trim();
+        const eventType = cells[2].textContent.trim();
+        const details = cells[3].textContent.trim();
+        csvContent += `"${time}","${user}","${eventType}","${details.replace(/"/g, '""')}"\n`;
+      }
+    }
+    
+    // Download CSV
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `audit-log-${timestamp}.csv`;
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast(`Exported ${rows.length - 1} audit entries`, 'success');
+  } catch(e) {
+    showToast('Error exporting audit log: ' + e.message, 'error');
+  }
+}
 
 
 /* ═══ PERSONA MANAGEMENT ═══ */
@@ -3140,6 +3238,196 @@ function exportSecretResults() {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ═══ DOCKER IMAGE MANAGEMENT ═══ */
+var dockerImagesCache = [];
+var dockerSecurityCache = {};
+
+async function loadDockerImages() {
+  const container = document.getElementById('docker-images-table');
+  if (!container) return;
+  container.innerHTML = '<div style="color:var(--text-3);font-size:0.82rem">Loading Docker images...</div>';
+  
+  try {
+    const response = await fetch('/api/admin/docker/images');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    
+    if (!data.images || data.images.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-3)">No Docker images found. Make sure Docker daemon is running.</p>';
+      return;
+    }
+    
+    dockerImagesCache = data.images;
+    
+    let html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:2px solid var(--glass-border)">'
+      + '<th style="text-align:left;padding:0.75rem;color:var(--text-3);font-size:0.7rem">Image</th>'
+      + '<th style="text-align:left;padding:0.75rem;color:var(--text-3);font-size:0.7rem">Tag</th>'
+      + '<th style="text-align:center;padding:0.75rem;color:var(--text-3);font-size:0.7rem">Size</th>'
+      + '<th style="text-align:center;padding:0.75rem;color:var(--text-3);font-size:0.7rem">Created</th>'
+      + '<th style="text-align:center;padding:0.75rem;color:var(--text-3);font-size:0.7rem">Status</th>'
+      + '<th style="text-align:right;padding:0.75rem;color:var(--text-3);font-size:0.7rem">Actions</th>'
+      + '</tr></thead><tbody>';
+    
+    data.images.forEach(function(img) {
+      const size = img.size ? (img.size / 1024 / 1024).toFixed(1) + ' MB' : 'N/A';
+      const created = img.created ? new Date(img.created).toLocaleDateString() : 'Unknown';
+      const status = img.status || 'ready';
+      const statusColor = status === 'ready' ? 'var(--success)' : status === 'pending' ? 'var(--warning)' : 'var(--danger)';
+      
+      html += '<tr style="border-bottom:1px solid var(--glass-border)">'
+        + '<td style="padding:0.75rem;font-family:monospace;font-size:0.75rem;word-break:break-all">' + escapeHtml(img.name || img.repository) + '</td>'
+        + '<td style="padding:0.75rem;font-size:0.75rem">' + escapeHtml(img.tag || 'latest') + '</td>'
+        + '<td style="padding:0.75rem;text-align:center;font-size:0.75rem">' + size + '</td>'
+        + '<td style="padding:0.75rem;text-align:center;font-size:0.75rem">' + created + '</td>'
+        + '<td style="padding:0.75rem;text-align:center"><span style="color:' + statusColor + ';font-size:0.7rem;font-weight:600;text-transform:uppercase">' + status + '</span></td>'
+        + '<td style="padding:0.75rem;text-align:right"><button class="btn btn-sm btn-secondary" onclick="scanDockerImage(\'' + escapeHtml(img.name || img.repository) + '\', \'' + escapeHtml(img.tag || 'latest') + '\')">Scan</button></td>'
+        + '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--danger)">Failed to load images: ' + escapeHtml(e.message) + '</p>';
+    console.error('Error loading Docker images:', e);
+  }
+}
+
+async function loadDockerSecuritySummary() {
+  const container = document.getElementById('docker-security-cards');
+  if (!container) return;
+  
+  try {
+    const response = await fetch('/api/admin/docker/security-summary');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    
+    const summary = data.summary || { total: 0, critical: 0, high: 0, medium: 0, low: 0 };
+    
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem">'
+      + '<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:1rem">'
+      + '<div style="color:var(--text-3);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em">Total Images</div>'
+      + '<div style="font-size:2rem;font-weight:700;color:var(--text-1);margin-top:0.5rem">' + summary.total + '</div>'
+      + '</div>';
+    
+    if (summary.critical > 0) {
+      html += '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:1rem">'
+        + '<div style="color:var(--text-3);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em">Critical Issues</div>'
+        + '<div style="font-size:2rem;font-weight:700;color:#ef4444;margin-top:0.5rem">' + summary.critical + '</div>'
+        + '</div>';
+    }
+    
+    if (summary.high > 0) {
+      html += '<div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:8px;padding:1rem">'
+        + '<div style="color:var(--text-3);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em">High Issues</div>'
+        + '<div style="font-size:2rem;font-weight:700;color:#fbbf24;margin-top:0.5rem">' + summary.high + '</div>'
+        + '</div>';
+    }
+    
+    html += '<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:1rem">'
+      + '<div style="color:var(--text-3);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em">Healthy Images</div>'
+      + '<div style="font-size:2rem;font-weight:700;color:#22c55e;margin-top:0.5rem">' + (summary.total - summary.critical - summary.high) + '</div>'
+      + '</div></div>';
+    
+    container.innerHTML = html;
+    dockerSecurityCache = summary;
+  } catch(e) {
+    console.error('Error loading security summary:', e);
+    container.innerHTML = '<p style="color:var(--danger)">Failed to load security summary</p>';
+  }
+}
+
+async function checkDockerUpdates(event) {
+  if (event) event.preventDefault();
+  
+  const btn = event ? event.target.closest('button') : null;
+  if (btn) btn.disabled = true;
+  
+  try {
+    const response = await fetch('/api/admin/docker/check-updates', { method: 'POST' });
+    const data = await response.json();
+    
+    if (data.updates && data.updates.length > 0) {
+      const container = document.getElementById('docker-updates-available');
+      let html = '<div class="card" style="border-left:4px solid var(--warning)">'
+        + '<h3 style="margin:0 0 1rem;color:var(--text-1)">📦 Updates Available</h3>'
+        + '<div style="display:grid;gap:0.5rem">';
+      
+      data.updates.forEach(function(upd) {
+        html += '<div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:6px;padding:0.75rem">'
+          + '<div style="font-weight:600;color:var(--text-1);font-size:0.9rem">' + escapeHtml(upd.image) + '</div>'
+          + '<div style="font-size:0.8rem;color:var(--text-2);margin-top:0.25rem">'
+          + escapeHtml(upd.current) + ' → ' + escapeHtml(upd.latest)
+          + '</div>'
+          + '</div>';
+      });
+      
+      html += '</div></div>';
+      container.innerHTML = html;
+      container.style.display = 'block';
+    } else {
+      const container = document.getElementById('docker-updates-available');
+      container.innerHTML = '<div class="card" style="border-left:4px solid var(--success);background:rgba(34,197,94,0.05)">'
+        + '<div style="color:var(--success);font-weight:600">✓ All images are up to date</div></div>';
+    }
+    
+    await loadDockerImages();
+  } catch(e) {
+    showToast('Error checking updates: ' + e.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function scanDockerImage(name, tag) {
+  try {
+    const response = await fetch('/api/admin/docker/scan-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: name, tag: tag })
+    });
+    const data = await response.json();
+    
+    if (data.vulnerabilities && data.vulnerabilities.length > 0) {
+      showToast(`Found ${data.vulnerabilities.length} vulnerabilities`, 'warning');
+    } else {
+      showToast('No vulnerabilities found', 'success');
+    }
+    
+    await loadDockerImages();
+    await loadDockerSecuritySummary();
+  } catch(e) {
+    showToast('Error scanning image: ' + e.message, 'error');
+  }
+}
+
+async function scanAllDockerImages() {
+  const btn = event.target.closest('button');
+  btn.disabled = true;
+  
+  try {
+    showToast('Scanning all images (this may take a few minutes)...', 'info');
+    const response = await fetch('/api/admin/docker/scan-all', { method: 'POST' });
+    const data = await response.json();
+    
+    showToast(`Scan complete: ${data.total} images scanned, ${data.vulnerabilities_found} vulnerabilities found`, 'success');
+    
+    await loadDockerImages();
+    await loadDockerSecuritySummary();
+  } catch(e) {
+    showToast('Error scanning images: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function initDockerManagement() {
+  const container = document.getElementById('tab-docker-images');
+  if (!container || container.style.display === 'none') return;
+  
+  loadDockerImages();
+  loadDockerSecuritySummary();
 }
 
 </script>
