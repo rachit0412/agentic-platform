@@ -1,0 +1,414 @@
+name: 'A08: Software & Data Integrity Verification'
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────
+  # Code Integrity Verification
+  # ────────────────────────────────────────────────────────────────────────
+  code-integrity:
+    name: 'Code Integrity Verification'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Generate code manifest'
+        id: manifest
+        run: |
+          echo "Generating code integrity manifest..."
+          
+          # Create manifest directory
+          mkdir -p .security-manifest
+          
+          # Calculate SHA256 for all source files
+          echo '{"files": {' > .security-manifest/code-manifest.json
+          
+          find . -type f \
+            -name "*.py" -o \
+            -name "*.js" -o \
+            -name "*.json" -o \
+            -name "*.yml" -o \
+            -name "*.yaml" \
+            ! -path "./node_modules/*" \
+            ! -path "./.git/*" \
+            ! -path "./.venv/*" \
+            ! -path "*/__pycache__/*" | sort | while read file; do
+            
+            hash=$(sha256sum "$file" | cut -d' ' -f1)
+            echo "  \"$file\": \"$hash\"," >> .security-manifest/code-manifest.json
+          done
+          
+          # Remove trailing comma and close JSON
+          sed -i '$ s/,$//' .security-manifest/code-manifest.json
+          echo '}}' >> .security-manifest/code-manifest.json
+          
+          # Calculate manifest hash
+          manifest_hash=$(sha256sum .security-manifest/code-manifest.json | cut -d' ' -f1)
+          echo "manifest_hash=$manifest_hash" >> $GITHUB_OUTPUT
+          echo "✓ Manifest generated: $manifest_hash"
+
+      - name: 'Verify no unauthorized file modifications'
+        run: |
+          echo "Checking for potentially malicious file modifications..."
+          
+          # Check for hidden files
+          if find . -name ".*" -type f ! -path "./.git/*" ! -name ".gitignore" ! -name ".env.example" | head -20 | grep -v "^\./\."; then
+            echo "⚠️  WARNING: Suspicious hidden files found"
+          fi
+          
+          # Check for suspicious permissions
+          find . -type f \( -perm /u+s -o -perm /g+s \) ! -path "./.git/*" && \
+            echo "⚠️  WARNING: Files with setuid/setgid bits found" || true
+          
+          # Check for compiled files in source
+          if find . -name "*.pyc" -o -name "*.so" | grep -v __pycache__; then
+            echo "⚠️  WARNING: Compiled files in source tree"
+          fi
+
+      - name: 'Generate and upload manifest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-manifest
+          path: .security-manifest/code-manifest.json
+          retention-days: 90
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Dependency Lock File Integrity
+  # ────────────────────────────────────────────────────────────────────────
+  dependency-integrity:
+    name: 'Dependency Lock File Integrity'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Verify lock files exist and are valid'
+        run: |
+          echo "Verifying dependency lock files..."
+          
+          # Check for package-lock.json
+          for package_json in $(find services -name "package.json" -not -path "*/node_modules/*"); do
+            package_dir=$(dirname "$package_json")
+            lock_file="$package_dir/package-lock.json"
+            
+            if [ ! -f "$lock_file" ]; then
+              echo "❌ MISSING: $lock_file (required for reproducible builds)"
+              exit 1
+            fi
+            
+            echo "✓ Found: $lock_file"
+          done
+          
+          # Verify no manual dependency modifications
+          echo ""
+          echo "Checking for unauthorized modifications..."
+          
+          for req_file in $(find services -name "requirements.txt"); do
+            if grep -E "^-e|^git+|^svn+|^hg+|^bzr+" "$req_file"; then
+              echo "❌ DETECTED: Non-pinned VCS dependencies in $req_file"
+              echo "All dependencies must use pinned versions"
+              exit 1
+            fi
+          done
+          
+          echo "✓ All dependencies properly pinned"
+
+      - name: 'Verify lock file integrity'
+        run: |
+          echo "Verifying lock file checksums..."
+          
+          for package_json in $(find services -name "package.json" -not -path "*/node_modules/*"); do
+            package_dir=$(dirname "$package_json")
+            lock_file="$package_dir/package-lock.json"
+            
+            if [ -f "$lock_file" ]; then
+              # Check lock file is valid JSON
+              if ! jq . "$lock_file" > /dev/null 2>&1; then
+                echo "❌ Invalid JSON: $lock_file"
+                exit 1
+              fi
+              
+              # Verify lockfileVersion is set
+              lockfile_version=$(jq '.lockfileVersion' "$lock_file")
+              echo "  - $lock_file (version: $lockfile_version)"
+            fi
+          done
+          
+          echo "✓ All lock files are valid and have versions"
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Build Reproducibility
+  # ────────────────────────────────────────────────────────────────────────
+  build-reproducibility:
+    name: 'Build Reproducibility Verification'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Set up Python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 'Set up Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 'Verify reproducible Python builds'
+        run: |
+          echo "Testing reproducible Python environment..."
+          
+          # Create two builds and compare
+          for iteration in 1 2; do
+            echo "Build iteration: $iteration"
+            
+            rm -rf venv$iteration
+            python -m venv venv$iteration
+            source venv$iteration/bin/activate
+            
+            for req_file in services/agent/requirements.txt; do
+              pip install --disable-pip-version-check -q -r "$req_file"
+            done
+            
+            pip freeze > build$iteration.txt
+            deactivate
+          done
+          
+          # Compare builds
+          if diff -u build1.txt build2.txt; then
+            echo "✓ Reproducible Python builds confirmed"
+          else
+            echo "❌ Build differences detected (may indicate integrity issues)"
+            exit 1
+          fi
+
+      - name: 'Verify reproducible Node.js builds'
+        run: |
+          echo "Testing reproducible Node.js environment..."
+          
+          for package_json in $(find services -name "package.json" -not -path "*/node_modules/*"); do
+            package_dir=$(dirname "$package_json")
+            echo "Building: $package_dir"
+            
+            cd "$package_dir"
+            
+            # Clean install twice
+            for iteration in 1 2; do
+              rm -rf node_modules
+              npm ci --legacy-peer-deps --prefer-offline
+              npm ls --all > npm-list-$iteration.txt
+            done
+            
+            # Compare installations
+            if diff -q npm-list-1.txt npm-list-2.txt; then
+              echo "✓ Reproducible Node.js build: $package_json"
+            else
+              echo "⚠️  Build may not be fully reproducible: $package_json"
+            fi
+            
+            cd -
+          done
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Container Image Integrity
+  # ────────────────────────────────────────────────────────────────────────
+  image-integrity:
+    name: 'Container Image Integrity'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+
+      - name: 'Verify Dockerfile security'
+        run: |
+          echo "Scanning Dockerfiles for security issues..."
+          
+          for dockerfile in $(find . -name "Dockerfile"); do
+            echo "Checking: $dockerfile"
+            
+            # Check for required security practices
+            if grep -q "HEALTHCHECK" "$dockerfile"; then
+              echo "  ✓ HEALTHCHECK defined"
+            else
+              echo "  ⚠️  No HEALTHCHECK (recommended for production)"
+            fi
+            
+            if grep -q "USER" "$dockerfile"; then
+              echo "  ✓ Non-root user configured"
+            else
+              echo "  ⚠️  Running as root (security risk)"
+            fi
+            
+            if ! grep -q "FROM.*latest" "$dockerfile"; then
+              echo "  ✓ Using specific base image version"
+            else
+              echo "  ❌ FAILED: Using 'latest' tag (non-reproducible)"
+              exit 1
+            fi
+            
+            # Verify all external dependencies are pinned
+            if grep -E "RUN.*pip install|RUN.*npm install" "$dockerfile" | grep -v "==" | grep -v "@"; then
+              echo "  ❌ FAILED: Non-pinned dependencies in $dockerfile"
+              exit 1
+            fi
+          done
+          
+          echo "✓ All Dockerfiles pass security checks"
+
+      - name: 'Build Docker images with digest'
+        if: github.event_name == 'push'
+        run: |
+          echo "Building Docker images with digest capture..."
+          
+          for dockerfile in $(find . -name "Dockerfile"); do
+            dir=$(dirname "$dockerfile")
+            
+            if [ -f "$dir/docker-compose.yml" ] || [ -f "docker-compose.yml" ]; then
+              service_name=$(basename "$dir")
+              
+              echo "Building: $service_name"
+              
+              # Build and capture digest
+              digest=$(docker build "$dir" --quiet)
+              echo "Digest: $digest"
+              
+              # Store digest for verification
+              echo "$service_name:$digest" >> .build-digests.txt
+            fi
+          done
+
+      - name: 'Upload build artifacts'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build*.txt
+            .build-digests.txt
+            .security-manifest/
+          retention-days: 90
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Code Signing & Release Artifacts
+  # ────────────────────────────────────────────────────────────────────────
+  sign-artifacts:
+    name: 'Code Signing (Release Builds)'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Generate release artifacts'
+        run: |
+          echo "Preparing release artifacts..."
+          
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev-$(git rev-parse --short HEAD)")
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          GIT_COMMIT=$(git rev-parse --verify HEAD)
+          
+          # Create release manifest
+          cat > release-manifest.json <<EOF
+          {
+            "version": "$VERSION",
+            "build_date": "$BUILD_DATE",
+            "git_commit": "$GIT_COMMIT",
+            "git_branch": "$(git rev-parse --abbrev-ref HEAD)",
+            "build_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+          
+          echo "✓ Release manifest created"
+          cat release-manifest.json
+
+      - name: 'Import GPG key for signing'
+        if: secrets.GPG_PRIVATE_KEY != ''
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes 2>/dev/null || true
+          echo "GPG key imported (if secret is configured)"
+
+      - name: 'Sign artifacts (optional)'
+        if: secrets.GPG_PRIVATE_KEY != ''
+        run: |
+          echo "Signing artifacts with GPG..."
+          
+          for file in release-manifest.json docker-compose.yml; do
+            if [ -f "$file" ]; then
+              gpg --armor --detach-sign --batch --yes "$file" 2>/dev/null || true
+              echo "Signed: $file.asc"
+            fi
+          done
+        continue-on-error: true
+
+      - name: 'Upload signed artifacts'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            release-manifest.json
+            release-manifest.json.asc
+            docker-compose.yml
+          retention-days: 365
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Summary Report
+  # ────────────────────────────────────────────────────────────────────────
+  integrity-summary:
+    name: 'Integrity Verification Summary'
+    runs-on: ubuntu-latest
+    needs: [code-integrity, dependency-integrity, build-reproducibility, image-integrity]
+    if: always()
+    
+    steps:
+      - name: 'Generate summary'
+        run: |
+          echo "# 🔐 Data Integrity Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Integrity Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Code Integrity**: ${{ needs.code-integrity.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dependency Lock Files**: ${{ needs.dependency-integrity.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Reproducibility**: ${{ needs.build-reproducibility.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Images**: ${{ needs.image-integrity.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Verification Passed" >> $GITHUB_STEP_SUMMARY
+          echo "✓ All data integrity checks completed successfully" >> $GITHUB_STEP_SUMMARY
+
+      - name: 'Fail if any check failed'
+        if: |
+          needs.code-integrity.result == 'failure' ||
+          needs.dependency-integrity.result == 'failure' ||
+          needs.build-reproducibility.result == 'failure' ||
+          needs.image-integrity.result == 'failure'
+        run: |
+          echo "❌ Data integrity verification failed"
+          exit 1

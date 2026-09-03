@@ -2,10 +2,10 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.0
 httpx==0.27.0
 pydantic==2.10.0
-ddgs>=9.0.0
-chromadb>=0.5.0
-langchain-text-splitters>=0.3.0
-PyYAML>=6.0
+ddgs==9.3.0
+chromadb==0.5.23
+langchain-text-splitters==0.3.4
+PyYAML==6.0.1
 opentelemetry-api==1.25.0
 opentelemetry-sdk==1.25.0
 opentelemetry-exporter-otlp-proto-http==1.25.0
