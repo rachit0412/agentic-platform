@@ -1010,6 +1010,8 @@
           setTimeout(nextStep, 500 + Math.random() * 300);
         } else {
           status.textContent = 'Session terminated. Redirecting...';
+          // Set flag in sessionStorage to skip gate on login page
+          try { sessionStorage.setItem('skipLoginGate', 'true'); } catch (e) {}
           fetch('/auth/logout', { method: 'POST' })
             .finally(() => {
               setTimeout(() => { window.location.href = '/login?logout=true'; }, 600);

@@ -314,7 +314,13 @@ function IntroGate({ onComplete }) {
 export default function App() {
   const { mode, resolved, setMode } = useTheme();
   const [showIntro, setShowIntro] = useState(() => {
-    // Skip gate if coming from logout (URL param)
+    // Skip gate if sessionStorage flag is set (from logout redirect)
+    if (sessionStorage.getItem('skipLoginGate') === 'true') {
+      sessionStorage.removeItem('skipLoginGate');
+      return false;
+    }
+    
+    // Skip gate if coming from logout (URL param as fallback)
     const params = new URLSearchParams(window.location.search);
     if (params.has('logout')) return false;
     
