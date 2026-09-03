@@ -29,6 +29,20 @@
 
 ---
 
+## ✨ Latest Updates (Sept 4, 2026)
+
+**Fixed & Improved:**
+- ✅ **Admin Panel Fixed** - Resolved EJS compilation errors. All admin sections now fully accessible
+- ⚡ **Sign-in Animation Optimized** - Reduced from 2.2s → 1.2s (45% faster)
+- 🎬 **Intro Gate Disabled by Default** - Login form shows immediately, no boot animation on first visit
+- ⚙️ **Animation Toggle** - Enable/disable gate animation in Admin → Config → System Config
+- 📖 **Testing Procedures** - New comprehensive testing guide with repeatable procedures ([TESTING-PROCEDURES.md](docs/TESTING-PROCEDURES.md))
+- 📋 **Changelog** - Full release notes and migration guides ([CHANGELOG.md](CHANGELOG.md))
+
+**All 16 services healthy & verified** • Admin panel accessible • All APIs working • Animations smooth
+
+---
+
 ## 👋 Hey — a word from the builder
 
 I'm Rachit — a solo developer who got tired of the gap between _"cool AI demo"_ and _"production-ready AI system."_
