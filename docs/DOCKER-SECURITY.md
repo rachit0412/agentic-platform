@@ -199,22 +199,116 @@ jobs:
           sarif_file: 'trivy-results.sarif'
 ```
 
+## Docker Image Management Admin Panel
+
+The Agentic Platform now includes a comprehensive Docker Image Management interface in the admin panel under **Infrastructure → Docker Images**.
+
+### Features
+
+#### 1. Security Summary Dashboard
+Displays real-time KPIs for all Docker images:
+- **Total Images**: Count of all images managed by the platform
+- **Critical Issues**: Number of images with critical vulnerabilities
+- **High Issues**: Number of images with high-severity vulnerabilities  
+- **Healthy Images**: Count of clean images with no known issues
+
+#### 2. Managed Images Table
+Lists all Docker images with:
+- **Image Name**: Repository name and identifier
+- **Tag**: Image version tag
+- **Size**: Uncompressed image size
+- **Created**: Image creation date
+- **Status**: Current status (ready, pending, scanning)
+- **Scan Action**: Button to scan individual image
+
+#### 3. Check for Updates
+Scans configured images for newer versions available on Docker Hub:
+- Identifies outdated images
+- Compares current vs. latest available versions
+- Displays update notifications with recommended actions
+- Supports batch checking of key images
+
+#### 4. Scan All Images
+Performs comprehensive security scanning across all images:
+- Checks image age and freshness
+- Identifies vulnerabilities
+- Generates security report
+- May take several minutes for large deployments (limited to 10 images to prevent timeout)
+
+#### 5. Individual Image Scanning
+Scans specific Docker image for vulnerabilities:
+- Checks image creation date
+- Analyzes layers for known issues
+- Provides remediation recommendations
+- Updates KPI cards with results
+
+### API Endpoints
+
+All Docker management functions are powered by backend APIs:
+
+```
+GET  /api/admin/docker/images
+  Returns: List of all Docker images with metadata
+  Auth: Admin required
+
+GET  /api/admin/docker/security-summary
+  Returns: Summary counts of vulnerabilities by severity
+  Auth: Admin required
+
+POST /api/admin/docker/check-updates
+  Returns: List of available updates for configured images
+  Auth: Admin required
+
+POST /api/admin/docker/scan-image
+  Body: { "image": "name", "tag": "version" }
+  Returns: Vulnerabilities found in specific image
+  Auth: Admin required
+
+POST /api/admin/docker/scan-all
+  Returns: Comprehensive security report for all images
+  Auth: Admin required
+```
+
+### Usage Guide
+
+**To monitor Docker image security:**
+
+1. Go to **Infrastructure → Docker Images** in admin panel
+2. Review security summary cards at top
+3. Check managed images table for outdated or problematic images
+4. Click **Check for Updates** to scan for newer versions
+5. Click **Scan All** to run comprehensive security check
+6. Address issues based on severity:
+   - **Critical**: Update immediately
+   - **High**: Plan update in next maintenance window
+   - **Medium/Low**: Update during regular maintenance
+
+**To scan a specific image:**
+
+1. Find image in "Managed Images" table
+2. Click **Scan** button on right side
+3. Review vulnerabilities in detail
+4. Take appropriate action based on severity
+
 ## Maintenance Checklist
 
 ### Monthly
-- [ ] Check for new versions of pinned images
-- [ ] Review security advisories
+- [ ] Check for new versions of pinned images using admin panel
+- [ ] Review security advisories from Docker Hub
 - [ ] Update patch versions if available
+- [ ] Run "Check for Updates" in Docker Image Management
 
 ### Quarterly
 - [ ] Plan minor/major version upgrades
-- [ ] Update documentation
+- [ ] Run comprehensive "Scan All" in admin panel
+- [ ] Update documentation with new versions found
 - [ ] Audit Docker image supply chain
 
 ### Annually
-- [ ] Conduct full security audit
-- [ ] Update base image strategy
-- [ ] Review and update all dependencies
+- [ ] Conduct full security audit using admin tools
+- [ ] Update base image strategy based on findings
+- [ ] Review and update all pinned dependencies
+- [ ] Generate security report from admin panel
 
 ## Troubleshooting
 

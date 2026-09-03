@@ -500,6 +500,123 @@ Use SARIF format to integrate with:
 
 ---
 
+## 🎛️ Admin Panel Interface
+
+The Agentic Platform includes a dedicated **Secret Scanning** admin interface in **Compliance & Ethics → Secret Scanning**.
+
+### Features
+
+#### 1. Scan Configuration
+- **Scan Path**: Specify directory to scan (default: `/app` - entire codebase)
+- **Output Format**: Choose result format:
+  - **JSON**: Structured data for programmatic processing
+  - **CSV**: Spreadsheet-compatible format
+  - **SARIF**: Security Analysis Results Format for integration with tools
+
+#### 2. Results Table
+Detailed findings displayed in 6-column format:
+
+| Column | Purpose |
+|--------|---------|
+| **Severity** | Badge showing severity level (HIGH/MEDIUM/LOW) with color coding |
+| **What & Why** | Plain-English description of secret type and risk explanation |
+| **Location** | File path and line number where secret was found |
+| **Remediation** | Immediate action steps to fix the issue |
+| **Matched Value** | First 15 characters of detected secret (obfuscated for safety) |
+| **Rule ID** | Technical identifier for the detection rule |
+
+#### 3. Secret Type Mapping
+Gitleaks identifies and labels secrets by type:
+
+| Secret Type | Description | Risk Level | Action |
+|------------|-------------|-----------|--------|
+| AWS API Key | AWS Access Key ID and Secret | HIGH | Rotate immediately in AWS console |
+| GitHub Token | GitHub Personal Access Token | HIGH | Revoke in GitHub settings |
+| Slack Token | Slack API Token | HIGH | Regenerate in Slack admin |
+| Stripe Key | Stripe payment API key | HIGH | Rotate in Stripe dashboard |
+| Private Key | SSH/RSA private key | CRITICAL | Revoke and generate new keypair |
+| Database Password | Hardcoded DB credentials | HIGH | Change password immediately |
+| API Key | Generic API key | MEDIUM | Regenerate in service dashboard |
+| OAuth Token | OAuth authentication token | HIGH | Revoke in account settings |
+
+#### 4. Export Results
+- **Download Scan Report**: Export results as HTML with timestamp
+- **Format**: Styled HTML report with summary and full details
+- **Filename**: `secret-scan-YYYY-MM-DD.html`
+
+### Quick Start
+
+**To run a security scan:**
+
+1. Go to **Compliance & Ethics → Secret Scanning**
+2. Enter scan path (default: `/app`)
+3. Select output format (JSON recommended for analysis)
+4. Click **"Run Scan"**
+5. Review results in table
+6. Address HIGH and CRITICAL findings immediately
+7. Click **"Export"** to save results
+
+**To address findings:**
+
+1. Click into each secret's row to see full details
+2. Review "What & Why" to understand the risk
+3. Follow "Remediation" steps to fix
+4. Verify secret is removed from codebase
+5. Commit changes with message like "chore: remove hardcoded secret"
+
+### API Endpoint
+
+All secret scanning is powered by:
+
+```
+POST /api/admin/secret-scan
+Content-Type: application/json
+Authorization: Admin session required
+
+Request Body:
+{
+  "scanPath": "/app",
+  "format": "json|csv|sarif"
+}
+
+Response:
+{
+  "success": true,
+  "timestamp": "2026-09-03T21:45:30Z",
+  "scanPath": "/app",
+  "secretsDetected": true,
+  "results": [
+    {
+      "Severity": "HIGH",
+      "Type": "github-token",
+      "File": "config/secrets.js",
+      "StartLine": 42,
+      "Match": "ghp_1234567890abcdefghij",
+      "RuleID": "github-token"
+    }
+  ]
+}
+```
+
+### Error Handling
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Timeout (60s exceeded) | Repository too large | Scan smaller subdirectories instead |
+| No secrets found | Clean codebase | Good! Continue monitoring |
+| Scan path not found | Invalid path | Verify path exists and is readable |
+| Permission denied | Access restrictions | Check admin permissions |
+
+### Security Considerations
+
+1. **Secret Obfuscation**: Only first 15 characters shown in results
+2. **Audit Logging**: All scans logged with timestamp and user
+3. **Admin Only**: Requires admin session to access
+4. **No Storage**: Results not stored, only in-memory processing
+5. **Timeout Protection**: 60-second execution limit prevents resource exhaustion
+
+---
+
 ## 📚 Additional Resources
 
 ### Official Documentation
