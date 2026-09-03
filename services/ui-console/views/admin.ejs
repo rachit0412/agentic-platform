@@ -1223,6 +1223,32 @@ Examples:
 
   <!-- SYSTEM CONFIG TAB -->
   <div id="config-system" class="admin-tab-subcontent" style="display:none">
+    <!-- UI/UX Settings -->
+    <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+      <div class="section-header">
+        <h3>UI/UX Settings</h3>
+        <span style="font-size:0.72rem;color:var(--text-3)">Control visual elements and animations</span>
+      </div>
+      
+      <div style="margin-top:1rem;padding:1rem;background:var(--input-bg);border:1px solid var(--border);border-radius:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+          <div>
+            <div style="font-weight:600;color:var(--text-1);margin-bottom:0.25rem">🎬 Intro Gate Animation</div>
+            <div style="font-size:0.75rem;color:var(--text-3)">Show boot sequence animation on first visit to login page</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <input type="checkbox" id="intro-gate-toggle" style="width:20px;height:20px;cursor:pointer;accent-color:var(--accent)" onchange="saveUISettings()">
+            <label for="intro-gate-toggle" style="cursor:pointer;font-size:0.85rem;font-weight:500" id="intro-gate-status">Enabled</label>
+          </div>
+        </div>
+      </div>
+      
+      <div style="margin-top:0.75rem;padding:0.75rem;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;font-size:0.72rem;color:var(--text-3)">
+        💡 When enabled: Shows animated boot sequence (1.5s) on first visit  
+        <br/>When disabled: Goes directly to login form
+      </div>
+    </div>
+
     <!-- Global Constraints -->
     <div class="card animate-fade-up" style="margin-bottom:1.5rem">
       <div class="section-header">
@@ -1721,7 +1747,7 @@ function switchTab(tab, fromSection) {
   if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
   if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
-  if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); setTimeout(function() { switchConfigTab('appearance'); }, 50); }
+  if (tab === 'config') { loadUISettings(); loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); setTimeout(function() { switchConfigTab('appearance'); }, 50); }
   if (tab === 'docker-images') { loadDockerImages(); loadDockerSecuritySummary(); if (typeof initDockerManagement === 'function') { setTimeout(initDockerManagement, 100); } }
   if (tab === 'environment-vars') { loadEnvVars(); loadLLMProviderSelection(); }
   if (tab === 'audit') loadAuditLog();
@@ -2773,6 +2799,29 @@ document.querySelectorAll('#subtabs-config .admin-subtab').forEach(function(btn)
 // ────────────────────────────────────────────────────────
 // COMPLIANCE & ETHICS MANAGEMENT
 // ────────────────────────────────────────────────────────
+
+// ── UI/UX SETTINGS ────────────────────────────────────────
+function loadUISettings() {
+  try {
+    const gateEnabled = localStorage.getItem('agentic_intro_gate_enabled');
+    const isEnabled = gateEnabled !== 'false'; // Default to enabled
+    document.getElementById('intro-gate-toggle').checked = isEnabled;
+    document.getElementById('intro-gate-status').textContent = isEnabled ? 'Enabled' : 'Disabled';
+  } catch(e) {
+    console.error('Error loading UI settings:', e);
+  }
+}
+
+function saveUISettings() {
+  try {
+    const isEnabled = document.getElementById('intro-gate-toggle').checked;
+    localStorage.setItem('agentic_intro_gate_enabled', isEnabled ? 'true' : 'false');
+    document.getElementById('intro-gate-status').textContent = isEnabled ? 'Enabled' : 'Disabled';
+    showToast(isEnabled ? '🎬 Intro gate animation enabled' : '⏭️ Intro gate animation disabled', 'success');
+  } catch(e) {
+    showToast('Error saving UI settings: ' + e.message, 'error');
+  }
+}
 
 async function loadComplianceSettings() {
   try {

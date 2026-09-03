@@ -314,6 +314,12 @@ function IntroGate({ onComplete }) {
 export default function App() {
   const { mode, resolved, setMode } = useTheme();
   const [showIntro, setShowIntro] = useState(() => {
+    // Check if intro gate is disabled in admin settings
+    const gateEnabled = localStorage.getItem('agentic_intro_gate_enabled');
+    if (gateEnabled === 'false') {
+      return false;
+    }
+    
     // Skip gate if sessionStorage flag is set (from logout redirect)
     if (sessionStorage.getItem('skipLoginGate') === 'true') {
       sessionStorage.removeItem('skipLoginGate');
@@ -324,9 +330,9 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     if (params.has('logout')) return false;
     
-    // Only show intro gate on first-ever visit, not after logout
+    // Only show intro gate on first-ever visit (if enabled), not after logout
     const hasSeenIntro = localStorage.getItem('agentic_intro_shown');
-    return !hasSeenIntro;
+    return !hasSeenIntro && gateEnabled !== 'false';
   });
 
   useEffect(() => {
@@ -339,10 +345,11 @@ export default function App() {
 
   useEffect(() => {
     if (showIntro) {
+      // 1.5 second animation (faster than 3.4s default)
       const t = setTimeout(() => {
         setShowIntro(false);
         localStorage.setItem('agentic_intro_shown', 'true');
-      }, 3400);
+      }, 1500);
       return () => clearTimeout(t);
     }
   }, [showIntro]);
