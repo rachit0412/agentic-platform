@@ -2,6 +2,18 @@ const express = require("express");
 const path = require("path");
 const session = require("express-session");
 
+// ── Security Middleware ────────────────────────────────
+const {
+  securityHeaders,
+  securityDefaults,
+  authRateLimiter,
+  CSRFProtection,
+  InputValidator,
+  errorHandler,
+  auditLog,
+  globalLimiter
+} = require("./security-middleware");
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -24,6 +36,12 @@ const AGENT_EXTERNAL = process.env.AGENT_EXTERNAL_URL || "http://localhost:8010"
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// ── Apply Security Middleware (BEFORE routes) ─────────
+app.use(securityDefaults);                              // Remove server headers, set secure defaults
+app.use(securityHeaders);                              // Add OWASP security headers
+app.use(auditLog);                                      // Log security-relevant requests
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -40,9 +58,11 @@ app.use(session({
   name: "agentic.sid",
   cookie: {
     httpOnly: true,
-    secure: false,      // set true behind HTTPS reverse proxy
+    secure: process.env.NODE_ENV === 'production' || process.env.SECURE_COOKIES === 'true',  // Enforce HTTPS in production
     maxAge: 24 * 60 * 60 * 1000,  // 24 hours
-    sameSite: "lax",
+    sameSite: "strict",            // Stricter CSRF protection (changed from "lax")
+    path: "/",
+    domain: undefined              // Let browser set domain for security
   },
 }));
 
@@ -52,11 +72,23 @@ app.get("/login", (req, res) => {
   res.redirect("/login-app/");
 });
 
-app.post("/auth/login", async (req, res) => {
+// OWASP A07: Authentication Failures - Rate limit login attempts
+app.post("/auth/login", authRateLimiter, async (req, res) => {
   const { username, password } = req.body;
+  
+  // A05: Injection - Input validation
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required" });
   }
+  
+  // Basic validation
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ error: "Invalid input format" });
+  }
+  
+  // Sanitize for logging purposes only
+  const sanitizedUsername = InputValidator.sanitizeString(username).substring(0, 50);
+  
   try {
     const r = await fetch(`${AGENT_URL}/auth/login`, {
       method: "POST",
@@ -75,19 +107,32 @@ app.post("/auth/login", async (req, res) => {
       data.personas = personas;
       // Prefer admin persona for admin users so scope/role is not accidentally downgraded
       data.active_persona = (data.role === 'admin' && personas.find(p => p.permissions && p.permissions.actions && p.permissions.actions.includes('access_admin'))) || personas[0] || null;
-      // Regenerate session to prevent fixation and guarantee a fresh cookie
+      // Regenerate session to prevent fixation (A07: Authentication Failures)
       return req.session.regenerate((err) => {
-        if (err) return res.status(500).json({ error: "Session error" });
+        if (err) {
+          console.error('[SECURITY] Session regeneration failed:', err.message);
+          return res.status(500).json({ error: "Authentication failed" });  // Generic message for security
+        }
         req.session.user = data;
         return req.session.save((err) => {
-          if (err) return res.status(500).json({ error: "Session save failed" });
+          if (err) {
+            console.error('[SECURITY] Session save failed:', err.message);
+            return res.status(500).json({ error: "Authentication failed" });  // Generic message for security
+          }
           return res.json(data);
         });
       });
     }
-    return res.status(r.status).json(data);
+    // A09: Security Logging - Log failed attempts
+    console.warn('[SECURITY] Failed login attempt', { 
+      username: sanitizedUsername, 
+      status: r.status, 
+      ip: req.ip 
+    });
+    return res.status(r.status).json({ error: 'Invalid credentials' });  // Generic message
   } catch (e) {
-    return res.status(502).json({ error: "Auth service unavailable" });
+    console.error('[SECURITY] Login error:', e.message);
+    return res.status(502).json({ error: "Authentication service temporarily unavailable" });
   }
 });
 
@@ -2521,6 +2566,15 @@ function applyComplianceFilter(text, settings) {
 
   return filtered;
 }
+
+// ── Error Handling Middleware (A02, A10) ───────────────
+// Catch-all 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+
+// Global error handler — MUST be last
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`UI Console listening on :${PORT}`);
