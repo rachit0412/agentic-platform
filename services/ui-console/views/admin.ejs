@@ -912,6 +912,24 @@ Examples:
     <h2 style="margin:0 0 1.5rem">🔐 Secret Scanning (Gitleaks)</h2>
     <p style="color:var(--text-3);font-size:0.9rem;margin-bottom:1.5rem">Scan the repository and codebase for hardcoded secrets, API keys, credentials, and sensitive data.</p>
     
+    <!-- What Gitleaks Scans For -->
+    <div style="background:linear-gradient(135deg,rgba(59,130,246,0.05),rgba(6,182,212,0.05));border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:1rem;margin-bottom:1.5rem">
+      <div style="font-weight:600;color:var(--text-1);margin-bottom:0.75rem">📋 What This Scan Looks For:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:0.85rem;color:var(--text-2)">
+        <div><span style="color:var(--accent)">🔑</span> AWS Access Keys & Secrets</div>
+        <div><span style="color:var(--accent)">🔑</span> GitHub Tokens & PATs</div>
+        <div><span style="color:var(--accent)">🔑</span> Database Passwords</div>
+        <div><span style="color:var(--accent)">🔑</span> Private SSH Keys</div>
+        <div><span style="color:var(--accent)">🔑</span> API Keys (Stripe, Slack, etc.)</div>
+        <div><span style="color:var(--accent)">🔑</span> OAuth Tokens</div>
+        <div><span style="color:var(--accent)">🔑</span> Firebase Keys</div>
+        <div><span style="color:var(--accent)">🔑</span> Encryption Passwords</div>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(59,130,246,0.1);font-size:0.8rem;color:var(--text-3)">
+        ⚠️ <strong>Action Required:</strong> Any secrets found should be considered <strong>compromised</strong> and must be rotated immediately. If found in git history, use <code style="background:var(--input-bg);padding:0.2rem 0.4rem;border-radius:3px;font-family:monospace;font-size:0.75rem">git-filter-branch</code> or <code style="background:var(--input-bg);padding:0.2rem 0.4rem;border-radius:3px;font-family:monospace;font-size:0.75rem">git-filter-repo</code> to remove them.
+      </div>
+    </div>
+    
     <div class="section-header" style="margin-bottom:1.5rem">
       <h3>Scan Configuration</h3>
     </div>
@@ -972,16 +990,17 @@ Examples:
         <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
           <thead>
             <tr style="border-bottom:2px solid var(--divider);background:rgba(0,0,0,0.2)">
-              <th style="text-align:left;padding:0.75rem;font-weight:600">Type</th>
-              <th style="text-align:left;padding:0.75rem;font-weight:600">File</th>
-              <th style="text-align:left;padding:0.75rem;font-weight:600">Line</th>
-              <th style="text-align:left;padding:0.75rem;font-weight:600">Match</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Severity</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">What & Why</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Location</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">What to Do</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Value</th>
               <th style="text-align:left;padding:0.75rem;font-weight:600">Rule</th>
             </tr>
           </thead>
           <tbody id="secrets-table-body">
             <tr style="border-bottom:1px solid var(--divider)">
-              <td colspan="5" style="padding:2rem;text-align:center;color:var(--text-3)">
+              <td colspan="6" style="padding:2rem;text-align:center;color:var(--text-3)">
                 No secrets detected
               </td>
             </tr>
@@ -2862,7 +2881,6 @@ function displaySecretScanResults(result) {
   document.getElementById('scan-timestamp').textContent = new Date(result.timestamp).toLocaleTimeString();
   
   let secretsData = [];
-  let highSeverityCount = 0;
   
   // Parse results
   if (result.results) {
@@ -2885,60 +2903,107 @@ function displaySecretScanResults(result) {
     }
   }
   
-  // Count and populate table
+  // Calculate severity breakdown
+  let highCount = 0, mediumCount = 0, lowCount = 0;
+  secretsData.forEach(s => {
+    const sev = (s.Severity || s.severity || 'MEDIUM').toUpperCase();
+    if (sev === 'HIGH') highCount++;
+    else if (sev === 'MEDIUM') mediumCount++;
+    else lowCount++;
+  });
+  
+  // Update summary counts
   document.getElementById('secrets-found-count').textContent = secretsData.length;
+  document.getElementById('scan-severity-high').textContent = highCount;
+  
+  if (secretsData.length === 0) {
+    const tbody = document.getElementById('secrets-table-body');
+    tbody.innerHTML = '<tr style="border-bottom:1px solid var(--divider)"><td colspan="6" style="padding:2rem;text-align:center;color:var(--success)">✓ No secrets detected</td></tr>';
+    return;
+  }
+  
+  // Build detailed results display
   const tbody = document.getElementById('secrets-table-body');
   tbody.innerHTML = '';
   
-  if (secretsData.length === 0) {
-    tbody.innerHTML = '<tr style="border-bottom:1px solid var(--divider)"><td colspan="5" style="padding:2rem;text-align:center;color:var(--success)">✓ No secrets detected</td></tr>';
-    document.getElementById('scan-severity-high').textContent = '0';
-  } else {
-    secretsData.forEach(secret => {
-      if (secret.Severity && (secret.Severity === 'HIGH' || secret.Severity === 'high')) highSeverityCount++;
-      
-      const row = tbody.insertRow();
-      row.style.borderBottom = '1px solid var(--divider)';
-      
-      const typeCell = row.insertCell(0);
-      typeCell.textContent = secret.RuleID || secret.Type || 'Unknown';
-      typeCell.style.padding = '0.75rem';
-      typeCell.style.wordBreak = 'break-word';
-      
-      const fileCell = row.insertCell(1);
-      fileCell.textContent = secret.File || secret.file || 'N/A';
-      fileCell.style.padding = '0.75rem';
-      fileCell.style.fontSize = '0.8rem';
-      fileCell.style.maxWidth = '200px';
-      fileCell.style.overflow = 'hidden';
-      fileCell.style.textOverflow = 'ellipsis';
-      
-      const lineCell = row.insertCell(2);
-      lineCell.textContent = secret.StartLine || secret.line || '—';
-      lineCell.style.padding = '0.75rem';
-      lineCell.style.textAlign = 'center';
-      
-      const matchCell = row.insertCell(3);
-      const match = (secret.Match || secret.Secret || '••••••••').substring(0, 20) + '...';
-      matchCell.textContent = match;
-      matchCell.style.padding = '0.75rem';
-      matchCell.style.fontSize = '0.75rem';
-      matchCell.style.fontFamily = 'monospace';
-      matchCell.style.color = 'var(--accent)';
-      
-      const ruleCell = row.insertCell(4);
-      ruleCell.textContent = secret.RuleTitle || secret.Rule || 'Custom Pattern';
-      ruleCell.style.padding = '0.75rem';
-      ruleCell.style.fontSize = '0.8rem';
-      
-      // Color code by severity
-      if (secret.Severity === 'HIGH' || secret.Severity === 'high') {
-        row.style.background = 'rgba(239, 68, 68, 0.05)';
-      } else if (secret.Severity === 'MEDIUM' || secret.Severity === 'medium') {
-        row.style.background = 'rgba(251, 191, 36, 0.05)';
-      }
-    });
-  }
+  secretsData.forEach((secret, idx) => {
+    const sev = (secret.Severity || secret.severity || 'MEDIUM').toUpperCase();
+    const ruleId = secret.RuleID || secret.Rule || secret.Type || 'Unknown';
+    const ruleTitle = secret.RuleTitle || 'Secret Detected';
+    const filePath = secret.File || secret.file || 'Unknown';
+    const lineNum = secret.StartLine || secret.LineNumber || secret.line || 'N/A';
+    const match = secret.Match || secret.Secret || secret.secret || '(redacted)';
+    
+    // Secret type descriptions and remediation
+    const secretTypes = {
+      'aws-api-key': { desc: 'AWS Access Key ID', risk: 'Can be used to access AWS resources', fix: 'Rotate the AWS access key immediately' },
+      'github-token': { desc: 'GitHub Personal Access Token', risk: 'Can be used to access private GitHub repositories', fix: 'Revoke the token in GitHub settings' },
+      'slack-token': { desc: 'Slack API Token', risk: 'Can be used to send messages and access workspace', fix: 'Regenerate the token in Slack admin panel' },
+      'stripe-key': { desc: 'Stripe API Key', risk: 'Can be used to access payment information', fix: 'Rotate the key in Stripe dashboard' },
+      'private-key': { desc: 'Private SSH/RSA Key', risk: 'Can be used for unauthorized access', fix: 'Revoke and generate new key pair' },
+      'database-password': { desc: 'Database Password', risk: 'Unauthorized database access', fix: 'Change password immediately' },
+      'api-key': { desc: 'Generic API Key', risk: 'Unauthorized API access', fix: 'Regenerate the key in service dashboard' },
+      'oauth-token': { desc: 'OAuth Token', risk: 'Unauthorized account access', fix: 'Revoke token in account settings' }
+    };
+    
+    // Try to identify secret type from rule
+    let typeInfo = secretTypes[ruleId.toLowerCase()] || { 
+      desc: ruleTitle, 
+      risk: 'This secret was detected and should be treated as compromised', 
+      fix: 'Rotate or revoke this credential immediately' 
+    };
+    
+    const row = tbody.insertRow();
+    row.style.borderBottom = '1px solid var(--divider)';
+    row.style.display = 'table-row';
+    
+    // Severity badge
+    const severityCell = row.insertCell(0);
+    const severityColor = sev === 'HIGH' ? '#ef4444' : sev === 'MEDIUM' ? '#f59e0b' : '#10b981';
+    severityCell.innerHTML = `<span style="display:inline-block;padding:0.3rem 0.6rem;border-radius:4px;background:${severityColor}20;color:${severityColor};font-weight:600;font-size:0.75rem">${sev}</span>`;
+    severityCell.style.padding = '1rem 0.75rem';
+    
+    // Type & Description
+    const typeCell = row.insertCell(1);
+    typeCell.innerHTML = `<div style="font-weight:600;color:var(--text-1)">${typeInfo.desc}</div><div style="font-size:0.8rem;color:var(--text-3);margin-top:0.25rem">${typeInfo.risk}</div>`;
+    typeCell.style.padding = '0.75rem';
+    typeCell.style.minWidth = '200px';
+    
+    // Location (file + line)
+    const locationCell = row.insertCell(2);
+    locationCell.innerHTML = `<div style="font-family:monospace;font-size:0.75rem;color:var(--text-2)">${filePath}</div><div style="font-size:0.75rem;color:var(--text-3);margin-top:0.25rem">Line ${lineNum}</div>`;
+    locationCell.style.padding = '0.75rem';
+    locationCell.style.fontSize = '0.75rem';
+    
+    // Remediation
+    const fixCell = row.insertCell(3);
+    fixCell.innerHTML = `<div style="font-size:0.8rem;color:var(--text-2);padding:0.5rem;background:rgba(251,146,60,0.1);border-radius:4px;border-left:2px solid #fb923c">${typeInfo.fix}</div>`;
+    fixCell.style.padding = '0.75rem';
+    fixCell.style.minWidth = '220px';
+    
+    // Matched value (obfuscated)
+    const matchCell = row.insertCell(4);
+    const displayMatch = (match || '').substring(0, 15) + (match && match.length > 15 ? '...' : '');
+    matchCell.innerHTML = `<span style="font-family:monospace;font-size:0.75rem;color:var(--accent);background:var(--input-bg);padding:0.4rem 0.6rem;border-radius:4px">${escapeHtml(displayMatch)}</span>`;
+    matchCell.style.padding = '0.75rem';
+    
+    // Rule ID
+    const ruleCell = row.insertCell(5);
+    ruleCell.textContent = ruleId;
+    ruleCell.style.padding = '0.75rem';
+    ruleCell.style.fontSize = '0.75rem';
+    ruleCell.style.color = 'var(--text-3)';
+    
+    // Color background by severity
+    if (sev === 'HIGH') {
+      row.style.background = 'rgba(239, 68, 68, 0.08)';
+    } else if (sev === 'MEDIUM') {
+      row.style.background = 'rgba(251, 191, 36, 0.08)';
+    } else {
+      row.style.background = 'rgba(34, 197, 94, 0.05)';
+    }
+  });
+}
 
 /* ═══ DOCKER CHAT ASSISTANT ═══ */
 var dockerChatMode = 'regular'; // 'regular' or 'agent'
