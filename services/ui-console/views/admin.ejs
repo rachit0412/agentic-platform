@@ -70,6 +70,7 @@
     <div class="admin-subtabs" id="subtabs-compliance" style="display:none">
       <button class="admin-subtab" data-tab="compliance-rules">Rules &amp; Policies</button>
       <button class="admin-subtab" data-tab="compliance-audit">Audit Log</button>
+      <button class="admin-subtab" data-tab="secret-scan">Secret Scanning</button>
     </div>
     <div class="admin-subtabs" id="subtabs-config" style="display:none">
       <button class="admin-subtab" data-tab="config-appearance">Appearance</button>
@@ -880,6 +881,106 @@ Examples:
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: SECRET SCANNING (GITLEAKS)                        -->
+<div id="tab-secret-scan" class="admin-tab-content" style="display:none">
+  <div class="card">
+    <h2 style="margin:0 0 1.5rem">🔐 Secret Scanning (Gitleaks)</h2>
+    <p style="color:var(--text-3);font-size:0.9rem;margin-bottom:1.5rem">Scan the repository and codebase for hardcoded secrets, API keys, credentials, and sensitive data.</p>
+    
+    <div class="section-header" style="margin-bottom:1.5rem">
+      <h3>Scan Configuration</h3>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div>
+        <label class="input-label">Scan Path</label>
+        <input id="scan-path-input" type="text" class="input" value="/app" placeholder="/app" style="font-size:0.9rem">
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.25rem">Enter the path to scan (e.g., /app, /app/services)</div>
+      </div>
+      <div>
+        <label class="input-label">Output Format</label>
+        <select id="scan-format-select" class="input" style="font-size:0.9rem">
+          <option value="json">JSON (Detailed)</option>
+          <option value="csv">CSV</option>
+          <option value="sarif">SARIF (Security)</option>
+        </select>
+        <div style="font-size:0.72rem;color:var(--text-3);margin-top:0.25rem">Format for scan results</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;margin-bottom:2rem;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="runSecretScan()" id="secret-scan-btn" style="padding:0.75rem 1.5rem">
+        <span id="scan-btn-text">🔍 Run Secret Scan</span>
+        <span id="scan-btn-spinner" style="display:none;margin-left:0.5rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+        </span>
+      </button>
+      <button class="btn btn-secondary" onclick="clearSecretResults()" style="padding:0.75rem 1.5rem">🗑️ Clear Results</button>
+      <button class="btn btn-secondary" onclick="exportSecretResults()" id="export-secret-btn" style="padding:0.75rem 1.5rem;display:none">📥 Export Results</button>
+    </div>
+
+    <!-- Scan Results -->
+    <div id="secret-scan-results" style="display:none">
+      <div class="section-header" style="margin-bottom:1rem;border-top:2px solid var(--divider);padding-top:1.5rem">
+        <h3>Scan Results</h3>
+        <span id="scan-result-info" style="font-size:0.72rem;color:var(--text-3)"></span>
+      </div>
+
+      <!-- Summary Stats -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+        <div class="card" style="text-align:center;padding:1rem">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--text-1)" id="secrets-found-count">0</div>
+          <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Secrets Found</div>
+        </div>
+        <div class="card" style="text-align:center;padding:1rem">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--accent)" id="scan-severity-high">0</div>
+          <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">High Severity</div>
+        </div>
+        <div class="card" style="text-align:center;padding:1rem">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--success)" id="scan-timestamp">—</div>
+          <div style="font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em">Last Scan</div>
+        </div>
+      </div>
+
+      <!-- Secrets Table -->
+      <div id="secrets-table-container" style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+          <thead>
+            <tr style="border-bottom:2px solid var(--divider);background:rgba(0,0,0,0.2)">
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Type</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">File</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Line</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Match</th>
+              <th style="text-align:left;padding:0.75rem;font-weight:600">Rule</th>
+            </tr>
+          </thead>
+          <tbody id="secrets-table-body">
+            <tr style="border-bottom:1px solid var(--divider)">
+              <td colspan="5" style="padding:2rem;text-align:center;color:var(--text-3)">
+                No secrets detected
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Raw Output -->
+      <div style="margin-top:1.5rem;display:none" id="raw-output-container">
+        <div class="section-header" style="margin-bottom:1rem;border-top:2px solid var(--divider);padding-top:1.5rem">
+          <h3>Raw Scan Output</h3>
+        </div>
+        <pre id="raw-output" style="background:rgba(0,0,0,0.5);padding:1rem;border-radius:8px;overflow-x:auto;max-height:400px;font-size:0.75rem;color:var(--text-3)"></pre>
+      </div>
+    </div>
+
+    <!-- No Results Yet -->
+    <div id="secret-scan-empty" style="text-align:center;padding:3rem;color:var(--text-3)">
+      <div style="font-size:2rem;margin-bottom:1rem">🔍</div>
+      <p style="margin:0;font-size:0.9rem">Run a secret scan to detect hardcoded credentials, API keys, and sensitive data in your codebase.</p>
     </div>
   </div>
 </div>
@@ -2683,6 +2784,178 @@ function showCompliancePreview() {
     '\nEthical Guidelines:\n' + (settings.ethicalGuidelines || '(Using defaults)');
 
   alert(preview);
+}
+
+// ── Secret Scan Functions ─────────────────────────────
+async function runSecretScan() {
+  const scanPath = document.getElementById('scan-path-input').value || '/app';
+  const format = document.getElementById('scan-format-select').value || 'json';
+  const btn = document.getElementById('secret-scan-btn');
+  const btnText = document.getElementById('scan-btn-text');
+  const spinner = document.getElementById('scan-btn-spinner');
+  
+  try {
+    btn.disabled = true;
+    btnText.textContent = 'Scanning...';
+    spinner.style.display = 'inline-block';
+    
+    const response = await fetch('/api/admin/secret-scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scanPath, format })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Scan failed');
+    }
+    
+    const result = await response.json();
+    displaySecretScanResults(result);
+    
+  } catch (error) {
+    alert('❌ Secret scan error: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '🔍 Run Secret Scan';
+    spinner.style.display = 'none';
+  }
+}
+
+function displaySecretScanResults(result) {
+  document.getElementById('secret-scan-empty').style.display = 'none';
+  document.getElementById('secret-scan-results').style.display = 'block';
+  document.getElementById('export-secret-btn').style.display = 'inline-block';
+  
+  // Update metadata
+  const timestamp = new Date(result.timestamp).toLocaleString();
+  document.getElementById('scan-result-info').textContent = `Scanned at ${timestamp} • Path: ${result.scanPath}`;
+  document.getElementById('scan-timestamp').textContent = new Date(result.timestamp).toLocaleTimeString();
+  
+  let secretsData = [];
+  let highSeverityCount = 0;
+  
+  // Parse results
+  if (result.results) {
+    if (typeof result.results === 'string') {
+      try {
+        secretsData = JSON.parse(result.results);
+      } catch {
+        document.getElementById('raw-output-container').style.display = 'block';
+        document.getElementById('raw-output').textContent = result.results;
+        document.getElementById('secrets-found-count').textContent = '?';
+        document.getElementById('scan-severity-high').textContent = '?';
+        return;
+      }
+    } else if (Array.isArray(result.results)) {
+      secretsData = result.results;
+    } else if (result.results.matches) {
+      secretsData = result.results.matches;
+    } else if (typeof result.results === 'object') {
+      secretsData = [result.results];
+    }
+  }
+  
+  // Count and populate table
+  document.getElementById('secrets-found-count').textContent = secretsData.length;
+  const tbody = document.getElementById('secrets-table-body');
+  tbody.innerHTML = '';
+  
+  if (secretsData.length === 0) {
+    tbody.innerHTML = '<tr style="border-bottom:1px solid var(--divider)"><td colspan="5" style="padding:2rem;text-align:center;color:var(--success)">✓ No secrets detected</td></tr>';
+    document.getElementById('scan-severity-high').textContent = '0';
+  } else {
+    secretsData.forEach(secret => {
+      if (secret.Severity && (secret.Severity === 'HIGH' || secret.Severity === 'high')) highSeverityCount++;
+      
+      const row = tbody.insertRow();
+      row.style.borderBottom = '1px solid var(--divider)';
+      
+      const typeCell = row.insertCell(0);
+      typeCell.textContent = secret.RuleID || secret.Type || 'Unknown';
+      typeCell.style.padding = '0.75rem';
+      typeCell.style.wordBreak = 'break-word';
+      
+      const fileCell = row.insertCell(1);
+      fileCell.textContent = secret.File || secret.file || 'N/A';
+      fileCell.style.padding = '0.75rem';
+      fileCell.style.fontSize = '0.8rem';
+      fileCell.style.maxWidth = '200px';
+      fileCell.style.overflow = 'hidden';
+      fileCell.style.textOverflow = 'ellipsis';
+      
+      const lineCell = row.insertCell(2);
+      lineCell.textContent = secret.StartLine || secret.line || '—';
+      lineCell.style.padding = '0.75rem';
+      lineCell.style.textAlign = 'center';
+      
+      const matchCell = row.insertCell(3);
+      const match = (secret.Match || secret.Secret || '••••••••').substring(0, 20) + '...';
+      matchCell.textContent = match;
+      matchCell.style.padding = '0.75rem';
+      matchCell.style.fontSize = '0.75rem';
+      matchCell.style.fontFamily = 'monospace';
+      matchCell.style.color = 'var(--accent)';
+      
+      const ruleCell = row.insertCell(4);
+      ruleCell.textContent = secret.RuleTitle || secret.Rule || 'Custom Pattern';
+      ruleCell.style.padding = '0.75rem';
+      ruleCell.style.fontSize = '0.8rem';
+      
+      // Color code by severity
+      if (secret.Severity === 'HIGH' || secret.Severity === 'high') {
+        row.style.background = 'rgba(239, 68, 68, 0.05)';
+      } else if (secret.Severity === 'MEDIUM' || secret.Severity === 'medium') {
+        row.style.background = 'rgba(251, 191, 36, 0.05)';
+      }
+    });
+  }
+  
+  document.getElementById('scan-severity-high').textContent = highSeverityCount;
+}
+
+function clearSecretResults() {
+  document.getElementById('secret-scan-results').style.display = 'none';
+  document.getElementById('secret-scan-empty').style.display = 'block';
+  document.getElementById('export-secret-btn').style.display = 'none';
+  document.getElementById('scan-path-input').value = '/app';
+}
+
+function exportSecretResults() {
+  const resultsHtml = document.getElementById('secret-scan-results').innerHTML;
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const filename = `secret-scan-${timestamp}.html`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Secret Scan Report - ${timestamp}</title>
+      <style>
+        body { font-family: monospace; background: #0a0a0f; color: #d1d5db; margin: 2rem; }
+        h1 { color: #10b981; border-bottom: 2px solid #10b981; padding-bottom: 1rem; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+        th { background: rgba(0,0,0,0.5); padding: 0.75rem; text-align: left; border-bottom: 2px solid #10b981; }
+        td { padding: 0.75rem; border-bottom: 1px solid #333; }
+        .high { background: rgba(239, 68, 68, 0.1); }
+        .timestamp { color: #888; font-size: 0.9rem; }
+      </style>
+    </head>
+    <body>
+      <h1>🔐 Secret Scan Report</h1>
+      <p class="timestamp">Generated: ${new Date().toLocaleString()}</p>
+      ${resultsHtml}
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 </script>

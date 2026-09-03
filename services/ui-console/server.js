@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
+const { execSync } = require("child_process");
 
 // ── Security Middleware ────────────────────────────────
 const {
@@ -2268,6 +2269,94 @@ app.get("/api/admin/docker/reminder-status", async (req, res) => {
 app.post("/api/admin/docker/provision", async (req, res) => {
   try { const r = await fetch(`${AGENT_URL}/admin/docker/provision`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── API: Admin – Secret Scanning (Gitleaks) ──────────────
+app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
+  try {
+    const { scanPath = "/app", format = "json" } = req.body;
+    
+    // Log the scan initiation
+    console.log("[SECURITY] Admin initiated secret scan", { 
+      path: scanPath, 
+      user: req.session.user?.username || "unknown",
+      ip: req.ip,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Run gitleaks scan
+    const cmd = `gitleaks detect --source "${scanPath}" --report-format ${format} --no-color 2>&1`;
+    
+    try {
+      const output = execSync(cmd, { 
+        encoding: "utf-8",
+        maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
+        timeout: 60000  // 60 second timeout
+      });
+      
+      // Parse JSON output if requested
+      let results = output;
+      if (format === "json") {
+        try {
+          results = JSON.parse(output);
+        } catch (parseErr) {
+          // If JSON parse fails, return raw output
+          results = { raw: output, parseError: parseErr.message };
+        }
+      }
+      
+      // Log successful scan
+      console.log("[SECURITY] Secret scan completed", {
+        user: req.session.user?.username || "unknown",
+        path: scanPath,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.status(200).json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        scanPath,
+        results
+      });
+    } catch (execErr) {
+      // gitleaks returns exit code > 0 if secrets found
+      const output = execErr.stdout || execErr.stderr || execErr.message;
+      let results = output;
+      
+      if (format === "json") {
+        try {
+          results = JSON.parse(output);
+        } catch (_) {
+          results = { raw: output };
+        }
+      }
+      
+      console.log("[SECURITY] Secret scan found issues", {
+        user: req.session.user?.username || "unknown",
+        path: scanPath,
+        secretsFound: true,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.status(200).json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        scanPath,
+        secretsDetected: true,
+        results
+      });
+    }
+  } catch (e) {
+    console.error("[SECURITY] Secret scan error", {
+      error: e.message,
+      user: req.session.user?.username || "unknown",
+      ip: req.ip
+    });
+    res.status(500).json({ 
+      error: "Secret scan failed",
+      details: process.env.NODE_ENV === 'development' ? e.message : "An error occurred during scanning"
+    });
+  }
 });
 
 // ── API: Admin – Platform overview counts ────────────

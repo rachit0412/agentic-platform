@@ -2,6 +2,9 @@ FROM node:20.11.1-alpine
 
 WORKDIR /app
 
+# Install gitleaks for secret scanning
+RUN apk add --no-cache gitleaks git
+
 COPY package.json ./
 RUN npm install --production
 
