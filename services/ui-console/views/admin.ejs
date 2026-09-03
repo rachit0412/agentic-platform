@@ -2817,7 +2817,7 @@ function saveUISettings() {
     const isEnabled = document.getElementById('intro-gate-toggle').checked;
     localStorage.setItem('agentic_intro_gate_enabled', isEnabled ? 'true' : 'false');
     document.getElementById('intro-gate-status').textContent = isEnabled ? 'Enabled' : 'Disabled (Default)';
-    showToast(isEnabled ? '🎬 Intro gate animation enabled' : '⏭️ Intro gate animation disabled', 'success');
+    showToast(isEnabled ? 'Intro gate animation enabled' : 'Intro gate animation disabled', 'success');
   } catch(e) {
     showToast('Error saving UI settings: ' + e.message, 'error');
   }
