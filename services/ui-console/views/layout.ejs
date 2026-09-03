@@ -1012,7 +1012,7 @@
           status.textContent = 'Session terminated. Redirecting...';
           fetch('/auth/logout', { method: 'POST' })
             .finally(() => {
-              setTimeout(() => { window.location.href = '/login'; }, 600);
+              setTimeout(() => { window.location.href = '/login?logout=true'; }, 600);
             });
         }
       }

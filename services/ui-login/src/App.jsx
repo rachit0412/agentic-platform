@@ -314,10 +314,22 @@ function IntroGate({ onComplete }) {
 export default function App() {
   const { mode, resolved, setMode } = useTheme();
   const [showIntro, setShowIntro] = useState(() => {
+    // Skip gate if coming from logout (URL param)
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) return false;
+    
     // Only show intro gate on first-ever visit, not after logout
     const hasSeenIntro = localStorage.getItem('agentic_intro_shown');
     return !hasSeenIntro;
   });
+
+  useEffect(() => {
+    // Clean up logout parameter from URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.history.replaceState({}, document.title, '/login-app/');
+    }
+  }, []);
 
   useEffect(() => {
     if (showIntro) {
