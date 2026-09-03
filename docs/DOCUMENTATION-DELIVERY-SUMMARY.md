@@ -143,7 +143,7 @@ A10: Error Handling                 [████████████░░�
 
 ### A06 - Insecure Design (0%) ⏳ PLANNED
 
-**⏳ NOT YET STARTED** (Phase 3, Q4 2025)
+**⏳ NOT YET STARTED** (Phase 3, Q4 2026)
 
 **WHAT WILL BE DONE:**
 - Threat modeling
@@ -368,7 +368,7 @@ Total Security Code:        2,000+ lines
 **Fully Implemented**: 3/10 vulnerabilities (A03, A08, A09)
 **Partially Implemented**: 2/10 vulnerabilities (A04, A05)
 **Substantially Implemented**: 4/10 vulnerabilities (A01, A02, A07, A10)
-**Not Started**: 1/10 vulnerability (A06 - planned Q4 2025)
+**Not Started**: 1/10 vulnerability (A06 - planned Q4 2026)
 
 **Security Controls Active**:
 - 8+ security headers
@@ -402,5 +402,5 @@ curl -I http://localhost:3005 | grep -i X-
 
 **Status**: ✅ Documentation Complete & Production Ready  
 **Coverage**: 90% OWASP Top 10:2025  
-**Last Updated**: 2025-09-03  
-**Commitment**: Clear roadmap for Phase 3 (Q4 2025)
+**Last Updated**: 2026-09-03  
+**Commitment**: Clear roadmap for Phase 3 (Q4 2026)
