@@ -2436,7 +2436,7 @@ async function loadAuditLog(type) {
     
     // Fetch audit log
     const response = await fetch('/api/audit-log?' + params.toString());
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
     
     const data = await response.json();
     
@@ -2803,10 +2803,10 @@ document.querySelectorAll('#subtabs-config .admin-subtab').forEach(function(btn)
 // ── UI/UX SETTINGS ────────────────────────────────────────
 function loadUISettings() {
   try {
-    const gateEnabled = localStorage.getItem('agentic_intro_gate_enabled');
-    const isEnabled = gateEnabled !== 'false'; // Default to enabled
-    document.getElementById('intro-gate-toggle').checked = isEnabled;
-    document.getElementById('intro-gate-status').textContent = isEnabled ? 'Enabled' : 'Disabled';
+    // Gate is DISABLED by default - only enabled if explicitly set to 'true'
+    const gateEnabled = localStorage.getItem('agentic_intro_gate_enabled') === 'true';
+    document.getElementById('intro-gate-toggle').checked = gateEnabled;
+    document.getElementById('intro-gate-status').textContent = gateEnabled ? 'Enabled' : 'Disabled (Default)';
   } catch(e) {
     console.error('Error loading UI settings:', e);
   }
@@ -2816,7 +2816,7 @@ function saveUISettings() {
   try {
     const isEnabled = document.getElementById('intro-gate-toggle').checked;
     localStorage.setItem('agentic_intro_gate_enabled', isEnabled ? 'true' : 'false');
-    document.getElementById('intro-gate-status').textContent = isEnabled ? 'Enabled' : 'Disabled';
+    document.getElementById('intro-gate-status').textContent = isEnabled ? 'Enabled' : 'Disabled (Default)';
     showToast(isEnabled ? '🎬 Intro gate animation enabled' : '⏭️ Intro gate animation disabled', 'success');
   } catch(e) {
     showToast('Error saving UI settings: ' + e.message, 'error');
@@ -3179,7 +3179,7 @@ async function loadDockerImages() {
   
   try {
     const response = await fetch('/api/admin/docker/images');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
     
     if (!data.images || data.images.length === 0) {
@@ -3228,7 +3228,7 @@ async function loadDockerSecuritySummary() {
   
   try {
     const response = await fetch('/api/admin/docker/security-summary');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
     
     const summary = data.summary || { total: 0, critical: 0, high: 0, medium: 0, low: 0 };

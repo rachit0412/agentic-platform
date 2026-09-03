@@ -627,7 +627,7 @@ export default function LoginPage() {
       /* Trigger dramatic gate animation, then redirect */
       setLoading(false);
       setGateOpen(true);
-      setTimeout(() => { window.location.href = '/'; }, 2200);
+      setTimeout(() => { window.location.href = '/'; }, 1200);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -887,7 +887,7 @@ function VaultGate() {
         className="fixed left-0 right-0 z-[103] pointer-events-none"
         initial={{ top: '-4px', opacity: 0 }}
         animate={{ top: ['0%', '105%'], opacity: [0, 1, 1, 0] }}
-        transition={{ duration: 0.55, delay: 0.05, ease: 'linear', times: [0, 0.05, 0.95, 1] }}
+        transition={{ duration: 0.45, delay: 0.05, ease: 'linear', times: [0, 0.05, 0.95, 1] }}
         style={{ height: '3px', background: isDark ? 'linear-gradient(90deg,transparent 0%,rgba(6,182,212,0.0) 10%,rgba(6,182,212,0.9) 50%,rgba(99,102,241,0.9) 50%,rgba(6,182,212,0.0) 90%,transparent 100%)' : 'linear-gradient(90deg,transparent 0%,rgba(99,102,241,0.0) 10%,rgba(79,70,229,0.9) 50%,rgba(99,102,241,0.9) 50%,rgba(99,102,241,0.0) 90%,transparent 100%)',
           boxShadow: isDark ? '0 0 20px rgba(6,182,212,0.5), 0 0 60px rgba(99,102,241,0.2)' : '0 0 20px rgba(79,70,229,0.4), 0 0 60px rgba(99,102,241,0.15)',
         }}
@@ -897,7 +897,7 @@ function VaultGate() {
         className="fixed left-0 right-0 z-[102] pointer-events-none"
         initial={{ top: '-20px', opacity: 0 }}
         animate={{ top: ['-2%', '103%'], opacity: [0, 0.4, 0] }}
-        transition={{ duration: 0.55, delay: 0.05, ease: 'linear' }}
+        transition={{ duration: 0.45, delay: 0.05, ease: 'linear' }}
         style={{ height: '40px', background: isDark ? 'linear-gradient(to bottom,transparent,rgba(6,182,212,0.08),transparent)' : 'linear-gradient(to bottom,transparent,rgba(79,70,229,0.06),transparent)', filter: 'blur(8px)' }}
       />
 
@@ -909,7 +909,7 @@ function VaultGate() {
           style={{ ...p.style, background: panelBg }}
           initial={{ x: 0, y: 0 }}
           animate={p.animate}
-          transition={{ duration: 0.7, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.55, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Grid texture */}
           <div className="absolute inset-0" style={{
