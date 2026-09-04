@@ -2528,13 +2528,13 @@ function exportAuditLog() {
         const user = cells[1].textContent.trim();
         const eventType = cells[2].textContent.trim();
         const details = cells[3].textContent.trim();
-        csvContent += `"${time}","${user}","${eventType}","${details.replace(/"/g, '""')}"\n`;
+        csvContent += \`"${time}","${user}","${eventType}","${details.replace(/"/g, '""')}"\n\`;
       }
     }
     
     // Download CSV
     const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `audit-log-${timestamp}.csv`;
+    const filename = \`audit-log-${timestamp}.csv\`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2543,7 +2543,7 @@ function exportAuditLog() {
     a.click();
     URL.revokeObjectURL(url);
     
-    showToast(`Exported ${rows.length - 1} audit entries`, 'success');
+    showToast(\`Exported ${rows.length - 1} audit entries\`, 'success');
   } catch(e) {
     showToast('Error exporting audit log: ' + e.message, 'error');
   }
