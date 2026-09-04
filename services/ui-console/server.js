@@ -2648,7 +2648,7 @@ app.get("/marketplace", renderPage("marketplace"));
 app.get("/admin", (req, res) => {
   const user = req.session.user || {};
   if (!hasAdminAccess(user)) return res.redirect("/");
-  res.render("admin", { urls: externalUrls, user });
+  res.render("admin", { title: "Admin Plane", page: "admin", urls: externalUrls, user });
 });
 app.get("/chat", requireAuth, (req, res) => {
   const user = req.session.user || {};
