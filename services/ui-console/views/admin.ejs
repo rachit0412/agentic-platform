@@ -2910,13 +2910,13 @@ async function saveComplianceSettings() {
     });
 
     if (response.ok) {
-      showNotification('✓ Compliance settings saved successfully', 'success');
+      showNotification('Compliance settings saved successfully', 'success');
     } else {
       throw new Error('Failed to save settings');
     }
   } catch (error) {
     console.error('Error saving compliance settings:', error);
-    showNotification('✗ Error saving settings: ' + error.message, 'error');
+    showNotification('Error saving settings: ' + error.message, 'error');
   }
 }
 
@@ -2950,11 +2950,11 @@ function showCompliancePreview() {
     'Level: ' + settings.complianceLevel.toUpperCase() + '\n' +
     'Status: ' + (settings.enableCompliance ? 'ENABLED' : 'DISABLED') + '\n\n' +
     'Active Filters:\n' +
-    (settings.enableAudit ? '✓ Audit Logging\n' : '') +
-    (settings.enablePIIFilter ? '✓ PII Filtering\n' : '') +
-    (settings.enableHarmfulContent ? '✓ Harmful Content Blocking\n' : '') +
-    (settings.enableProfanity ? '✓ Profanity Filtering\n' : '') +
-    (settings.enableRateLimit ? '✓ Rate Limiting\n' : '') +
+    (settings.enableAudit ? 'Audit Logging\n' : '') +
+    (settings.enablePIIFilter ? 'PII Filtering\n' : '') +
+    (settings.enableHarmfulContent ? 'Harmful Content Blocking\n' : '') +
+    (settings.enableProfanity ? 'Profanity Filtering\n' : '') +
+    (settings.enableRateLimit ? 'Rate Limiting\n' : '') +
     '\nEthical Guidelines:\n' + (settings.ethicalGuidelines || '(Using defaults)');
 
   alert(preview);
@@ -2988,7 +2988,7 @@ async function runSecretScan() {
     displaySecretScanResults(result);
     
   } catch (error) {
-    alert('❌ Secret scan error: ' + error.message);
+    alert('Secret scan error: ' + error.message);
   } finally {
     btn.disabled = false;
     btnText.textContent = '🔍 Run Secret Scan';
@@ -3044,7 +3044,7 @@ function displaySecretScanResults(result) {
   
   if (secretsData.length === 0) {
     const tbody = document.getElementById('secrets-table-body');
-    tbody.innerHTML = '<tr style="border-bottom:1px solid var(--divider)"><td colspan="6" style="padding:2rem;text-align:center;color:var(--success)">✓ No secrets detected</td></tr>';
+    tbody.innerHTML = '<tr style="border-bottom:1px solid var(--divider)"><td colspan="6" style="padding:2rem;text-align:center;color:var(--success)">No secrets detected</td></tr>';
     return;
   }
   
@@ -3297,7 +3297,7 @@ async function checkDockerUpdates(event) {
     } else {
       const container = document.getElementById('docker-updates-available');
       container.innerHTML = '<div class="card" style="border-left:4px solid var(--success);background:rgba(34,197,94,0.05)">'
-        + '<div style="color:var(--success);font-weight:600">✓ All images are up to date</div></div>';
+        + '<div style="color:var(--success);font-weight:600">All images are up to date</div></div>';
     }
     
     await loadDockerImages();
