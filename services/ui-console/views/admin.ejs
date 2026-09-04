@@ -1423,16 +1423,16 @@ Examples:
 
 <script>
 /* ═══ INIT ═══ */
-document.getElementById('admin-content').style.display = 'block';
+document.getElementById(\'admin-content\').style.display = \'block\';
 
 /* ═══ USER MANAGEMENT ═══ */
 var _usersCache = [];
 function filterUsers(filter) {
-  if (filter === 'all') { renderUsersTable(_usersCache); return; }
+  if (filter === \'all\') { renderUsersTable(_usersCache); return; }
   var filtered = _usersCache.filter(function(u) {
-    if (filter === 'active') return u.is_active !== false;
-    if (filter === 'verified') return u.email_verified;
-    if (filter === 'admin') return u.role === 'admin';
+    if (filter === \'active\') return u.is_active !== false;
+    if (filter === \'verified\') return u.email_verified;
+    if (filter === \'admin\') return u.role === \'admin\';
     return true;
   });
   renderUsersTable(filtered);
@@ -1440,7 +1440,7 @@ function filterUsers(filter) {
   document.querySelectorAll('#user-stats-bar .card').forEach(function(c) { c.style.boxShadow = ''; });
   var idx = { all: 0, active: 1, verified: 2, admin: 3 }[filter];
   var cards = document.querySelectorAll('#user-stats-bar .card');
-  if (cards[idx]) cards[idx].style.boxShadow = '0 0 0 2px var(--accent)';
+  if (cards[idx]) cards[idx].style.boxShadow = \'0 0 0 2px var(--accent)\';
 }
 async function loadUsers() {
   try {
@@ -1455,10 +1455,10 @@ async function loadUsers() {
     var active = users.filter(function(u) { return u.is_active !== false; }).length;
     var verified = users.filter(function(u) { return u.email_verified; }).length;
     var admins = users.filter(function(u) { return u.role === 'admin'; }).length;
-    document.getElementById('user-count-total').textContent = total;
-    document.getElementById('user-count-active').textContent = active;
-    document.getElementById('user-count-verified').textContent = verified;
-    document.getElementById('user-count-admins').textContent = admins;
+    document.getElementById(\'user-count-total\').textContent = total;
+    document.getElementById(\'user-count-active\').textContent = active;
+    document.getElementById(\'user-count-verified\').textContent = verified;
+    document.getElementById(\'user-count-admins\').textContent = admins;
   } catch(e) { document.getElementById('users-table-container').innerHTML = '<p style="color:var(--danger)">Failed to load users: ' + escapeHtml(e.message) + '</p>'; }
 }
 
@@ -1477,7 +1477,7 @@ function renderUsersTable(users) {
     + '<th style="text-align:center;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Status</th>'
     + '<th style="text-align:center;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Verified</th>'
     + '<th style="text-align:right;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Actions</th>'
-    + '</tr></thead><tbody>';
+    + \'</tr></thead><tbody>\';
   users.forEach(function(u) {
     var initials = (u.display_name || u.username || '?').split(' ').map(function(w){return w[0]}).join('').substring(0,2).toUpperCase();
     var roleColor = roleColors[u.role] || 'var(--text-3)';
@@ -1491,7 +1491,7 @@ function renderUsersTable(users) {
     /* Action buttons */
     var actions = '<div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:nowrap">';
     actions += '<button class="btn btn-sm" onclick="editUser(&#39;' + u.id + '&#39;)" style="font-size:0.66rem;padding:3px 8px" title="Edit user">Edit</button>';
-    if (u.username !== 'admin') {
+    if (u.username !== \'admin\') {
       if (isActive) {
         actions += '<button class="btn btn-sm" onclick="toggleUserActive(&#39;' + u.id + '&#39;,false)" style="font-size:0.66rem;padding:3px 8px;color:var(--warn)" title="Disable user">Disable</button>';
       } else {
@@ -1502,7 +1502,7 @@ function renderUsersTable(users) {
       }
       actions += '<button class="btn btn-sm" onclick="deleteUser(&#39;' + u.id + '&#39;,&#39;' + escapeHtml(u.username) + '&#39;)" style="font-size:0.66rem;padding:3px 8px;color:var(--danger)" title="Delete user">Delete</button>';
     }
-    actions += '</div>';
+    actions += \'</div>\';
     html += '<tr style="border-bottom:1px solid var(--glass-border)">' +
       '<td style="padding:10px 12px"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),rgba(139,92,246,0.7));display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#fff;flex-shrink:0">' + escapeHtml(initials) + '</div><div><div style="font-weight:600;font-size:0.82rem;color:var(--text-1)">' + escapeHtml(u.display_name || u.username) + '</div><div style="font-size:0.7rem;color:var(--text-3)" class="mono">@' + escapeHtml(u.username) + '</div></div></div></td>' +
       '<td style="padding:10px 12px;font-size:0.78rem;color:var(--text-2)">' + escapeHtml(u.email || String.fromCharCode(0x2014)) + '</td>' +
@@ -1512,14 +1512,14 @@ function renderUsersTable(users) {
       '<td style="padding:10px 12px;text-align:center">' + verifiedBadge + '</td>' +
       '<td style="padding:10px 12px">' + actions + '</td></tr>';
   });
-  html += '</tbody></table></div>';
-  document.getElementById('users-table-container').innerHTML = html;
+  html += \'</tbody></table></div>\';
+  document.getElementById(\'users-table-container\').innerHTML = html;
 }
 
 function showCreateUserModal() {
   var overlay = document.createElement('div');
-  overlay.id = 'user-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)';
+  overlay.id = \'user-modal-overlay\';
+  overlay.style.cssText = \'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)\';
   overlay.onclick = function(e) { if (e.target === overlay) closeUserModal(); };
   overlay.innerHTML = '<div style="width:440px;padding:28px 32px;background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;box-shadow:var(--modal-shadow)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1)">Create User</h3><button onclick="closeUserModal()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px">&times;</button></div>' +
@@ -1532,9 +1532,9 @@ function showCreateUserModal() {
     '<div style="padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);font-size:0.72rem;color:var(--text-3)"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Admin-created users are automatically verified and can log in immediately.</div>' +
     '<div id="create-user-error" style="display:none;color:var(--danger);font-size:0.75rem;text-align:center;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px"></div>' +
     '<div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-primary" onclick="createUser()" style="flex:1;padding:11px;border-radius:10px;font-weight:600">Create User</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1;padding:11px;border-radius:10px">Cancel</button></div>' +
-    '</div></div>';
+    \'</div></div>\';
   document.body.appendChild(overlay);
-  document.getElementById('new-user-username').focus();
+  document.getElementById(\'new-user-username\').focus();
 }
 
 async function createUser() {
@@ -1544,12 +1544,12 @@ async function createUser() {
   var email = document.getElementById('new-user-email').value.trim();
   var password = document.getElementById('new-user-password').value;
   var role = document.getElementById('new-user-role').value;
-  if (!username || !password) { errEl.style.display = 'block'; errEl.textContent = 'Username and password are required'; return; }
-  if (password.length < 6) { errEl.style.display = 'block'; errEl.textContent = 'Password must be at least 6 characters'; return; }
+  if (!username || !password) { errEl.style.display = \'block\'; errEl.textContent = \'Username and password are required\'; return; }
+  if (password.length < 6) { errEl.style.display = \'block\'; errEl.textContent = \'Password must be at least 6 characters\'; return; }
   try {
     var r = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: \'POST\',
+      headers: { \'Content-Type\': \'application/json\' },
       body: JSON.stringify({ username: username, password: password, display_name: display_name || username, email: email, role: role })
     });
     if (r.status === 409) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || 'Username or email already exists'; return; }
@@ -1557,15 +1557,15 @@ async function createUser() {
     closeUserModal();
     showToast('User "' + username + '" created', 'success');
     loadUsers();
-  } catch(e) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + e.message; }
+  } catch(e) { errEl.style.display = \'block\'; errEl.textContent = \'Error: \' + e.message; }
 }
 
 function editUser(userId) {
   var u = _usersCache.find(function(x) { return x.id === userId; });
   if (!u) return;
   var overlay = document.createElement('div');
-  overlay.id = 'user-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)';
+  overlay.id = \'user-modal-overlay\';
+  overlay.style.cssText = \'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)\';
   overlay.onclick = function(e) { if (e.target === overlay) closeUserModal(); };
   var statusInfo = u.is_active !== false
     ? '<span style="color:var(--success);font-weight:500">Active</span>'
@@ -1585,7 +1585,7 @@ function editUser(userId) {
     '<div><label style="font-size:0.68rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">New Password <span style="font-weight:400;color:var(--text-3)">(leave blank to keep)</span></label><input type="password" id="edit-user-password" class="input" placeholder="Unchanged" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border);color:var(--text-1);box-sizing:border-box"></div>' +
     '<div id="edit-user-error" style="display:none;color:var(--danger);font-size:0.75rem;text-align:center;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px"></div>' +
     '<div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-primary" onclick="saveUser(&#39;' + userId + '&#39;)" style="flex:1;padding:11px;border-radius:10px;font-weight:600">Save Changes</button><button class="btn btn-secondary" onclick="closeUserModal()" style="flex:1;padding:11px;border-radius:10px">Cancel</button></div>' +
-    '</div></div>';
+    \'</div></div>\';
   document.body.appendChild(overlay);
 }
 
@@ -1599,29 +1599,29 @@ async function saveUser(userId) {
   if (display) body.display_name = display;
   if (email) body.email = email;
   body.role = role;
-  if (password) { if (password.length < 6) { errEl.style.display = 'block'; errEl.textContent = 'Password must be at least 6 characters'; return; } body.password = password; }
+  if (password) { if (password.length < 6) { errEl.style.display = \'block\'; errEl.textContent = \'Password must be at least 6 characters\'; return; } body.password = password; }
   try {
     var r = await fetch('/api/users/' + userId, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: \'PUT\',
+      headers: { \'Content-Type\': \'application/json\' },
       body: JSON.stringify(body)
     });
     if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || d.detail || 'Failed to update user'; return; }
     closeUserModal();
-    showToast('User updated', 'success');
+    showToast(\'User updated\', \'success\');
     loadUsers();
-  } catch(e) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + e.message; }
+  } catch(e) { errEl.style.display = \'block\'; errEl.textContent = \'Error: \' + e.message; }
 }
 
 async function deleteUser(userId, username) {
   if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
   try {
     var r = await fetch('/api/users/' + userId, { method: 'DELETE' });
-    if (r.status === 403) { showToast('Cannot delete admin user', 'error'); return; }
-    if (!r.ok) { showToast('Failed to delete user', 'error'); return; }
+    if (r.status === 403) { showToast(\'Cannot delete admin user\', \'error\'); return; }
+    if (!r.ok) { showToast(\'Failed to delete user\', \'error\'); return; }
     showToast('User "' + username + '" deleted', 'success');
     loadUsers();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 function closeUserModal() {
@@ -1631,34 +1631,34 @@ function closeUserModal() {
 
 async function toggleUserActive(userId, activate) {
   var action = activate ? 'enable' : 'disable';
-  if (!confirm('Are you sure you want to ' + action + ' this user?')) return;
+  if (!confirm(\'Are you sure you want to \' + action + \' this user?\')) return;
   try {
     var r = await fetch('/api/users/' + userId, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: \'PUT\',
+      headers: { \'Content-Type\': \'application/json\' },
       body: JSON.stringify({ is_active: activate })
     });
-    if (!r.ok) { showToast('Failed to ' + action + ' user', 'error'); return; }
-    showToast('User ' + action + 'd successfully', 'success');
+    if (!r.ok) { showToast(\'Failed to \' + action + \' user\', \'error\'); return; }
+    showToast(\'User \' + action + \'d successfully\', \'success\');
     loadUsers();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 async function adminVerifyUser(userId) {
-  if (!confirm('Mark this user as email verified?')) return;
+  if (!confirm(\'Mark this user as email verified?\')) return;
   try {
     var r = await fetch('/api/users/' + userId + '/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      method: \'POST\',
+      headers: { \'Content-Type\': \'application/json\' }
     });
-    if (!r.ok) { showToast('Failed to verify user', 'error'); return; }
-    showToast('User verified successfully', 'success');
+    if (!r.ok) { showToast(\'Failed to verify user\', \'error\'); return; }
+    showToast(\'User verified successfully\', \'success\');
     loadUsers();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 function showCreateWorkspaceModal() {
-  showToast('Workspace creation is available from the workspace selector', 'info');
+  showToast(\'Workspace creation is available from the workspace selector\', \'info\');
 }
 
 async function loadWorkspacesAdmin() {
@@ -1676,40 +1676,40 @@ async function loadWorkspacesAdmin() {
       var members = Array.isArray(w.members) ? w.members.length : (w.member_count || String.fromCharCode(0x2014));
       html += '<tr><td style="font-weight:600">' + escapeHtml(w.name || w.id) + '</td>' +
         '<td class="mono" style="font-size:0.75rem">' + escapeHtml(w.id) + '</td>' +
-        '<td>' + members + '</td>' +
+        \'<td>\' + members + \'</td>\' +
         '<td class="mono" style="font-size:0.75rem">' + created + '</td></tr>';
     });
-    html += '</table>';
-    document.getElementById('workspaces-admin-table').innerHTML = html;
+    html += \'</table>\';
+    document.getElementById(\'workspaces-admin-table\').innerHTML = html;
   } catch(e) { document.getElementById('workspaces-admin-table').innerHTML = '<p style="color:var(--text-3)">Failed to load workspaces</p>'; }
 }
 
 /* ═══ NAVIGATION ═══ */
 var SECTION_TABS = {
-  operations: ['health', 'overview', 'audit'],
-  identity: ['users', 'personas'],
-  ai: ['llm', 'config'],
-  data: ['database'],
-  infrastructure: ['docker-images', 'environment-vars'],
-  compliance: ['compliance-rules', 'compliance-audit', 'secret-scan']
+  operations: [\'health\', \'overview\', \'audit\'],
+  identity: [\'users\', \'personas\'],
+  ai: [\'llm\', \'config\'],
+  data: [\'database\'],
+  infrastructure: [\'docker-images\', \'environment-vars\'],
+  compliance: [\'compliance-rules\', \'compliance-audit\', \'secret-scan\']
 };
 var TAB_SECTION = {
-  health: 'operations', overview: 'operations', audit: 'operations',
-  users: 'identity', personas: 'identity',
-  llm: 'ai', config: 'ai',
-  database: 'data',
-  'docker-images': 'infrastructure', 'environment-vars': 'infrastructure',
-  'compliance-rules': 'compliance', 'compliance-audit': 'compliance', 'secret-scan': 'compliance'
+  health: \'operations\', overview: \'operations\', audit: \'operations\',
+  users: \'identity\', personas: \'identity\',
+  llm: \'ai\', config: \'ai\',
+  database: \'data\',
+  \'docker-images\': \'infrastructure\', \'environment-vars\': \'infrastructure\',
+  \'compliance-rules\': \'compliance\', \'compliance-audit\': \'compliance\', \'secret-scan\': \'compliance\'
 };
 
 function switchSection(section) {
   /* Update section tab active states */
   document.querySelectorAll('.admin-stab').forEach(function(el) {
-    el.classList.toggle('active', el.getAttribute('data-section') === section);
+    el.classList.toggle(\'active\', el.getAttribute(\'data-section\') === section);
   });
   /* Show only the matching subtab row */
   document.querySelectorAll('.admin-subtabs').forEach(function(el) {
-    el.style.display = el.id === 'subtabs-' + section ? 'flex' : 'none';
+    el.style.display = el.id === \'subtabs-\' + section ? \'flex\' : \'none\';
   });
   /* Navigate to first tab of section */
   var firstTab = (SECTION_TABS[section] || [])[0];
@@ -1722,48 +1722,48 @@ function switchTab(tab, fromSection) {
     var sec = TAB_SECTION[tab];
     if (sec) {
       document.querySelectorAll('.admin-stab').forEach(function(el) {
-        el.classList.toggle('active', el.getAttribute('data-section') === sec);
+        el.classList.toggle(\'active\', el.getAttribute(\'data-section\') === sec);
       });
       document.querySelectorAll('.admin-subtabs').forEach(function(el) {
-        el.style.display = el.id === 'subtabs-' + sec ? 'flex' : 'none';
+        el.style.display = el.id === \'subtabs-\' + sec ? \'flex\' : \'none\';
       });
     }
   }
   /* Update subtab active states */
   document.querySelectorAll('.admin-subtab').forEach(function(el) {
-    el.classList.toggle('active', el.getAttribute('data-tab') === tab);
+    el.classList.toggle(\'active\', el.getAttribute(\'data-tab\') === tab);
   });
   /* Show content panel */
   document.querySelectorAll('.admin-tab-content').forEach(function(el) {
-    el.style.display = 'none';
+    el.style.display = \'none\';
   });
   var panel = document.getElementById('tab-' + tab);
-  if (panel) panel.style.display = 'block';
-  history.replaceState(null, '', '#' + tab);
+  if (panel) panel.style.display = \'block\';
+  history.replaceState(null, \'\', \'#\' + tab);
   /* Load data */
-  if (tab === 'health') loadServiceHealth();
-  if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
-  if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
-  if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
-  if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
-  if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
+  if (tab === \'health\') loadServiceHealth();
+  if (tab === \'users\') { loadUsers(); loadWorkspacesAdmin(); }
+  if (tab === \'personas\') { loadPersonas(); loadUserPersonaAssignments(); }
+  if (tab === \'overview\') { loadOverviewCounts(); loadMemoryStats(); }
+  if (tab === \'llm\') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
+  if (tab === \'database\') { loadDbStats(); loadChromaStats(); loadDocStats(); }
   if (tab === 'config') { loadUISettings(); loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); setTimeout(function() { switchConfigTab('appearance'); }, 50); }
   if (tab === 'docker-images') { loadDockerImages(); loadDockerSecuritySummary(); if (typeof initDockerManagement === 'function') { setTimeout(initDockerManagement, 100); } }
-  if (tab === 'environment-vars') { loadEnvVars(); loadLLMProviderSelection(); }
-  if (tab === 'audit') loadAuditLog();
-  if (tab === 'compliance-rules') { loadComplianceSettings(); }
-  if (tab === 'compliance-audit') { loadAuditLog('compliance'); }
+  if (tab === \'environment-vars\') { loadEnvVars(); loadLLMProviderSelection(); }
+  if (tab === \'audit\') loadAuditLog();
+  if (tab === \'compliance-rules\') { loadComplianceSettings(); }
+  if (tab === \'compliance-audit\') { loadAuditLog(\'compliance\'); }
 }
 
 /* Wire up nav via event delegation (avoids inline onclick in template literal) */
 document.getElementById('admin-section-tabs').addEventListener('click', function(e) {
   var btn = e.target.closest('.admin-stab');
-  if (btn) switchSection(btn.getAttribute('data-section'));
+  if (btn) switchSection(btn.getAttribute(\'data-section\'));
 });
 document.querySelectorAll('.admin-subtabs').forEach(function(row) {
   row.addEventListener('click', function(e) {
     var btn = e.target.closest('.admin-subtab');
-    if (btn) switchTab(btn.getAttribute('data-tab'));
+    if (btn) switchTab(btn.getAttribute(\'data-tab\'));
   });
 });
 
@@ -1784,18 +1784,18 @@ function highlightThemeCard() {
     var el = document.getElementById('theme-card-' + themes[i]);
     if (!el) continue;
     if (themes[i] === current) {
-      el.style.borderColor = 'var(--accent)';
-      el.style.boxShadow = '0 0 0 1px var(--accent)';
+      el.style.borderColor = \'var(--accent)\';
+      el.style.boxShadow = \'0 0 0 1px var(--accent)\';
     } else {
-      el.style.borderColor = 'var(--glass-border)';
-      el.style.boxShadow = 'none';
+      el.style.borderColor = \'var(--glass-border)\';
+      el.style.boxShadow = \'none\';
     }
   }
 }
 
 /* ═══ LOAD ALL ═══ */
 function adminLoadAll() {
-  document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
+  document.getElementById(\'admin-last-refresh\').textContent = \'Refreshed: \' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
   var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database', infrastructure: 'docker-images', compliance: 'compliance-rules' };
   var validTabs = ['health','users','personas','overview','llm','database','config','audit','docker-images','environment-vars','compliance-rules','compliance-audit','secret-scan'];
@@ -1805,7 +1805,7 @@ function adminLoadAll() {
   } else if (validTabs.indexOf(hash) >= 0) {
     startTab = hash;
   } else {
-    startTab = 'health';
+    startTab = \'health\';
   }
   switchTab(startTab);
 }
@@ -1816,10 +1816,10 @@ async function loadServiceHealth() {
     var r = await fetch('/api/admin/services/health');
     var d = await r.json();
     /* Summary */
-    document.getElementById('health-count-healthy').textContent = d.summary.healthy;
-    document.getElementById('health-count-unhealthy').textContent = d.summary.unhealthy;
-    document.getElementById('health-count-total').textContent = d.summary.total;
-    document.getElementById('health-timestamp').textContent = new Date(d.summary.timestamp).toLocaleTimeString();
+    document.getElementById(\'health-count-healthy\').textContent = d.summary.healthy;
+    document.getElementById(\'health-count-unhealthy\').textContent = d.summary.unhealthy;
+    document.getElementById(\'health-count-total\').textContent = d.summary.total;
+    document.getElementById(\'health-timestamp\').textContent = new Date(d.summary.timestamp).toLocaleTimeString();
     /* Grid */
     var grid = document.getElementById('service-health-grid');
     grid.innerHTML = d.services.map(function(s) {
@@ -1835,16 +1835,16 @@ async function loadServiceHealth() {
           '<div style="display:flex;align-items:center;gap:0.5rem">' +
             '<strong style="font-size:0.82rem;color:var(--text-1)">' + escapeHtml(s.name) + '</strong>' +
             typeBadge +
-          '</div>' +
+          \'</div>\' +
           '<div style="font-size:0.72rem;color:' + statusColor + ';font-weight:600;text-transform:uppercase;margin-top:0.15rem">' + s.status + '</div>' +
           (url ? '<div class="mono" style="font-size:0.65rem;color:var(--text-3);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(url) + '</div>' : '') +
-        '</div>' +
+        \'</div>\' +
         '<div style="text-align:right">' +
           '<div class="mono" style="font-size:0.72rem;color:var(--text-3)">' + s.latency + 'ms</div>' +
           (s.code ? '<div class="mono" style="font-size:0.68rem;color:var(--text-3)">HTTP ' + s.code + '</div>' : '') +
-        '</div>' +
-      '</div>';
-    }).join('');
+        \'</div>\' +
+      \'</div>\';
+    }).join(\'\');
   } catch(e) {
     document.getElementById('service-health-grid').innerHTML = '<div style="color:var(--danger);grid-column:1/-1">Failed to load service health: ' + escapeHtml(e.message) + '</div>';
   }
@@ -1857,24 +1857,24 @@ async function loadOverviewCounts() {
     var d = await r.json();
     var el = document.getElementById('overview-counts');
     var items = [
-      { key: 'agents',      label: 'Agents',       icon: '&#x1F916;', href: '/agents' },
-      { key: 'skills',      label: 'Skills',        icon: '&#x26A1;',  href: '/skills' },
-      { key: 'prompts',     label: 'Prompts',       icon: '&#x1F4DD;', href: '/prompts' },
-      { key: 'tools',       label: 'Tools',         icon: '&#x1F527;', href: '/tools' },
-      { key: 'custom_tools',label: 'Custom Tools',  icon: '&#x1F6E0;', href: '/tools' },
-      { key: 'sessions',    label: 'Sessions',      icon: '&#x1F4AC;', href: '/chat' },
-      { key: 'guardrails',  label: 'Guardrails',    icon: '&#x1F6E1;', href: '/admin#config' },
-      { key: 'a2a_peers',   label: 'A2A Peers',     icon: '&#x1F310;', href: '/tools' },
-      { key: 'mcp_servers', label: 'MCP Servers',   icon: '&#x1F50C;', href: '/tools' },
-      { key: 'connectors',  label: 'Connectors',    icon: '&#x1F517;', href: '/data' },
+      { key: \'agents\',      label: \'Agents\',       icon: \'&#x1F916;\', href: \'/agents\' },
+      { key: \'skills\',      label: \'Skills\',        icon: \'&#x26A1;\',  href: \'/skills\' },
+      { key: \'prompts\',     label: \'Prompts\',       icon: \'&#x1F4DD;\', href: \'/prompts\' },
+      { key: \'tools\',       label: \'Tools\',         icon: \'&#x1F527;\', href: \'/tools\' },
+      { key: \'custom_tools\',label: \'Custom Tools\',  icon: \'&#x1F6E0;\', href: \'/tools\' },
+      { key: \'sessions\',    label: \'Sessions\',      icon: \'&#x1F4AC;\', href: \'/chat\' },
+      { key: \'guardrails\',  label: \'Guardrails\',    icon: \'&#x1F6E1;\', href: \'/admin#config\' },
+      { key: \'a2a_peers\',   label: \'A2A Peers\',     icon: \'&#x1F310;\', href: \'/tools\' },
+      { key: \'mcp_servers\', label: \'MCP Servers\',   icon: \'&#x1F50C;\', href: \'/tools\' },
+      { key: \'connectors\',  label: \'Connectors\',    icon: \'&#x1F517;\', href: \'/data\' },
     ];
     el.innerHTML = items.map(function(it) {
       return '<a href="' + it.href + '" style="text-decoration:none">'
         + '<div class="count-card" style="cursor:pointer;transition:all 0.18s" onmouseover="this.style.borderColor=&#39;var(--accent-border)&#39;;this.style.transform=&#39;translateY(-2px)&#39;" onmouseout="this.style.borderColor=&#39;&#39;;this.style.transform=&#39;&#39;">'
         + '<div class="count-num">' + (d[it.key] || 0) + '</div>'
         + '<div class="count-label">' + it.icon + ' ' + it.label + '</div>'
-        + '</div></a>';
-    }).join('');
+        + \'</div></a>\';
+    }).join(\'\');
   } catch(e) {
     document.getElementById('overview-counts').innerHTML = '<div style="color:var(--danger)">Failed to load overview</div>';
   }
@@ -1888,21 +1888,21 @@ async function loadMemoryStats() {
     var el = document.getElementById('memory-stats');
     var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem">';
     for (var k in d) {
-      if (typeof d[k] === 'object' && d[k] !== null) {
+      if (typeof d[k] === \'object\' && d[k] !== null) {
         html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px">';
         html += '<div style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">' + escapeHtml(k) + '</div>';
         for (var sk in d[k]) {
           html += '<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:0.15rem 0"><span style="color:var(--text-2)">' + escapeHtml(sk) + '</span><span class="mono" style="color:var(--text-1)">' + d[k][sk] + '</span></div>';
         }
-        html += '</div>';
+        html += \'</div>\';
       } else {
         html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-align:center">';
         html += '<div style="font-size:1.5rem;font-weight:700;color:var(--text-1)">' + d[k] + '</div>';
         html += '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(k) + '</div>';
-        html += '</div>';
+        html += \'</div>\';
       }
     }
-    html += '</div>';
+    html += \'</div>\';
     el.innerHTML = html;
   } catch(e) { document.getElementById('memory-stats').innerHTML = '<p style="color:var(--text-3)">Memory stats unavailable</p>'; }
 }
@@ -1919,26 +1919,26 @@ async function loadLlmConfig() {
       '<div style="padding:0.75rem;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:8px">' +
         '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">Provider</div>' +
         '<div style="font-size:1rem;font-weight:600;color:var(--success);margin-top:0.25rem">' + escapeHtml(a.provider || 'unknown') + '</div>' +
-      '</div>' +
+      \'</div>\' +
       '<div style="padding:0.75rem;background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.2);border-radius:8px">' +
         '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">Model</div>' +
         '<div style="font-size:1rem;font-weight:600;color:var(--accent-text);margin-top:0.25rem">' + escapeHtml(a.model || 'unknown') + '</div>' +
-      '</div>' +
+      \'</div>\' +
       '<div style="padding:0.75rem;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.2);border-radius:8px">' +
         '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">Embedding</div>' +
         '<div style="font-size:1rem;font-weight:600;color:#a78bfa;margin-top:0.25rem">' + escapeHtml(a.embedding_model || 'default') + '</div>' +
-      '</div>' +
-    '</div>';
+      \'</div>\' +
+    \'</div>\';
     filterEmbeddingsByProvider(a.provider, d.available_embedding_providers || []);
-    highlightActiveEmbedding(a.embedding_provider || a.provider, a.embedding_model || 'nomic-embed-text');
+    highlightActiveEmbedding(a.embedding_provider || a.provider, a.embedding_model || \'nomic-embed-text\');
   } catch(e) { document.getElementById('llm-active-config').innerHTML = '<p style="color:var(--danger)">Failed to load LLM config</p>'; }
 }
 
 var _EMBED_COMPAT = {
-  'ollama': ['ollama'],
-  'openai': ['openai'],
-  'azure-openai': ['azure-openai'],
-  'azure-foundry': ['azure-foundry', 'openai']
+  \'ollama\': [\'ollama\'],
+  \'openai\': [\'openai\'],
+  \'azure-openai\': [\'azure-openai\'],
+  \'azure-foundry\': [\'azure-foundry\', \'openai\']
 };
 
 function filterEmbeddingsByProvider(llmProvider, availableProviders) {
@@ -1947,25 +1947,25 @@ function filterEmbeddingsByProvider(llmProvider, availableProviders) {
     var p = el.dataset.provider;
     var isCompat = compatible.indexOf(p) !== -1;
     var isConfigured = availableProviders.indexOf(p) !== -1;
-    el.style.display = (isCompat && isConfigured) ? '' : 'none';
+    el.style.display = (isCompat && isConfigured) ? \'\' : \'none\';
   });
   var hint = document.getElementById('embed-provider-hint');
-  if (hint) hint.textContent = 'Showing embeddings compatible with ' + llmProvider;
+  if (hint) hint.textContent = \'Showing embeddings compatible with \' + llmProvider;
 }
 
 function highlightActiveEmbedding(provider, model) {
   document.querySelectorAll('.embed-option').forEach(function(el) {
     var isActive = el.dataset.provider === provider && el.dataset.model === model;
-    el.style.borderColor = isActive ? 'var(--accent)' : 'var(--glass-border)';
-    el.style.boxShadow = isActive ? '0 0 0 1px var(--accent)' : 'none';
-    el.style.background = isActive ? 'rgba(6,182,212,0.06)' : 'transparent';
+    el.style.borderColor = isActive ? \'var(--accent)\' : \'var(--glass-border)\';
+    el.style.boxShadow = isActive ? \'0 0 0 1px var(--accent)\' : \'none\';
+    el.style.background = isActive ? \'rgba(6,182,212,0.06)\' : \'transparent\';
     var badge = el.querySelector('.badge');
     if (isActive && badge) {
       var old = badge.querySelector('.embed-active-dot');
       if (!old) {
         var dot = document.createElement('span');
-        dot.className = 'embed-active-dot';
-        dot.style.cssText = 'display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:4px';
+        dot.className = \'embed-active-dot\';
+        dot.style.cssText = \'display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:4px\';
         badge.insertBefore(dot, badge.firstChild);
       }
     } else if (badge) {
@@ -1982,13 +1982,13 @@ async function selectEmbedding(el) {
     var r = await fetch('/api/models/embedding', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ provider: provider, model: model }) });
     var d = await r.json();
     if (r.ok) {
-      showToast('Embedding switched to ' + provider + ' / ' + model, 'success');
+      showToast(\'Embedding switched to \' + provider + \' / \' + model, \'success\');
       highlightActiveEmbedding(provider, model);
       loadLlmConfig();
     } else {
-      showToast('Embedding switch failed: ' + (d.detail || d.error || 'Unknown error'), 'error');
+      showToast(\'Embedding switch failed: \' + (d.detail || d.error || \'Unknown error\'), \'error\');
     }
-  } catch(e) { showToast('Embedding switch failed: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Embedding switch failed: \' + e.message, \'error\'); }
 }
 
 async function activateModel(provider, model) {
@@ -1996,22 +1996,22 @@ async function activateModel(provider, model) {
     var r = await fetch('/api/models/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ provider: provider, model: model }) });
     var d = await r.json();
     if (r.ok) {
-      showToast('Switched to ' + provider + ' / ' + model, 'success');
+      showToast(\'Switched to \' + provider + \' / \' + model, \'success\');
       // Auto-switch embedding to the best compatible default for this provider
       var embedDefaults = {
-        'ollama': { provider: 'ollama', model: 'nomic-embed-text' },
-        'openai': { provider: 'openai', model: 'text-embedding-3-small' },
-        'azure-openai': { provider: 'azure-openai', model: 'text-embedding-ada-002' },
-        'azure-foundry': { provider: 'azure-foundry', model: 'text-embedding-ada-002' }
+        \'ollama\': { provider: \'ollama\', model: \'nomic-embed-text\' },
+        \'openai\': { provider: \'openai\', model: \'text-embedding-3-small\' },
+        \'azure-openai\': { provider: \'azure-openai\', model: \'text-embedding-ada-002\' },
+        \'azure-foundry\': { provider: \'azure-foundry\', model: \'text-embedding-ada-002\' }
       };
       var emb = embedDefaults[provider] || embedDefaults['ollama'];
-      await fetch('/api/models/embedding', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(emb) });
+      await fetch(\'/api/models/embedding\', { method:\'POST\', headers:{\'Content-Type\':\'application/json\'}, body: JSON.stringify(emb) });
       loadLlmConfig();
       loadModels();
     } else {
-      showToast('Switch failed: ' + (d.detail || d.error || 'Unknown error'), 'error');
+      showToast(\'Switch failed: \' + (d.detail || d.error || \'Unknown error\'), \'error\');
     }
-  } catch(e) { showToast('Switch failed: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Switch failed: \' + e.message, \'error\'); }
 }
 
 /* ═══ MODELS ═══ */
@@ -2025,9 +2025,9 @@ async function loadModels() {
       var reason = escapeHtml(d.ollama_status.reason || 'Configured model is not pulled');
       var cmd = escapeHtml(d.ollama_status.pull_command || 'docker compose exec -T ollama ollama pull llama3');
       ollamaMsg = '<div style="margin-bottom:0.65rem;padding:0.6rem 0.75rem;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#b45309">' +
-        '<strong>Ollama not enabled:</strong> ' + reason + '<br>' +
+        \'<strong>Ollama not enabled:</strong> \' + reason + \'<br>\' +
         '<span style="font-size:0.75rem">Enable with: <code style="color:#92400e">' + cmd + '</code></span>' +
-        '</div>';
+        \'</div>\';
     }
     if (!d.models || d.models.length === 0) {
       el.innerHTML = ollamaMsg + '<p style="color:var(--text-3)">No models found. Pull models with: <code style="color:var(--accent-text)">docker compose exec -T ollama ollama pull llama3</code></p>';
@@ -2046,11 +2046,11 @@ async function loadModels() {
             ? '<span class="badge" style="font-size:0.68rem;background:rgba(244,63,94,0.12);color:#f43f5e">not enabled</span>'
             : '<span class="badge" style="font-size:0.68rem">available</span>');
         var action = (m.active || ollamaUnavailable)
-          ? ''
+          ? \'\'
           : '<button class="btn btn-primary btn-sm" style="padding:0.2rem 0.6rem;font-size:0.7rem;white-space:nowrap" onclick="activateModel(&apos;' + provider + '&apos;,&apos;' + model + '&apos;)">Use</button>';
         var note = m.note ? '<div style="font-size:0.68rem;color:#b45309;margin-top:0.2rem">' + escapeHtml(m.note) + '</div>' : '';
         return '<tr><td>' + name + note + '</td><td class="mono" style="font-size:0.78rem">' + provider + '</td><td class="mono">' + size + '</td><td>' + badge + '</td><td>' + action + '</td></tr>';
-      }).join('') + '</table>';
+      }).join(\'\') + \'</table>\';
   } catch(e) {
     document.getElementById('models-list').innerHTML = '<p style="color:var(--danger)">Failed to load models</p>';
   }
@@ -2062,29 +2062,29 @@ async function loadLlmSummary() {
     var r = await fetch('/api/admin/llm-summary');
     var d = await r.json();
     var el = document.getElementById('llm-usage-summary');
-    if (!d || (typeof d === 'object' && Object.keys(d).length === 0)) {
+    if (!d || (typeof d === \'object\' && Object.keys(d).length === 0)) {
       el.innerHTML = '<p style="color:var(--text-3)">No LLM usage data yet. Run some agent prompts to generate usage data.</p>';
       return;
     }
     var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.75rem">';
     var metricLabels = { total_calls: 'Total Calls', total_tokens: 'Total Tokens', total_input_tokens: 'Input Tokens', total_output_tokens: 'Output Tokens', avg_latency_ms: 'Avg Latency', total_cost: 'Est. Cost' };
     for (var k in d) {
-      if (k === 'by_model' || k === 'by_provider' || k === 'recent') continue;
+      if (k === \'by_model\' || k === \'by_provider\' || k === \'recent\') continue;
       var label = metricLabels[k] || k;
       var val = typeof d[k] === 'number' ? (k.includes('cost') ? '$' + d[k].toFixed(4) : k.includes('latency') ? d[k].toFixed(0) + 'ms' : d[k].toLocaleString()) : d[k];
       html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-align:center">';
       html += '<div style="font-size:1.25rem;font-weight:700;color:var(--text-1)">' + val + '</div>';
       html += '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(label) + '</div>';
-      html += '</div>';
+      html += \'</div>\';
     }
-    html += '</div>';
+    html += \'</div>\';
     if (d.by_model && d.by_model.length > 0) {
       html += '<h4 style="margin-top:1rem;margin-bottom:0.5rem;font-size:0.85rem">By Model</h4><table><tr><th>Model</th><th>Provider</th><th>Calls</th><th>Tokens</th><th>Cost</th></tr>';
       for (var i = 0; i < d.by_model.length; i++) {
         var m = d.by_model[i];
         html += '<tr><td>' + escapeHtml(m.model || 'unknown') + '</td><td>' + escapeHtml(m.provider || '') + '</td><td class="mono">' + (m.requests || m.calls || 0) + '</td><td class="mono">' + (m.tokens || 0).toLocaleString() + '</td><td class="mono">$' + (m.cost || 0).toFixed(4) + '</td></tr>';
       }
-      html += '</table>';
+      html += \'</table>\';
     }
     el.innerHTML = html;
   } catch(e) { document.getElementById('llm-usage-summary').innerHTML = '<p style="color:var(--text-3)">LLM usage summary unavailable</p>'; }
@@ -2103,15 +2103,15 @@ async function loadDbStats() {
       '<div><span style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase">Path</span><br><code style="color:var(--accent-text);font-size:0.78rem">' + escapeHtml(d.db_path||'unknown') + '</code></div>' +
       '<div><span style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase">Size</span><br><span class="mono" style="font-size:0.95rem;font-weight:600">' + sizeMB + ' MB</span></div>' +
       '<div><span style="font-size:0.72rem;color:var(--text-3);text-transform:uppercase">Total Records</span><br><span class="mono" style="font-size:0.95rem;font-weight:600">' + totalRecords.toLocaleString() + '</span></div>' +
-    '</div>' +
-      '<table><tr><th>Table</th><th>Records</th><th>% of Total</th></tr>' +
+    \'</div>\' +
+      \'<table><tr><th>Table</th><th>Records</th><th>% of Total</th></tr>\' +
       tables.map(function(t) {
         var count = d[t] || 0;
         var pct = totalRecords > 0 ? ((count / totalRecords) * 100).toFixed(1) : '0.0';
         var barWidth = totalRecords > 0 ? Math.max(2, (count / totalRecords) * 100) : 0;
         return '<tr><td>' + t + '</td><td class="mono">' + count.toLocaleString() + '</td>' +
           '<td><div style="display:flex;align-items:center;gap:0.5rem"><div style="width:80px;height:6px;background:var(--glass-border);border-radius:3px;overflow:hidden"><div style="width:' + barWidth + '%;height:100%;background:var(--accent-text);border-radius:3px"></div></div><span class="mono" style="font-size:0.72rem;color:var(--text-3)">' + pct + '%</span></div></td></tr>';
-      }).join('') + '</table>';
+      }).join(\'\') + \'</table>\';
   } catch(e) { document.getElementById('db-stats').innerHTML = '<p style="color:var(--danger)">Failed to load DB stats</p>'; }
 }
 
@@ -2123,11 +2123,11 @@ async function exportData() {
     var blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'agentic-platform-export-' + new Date().toISOString().slice(0,10) + '.json';
+    a.download = \'agentic-platform-export-\' + new Date().toISOString().slice(0,10) + \'.json\';
     a.click();
     URL.revokeObjectURL(a.href);
-    showToast('Data exported successfully', 'success');
-  } catch(e) { showToast('Export failed: ' + e.message, 'error'); }
+    showToast(\'Data exported successfully\', \'success\');
+  } catch(e) { showToast(\'Export failed: \' + e.message, \'error\'); }
 }
 
 async function importData(evt) {
@@ -2137,12 +2137,12 @@ async function importData(evt) {
     var text = await file.text();
     var data = JSON.parse(text);
     var r = await fetch('/api/import', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
-    if (!r.ok) { showToast('Import failed: ' + r.statusText, 'error'); return; }
+    if (!r.ok) { showToast(\'Import failed: \' + r.statusText, \'error\'); return; }
     await r.json();
-    showToast('Import complete', 'success');
+    showToast(\'Import complete\', \'success\');
     loadDbStats();
-  } catch(e) { showToast('Import failed: ' + e.message, 'error'); }
-  evt.target.value = '';
+  } catch(e) { showToast(\'Import failed: \' + e.message, \'error\'); }
+  evt.target.value = \'\';
 }
 
 /* ═══ CHROMADB ═══ */
@@ -2158,13 +2158,13 @@ async function loadChromaStats() {
     if (Array.isArray(cols) || (cols && cols.collections)) {
       var collections = cols.collections || cols;
       if (Array.isArray(collections) && collections.length > 0) {
-        html += '<table><tr><th>Collection</th><th>Documents</th></tr>';
+        html += \'<table><tr><th>Collection</th><th>Documents</th></tr>\';
         collections.forEach(function(c) {
           var name = typeof c === 'string' ? c : (c.name || c.id || 'unknown');
           var count = c.count || c.document_count || String.fromCharCode(0x2014);
           html += '<tr><td>' + escapeHtml(name) + '</td><td class="mono">' + count + '</td></tr>';
         });
-        html += '</table>';
+        html += \'</table>\';
       } else {
         html += '<p style="color:var(--text-3)">No collections found</p>';
       }
@@ -2184,14 +2184,14 @@ async function loadDocStats() {
     if (!d || typeof d !== 'object') { el.innerHTML = '<p style="color:var(--text-3)">No document stats available</p>'; return; }
     var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem">';
     for (var k in d) {
-      if (typeof d[k] === 'number' || typeof d[k] === 'string') {
+      if (typeof d[k] === \'number\' || typeof d[k] === \'string\') {
         html += '<div style="padding:0.75rem;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;text-align:center">';
         html += '<div style="font-size:1.25rem;font-weight:700;color:var(--text-1)">' + (typeof d[k] === 'number' ? d[k].toLocaleString() : escapeHtml(String(d[k]))) + '</div>';
         html += '<div style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(k.replace(/_/g, ' ')) + '</div>';
-        html += '</div>';
+        html += \'</div>\';
       }
     }
-    html += '</div>';
+    html += \'</div>\';
     el.innerHTML = html;
   } catch(e) { document.getElementById('doc-stats').innerHTML = '<p style="color:var(--text-3)">Document stats unavailable</p>'; }
 }
@@ -2206,18 +2206,18 @@ async function loadSSOStatus() {
       var card = document.getElementById('sso-card-' + p);
       if (d[p]) {
         el.innerHTML = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:2px;color:var(--success)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Configured &amp; Encrypted';
-        el.style.color = 'var(--success)';
-        card.style.borderColor = 'var(--success)';
+        el.style.color = \'var(--success)\';
+        card.style.borderColor = \'var(--success)\';
       } else {
-        el.textContent = 'Not configured';
-        el.style.color = 'var(--text-3)';
-        card.style.borderColor = 'var(--glass-border)';
+        el.textContent = \'Not configured\';
+        el.style.color = \'var(--text-3)\';
+        card.style.borderColor = \'var(--glass-border)\';
       }
     });
   } catch(e) {
     ['google','github','microsoft'].forEach(function(p) {
       var el = document.getElementById('sso-' + p + '-status');
-      if (el) { el.textContent = 'Error loading'; el.style.color = 'var(--danger)'; }
+      if (el) { el.textContent = \'Error loading\'; el.style.color = \'var(--danger)\'; }
     });
   }
 }
@@ -2226,40 +2226,40 @@ loadSSOStatus();
 function toggleSSOForm(provider) {
   var form = document.getElementById('sso-form-' + provider);
   if (!form) return;
-  if (form.style.display === 'none') {
-    form.style.display = 'block';
+  if (form.style.display === \'none\') {
+    form.style.display = \'block\';
     // Pre-fill client ID if already configured
     fetch('/api/admin/sso-config').then(function(r) { return r.json(); }).then(function(d) {
       if (d[provider] && d[provider].clientId) {
-        document.getElementById('sso-' + provider + '-id').value = d[provider].clientId;
+        document.getElementById(\'sso-\' + provider + \'-id\').value = d[provider].clientId;
       }
     }).catch(function() {});
   } else {
-    form.style.display = 'none';
+    form.style.display = \'none\';
   }
 }
 
 async function saveSSO(provider) {
   var clientId = document.getElementById('sso-' + provider + '-id').value.trim();
   var clientSecret = document.getElementById('sso-' + provider + '-secret').value.trim();
-  if (!clientId || !clientSecret) { showToast('Client ID and Secret are required', 'error'); return; }
+  if (!clientId || !clientSecret) { showToast(\'Client ID and Secret are required\', \'error\'); return; }
   try {
     var r = await fetch('/api/admin/sso-config', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: \'PUT\',
+      headers: { \'Content-Type\': \'application/json\' },
       body: JSON.stringify({ provider: provider, clientId: clientId, clientSecret: clientSecret })
     });
     var d = await r.json();
     if (r.ok && d.ok) {
-      showToast((provider.charAt(0).toUpperCase() + provider.slice(1)) + ' SSO configured', 'success');
-      if (d.warning) showToast(d.warning, 'warn');
-      document.getElementById('sso-form-' + provider).style.display = 'none';
-      document.getElementById('sso-' + provider + '-secret').value = '';
+      showToast((provider.charAt(0).toUpperCase() + provider.slice(1)) + \' SSO configured\', \'success\');
+      if (d.warning) showToast(d.warning, \'warn\');
+      document.getElementById(\'sso-form-\' + provider).style.display = \'none\';
+      document.getElementById(\'sso-\' + provider + \'-secret\').value = \'\';
       loadSSOStatus();
     } else {
-      showToast(d.error || 'Failed to save SSO config', 'error');
+      showToast(d.error || \'Failed to save SSO config\', \'error\');
     }
-  } catch(e) { showToast('Failed to save SSO config', 'error'); }
+  } catch(e) { showToast(\'Failed to save SSO config\', \'error\'); }
 }
 
 /* ═══ GLOBAL CONSTRAINTS ═══ */
@@ -2267,9 +2267,9 @@ async function loadGlobalConstraints() {
   try {
     var r = await fetch('/api/admin/global-constraints');
     var d = await r.json();
-    document.getElementById('global-constraints-editor').value = JSON.stringify(d, null, 2);
+    document.getElementById(\'global-constraints-editor\').value = JSON.stringify(d, null, 2);
   } catch(e) {
-    document.getElementById('global-constraints-editor').value = '{}';
+    document.getElementById(\'global-constraints-editor\').value = \'{}\';
   }
 }
 
@@ -2278,18 +2278,18 @@ async function saveGlobalConstraints() {
     var text = document.getElementById('global-constraints-editor').value;
     var data = JSON.parse(text);
     var r = await fetch('/api/admin/global-constraints', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-    if (r.ok) { showToast('Global constraints saved', 'success'); }
-    else { showToast('Failed to save constraints', 'error'); }
-  } catch(e) { showToast('Invalid JSON: ' + e.message, 'error'); }
+    if (r.ok) { showToast(\'Global constraints saved\', \'success\'); }
+    else { showToast(\'Failed to save constraints\', \'error\'); }
+  } catch(e) { showToast(\'Invalid JSON: \' + e.message, \'error\'); }
 }
 
 /* ═══ SECURITY CONSIDERATIONS ═══ */
 var _defaultSC = [
-  'Exercise caution when adding scripts to your skill',
-  'Never hardcode API keys, passwords, or secrets in prompts or constraints',
-  'Review any skills you download before enabling them',
-  'Use appropriate MCP connections for external service access',
-  'Validate input parameters to prevent injection attacks'
+  \'Exercise caution when adding scripts to your skill\',
+  \'Never hardcode API keys, passwords, or secrets in prompts or constraints\',
+  \'Review any skills you download before enabling them\',
+  \'Use appropriate MCP connections for external service access\',
+  \'Validate input parameters to prevent injection attacks\'
 ];
 
 async function loadSecurityConsiderations() {
@@ -2297,41 +2297,41 @@ async function loadSecurityConsiderations() {
     var r = await fetch('/api/admin/security-considerations');
     var d = await r.json();
     var items = d.items || [];
-    document.getElementById('security-editor').value = items.length ? items.join('\\n') : _defaultSC.join('\\n');
+    document.getElementById(\'security-editor\').value = items.length ? items.join(\'\\n\') : _defaultSC.join(\'\\n\');
   } catch(e) {
-    document.getElementById('security-editor').value = _defaultSC.join('\\n');
+    document.getElementById(\'security-editor\').value = _defaultSC.join(\'\\n\');
   }
 }
 
 async function saveSecurityConsiderations() {
   var lines = document.getElementById('security-editor').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean);
-  if (lines.length === 0) { showToast('Add at least one security consideration', 'error'); return; }
+  if (lines.length === 0) { showToast(\'Add at least one security consideration\', \'error\'); return; }
   try {
     var r = await fetch('/api/admin/security-considerations', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ items: lines }) });
     var d = await r.json();
-    if (d.error) { showToast('Error: ' + d.error, 'error'); return; }
-    showToast('Security considerations saved (' + (d.items || lines).length + ' items)', 'success');
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    if (d.error) { showToast(\'Error: \' + d.error, \'error\'); return; }
+    showToast(\'Security considerations saved (\' + (d.items || lines).length + \' items)\', \'success\');
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 function resetSecurityConsiderations() {
-  document.getElementById('security-editor').value = _defaultSC.join('\\n');
-  showToast('Reset to defaults \\u2014 click Save All to persist', 'info');
+  document.getElementById(\'security-editor\').value = _defaultSC.join(\'\\n\');
+  showToast(\'Reset to defaults \\u2014 click Save All to persist\', \'info\');
 }
 
 /* ═══ BEST PRACTICES ═══ */
 var _defaultBP = [
-  'Write a clear, specific description so agents know WHEN to activate this skill (progressive disclosure)',
-  'Keep prompts under 5,000 tokens \u2014 move reference docs, templates, and assets to external files',
+  \'Write a clear, specific description so agents know WHEN to activate this skill (progressive disclosure)\',
+  \'Keep prompts under 5,000 tokens \u2014 move reference docs, templates, and assets to external files\',
   'Define input parameters with types and defaults for reusable, composable skills (like function arguments)',
-  'Limit allowed tools to only what the skill needs (principle of least privilege)',
+  \'Limit allowed tools to only what the skill needs (principle of least privilege)\',
   'Add constraints as behavioral guardrails (e.g. "Max 500 words", "Always cite sources", "Never output PII")',
-  'Include examples of expected inputs & outputs in the prompt for consistency and auditability',
-  'Bundle scripts, reference materials, and templates alongside the skill for self-contained execution',
-  'Capture domain expertise and org-specific workflows as repeatable, version-controlled procedures',
-  'Design skills to be portable and cross-product \u2014 follow the Agent Skills open standard (agentskills.io)',
-  'Use MCP connections for external services instead of hardcoding credentials or secrets',
-  'Test your skill with edge cases and adversarial inputs before deploying to production'
+  \'Include examples of expected inputs & outputs in the prompt for consistency and auditability\',
+  \'Bundle scripts, reference materials, and templates alongside the skill for self-contained execution\',
+  \'Capture domain expertise and org-specific workflows as repeatable, version-controlled procedures\',
+  \'Design skills to be portable and cross-product \u2014 follow the Agent Skills open standard (agentskills.io)\',
+  \'Use MCP connections for external services instead of hardcoding credentials or secrets\',
+  \'Test your skill with edge cases and adversarial inputs before deploying to production\'
 ];
 
 async function loadBestPractices() {
@@ -2339,26 +2339,26 @@ async function loadBestPractices() {
     var r = await fetch('/api/admin/best-practices');
     var d = await r.json();
     var items = d.practices || [];
-    document.getElementById('best-practices-editor').value = items.length ? items.join('\\n') : _defaultBP.join('\\n');
+    document.getElementById(\'best-practices-editor\').value = items.length ? items.join(\'\\n\') : _defaultBP.join(\'\\n\');
   } catch(e) {
-    document.getElementById('best-practices-editor').value = _defaultBP.join('\\n');
+    document.getElementById(\'best-practices-editor\').value = _defaultBP.join(\'\\n\');
   }
 }
 
 async function saveBestPractices() {
   var lines = document.getElementById('best-practices-editor').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean);
-  if (lines.length === 0) { showToast('Add at least one best practice', 'error'); return; }
+  if (lines.length === 0) { showToast(\'Add at least one best practice\', \'error\'); return; }
   try {
     var r = await fetch('/api/admin/best-practices', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ practices: lines }) });
     var d = await r.json();
-    if (d.error) { showToast('Error: ' + d.error, 'error'); return; }
-    showToast('Best practices saved (' + (d.practices || lines).length + ' items)', 'success');
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    if (d.error) { showToast(\'Error: \' + d.error, \'error\'); return; }
+    showToast(\'Best practices saved (\' + (d.practices || lines).length + \' items)\', \'success\');
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 function resetBestPractices() {
-  document.getElementById('best-practices-editor').value = _defaultBP.join('\\n');
-  showToast('Reset to defaults \u2014 click Save to persist', 'info');
+  document.getElementById(\'best-practices-editor\').value = _defaultBP.join(\'\\n\');
+  showToast(\'Reset to defaults \u2014 click Save to persist\', \'info\');
 }
 
 /* ═══ GUARDRAILS ═══ */
@@ -2372,7 +2372,7 @@ async function loadGuardrails() {
       el.innerHTML = '<p style="color:var(--text-3)">No guardrails configured. Create them from the <a href="/guardrails" style="color:var(--accent-text)">Guardrails</a> page.</p>';
       return;
     }
-    el.innerHTML = '<table><tr><th>Name</th><th>Status</th><th>Checks</th></tr>' +
+    el.innerHTML = \'<table><tr><th>Name</th><th>Status</th><th>Checks</th></tr>\' +
       items.map(function(g) {
         var status = g.enabled !== false ? '<span class="badge badge-success">Active</span>' : '<span class="badge" style="font-size:0.68rem">Disabled</span>';
         var checks = '';
@@ -2380,10 +2380,10 @@ async function loadGuardrails() {
           try {
             var cfg = typeof g.checks_config === 'string' ? JSON.parse(g.checks_config) : g.checks_config;
             checks = Object.keys(cfg).filter(function(k) { return cfg[k]; }).join(', ');
-          } catch(e2) { checks = 'custom'; }
+          } catch(e2) { checks = \'custom\'; }
         }
         return '<tr><td>' + escapeHtml(g.name || g.id) + '</td><td>' + status + '</td><td style="font-size:0.75rem;color:var(--text-3)">' + escapeHtml(checks) + '</td></tr>';
-      }).join('') + '</table>';
+      }).join(\'\') + \'</table>\';
   } catch(e) { document.getElementById('guardrails-list').innerHTML = '<p style="color:var(--text-3)">Guardrails unavailable</p>'; }
 }
 
@@ -2398,12 +2398,12 @@ async function loadN8nWorkflows() {
       el.innerHTML = '<p style="color:var(--text-3)">No n8n workflows found. ' + (d.error ? 'Error: ' + escapeHtml(d.error) : 'Create workflows from the <a href="/workflows" style="color:var(--accent-text)">Workflows</a> page.') + '</p>';
       return;
     }
-    el.innerHTML = '<table><tr><th>Name</th><th>Status</th><th>Created</th></tr>' +
+    el.innerHTML = \'<table><tr><th>Name</th><th>Status</th><th>Created</th></tr>\' +
       items.map(function(w) {
         var status = w.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge" style="font-size:0.68rem">Inactive</span>';
         var created = w.createdAt ? new Date(w.createdAt).toLocaleDateString() : String.fromCharCode(0x2014);
         return '<tr><td>' + escapeHtml(w.name || w.id) + '</td><td>' + status + '</td><td class="mono" style="font-size:0.75rem">' + created + '</td></tr>';
-      }).join('') + '</table>';
+      }).join(\'\') + \'</table>\';
   } catch(e) { document.getElementById('n8n-workflows').innerHTML = '<p style="color:var(--text-3)">n8n unavailable</p>'; }
 }
 
@@ -2415,7 +2415,7 @@ async function loadAuditLog(type) {
     const tableContainer = isComplianceTab ? document.getElementById('audit-log-table') : document.getElementById('audit-log');
     
     if (!tableContainer) {
-      console.error('Audit log table container not found');
+      console.error(\'Audit log table container not found\');
       return;
     }
     
@@ -2430,13 +2430,13 @@ async function loadAuditLog(type) {
     
     // Build query parameters
     const params = new URLSearchParams({ limit: '100' });
-    if (typeVal) params.set('entity_type', typeVal);
-    if (actionVal) params.set('action', actionVal);
-    if (complianceVal) params.set('event_type', complianceVal);
+    if (typeVal) params.set(\'entity_type\', typeVal);
+    if (actionVal) params.set(\'action\', actionVal);
+    if (complianceVal) params.set(\'event_type\', complianceVal);
     
     // Fetch audit log
     const response = await fetch('/api/audit-log?' + params.toString());
-    if (!response.ok) throw new Error('HTTP ' + response.status);
+    if (!response.ok) throw new Error(\'HTTP \' + response.status);
     
     const data = await response.json();
     
@@ -2464,10 +2464,10 @@ async function loadAuditLog(type) {
           + '<td style="padding:0.75rem">' + escapeHtml(user) + '</td>'
           + '<td style="padding:0.75rem;font-weight:500">' + escapeHtml(eventType) + '</td>'
           + '<td style="padding:0.75rem;font-size:0.85rem;color:var(--text-2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHtml(details) + '">' + escapeHtml(details) + '</td>'
-          + '</tr>';
+          + \'</tr>\';
       });
       
-      tableHtml += '</tbody></table>';
+      tableHtml += \'</tbody></table>\';
       tableContainer.innerHTML = tableHtml;
     } else {
       // Render regular audit log table
@@ -2483,13 +2483,13 @@ async function loadAuditLog(type) {
           + '<td style="font-size:0.78rem">' + escapeHtml(e.entity_type) + '</td>'
           + '<td style="font-size:0.78rem">' + escapeHtml(e.entity_name || e.entity_id) + '</td>'
           + '<td class="mono" style="font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + details + '">' + details + '</td></tr>';
-      }).join('');
+      }).join(\'\');
       
-      html += '</table>';
+      html += \'</table>\';
       tableContainer.innerHTML = html;
     }
   } catch(e) {
-    console.error('Error loading audit log:', e);
+    console.error(\'Error loading audit log:\', e);
     const tableContainer = document.getElementById(type === 'compliance' ? 'audit-log-table' : 'audit-log');
     if (tableContainer) {
       tableContainer.innerHTML = '<p style="color:var(--danger)">Failed to load audit log: ' + escapeHtml(e.message) + '</p>';
@@ -2511,11 +2511,11 @@ setTimeout(function() {
 function exportAuditLog() {
   try {
     const table = document.getElementById('audit-log-table');
-    if (!table) throw new Error('Table not found');
+    if (!table) throw new Error(\'Table not found\');
     
     const rows = table.querySelectorAll('tr');
     if (rows.length < 2) {
-      showToast('No audit entries to export', 'warning');
+      showToast(\'No audit entries to export\', \'warning\');
       return;
     }
     
@@ -2543,9 +2543,9 @@ function exportAuditLog() {
     a.click();
     URL.revokeObjectURL(url);
     
-    showToast(`Exported \${rows.length - 1} audit entries`, 'success');
+    showToast(`Exported \${rows.length - 1} audit entries`, \'success\');
   } catch(e) {
-    showToast('Error exporting audit log: ' + e.message, 'error');
+    showToast(\'Error exporting audit log: \' + e.message, \'error\');
   }
 }
 
@@ -2553,43 +2553,43 @@ function exportAuditLog() {
 /* ═══ PERSONA MANAGEMENT ═══ */
 var _personasCache = [];
 var _allNavItems = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'run-agent', label: 'Run Agent' },
-  { id: 'agent-builder', label: 'Agent Builder' },
-  { id: 'agent-hub', label: 'Agent Hub' },
-  { id: 'agents', label: 'Agents' },
-  { id: 'skills', label: 'Skills' },
-  { id: 'prompts', label: 'Prompts' },
-  { id: 'tools', label: 'Tools' },
-  { id: 'ai-studio', label: 'AI Studio' },
-  { id: 'documents', label: 'Documents' },
-  { id: 'data-ingestion', label: 'Data Ingestion' },
-  { id: 'workflows', label: 'Workflows' },
-  { id: 'a2a', label: 'A2A Protocol' },
-  { id: 'mcp', label: 'MCP Protocol' },
-  { id: 'rest', label: 'REST Protocol' },
-  { id: 'intelligence-hub', label: 'Intelligence Hub' },
-  { id: 'llm-activity', label: 'LLM Activity' },
-  { id: 'traceability', label: 'Traceability' },
-  { id: 'evaluation', label: 'Evaluation' },
-  { id: 'observability', label: 'Observability' },
-  { id: 'guardrails', label: 'Guardrails' },
-  { id: 'marketplace', label: 'Marketplace' },
-  { id: 'docs', label: 'Docs' },
-  { id: 'admin', label: 'Admin Plane' }
+  { id: \'overview\', label: \'Overview\' },
+  { id: \'run-agent\', label: \'Run Agent\' },
+  { id: \'agent-builder\', label: \'Agent Builder\' },
+  { id: \'agent-hub\', label: \'Agent Hub\' },
+  { id: \'agents\', label: \'Agents\' },
+  { id: \'skills\', label: \'Skills\' },
+  { id: \'prompts\', label: \'Prompts\' },
+  { id: \'tools\', label: \'Tools\' },
+  { id: \'ai-studio\', label: \'AI Studio\' },
+  { id: \'documents\', label: \'Documents\' },
+  { id: \'data-ingestion\', label: \'Data Ingestion\' },
+  { id: \'workflows\', label: \'Workflows\' },
+  { id: \'a2a\', label: \'A2A Protocol\' },
+  { id: \'mcp\', label: \'MCP Protocol\' },
+  { id: \'rest\', label: \'REST Protocol\' },
+  { id: \'intelligence-hub\', label: \'Intelligence Hub\' },
+  { id: \'llm-activity\', label: \'LLM Activity\' },
+  { id: \'traceability\', label: \'Traceability\' },
+  { id: \'evaluation\', label: \'Evaluation\' },
+  { id: \'observability\', label: \'Observability\' },
+  { id: \'guardrails\', label: \'Guardrails\' },
+  { id: \'marketplace\', label: \'Marketplace\' },
+  { id: \'docs\', label: \'Docs\' },
+  { id: \'admin\', label: \'Admin Plane\' }
 ];
 var _allActions = [
-  { id: 'create_agents', label: 'Create Agents' },
-  { id: 'run_agents', label: 'Run Agents' },
-  { id: 'manage_tools', label: 'Manage Tools' },
-  { id: 'manage_users', label: 'Manage Users' },
-  { id: 'access_admin', label: 'Access Admin' },
-  { id: 'view_observability', label: 'View Observability' },
-  { id: 'ingest_data', label: 'Ingest Data' },
-  { id: 'manage_workflows', label: 'Manage Workflows' },
-  { id: 'access_protocols', label: 'Access Protocols' },
-  { id: 'manage_guardrails', label: 'Manage Guardrails' },
-  { id: 'create_global', label: 'Create Global Resources' }
+  { id: \'create_agents\', label: \'Create Agents\' },
+  { id: \'run_agents\', label: \'Run Agents\' },
+  { id: \'manage_tools\', label: \'Manage Tools\' },
+  { id: \'manage_users\', label: \'Manage Users\' },
+  { id: \'access_admin\', label: \'Access Admin\' },
+  { id: \'view_observability\', label: \'View Observability\' },
+  { id: \'ingest_data\', label: \'Ingest Data\' },
+  { id: \'manage_workflows\', label: \'Manage Workflows\' },
+  { id: \'access_protocols\', label: \'Access Protocols\' },
+  { id: \'manage_guardrails\', label: \'Manage Guardrails\' },
+  { id: \'create_global\', label: \'Create Global Resources\' }
 ];
 
 async function loadPersonas() {
@@ -2612,7 +2612,7 @@ function renderPersonasGrid(personas) {
     var deleteBtn = p.is_system ? '' : '<button class="btn btn-sm" onclick="deletePersona(&#39;' + p.id + '&#39;,&#39;' + escapeHtml(p.name) + '&#39;)" style="font-size:0.66rem;padding:3px 8px;color:var(--danger)">Delete</button>';
     var navTags = (p.permissions && p.permissions.nav || []).slice(0, 6).map(function(n) {
       return '<span style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.6rem;background:rgba(6,182,212,0.08);color:var(--accent-text);border:1px solid rgba(6,182,212,0.15);margin:1px">' + escapeHtml(n) + '</span>';
-    }).join('');
+    }).join(\'\');
     var moreNav = navCount > 6 ? '<span style="font-size:0.6rem;color:var(--text-3)">+' + (navCount - 6) + ' more</span>' : '';
     return '<div style="padding:1rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg)">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem">'
@@ -2623,8 +2623,8 @@ function renderPersonasGrid(personas) {
       + '<div style="font-size:0.65rem;color:var(--text-3)"><strong style="color:var(--text-2)">' + navCount + '</strong> nav items</div>'
       + '<div style="font-size:0.65rem;color:var(--text-3)"><strong style="color:var(--text-2)">' + actionCount + '</strong> actions</div></div>'
       + '<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:0.4rem">' + navTags + moreNav + '</div>'
-      + '</div>';
-  }).join('');
+      + \'</div>\';
+  }).join(\'\');
 }
 
 function showCreatePersonaModal() {
@@ -2642,17 +2642,17 @@ function _showPersonaModal(persona) {
   var currentNav = (persona && persona.permissions && persona.permissions.nav) || [];
   var currentActions = (persona && persona.permissions && persona.permissions.actions) || [];
   var overlay = document.createElement('div');
-  overlay.id = 'persona-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)';
+  overlay.id = \'persona-modal-overlay\';
+  overlay.style.cssText = \'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--modal-overlay);backdrop-filter:blur(6px)\';
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   var navChecks = _allNavItems.map(function(n) {
     var checked = currentNav.indexOf(n.id) >= 0 ? ' checked' : '';
     return '<label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--text-2);cursor:pointer;padding:3px 0"><input type="checkbox" class="persona-nav-check" value="' + n.id + '"' + checked + ' style="accent-color:var(--accent)"> ' + escapeHtml(n.label) + '</label>';
-  }).join('');
+  }).join(\'\');
   var actionChecks = _allActions.map(function(a) {
     var checked = currentActions.indexOf(a.id) >= 0 ? ' checked' : '';
     return '<label style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--text-2);cursor:pointer;padding:3px 0"><input type="checkbox" class="persona-action-check" value="' + a.id + '"' + checked + ' style="accent-color:var(--accent)"> ' + escapeHtml(a.label) + '</label>';
-  }).join('');
+  }).join(\'\');
   overlay.innerHTML = '<div style="width:560px;max-height:85vh;overflow-y:auto;padding:28px 32px;background:var(--modal-bg);border:1px solid var(--modal-border);border-radius:16px;box-shadow:var(--modal-shadow)">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-1)">' + title + '</h3><button onclick="document.getElementById(&#39;persona-modal-overlay&#39;).remove()" style="border:none;background:transparent;cursor:pointer;color:var(--text-3);font-size:1.3rem;line-height:1;padding:4px">&times;</button></div>'
     + '<div style="display:flex;flex-direction:column;gap:14px">'
@@ -2666,9 +2666,9 @@ function _showPersonaModal(persona) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;padding:10px 14px;border-radius:10px;background:var(--modal-field-bg);border:1px solid var(--modal-border)">' + actionChecks + '</div></div>'
     + '<div id="persona-modal-error" style="display:none;color:var(--danger);font-size:0.75rem;text-align:center;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px"></div>'
     + '<div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-primary" onclick="savePersona(' + (isEdit ? "&#39;" + persona.id + "&#39;" : 'null') + ')" style="flex:1;padding:11px;border-radius:10px;font-weight:600">' + (isEdit ? 'Save Changes' : 'Create Persona') + '</button><button class="btn btn-secondary" onclick="document.getElementById(&#39;persona-modal-overlay&#39;).remove()" style="flex:1;padding:11px;border-radius:10px">Cancel</button></div>'
-    + '</div></div>';
+    + \'</div></div>\';
   document.body.appendChild(overlay);
-  document.getElementById('persona-name').focus();
+  document.getElementById(\'persona-name\').focus();
 }
 
 function toggleAllChecks(className, checked) {
@@ -2679,7 +2679,7 @@ async function savePersona(personaId) {
   var errEl = document.getElementById('persona-modal-error');
   var name = document.getElementById('persona-name').value.trim();
   var description = document.getElementById('persona-description').value.trim();
-  if (!name) { errEl.style.display = 'block'; errEl.textContent = 'Name is required'; return; }
+  if (!name) { errEl.style.display = \'block\'; errEl.textContent = \'Name is required\'; return; }
   var nav = []; document.querySelectorAll('.persona-nav-check:checked').forEach(function(cb) { nav.push(cb.value); });
   var actions = []; document.querySelectorAll('.persona-action-check:checked').forEach(function(cb) { actions.push(cb.value); });
   var body = { name: name, description: description, permissions: { nav: nav, actions: actions } };
@@ -2690,9 +2690,9 @@ async function savePersona(personaId) {
     if (!r.ok) { var d = await r.json(); errEl.style.display = 'block'; errEl.textContent = d.error || 'Failed to save persona'; return; }
     var el = document.getElementById('persona-modal-overlay');
     if (el) el.remove();
-    showToast(personaId ? 'Persona updated' : 'Persona created', 'success');
+    showToast(personaId ? \'Persona updated\' : \'Persona created\', \'success\');
     loadPersonas();
-  } catch(e) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + e.message; }
+  } catch(e) { errEl.style.display = \'block\'; errEl.textContent = \'Error: \' + e.message; }
 }
 
 async function deletePersona(personaId, name) {
@@ -2703,7 +2703,7 @@ async function deletePersona(personaId, name) {
     showToast('Persona "' + name + '" deleted', 'success');
     loadPersonas();
     loadUserPersonaAssignments();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 /* ═══ USER PERSONA ASSIGNMENTS ═══ */
@@ -2719,30 +2719,30 @@ async function loadUserPersonaAssignments() {
       + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">User</th>'
       + '<th style="text-align:left;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Assigned Personas</th>'
       + '<th style="text-align:right;padding:10px 12px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);font-weight:600">Actions</th>'
-      + '</tr></thead><tbody>';
+      + \'</tr></thead><tbody>\';
     users.forEach(function(u) {
       var userPersonas = u.personas || [];
       var chips = userPersonas.map(function(p) {
         return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:0.68rem;font-weight:500;background:rgba(6,182,212,0.08);color:var(--accent-text);border:1px solid rgba(6,182,212,0.15)">'
           + escapeHtml(p.name)
           + '<button onclick="removePersonaFromUser(&#39;' + u.id + '&#39;,&#39;' + p.id + '&#39;)" style="border:none;background:none;cursor:pointer;color:var(--text-3);font-size:0.75rem;padding:0 2px;line-height:1" title="Remove">&times;</button>'
-          + '</span>';
-      }).join(' ');
+          + \'</span>\';
+      }).join(\' \');
       if (!chips) chips = '<span style="font-size:0.7rem;color:var(--text-3);opacity:0.5">None</span>';
       var options = personas.filter(function(p) {
         return !userPersonas.some(function(up) { return up.id === p.id; });
       }).map(function(p) {
         return '<option value="' + p.id + '">' + escapeHtml(p.name) + '</option>';
-      }).join('');
+      }).join(\'\');
       var addSelect = options ? '<select id="add-persona-' + u.id + '" class="input" style="font-size:0.72rem;padding:3px 8px;min-width:100px"><option value="">Add...</option>' + options + '</select>'
         + '<button class="btn btn-sm" onclick="addPersonaToUser(&#39;' + u.id + '&#39;)" style="font-size:0.62rem;padding:3px 6px">+</button>' : '';
       html += '<tr style="border-bottom:1px solid var(--glass-border)">'
         + '<td style="padding:10px 12px"><div style="font-weight:600;font-size:0.82rem;color:var(--text-1)">' + escapeHtml(u.display_name || u.username) + '</div><div style="font-size:0.68rem;color:var(--text-3)">@' + escapeHtml(u.username) + '</div></td>'
         + '<td style="padding:10px 12px"><div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">' + chips + '</div></td>'
         + '<td style="padding:10px 12px;text-align:right"><div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">' + addSelect + '</div></td>'
-        + '</tr>';
+        + \'</tr>\';
     });
-    html += '</tbody></table></div>';
+    html += \'</tbody></table></div>\';
     container.innerHTML = html;
   } catch(e) { container.innerHTML = '<p style="color:var(--danger)">Failed to load: ' + escapeHtml(e.message) + '</p>'; }
 }
@@ -2752,30 +2752,30 @@ async function addPersonaToUser(userId) {
   if (!sel || !sel.value) return;
   try {
     var r = await fetch('/api/users/' + userId + '/personas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: \'POST\',
+      headers: { \'Content-Type\': \'application/json\' },
       body: JSON.stringify({ persona_id: sel.value })
     });
     if (!r.ok) { var d = await r.json(); showToast(d.error || 'Failed to assign', 'error'); return; }
-    showToast('Persona assigned', 'success');
+    showToast(\'Persona assigned\', \'success\');
     loadUserPersonaAssignments();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 async function removePersonaFromUser(userId, personaId) {
   try {
     var r = await fetch('/api/users/' + userId + '/personas/' + personaId, { method: 'DELETE' });
-    if (!r.ok) { showToast('Failed to remove persona', 'error'); return; }
-    showToast('Persona removed', 'success');
+    if (!r.ok) { showToast(\'Failed to remove persona\', \'error\'); return; }
+    showToast(\'Persona removed\', \'success\');
     loadUserPersonaAssignments();
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  } catch(e) { showToast(\'Error: \' + e.message, \'error\'); }
 }
 
 /* ═══ INIT ═══ */
 adminLoadAll();
 
 <\/script>
-` }) %>
+' }) %>
 
 // Config subtab switching
 function switchConfigTab(tabName) {
