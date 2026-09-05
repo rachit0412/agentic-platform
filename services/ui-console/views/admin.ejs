@@ -2654,22 +2654,12 @@ function renderMarkdown(md) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/_(.*?)_/g, '<em>$1</em>')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-    .replace(/^### (.*?)$/gm, '<h3 style="margin-top:1.5rem;margin-bottom:0.75rem;color:var(--text-1)">$1</h3>')
-    .replace(/^## (.*?)$/gm, '<h2 style="margin-top:2rem;margin-bottom:1rem;color:var(--text-1)">$1</h2>')
-    .replace(/^# (.*?)$/gm, '<h1 style="margin-bottom:1rem;color:var(--text-1)">$1</h1>')
-    .replace(/\|(.+?)\|/g, function(match) {
-      if (!match.includes('---|')) return match;
-      return '<table style="border-collapse:collapse;width:100%;margin:1rem 0"><tr>' +
-        match.split('|').slice(1,-1).map(function(cell) {
-          return '<td style="border:1px solid var(--glass-border);padding:0.5rem">' + cell.trim() + '</td>';
-        }).join('') + '</tr></table>';
-    })
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+?)$/gm, '<h3 style="margin-top:1.5rem;margin-bottom:0.75rem;color:var(--text-1)">$1</h3>')
+    .replace(/^## (.+?)$/gm, '<h2 style="margin-top:2rem;margin-bottom:1rem;color:var(--text-1)">$1</h2>')
+    .replace(/^# (.+?)$/gm, '<h1 style="margin-bottom:1rem;color:var(--text-1)">$1</h1>')
     .replace(/\n\n/g, '</p><p style="margin-top:0.5rem">')
-    .replace(/^([^<])/gm, function(m) { return m.includes('<') ? m : '<p>' + m; })
-    .replace(/```(.*?)```/gs, '<pre style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:4px;overflow-x:auto"><code>$1</code></pre>');
+    .replace(/^([^<])/gm, function(m) { return m.includes('<') ? m : '<p>' + m; });
 
   return '<div style="line-height:1.6;color:var(--text-2)">' + html + '</div>';
 }
