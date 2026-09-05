@@ -1389,12 +1389,20 @@ app.get("/api/documents/stats", async (req, res) => {
 // ── Enterprise Document Management (staging) ──────────
 app.post("/api/documents/upload", async (req, res) => {
   try {
+    const contentType = req.headers["content-type"] || "";
+    const isMultipart = contentType.startsWith("multipart/form-data");
+    const headers = isMultipart
+      ? wsHeaders(req, { "Content-Type": contentType, ...(req.headers["content-length"] ? { "Content-Length": req.headers["content-length"] } : {}) })
+      : wsHeaders(req, { "Content-Type": "application/json" });
     const resp = await fetch(`${AGENT_URL}/documents/upload`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body),
+      headers,
+      body: isMultipart ? req : JSON.stringify(req.body),
+      duplex: isMultipart ? "half" : undefined,
+      signal: AbortSignal.timeout(30000),
     });
-    const data = await resp.json();
+    const raw = await resp.text();
+    const data = raw ? JSON.parse(raw) : {};
     if (!resp.ok) return res.status(resp.status).json(data);
     res.json(data);
   } catch (e) {
@@ -2285,7 +2293,18 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
     });
     
     // Run gitleaks scan
-    const cmd = `gitleaks detect --source "${scanPath}" --report-format ${format} --no-color 2>&1`;
+    const cmd = `gitleaks detect --source "${scanPath}" --report-format ${format} --no-color --no-git 2>&1`;
+
+    try {
+      execSync("gitleaks version", { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
+    } catch (toolErr) {
+      console.error("[SECURITY] Gitleaks unavailable", { error: toolErr.message });
+      return res.status(500).json({
+        error: "Gitleaks is not installed in the ui-console runtime",
+        details: toolErr.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
     
     try {
       const output = execSync(cmd, { 
@@ -2321,6 +2340,20 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
     } catch (execErr) {
       // gitleaks returns exit code > 0 if secrets found
       const output = execErr.stdout || execErr.stderr || execErr.message;
+
+      if (/not found|ENOENT/i.test(String(output))) {
+        console.error("[SECURITY] Secret scan failed to start", {
+          error: output,
+          user: req.session.user?.username || "unknown",
+          path: scanPath,
+        });
+        return res.status(500).json({
+          error: "Secret scanner is unavailable in the current runtime",
+          details: String(output),
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       let results = output;
       
       if (format === "json") {

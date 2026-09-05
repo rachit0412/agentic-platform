@@ -441,34 +441,28 @@ function handleFiles(files) {
 
 function readAndIngestFile(file, id) {
   const statusEl = document.getElementById(id + '-status');
-  statusEl.textContent = 'Reading...';
+  statusEl.textContent = 'Inspecting and scanning...';
   statusEl.style.color = '#f59e0b';
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    statusEl.textContent = 'Uploading to store...';
-    const extras = getIngestExtras();
-    try {
-      const r = await fetch('/api/documents/upload', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          filename: file.name,
-          content: e.target.result,
-          ...extras,
-        })
-      });
-      const d = await r.json();
+  const extras = getIngestExtras();
+  const form = new FormData();
+  form.append('file', file, file.name);
+  form.append('folder', extras.folder || '/');
+  if (extras.agent_id) form.append('agent_id', extras.agent_id);
+  fetch('/api/documents/upload', {
+    method: 'POST',
+    body: form,
+  })
+    .then(async (r) => {
+      const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.detail || d.error || 'Upload failed');
       statusEl.textContent = 'Staged (' + (d.size_bytes/1024).toFixed(1) + ' KB)';
       statusEl.style.color = '#10b981';
       refreshAll();
-    } catch(err) {
+    })
+    .catch((err) => {
       statusEl.textContent = 'Error: ' + err.message;
       statusEl.style.color = '#f43f5e';
-    }
-  };
-  reader.onerror = function() { statusEl.textContent = 'Read error'; statusEl.style.color = '#f43f5e'; };
-  reader.readAsText(file);
+    });
 }
 
 // ── Connect URL (staging) ──

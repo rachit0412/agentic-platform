@@ -47,6 +47,7 @@ services:
       - ./services/ui-console/marketplace.js:/app/marketplace.js
       - ./docs:/app/docs-static
       - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - platform-net
     healthcheck:
@@ -184,6 +185,8 @@ services:
       - DATASTORE_DB_URL=postgresql://agentic:${DATASTORE_DB_PASSWORD:-agentic}@datastore-db:5432/datastore
       - ADMIN_SEED_PASSWORD=${ADMIN_SEED_PASSWORD:-}
       - RACHIT_SEED_PASSWORD=${RACHIT_SEED_PASSWORD:-}
+      - CLAMAV_HOST=clamav
+      - CLAMAV_PORT=3310
     volumes:
       - ./services/agent:/app
       - agent-data:/data
@@ -198,6 +201,8 @@ services:
         condition: service_healthy
       datastore-db:
         condition: service_healthy
+      clamav:
+        condition: service_started
     networks:
       - platform-net
     healthcheck:
@@ -206,6 +211,14 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # ── ClamAV Malware Scanner ───────────────────────────────────────────────
+  clamav:
+    image: clamav/clamav:stable
+    container_name: clamav
+    restart: unless-stopped
+    networks:
+      - platform-net
 
   # ── Tools Service — FastAPI ──────────────────────────────────────────────
 

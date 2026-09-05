@@ -9,6 +9,7 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from agent.connectors import (CONNECTOR_CATALOG, generate_connector_id,
                               generate_job_id)
@@ -1256,48 +1257,201 @@ class DocumentSearchRequest(BaseModel):
     k: int = Field(default=5, ge=1, le=50)
 
 
-# ── Upload to staging (enterprise pattern) ─────────────────────────────────
+def _parse_upload_metadata(raw_metadata: str | None) -> dict:
+    if not raw_metadata:
+        return {}
+    try:
+        parsed = json.loads(raw_metadata)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid metadata JSON: {exc.msg}") from exc
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=400, detail="metadata must be a JSON object")
+    return parsed
 
 
-@app.post("/documents/upload")
-async def documents_upload(body: DocumentUploadRequest):
-    """Upload a file to the staging file store. Does NOT index to ChromaDB.
-    The file sits in staging until explicitly indexed."""
-    from agent.filestore import save_file
+async def _stage_multipart_upload(upload_id: str, upload_file: UploadFile, safe_filename: str) -> tuple[Path, int, bytes]:
+    from agent.filestore import create_upload_staging_path
+    from agent.upload_security import (MAGIC_SAMPLE_BYTES,
+                                       MAX_UPLOAD_SIZE_BYTES,
+                                       UPLOAD_READ_CHUNK_BYTES,
+                                       UploadSecurityError)
 
-    file_ext = body.filename.rsplit(".", 1)[-1].lower() if "." in body.filename else ""
-    agent_tags = [body.agent_id] if body.agent_id else []
+    staged_path = create_upload_staging_path(upload_id, safe_filename)
+    head = bytearray()
+    total_size = 0
+    try:
+        with staged_path.open("wb") as staged_handle:
+            while True:
+                chunk = await upload_file.read(UPLOAD_READ_CHUNK_BYTES)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > MAX_UPLOAD_SIZE_BYTES:
+                    raise UploadSecurityError(
+                        413,
+                        f"Uploaded file exceeds the {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB limit",
+                    )
+                if len(head) < MAGIC_SAMPLE_BYTES:
+                    remaining = MAGIC_SAMPLE_BYTES - len(head)
+                    head.extend(chunk[:remaining])
+                staged_handle.write(chunk)
+        if total_size == 0:
+            raise UploadSecurityError(400, "Uploaded file is empty")
+        return staged_path, total_size, bytes(head)
+    except Exception:
+        if staged_path.exists():
+            staged_path.unlink()
+        raise
 
-    # Create registry entry first to get the doc_id
+
+def _stage_json_upload(upload_id: str, safe_filename: str, content: str) -> tuple[Path, int, bytes]:
+    from agent.filestore import create_upload_staging_path
+    from agent.upload_security import MAGIC_SAMPLE_BYTES, MAX_UPLOAD_SIZE_BYTES, UploadSecurityError
+
+    payload = content.encode("utf-8")
+    if len(payload) > MAX_UPLOAD_SIZE_BYTES:
+        raise UploadSecurityError(
+            413,
+            f"Uploaded file exceeds the {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB limit",
+        )
+    staged_path = create_upload_staging_path(upload_id, safe_filename)
+    staged_path.write_bytes(payload)
+    return staged_path, len(payload), payload[:MAGIC_SAMPLE_BYTES]
+
+
+def _finalize_scanned_upload(
+    upload_id: str,
+    safe_filename: str,
+    staged_path: Path,
+    size_bytes: int,
+    sample_bytes: bytes,
+    folder: str,
+    agent_id: str | None,
+    metadata: dict,
+    collection: str,
+    original_filename: str,
+) -> dict:
+    from agent.filestore import promote_staged_file, quarantine_staged_file
+    from agent.upload_security import UploadSecurityError, inspect_magic_bytes, scan_file_with_clamav
+
+    try:
+        inspected = inspect_magic_bytes(safe_filename, sample_bytes)
+        scan_result = scan_file_with_clamav(staged_path)
+    except UploadSecurityError as exc:
+        if exc.malware_name:
+            quarantine = quarantine_staged_file(upload_id, staged_path, safe_filename)
+            logger.warning(
+                "Malware upload quarantined: upload_id=%s file=%s signature=%s quarantine=%s",
+                upload_id,
+                safe_filename,
+                exc.malware_name,
+                quarantine.get("quarantine_path"),
+            )
+        else:
+            staged_path.unlink(missing_ok=True)
+            staged_path.parent.rmdir() if staged_path.parent.exists() and not any(staged_path.parent.iterdir()) else None
+        raise
+
+    file_ext = safe_filename.rsplit(".", 1)[-1].lower() if "." in safe_filename else ""
+    agent_tags = [agent_id] if agent_id else []
+    merged_metadata = {
+        **(metadata or {}),
+        "original_filename": original_filename,
+        "detected_mime": inspected["mime"],
+        "upload_scanned_at": datetime.utcnow().isoformat() + "Z",
+        "clamav": scan_result,
+    }
     doc = create_document_registry(
-        name=body.filename,
-        source=body.filename,
-        collection=body.collection,
-        folder=body.folder,
+        name=safe_filename,
+        source=safe_filename,
+        collection=collection,
+        folder=folder,
         agent_tags=agent_tags,
         file_type=file_ext,
-        file_size=len(body.content),
+        file_size=size_bytes,
         chunk_count=0,
-        metadata=body.metadata,
+        metadata=merged_metadata,
         status="uploaded",
         source_type="upload",
         storage_path="",
     )
-
-    # Save file to disk
-    store_result = save_file(doc["id"], body.filename, body.content)
+    store_result = promote_staged_file(upload_id, staged_path, doc["id"], safe_filename)
     update_document_registry(doc["id"], storage_path=store_result["storage_path"])
     doc["storage_path"] = store_result["storage_path"]
     doc["status"] = "uploaded"
-
     return {
         "id": doc["id"],
         "name": doc["name"],
         "status": "uploaded",
         "storage_path": store_result["storage_path"],
         "size_bytes": store_result["size_bytes"],
+        "detected_mime": inspected["mime"],
         "message": "File staged successfully. Use POST /documents/{id}/index to index into knowledge base.",
     }
+
+
+# ── Upload to staging (enterprise pattern) ─────────────────────────────────
+
+
+@app.post("/documents/upload")
+async def documents_upload(
+    request: Request,
+    file: UploadFile | None = File(default=None),
+    folder: str = Form(default="/"),
+    agent_id: str | None = Form(default=None),
+    metadata: str | None = Form(default=None),
+    collection: str = Form(default="agentic_docs"),
+):
+    """Upload a file to the staging file store. Does NOT index to ChromaDB.
+    The file sits in staging until explicitly indexed."""
+    from agent.upload_security import UploadSecurityError, sanitize_upload_filename
+
+    content_type = request.headers.get("content-type", "")
+    upload_id = str(uuid.uuid4())[:12]
+
+    try:
+        if content_type.startswith("multipart/form-data"):
+            if file is None:
+                raise HTTPException(status_code=400, detail="file is required")
+            safe_filename = sanitize_upload_filename(file.filename or "upload.bin")
+            staged_path, size_bytes, sample_bytes = await _stage_multipart_upload(
+                upload_id, file, safe_filename
+            )
+            return _finalize_scanned_upload(
+                upload_id=upload_id,
+                safe_filename=safe_filename,
+                staged_path=staged_path,
+                size_bytes=size_bytes,
+                sample_bytes=sample_bytes,
+                folder=folder,
+                agent_id=agent_id,
+                metadata=_parse_upload_metadata(metadata),
+                collection=collection,
+                original_filename=file.filename or safe_filename,
+            )
+
+        body = DocumentUploadRequest.model_validate(await request.json())
+        safe_filename = sanitize_upload_filename(body.filename)
+        staged_path, size_bytes, sample_bytes = _stage_json_upload(
+            upload_id, safe_filename, body.content
+        )
+        return _finalize_scanned_upload(
+            upload_id=upload_id,
+            safe_filename=safe_filename,
+            staged_path=staged_path,
+            size_bytes=size_bytes,
+            sample_bytes=sample_bytes,
+            folder=body.folder,
+            agent_id=body.agent_id,
+            metadata=body.metadata,
+            collection=body.collection,
+            original_filename=body.filename,
+        )
+    except UploadSecurityError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+    finally:
+        if file is not None:
+            await file.close()
 
 
 @app.post("/documents/connect")
@@ -1410,6 +1564,7 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
     """Process a staged document and index it into ChromaDB.
     This is the explicit step that moves content from file store → vector DB."""
     from agent.filestore import read_file as fs_read_file
+    from agent.filestore import read_file_bytes as fs_read_file_bytes
     from agent.vectorstore import ingest_document
 
     doc = get_document_registry(doc_id)
@@ -1429,17 +1584,6 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
     # Update status to processing
     update_document_registry(doc_id, status="processing")
 
-    # Read content from file store
-    text = fs_read_file(doc_id, doc["name"])
-    if not text:
-        update_document_registry(doc_id, status="failed")
-        from fastapi import HTTPException
-
-        raise HTTPException(
-            status_code=404,
-            detail="File content not found in store. Re-upload required.",
-        )
-
     collection = body.collection or doc["collection"]
     try:
         # Use LlamaIndex parser for rich file types (PDF, DOCX, XLSX, etc.)
@@ -1450,8 +1594,15 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
                                              parse_file_bytes)
 
         if file_ext in SUPPORTED_EXTENSIONS and file_ext not in (".txt", ".md", ""):
+            raw_bytes = fs_read_file_bytes(doc_id, doc["name"])
+            if not raw_bytes:
+                update_document_registry(doc_id, status="failed")
+                raise HTTPException(
+                    status_code=404,
+                    detail="File content not found in store. Re-upload required.",
+                )
             parsed_docs = parse_file_bytes(
-                content=text.encode("utf-8") if isinstance(text, str) else text,
+                content=raw_bytes,
                 filename=doc["name"],
                 metadata=doc.get("metadata", {}),
             )
@@ -1469,6 +1620,13 @@ async def documents_index(doc_id: str, body: DocumentIndexRequest):
                     total_chunks += r.get("chunks", 0)
             result = {"chunks": total_chunks}
         else:
+            text = fs_read_file(doc_id, doc["name"])
+            if not text:
+                update_document_registry(doc_id, status="failed")
+                raise HTTPException(
+                    status_code=404,
+                    detail="File content not found in store. Re-upload required.",
+                )
             result = ingest_document(
                 text=text,
                 source=doc["source"],
