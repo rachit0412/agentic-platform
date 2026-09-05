@@ -971,10 +971,76 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="card animate-fade-up">
     <div class="section-header">
       <h3>API Reference</h3>
-      <p style="font-size:0.75rem;color:var(--text-2);margin:0.5rem 0">Comprehensive endpoint documentation for the Agentic Platform (192 total endpoints)</p>
+      <p style="font-size:0.75rem;color:var(--text-2);margin:0.5rem 0">Comprehensive endpoint documentation for the Agentic Platform</p>
     </div>
-    <div id="api-reference-content" style="margin-top:1rem;color:var(--text-2);font-size:0.82rem">
-      Loading API reference documentation...
+    <div style="margin-top:1rem;color:var(--text-2);font-size:0.82rem;line-height:1.6">
+      <p><strong>Total Endpoints: 192</strong></p>
+
+      <div style="background:rgba(6,182,212,0.08);border-left:3px solid #06b6d4;padding:1rem;margin:1rem 0;border-radius:4px">
+        <p><strong>📖 View Full Documentation</strong></p>
+        <p>The complete API reference with detailed endpoint descriptions is available in the public documentation.</p>
+        <a href="/docs#api-reference" target="_blank" style="color:#06b6d4;text-decoration:none;font-weight:600">Open API Reference Documentation →</a>
+      </div>
+
+      <p><strong>API Categories (22 total):</strong></p>
+      <ul style="columns:2;margin-left:1.5rem">
+        <li>Authentication (6)</li>
+        <li>Users & Personas (20)</li>
+        <li>Workspaces (8)</li>
+        <li>Skills (11)</li>
+        <li>Agents (8)</li>
+        <li>Documents (18)</li>
+        <li>Prompts (8)</li>
+        <li>Custom Tools (6)</li>
+        <li>Guardrails (6)</li>
+        <li>Pipelines (8)</li>
+        <li>Connectors (10)</li>
+        <li>Chat & Sessions (10)</li>
+        <li>Models (4)</li>
+        <li>MCP Servers (14)</li>
+        <li>Admin - Docker (19)</li>
+        <li>Admin - Compliance (4)</li>
+        <li>Admin - Observability (6)</li>
+        <li>Admin - Overviews (12)</li>
+        <li>A2A Networking (6)</li>
+        <li>N8N Integration (6)</li>
+        <li>Audit & Monitoring (8)</li>
+        <li>Health & System (5)</li>
+      </ul>
+
+      <p><strong>Endpoint Statistics:</strong></p>
+      <table style="font-size:0.82rem;margin:1rem 0">
+        <tr style="border-bottom:1px solid var(--glass-border)">
+          <td style="padding:0.5rem;font-weight:600">Method</td>
+          <td style="padding:0.5rem;text-align:right;font-weight:600">Count</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--glass-border)">
+          <td style="padding:0.5rem">GET (Read)</td>
+          <td style="padding:0.5rem;text-align:right">93</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--glass-border)">
+          <td style="padding:0.5rem">POST (Create/Execute)</td>
+          <td style="padding:0.5rem;text-align:right">74</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--glass-border)">
+          <td style="padding:0.5rem">PUT (Update)</td>
+          <td style="padding:0.5rem;text-align:right">18</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem">DELETE (Remove)</td>
+          <td style="padding:0.5rem;text-align:right">7</td>
+        </tr>
+      </table>
+
+      <p><strong>Key Features:</strong></p>
+      <ul style="margin-left:1.5rem">
+        <li>Session-based authentication for all protected endpoints</li>
+        <li>Public endpoints: /api/docs/*, /health, /api/health-check</li>
+        <li>Rate limiting on authentication endpoints (5 attempts/5 min per IP)</li>
+        <li>JSON response format with status, data, and timestamp</li>
+        <li>Comprehensive error handling (400, 401, 403, 404, 500)</li>
+        <li>Support for pagination, filtering, and sorting on list endpoints</li>
+      </ul>
     </div>
   </div>
 </div>
@@ -1929,7 +1995,6 @@ function switchTab(tab, fromSection) {
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
   if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
   if (tab === 'audit') loadAuditLog();
-  if (tab === 'api-reference') loadApiReference();
 }
 
 /* Wire up nav via event delegation (avoids inline onclick in template literal) */
@@ -2616,53 +2681,6 @@ async function loadAuditLog() {
 
 document.getElementById('audit-filter-type').addEventListener('change', loadAuditLog);
 document.getElementById('audit-filter-action').addEventListener('change', loadAuditLog);
-
-/* ═══ API REFERENCE ═══ */
-async function loadApiReference() {
-  try {
-    var elem = document.getElementById('api-reference-content');
-    if (!elem) return;
-
-    // Use DocsClient if available to load the API-REFERENCE.md dynamically
-    if (window.DocsClient) {
-      await DocsClient.loadIntoElement('API-REFERENCE', '#api-reference-content', {
-        format: 'raw',
-        showToc: true,
-        forceRefresh: false
-      });
-    } else {
-      // Fallback: load via fetch
-      var response = await fetch('/api/docs/API-REFERENCE?format=raw&toc=true');
-      if (!response.ok) throw new Error('Failed to load API reference');
-      var data = await response.json();
-
-      // Render markdown as HTML
-      var html = renderMarkdown(data.content);
-      elem.innerHTML = html;
-    }
-  } catch(e) {
-    console.error('Error loading API reference:', e);
-    document.getElementById('api-reference-content').innerHTML =
-      '<div style="color:var(--danger);padding:1rem"><strong>Error loading API reference:</strong> ' +
-      escapeHtml(e.message) + '</div>';
-  }
-}
-
-// Simple markdown renderer for API reference
-function renderMarkdown(md) {
-  var html = md
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^### (.+?)$/gm, '<h3 style="margin-top:1.5rem;margin-bottom:0.75rem;color:var(--text-1)">$1</h3>')
-    .replace(/^## (.+?)$/gm, '<h2 style="margin-top:2rem;margin-bottom:1rem;color:var(--text-1)">$1</h2>')
-    .replace(/^# (.+?)$/gm, '<h1 style="margin-bottom:1rem;color:var(--text-1)">$1</h1>')
-    .replace(/\n\n/g, '</p><p style="margin-top:0.5rem">')
-    .replace(/^([^<])/gm, function(m) { return m.includes('<') ? m : '<p>' + m; });
-
-  return '<div style="line-height:1.6;color:var(--text-2)">' + html + '</div>';
-}
 
 /* ═══ PERSONA MANAGEMENT ═══ */
 var _personasCache = [];
