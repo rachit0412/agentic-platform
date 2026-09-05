@@ -3,7 +3,8 @@
 > **Comprehensive API endpoint documentation for the Agentic Platform**
 > 
 > Auto-generated from: `services/ui-console/server.js`  
-> Total Endpoints: **192**
+> Total Endpoints: **192**  
+> Last Updated: 2025-09-06
 
 ## Quick Navigation
 
@@ -37,279 +38,278 @@
 
 ## Authentication
 
-**6 endpoints** — User authentication and 2FA management
+**6 endpoints** — User authentication and two-factor authentication (2FA) management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/auth/me` | Get current user authentication status |
-| 🔍 GET | `/api/me` | Get current user profile information |
-| ✏️ POST | `/api/change-password` | Change user password |
-| ✏️ POST | `/api/setup-2fa` | Setup two-factor authentication |
-| ✏️ POST | `/api/confirm-2fa` | Confirm 2FA configuration |
-| ✏️ POST | `/api/disable-2fa` | Disable two-factor authentication |
+| 🔍 GET | `/api/auth/me` | Retrieve current authenticated user's session status and basic profile info (username, role, workspace). Returns 401 if not authenticated. |
+| 🔍 GET | `/api/me` | Get complete current user profile including email, 2FA status, role, and account metadata. Requires active session. |
+| ✏️ POST | `/api/change-password` | Update user password. Validates old password before accepting new one. Invalidates existing sessions. Body: `{oldPassword, newPassword}`. |
+| ✏️ POST | `/api/setup-2fa` | Initiate 2FA setup, returns QR code and backup codes. User must confirm with `/api/confirm-2fa` to activate. |
+| ✏️ POST | `/api/confirm-2fa` | Verify 2FA setup by providing TOTP code from authenticator app. Enables 2FA for account. Body: `{code}`. |
+| ✏️ POST | `/api/disable-2fa` | Disable 2FA protection on account. Requires password verification. Body: `{password}`. |
 
 ---
 
 ## Users & Personas
 
-**20 endpoints** — User management and persona selection
+**20 endpoints** — User account management and AI persona/role assignment
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/users` | List all users (admin only) |
-| 🔍 GET | `/api/users/:id` | Get specific user (admin only) |
-| ✏️ POST | `/api/users` | Create new user (admin only) |
-| 🔄 PUT | `/api/users/:id` | Update user (admin only) |
-| 🗑️ DELETE | `/api/users/:id` | Delete user (admin only) |
-| ✏️ POST | `/api/users/:id/verify` | Verify user identity (admin only) |
-| 🔄 PUT | `/api/users/:id` | Update user profile |
-| 🔍 GET | `/api/personas` | List available personas |
-| 🔍 GET | `/api/personas/:id` | Get specific persona |
-| ✏️ POST | `/api/personas` | Create new persona (admin) |
-| 🔄 PUT | `/api/personas/:id` | Update persona (admin) |
-| 🗑️ DELETE | `/api/personas/:id` | Delete persona (admin) |
-| 🔍 GET | `/api/users/:id/personas` | List user personas (admin) |
-| ✏️ POST | `/api/users/:id/personas` | Assign persona to user (admin) |
-| 🗑️ DELETE | `/api/users/:id/personas/:pid` | Remove persona from user (admin) |
-| ✏️ POST | `/api/switch-persona` | Switch active persona |
-| 🔍 GET | `/api/my-personas` | Get current user's personas |
-| ✏️ POST | `/api/update-profile` | Update personal profile |
+| 🔍 GET | `/api/users` | List all platform users. Admin-only. Returns paginated list with user metadata. Query params: `?page=1&limit=50`. |
+| 🔍 GET | `/api/users/:id` | Fetch specific user's complete profile including created_at, last_login, roles, and workspace associations. Admin-only. |
+| ✏️ POST | `/api/users` | Create new user account. Admin-only. Body: `{username, email, password, role}`. Returns 400 if username already exists. |
+| 🔄 PUT | `/api/users/:id` | Update user profile (email, display_name, avatar). Regular users can only edit their own profile. Admins can edit anyone. |
+| 🗑️ DELETE | `/api/users/:id` | Delete user account and all associated data. Admin-only. Prevents deletion of last admin user (403 Forbidden). |
+| ✏️ POST | `/api/users/:id/verify` | Manually verify user email address. Admin-only. Marks email_verified=true. |
+| 🔍 GET | `/api/personas` | List all available AI personas in platform. Public personas visible to all, private personas only to owner/admins. |
+| 🔍 GET | `/api/personas/:id` | Get specific persona definition including system prompt, personality traits, and capability constraints. |
+| ✏️ POST | `/api/personas` | Create new AI persona. Admin-only. Body: `{name, description, system_prompt, capabilities, constraints}`. |
+| 🔄 PUT | `/api/personas/:id` | Update persona configuration. Admin-only. Can modify all persona attributes. |
+| 🗑️ DELETE | `/api/personas/:id` | Remove persona from platform. Admin-only. Cannot delete personas with active users. |
+| 🔍 GET | `/api/users/:id/personas` | List personas assigned to specific user. Admin-only. Shows user's personalization scope. |
+| ✏️ POST | `/api/users/:id/personas` | Assign persona to user, allowing them to switch into that persona context. Admin-only. |
+| 🗑️ DELETE | `/api/users/:id/personas/:pid` | Remove persona from user's available list. Admin-only. |
+| ✏️ POST | `/api/switch-persona` | Switch current session to use different persona. Client provides new persona_id. Affects agent execution context. |
+| 🔍 GET | `/api/my-personas` | Get personas available to current user. Shows all assigned personas they can switch between. |
+| ✏️ POST | `/api/update-profile` | Update own user profile (name, avatar, preferences). Cannot edit email or role (use `/api/users/:id` instead). |
 
 ---
 
 ## Workspaces
 
-**8 endpoints** — Workspace and team management
+**8 endpoints** — Team workspace and member management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/workspaces` | List user's workspaces |
-| ✏️ POST | `/api/workspaces` | Create new workspace |
-| 🔄 PUT | `/api/workspaces/:id` | Update workspace |
-| 🗑️ DELETE | `/api/workspaces/:id` | Delete workspace |
-| 🔍 GET | `/api/workspaces/:id/members` | List workspace members |
-| ✏️ POST | `/api/workspaces/:id/members` | Add member to workspace |
-| 🗑️ DELETE | `/api/workspaces/:id/members/:userId` | Remove member from workspace |
+| 🔍 GET | `/api/workspaces` | List all workspaces current user is member of. Returns workspace metadata and member count. |
+| ✏️ POST | `/api/workspaces` | Create new workspace. Creator becomes owner. Body: `{name, description, icon}`. Workspace isolated for data scoping. |
+| 🔄 PUT | `/api/workspaces/:id` | Update workspace settings (name, description, permissions). Owner-only. |
+| 🗑️ DELETE | `/api/workspaces/:id` | Remove workspace and cascade-delete all associated data (agents, skills, documents). Owner-only. |
+| 🔍 GET | `/api/workspaces/:id/members` | List all members in workspace with their roles and permissions. |
+| ✏️ POST | `/api/workspaces/:id/members` | Invite user to workspace with specified role (owner/editor/viewer). Owner-only. Body: `{userId, role}`. |
+| 🗑️ DELETE | `/api/workspaces/:id/members/:userId` | Remove member from workspace. Owner-only. Cannot remove last owner. |
 
 ---
 
 ## Skills
 
-**11 endpoints** — AI skill management and enrichment
+**11 endpoints** — AI skill (reusable capability) lifecycle and file management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/skills` | List all skills |
-| ✏️ POST | `/api/skills` | Create new skill |
-| 🔍 GET | `/api/skills/:id` | Get specific skill |
-| 🔄 PUT | `/api/skills/:id` | Update skill |
-| 🗑️ DELETE | `/api/skills/:id` | Delete skill |
-| 🔍 GET | `/api/skills/:id/files` | List skill files |
-| ✏️ POST | `/api/skills/:id/files` | Upload skill file |
-| 🔍 GET | `/api/skills/:id/files/:category/:filename` | Download skill file |
-| 🗑️ DELETE | `/api/skills/:id/files/:category/:filename` | Delete skill file |
-| ✏️ POST | `/api/skills/enrich` | Enrich skill with AI |
-| ✏️ POST | `/api/skills/decompose` | Decompose skill into subtasks |
+| 🔍 GET | `/api/skills` | List all skills accessible to current user. Returns skill metadata with version and last_modified timestamp. |
+| ✏️ POST | `/api/skills` | Create new skill definition. Body: `{name, description, category, language, parameters}`. Skill empty until files uploaded. |
+| 🔍 GET | `/api/skills/:id` | Get skill details including implementation files, version history, and usage statistics. |
+| 🔄 PUT | `/api/skills/:id` | Update skill metadata or parameters. Cannot modify after deployment without version bump. |
+| 🗑️ DELETE | `/api/skills/:id` | Remove skill and all versions. Returns 409 Conflict if skill actively used by agents. |
+| 🔍 GET | `/api/skills/:id/files` | List all implementation files (source code, configs) for skill. Organized by file category. |
+| ✏️ POST | `/api/skills/:id/files` | Upload skill implementation file (Python, JavaScript, config YAML). Category: code/config/test. |
+| 🔍 GET | `/api/skills/:id/files/:category/:filename` | Download specific skill file content (raw binary or text). |
+| 🗑️ DELETE | `/api/skills/:id/files/:category/:filename` | Remove skill file. Regenerate latest version. |
+| ✏️ POST | `/api/skills/enrich` | AI-powered skill enhancement. Analyzes existing skill and suggests improvements. Body: `{skillId, aspect: 'performance'|'security'|'documentation'}`. |
+| ✏️ POST | `/api/skills/decompose` | Break complex skill into smaller sub-skills. AI suggests decomposition. Body: `{skillId}`. |
 
 ---
 
 ## Agents
 
-**8 endpoints** — AI agent lifecycle management
+**8 endpoints** — AI agent creation, execution, and lifecycle management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/agents` | List all agents |
-| ✏️ POST | `/api/agents` | Create new agent |
-| 🔍 GET | `/api/agents/:id` | Get specific agent |
-| 🔄 PUT | `/api/agents/:id` | Update agent |
-| 🗑️ DELETE | `/api/agents/:id` | Delete agent |
-| ✏️ POST | `/api/agent-run` | Execute agent synchronously |
-| ✏️ POST | `/api/agent-run/stream` | Execute agent with streaming |
+| 🔍 GET | `/api/agents` | List all agents accessible to current user. Returns agent status, LLM model, and last execution time. |
+| ✏️ POST | `/api/agents` | Create new agent. Body: `{name, description, model, skills, guardrails, system_prompt}`. Agent starts in draft status. |
+| 🔍 GET | `/api/agents/:id` | Get complete agent definition including skills, tools, memory settings, and execution history. |
+| 🔄 PUT | `/api/agents/:id` | Update agent configuration. Can modify skills, model, guardrails without re-creating. Version created on save. |
+| 🗑️ DELETE | `/api/agents/:id` | Remove agent and cascade-delete associated conversations/sessions. Cannot delete published agents. |
+| ✏️ POST | `/api/agent-run` | Execute agent synchronously (blocking). Body: `{agentId, input, context}`. Waits for completion, returns full output. Use for short tasks. |
+| ✏️ POST | `/api/agent-run/stream` | Execute agent with streaming response. Connects via Server-Sent Events. Returns token-by-token output. Use for long-running tasks. |
 
 ---
 
 ## Documents
 
-**18 endpoints** — Document management and search
+**18 endpoints** — Knowledge base document ingestion, indexing, search, and organization
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/documents` | List all documents |
-| 🔍 GET | `/api/documents/collections` | List document collections |
-| 🔍 GET | `/api/documents/folders` | List document folders |
-| 🔍 GET | `/api/documents/registry` | Get document registry |
-| 🔍 GET | `/api/documents/stats` | Get document statistics |
-| ✏️ POST | `/api/documents/upload` | Upload new document |
-| ✏️ POST | `/api/documents/connect` | Connect external document |
-| ✏️ POST | `/api/documents/fetch-url` | Fetch document from URL |
-| ✏️ POST | `/api/documents/ingest` | Ingest document content |
-| ✏️ POST | `/api/documents/search` | Search documents |
-| ✏️ POST | `/api/documents/copy` | Copy document |
-| ✏️ POST | `/api/documents/shortcut` | Create document shortcut |
-| ✏️ POST | `/api/documents/:id/index` | Index document |
-| 🗑️ DELETE | `/api/documents/:source` | Delete document |
-| 🔍 GET | `/api/admin/documents/stats` | Get document admin stats |
-| 🔄 PUT | `/api/documents/registry/:id/folder` | Update document folder |
-| 🔄 PUT | `/api/documents/registry/:id/tags` | Update document tags |
-| 🗑️ DELETE | `/api/documents/registry/:id` | Remove from registry |
+| 🔍 GET | `/api/documents` | List all documents in workspace. Returns doc metadata, type (pdf/docx/txt/url), and indexing status. |
+| 🔍 GET | `/api/documents/collections` | List document collections (folders/projects) for organizing knowledge. |
+| 🔍 GET | `/api/documents/folders` | Get folder hierarchy and document counts. |
+| 🔍 GET | `/api/documents/registry` | List registered documents with deduplication metadata. Prevents duplicate ingestion. |
+| 🔍 GET | `/api/documents/stats` | Get indexing statistics: total docs, vectors indexed, storage used, last indexed. |
+| ✏️ POST | `/api/documents/upload` | Upload document file (PDF, DOCX, TXT, Markdown). Returns document ID and ingest status. Form: `multipart/form-data` with file. |
+| ✏️ POST | `/api/documents/connect` | Connect external data source (S3, Google Drive, Confluence). Body: `{sourceType, credentials, path}`. |
+| ✏️ POST | `/api/documents/fetch-url` | Fetch and ingest document from URL (web page, PDF link). Body: `{url, format}`. Follows redirects. |
+| ✏️ POST | `/api/documents/ingest` | Process uploaded document: parse content, extract text, chunk into vectors. Can take 30+ seconds for large docs. |
+| ✏️ POST | `/api/documents/search` | Semantic search across indexed documents. Body: `{query, limit: 10, threshold: 0.7}`. Returns matching chunks with relevance scores. |
+| ✏️ POST | `/api/documents/copy` | Duplicate document and metadata. Returns new document ID. |
+| ✏️ POST | `/api/documents/shortcut` | Create alias/symlink to document in another collection. |
+| ✏️ POST | `/api/documents/:id/index` | Manually trigger re-indexing for document. Force-refreshes vector embeddings. |
+| 🗑️ DELETE | `/api/documents/:source` | Delete document by source identifier. Cascade-deletes from index. |
+| 🔍 GET | `/api/admin/documents/stats` | Admin view of document statistics across all workspaces. |
+| 🔄 PUT | `/api/documents/registry/:id/folder` | Move document to different folder/collection. |
+| 🔄 PUT | `/api/documents/registry/:id/tags` | Add/update document tags for filtering and organization. |
+| 🗑️ DELETE | `/api/documents/registry/:id` | Remove document from registry (soft-delete). Can be restored. |
 
 ---
 
 ## Prompts
 
-**8 endpoints** — Prompt management and generation
+**8 endpoints** — Prompt template creation, generation, and validation
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/prompts` | List all prompts |
-| ✏️ POST | `/api/prompts` | Create new prompt |
-| 🔍 GET | `/api/prompts/:id` | Get specific prompt |
-| 🔄 PUT | `/api/prompts/:id` | Update prompt |
-| 🗑️ DELETE | `/api/prompts/:id` | Delete prompt |
-| ✏️ POST | `/api/prompts/generate` | Generate prompt with AI |
-| ✏️ POST | `/api/prompts/validate` | Validate prompt syntax |
+| 🔍 GET | `/api/prompts` | List all prompt templates. Returns prompt metadata and usage statistics. |
+| ✏️ POST | `/api/prompts` | Create prompt template. Body: `{name, category, template, variables, output_format}`. Template can include `{{variable}}` placeholders. |
+| 🔍 GET | `/api/prompts/:id` | Get prompt template including edit history and performance metrics. |
+| 🔄 PUT | `/api/prompts/:id` | Update prompt template. Tracks version history automatically. |
+| 🗑️ DELETE | `/api/prompts/:id` | Delete prompt template. Cannot delete if used by active agents. |
+| ✏️ POST | `/api/prompts/generate` | AI-powered prompt generation. Generates optimal prompt based on task description. Body: `{task, constraints, examples}`. |
+| ✏️ POST | `/api/prompts/validate` | Test prompt with sample inputs. Returns execution time and output quality metrics. |
 
 ---
 
 ## Custom Tools
 
-**6 endpoints** — Custom tool registration and management
+**6 endpoints** — Register and manage custom tool integrations
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/custom-tools` | List custom tools |
-| ✏️ POST | `/api/custom-tools` | Register custom tool |
-| 🔍 GET | `/api/custom-tools/:id` | Get custom tool details |
-| 🔄 PUT | `/api/custom-tools/:id` | Update custom tool |
-| 🗑️ DELETE | `/api/custom-tools/:id` | Delete custom tool |
-| 🔍 GET | `/api/tools` | List all available tools |
+| 🔍 GET | `/api/custom-tools` | List all custom tools registered in platform. Shows tool availability and documentation. |
+| ✏️ POST | `/api/custom-tools` | Register new custom tool. Body: `{name, description, schema, endpoint, auth_type}`. Tools become available to agents immediately. |
+| 🔍 GET | `/api/custom-tools/:id` | Get tool definition including parameters, return schema, and integration status. |
+| 🔄 PUT | `/api/custom-tools/:id` | Update tool configuration or schema. Changes effective immediately. |
+| 🗑️ DELETE | `/api/custom-tools/:id` | Unregister custom tool. Cannot delete if agents actively using it. |
+| 🔍 GET | `/api/tools` | List all available tools (built-in + custom). Returns combined tool catalog. |
 
 ---
 
 ## Guardrails
 
-**6 endpoints** — Safety and compliance guardrails
+**6 endpoints** — Safety and compliance policy management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/guardrails` | List all guardrails |
-| 🔍 GET | `/api/guardrails/:id` | Get specific guardrail |
-| 🔄 PUT | `/api/guardrails/:id` | Update guardrail |
-| 🔍 GET | `/api/global-constraints` | Get global constraints |
-| 🔄 PUT | `/api/global-constraints` | Update global constraints |
-| 🔍 GET | `/api/admin/global-constraints` | Get admin constraints |
+| 🔍 GET | `/api/guardrails` | List all active guardrails/policies. Returns policy type (input validation, output filtering, compliance). |
+| 🔍 GET | `/api/guardrails/:id` | Get guardrail details including rules, actions on violation, and audit log. |
+| 🔄 PUT | `/api/guardrails/:id` | Update guardrail configuration. Can enable/disable rules or adjust thresholds. |
+| 🔍 GET | `/api/global-constraints` | Get global constraints (rate limits, token budgets, timeout policies) applied to all agents. |
+| 🔄 PUT | `/api/global-constraints` | Update global constraints. Changes apply to all future agent runs. |
+| 🔍 GET | `/api/admin/global-constraints` | Admin-only view of all constraint configurations and overrides. |
 
 ---
 
 ## Pipelines
 
-**8 endpoints** — Data processing pipelines
+**8 endpoints** — Data processing and orchestration pipelines
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/pipelines` | List all pipelines |
-| ✏️ POST | `/api/pipelines` | Create new pipeline |
-| 🔍 GET | `/api/pipelines/:id` | Get specific pipeline |
-| 🔄 PUT | `/api/pipelines/:id` | Update pipeline |
-| 🗑️ DELETE | `/api/pipelines/:id` | Delete pipeline |
-| ✏️ POST | `/api/pipelines/:id/run` | Run pipeline |
-| 🔍 GET | `/api/pipelines/:id/runs` | Get pipeline run history |
-| 🔍 GET | `/api/pipeline-runs` | List all pipeline runs |
+| 🔍 GET | `/api/pipelines` | List all data pipelines. Shows status (active/paused/failed), next run time, and execution history. |
+| ✏️ POST | `/api/pipelines` | Create new pipeline. Body: `{name, steps, schedule, error_handling}`. Steps are DAG-connected. |
+| 🔍 GET | `/api/pipelines/:id` | Get pipeline definition including all steps, connections, and configuration. |
+| 🔄 PUT | `/api/pipelines/:id` | Update pipeline configuration. Changes take effect on next scheduled run. |
+| 🗑️ DELETE | `/api/pipelines/:id` | Delete pipeline. Cannot delete if currently running (423 Locked). |
+| ✏️ POST | `/api/pipelines/:id/run` | Trigger immediate pipeline execution (ignoring schedule). Body: `{input_data}`. |
+| 🔍 GET | `/api/pipelines/:id/runs` | Get execution history for pipeline. Returns past run status, duration, and result logs. |
+| 🔍 GET | `/api/pipeline-runs` | List all pipeline runs across platform with execution status and duration. |
 
 ---
 
 ## Connectors
 
-**10 endpoints** — External data source integration
+**10 endpoints** — Third-party data source integration and synchronization
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/connectors` | List all connectors |
-| ✏️ POST | `/api/connectors` | Create new connector |
-| 🔍 GET | `/api/connectors/:id` | Get connector details |
-| 🔄 PUT | `/api/connectors/:id` | Update connector |
-| 🗑️ DELETE | `/api/connectors/:id` | Delete connector |
-| 🔍 GET | `/api/connectors/:id/jobs` | Get connector sync jobs |
-| ✏️ POST | `/api/connectors/:id/sync` | Trigger connector sync |
-| ✏️ POST | `/api/connectors/test` | Test connector config |
-| 🔍 GET | `/api/connectors/catalog` | Get available connectors |
+| 🔍 GET | `/api/connectors` | List all configured connectors. Shows status, last_sync, and next scheduled sync. |
+| ✏️ POST | `/api/connectors` | Create new connector to external data source. Body: `{type, name, credentials, config}`. Supports: Salesforce, HubSpot, Slack, GitHub, Jira, etc. |
+| 🔍 GET | `/api/connectors/:id` | Get connector configuration and sync metadata. |
+| 🔄 PUT | `/api/connectors/:id` | Update connector settings or credentials. |
+| 🗑️ DELETE | `/api/connectors/:id` | Remove connector and stop syncs. |
+| 🔍 GET | `/api/connectors/:id/jobs` | List all sync jobs for connector including failed syncs. |
+| ✏️ POST | `/api/connectors/:id/sync` | Trigger immediate sync (ignoring schedule). Returns sync job ID. |
+| ✏️ POST | `/api/connectors/test` | Test connector credentials before saving. Body: `{type, credentials}`. Returns validation result. |
+| 🔍 GET | `/api/connectors/catalog` | Get list of available connector types and their required credentials. |
 
 ---
 
 ## Chat & Sessions
 
-**10 endpoints** — Conversation and session management
+**10 endpoints** — Conversation and session management for multi-turn interactions
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/sessions` | List user sessions |
-| 🔍 GET | `/api/sessions/:id` | Get session details |
-| 🔗 DELETE | `/api/sessions/:id` | Delete session |
-| 🔍 GET | `/api/sessions/:id/history` | Get session history |
-| 🔍 GET | `/api/sessions/:id/summary` | Get session summary |
-| 🔍 GET | `/api/chat/conversations` | List conversations |
-| 🔍 GET | `/api/chat/conversations/:conversationId` | Get conversation |
-| ✏️ POST | `/api/chat/message` | Send chat message |
+| 🔍 GET | `/api/sessions` | List user's sessions (conversations with agents). Shows last_message_at and message_count. |
+| 🔍 GET | `/api/sessions/:id` | Get session details including participant info and metadata. |
+| 🗑️ DELETE | `/api/sessions/:id` | Delete entire session and message history. Cascade-deletes all associated data. |
+| 🔍 GET | `/api/sessions/:id/history` | Get full message history for session (paginated). Messages ordered by timestamp. |
+| 🔍 GET | `/api/sessions/:id/summary` | Get AI-generated summary of session conversation. Cached per session. |
+| 🔍 GET | `/api/chat/conversations` | List all conversations accessible to user. Filtered by workspace/scope. |
+| 🔍 GET | `/api/chat/conversations/:conversationId` | Get conversation metadata and participants. |
+| ✏️ POST | `/api/chat/message` | Send message in conversation. Body: `{conversationId, content, attachments}`. Returns message ID and timestamp. |
 
 ---
 
 ## Models
 
-**4 endpoints** — LLM model selection and management
+**4 endpoints** — LLM model selection and text embedding
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/models` | List available models |
-| ✏️ POST | `/api/models/switch` | Switch active model |
-| ✏️ POST | `/api/models/embedding` | Get text embeddings |
+| 🔍 GET | `/api/models` | List all available LLM models. Shows model name, provider (OpenAI, Anthropic, local), and pricing. |
+| ✏️ POST | `/api/models/switch` | Switch active model for current session or globally. Body: `{modelId, scope: 'session'|'workspace'|'global'}`. |
+| ✏️ POST | `/api/models/embedding` | Get text embeddings using configured embedding model. Body: `{texts: [string]}`. Returns vector arrays. |
 
 ---
 
 ## MCP Servers
 
-**14 endpoints** — Model Context Protocol server management
+**14 endpoints** — Model Context Protocol server management and container orchestration
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/mcp/servers` | List MCP servers |
-| ✏️ POST | `/api/mcp/servers` | Create MCP server |
-| 🔍 GET | `/api/mcp/servers/:id` | Get server details |
-| 🔄 PUT | `/api/mcp/servers/:id` | Update MCP server |
-| 🗑️ DELETE | `/api/mcp/servers/:id` | Delete MCP server |
-| ✏️ POST | `/api/mcp/servers/:id/discover` | Discover server capabilities |
-| ✏️ POST | `/api/mcp/servers/:id/invoke` | Invoke server tool |
-| ✏️ POST | `/api/mcp/servers/:id/provision` | Provision server |
-| ✏️ POST | `/api/mcp/servers/managed/code` | Manage code server |
-| ✏️ POST | `/api/mcp/servers/managed/config` | Manage config server |
-| 🔍 GET | `/api/mcp/servers/:id/container/status` | Get container status |
-| 🔍 GET | `/api/mcp/servers/:id/container/logs` | Get container logs |
-| ✏️ POST | `/api/mcp/servers/:id/container/start` | Start container |
-| ✏️ POST | `/api/mcp/servers/:id/container/stop` | Stop container |
-| ✏️ POST | `/api/mcp/servers/:id/container/restart` | Restart container |
-| 🗑️ DELETE | `/api/mcp/servers/:id/container` | Delete container |
+| 🔍 GET | `/api/mcp/servers` | List all MCP servers configured in platform. Shows container status and capability endpoints. |
+| ✏️ POST | `/api/mcp/servers` | Register new MCP server. Body: `{name, endpoint, capabilities, auth}`. Can be local or remote. |
+| 🔍 GET | `/api/mcp/servers/:id` | Get MCP server definition including capabilities and documentation. |
+| 🔄 PUT | `/api/mcp/servers/:id` | Update server configuration or capabilities. |
+| 🗑️ DELETE | `/api/mcp/servers/:id` | Unregister MCP server. Stops container if managed. |
+| ✏️ POST | `/api/mcp/servers/:id/discover` | Auto-discover server capabilities by introspection. Updates capability list. |
+| ✏️ POST | `/api/mcp/servers/:id/invoke` | Call tool/resource on MCP server. Body: `{tool, args}`. Proxies request and returns result. |
+| ✏️ POST | `/api/mcp/servers/:id/provision` | Deploy/provision server container. Body: `{image, config}`. Creates Docker container if needed. |
+| ✏️ POST | `/api/mcp/servers/managed/code` | Provision code execution server (runs agent code safely). |
+| ✏️ POST | `/api/mcp/servers/managed/config` | Provision configuration server (provides structured configs). |
+| 🔍 GET | `/api/mcp/servers/:id/container/status` | Check container health: running/stopped/error. |
+| 🔍 GET | `/api/mcp/servers/:id/container/logs` | Stream container logs (stdout/stderr). Useful for debugging. |
+| ✏️ POST | `/api/mcp/servers/:id/container/start` | Start stopped container. |
+| ✏️ POST | `/api/mcp/servers/:id/container/stop` | Stop running container. |
+| ✏️ POST | `/api/mcp/servers/:id/container/restart` | Restart container (stop + start). |
+| 🗑️ DELETE | `/api/mcp/servers/:id/container` | Delete container and volumes. Unrecoverable. |
 
 ---
 
 ## Admin - Docker
 
-**19 endpoints** — Docker container and image management
+**19 endpoints** — Container image and vulnerability management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/admin/docker/images` | List Docker images |
-| 🔍 GET | `/api/admin/docker/images/:name` | Get image details |
-| 🔍 GET | `/api/admin/docker/env-vars` | Get environment variables |
-| ✏️ POST | `/api/admin/docker/provision` | Provision Docker container |
-| ✏️ POST | `/api/admin/docker/scan` | Scan container for vulnerabilities |
-| ✏️ POST | `/api/admin/docker/scan-all` | Scan all containers |
-| ✏️ POST | `/api/admin/docker/scan-image` | Scan image for vulnerabilities |
-| ✏️ POST | `/api/admin/docker/scan/:name` | Scan specific image |
-| 🔍 GET | `/api/admin/docker/check-updates/:name` | Check for image updates |
-| ✏️ POST | `/api/admin/docker/check-updates` | Check all for updates |
-| ✏️ POST | `/api/admin/docker/update-version` | Update image version |
-| 🔍 GET | `/api/admin/docker/security-summary` | Get security summary |
-| 🔍 GET | `/api/admin/docker/reminder-status` | Get reminder status |
+| 🔍 GET | `/api/admin/docker/images` | List all Docker images available in platform. Shows size, layers, and scan status. |
+| 🔍 GET | `/api/admin/docker/images/:name` | Get detailed image metadata including base layers and tag history. |
+| 🔍 GET | `/api/admin/docker/env-vars` | Get environment variables configured for all Docker containers. |
+| ✏️ POST | `/api/admin/docker/provision` | Provision new container from image. Body: `{image, name, env, ports, volumes}`. |
+| ✏️ POST | `/api/admin/docker/scan` | Scan specific container for vulnerabilities (ClamAV, Trivy, etc.). Long-running operation. |
+| ✏️ POST | `/api/admin/docker/scan-all` | Scan all containers in parallel. Queues jobs and returns job IDs. |
+| ✏️ POST | `/api/admin/docker/scan-image` | Scan Docker image before deployment. Returns CVE list and remediation. |
+| ✏️ POST | `/api/admin/docker/scan/:name` | Scan specific image by name. Returns security report. |
+| 🔍 GET | `/api/admin/docker/check-updates/:name` | Check if newer version of image available. |
+| ✏️ POST | `/api/admin/docker/check-updates` | Check for updates across all images. |
+| ✏️ POST | `/api/admin/docker/update-version` | Upgrade image to newer version. Restarts containers. Body: `{image, newVersion}`. |
+| 🔍 GET | `/api/admin/docker/security-summary` | Get security dashboard: scan count, vulnerabilities found, remediation status. |
+| 🔍 GET | `/api/admin/docker/reminder-status` | Get pending security reminders and maintenance tasks. |
 
 ---
 
@@ -319,25 +319,25 @@
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/admin/compliance/config` | Get compliance config |
-| ✏️ POST | `/api/admin/compliance/config` | Update compliance config |
-| ✏️ POST | `/api/admin/docker/scan` | Run compliance scan |
-| ✏️ POST | `/api/admin/secret-scan` | Scan for secrets |
+| 🔍 GET | `/api/admin/compliance/config` | Get compliance configuration: standards enabled (SOC2, ISO27001, HIPAA, GDPR). |
+| ✏️ POST | `/api/admin/compliance/config` | Update compliance standards and policies. Body: `{standards: {soc2, iso27001, hipaa, gdpr}}`. |
+| ✏️ POST | `/api/admin/docker/scan` | Run compliance scan on all systems. Checks against configured standards. |
+| ✏️ POST | `/api/admin/secret-scan` | Scan codebase and containers for exposed secrets using GitLeaks. Returns findings. |
 
 ---
 
 ## Admin - Observability
 
-**6 endpoints** — Monitoring and metrics
+**6 endpoints** — Monitoring metrics and distributed tracing
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/observability/health` | Get observability health |
-| 🔍 GET | `/api/observability/prometheus/targets` | Get Prometheus targets |
-| 🔍 GET | `/api/observability/prometheus/query` | Query metrics |
-| 🔍 GET | `/api/observability/prometheus/query_range` | Query metric range |
-| 🔍 GET | `/api/traces` | List distributed traces |
-| 🔍 GET | `/api/traces/:traceId` | Get trace details |
+| 🔍 GET | `/api/observability/health` | Get observability stack health: Prometheus, Grafana, Jaeger status. |
+| 🔍 GET | `/api/observability/prometheus/targets` | List all Prometheus scrape targets and their health. |
+| 🔍 GET | `/api/observability/prometheus/query` | Execute Prometheus query. Body: `{query: "up{job='api'}"}`. Returns time series data. |
+| 🔍 GET | `/api/observability/prometheus/query_range` | Query Prometheus over time range. Body: `{query, start, end, step}`. |
+| 🔍 GET | `/api/traces` | List distributed traces (Jaeger). Returns trace IDs and metadata. |
+| 🔍 GET | `/api/traces/:traceId` | Get detailed trace including all spans and timing. |
 
 ---
 
@@ -347,116 +347,115 @@
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/admin/overview` | Get admin overview dashboard |
-| 🔍 GET | `/api/admin/metrics` | Get metrics summary |
-| 🔍 GET | `/api/admin/llm-summary` | Get LLM usage summary |
-| 🔍 GET | `/api/llm-activity` | Get LLM activity log |
-| 🔍 GET | `/api/llm-activity/summary` | Get activity summary |
-| 🔍 GET | `/api/admin/memory-stats` | Get memory statistics |
-| 🔍 GET | `/api/memory/stats` | Get detailed memory stats |
-| 🔍 GET | `/api/chromadb/stats` | Get ChromaDB statistics |
-| 🔍 GET | `/api/admin/chromadb/collections` | List ChromaDB collections |
-| 🔍 GET | `/api/admin/n8n/workflows` | Get N8N workflows |
-| 🔍 GET | `/api/admin/best-practices` | Get best practices |
-| 🔄 PUT | `/api/admin/best-practices` | Update best practices |
+| 🔍 GET | `/api/admin/overview` | Admin dashboard summary: user count, agent count, token usage, system health. |
+| 🔍 GET | `/api/admin/metrics` | Get key metrics: requests/sec, latency p50/p95/p99, error rate. |
+| 🔍 GET | `/api/admin/llm-summary` | LLM usage summary: tokens consumed, cost, by model, by user. |
+| 🔍 GET | `/api/llm-activity` | Activity log of all LLM API calls including input tokens, output tokens, cost. |
+| 🔍 GET | `/api/llm-activity/summary` | Summary of LLM activity: total spend, daily average, model breakdown. |
+| 🔍 GET | `/api/admin/memory-stats` | Get memory usage: RSS, heap, external, buffer. Useful for identifying leaks. |
+| 🔍 GET | `/api/memory/stats` | Detailed memory statistics and allocation breakdown. |
+| 🔍 GET | `/api/chromadb/stats` | ChromaDB vector store statistics: collections, vectors indexed, storage used. |
+| 🔍 GET | `/api/admin/chromadb/collections` | List ChromaDB collections and their metadata. |
+| 🔍 GET | `/api/admin/n8n/workflows` | List n8n workflows and their execution status. |
+| 🔍 GET | `/api/admin/best-practices` | Get security and architecture best practices. |
+| 🔄 PUT | `/api/admin/best-practices` | Update best practices documentation. |
 
 ---
 
 ## A2A Networking
 
-**6 endpoints** — Agent-to-Agent networking
+**6 endpoints** — Agent-to-Agent networking and discovery
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/a2a/card` | Get A2A service card |
-| 🔍 GET | `/api/a2a/peers` | List A2A peers |
-| ✏️ POST | `/api/a2a/peers` | Register A2A peer |
-| 🔄 PUT | `/api/a2a/peers/:id` | Update A2A peer |
-| 🗑️ DELETE | `/api/a2a/peers/:id` | Unregister A2A peer |
-| ✏️ POST | `/api/a2a/peers/:id/ping` | Ping A2A peer |
-| ✏️ POST | `/api/a2a/send` | Send A2A message |
+| 🔍 GET | `/api/a2a/card` | Get this agent's A2A service card: endpoints, capabilities, auth requirements. |
+| 🔍 GET | `/api/a2a/peers` | List all discovered A2A peers in network. Shows status and capabilities. |
+| ✏️ POST | `/api/a2a/peers` | Register new A2A peer. Body: `{name, endpoint, card}`. Makes peer discoverable. |
+| 🔄 PUT | `/api/a2a/peers/:id` | Update peer registration. |
+| 🗑️ DELETE | `/api/a2a/peers/:id` | Unregister A2A peer. |
+| ✏️ POST | `/api/a2a/peers/:id/ping` | Check peer health and connectivity. Returns latency. |
+| ✏️ POST | `/api/a2a/send` | Send message to A2A peer. Body: `{peerId, message, data}`. |
 
 ---
 
 ## N8N Integration
 
-**6 endpoints** — N8N workflow automation
+**6 endpoints** — n8n workflow automation platform integration
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/n8n/workflows` | List N8N workflows |
-| 🔍 GET | `/api/n8n/executions` | Get workflow executions |
-| 🔍 GET | `/api/n8n/agent-discovery` | Discover agents via N8N |
-| ✏️ POST | `/api/n8n/workflows/:id/activate` | Activate workflow |
-| ✏️ POST | `/api/n8n/workflows/:id/deactivate` | Deactivate workflow |
+| 🔍 GET | `/api/n8n/workflows` | List n8n workflows accessible from platform. |
+| 🔍 GET | `/api/n8n/executions` | Get n8n workflow execution history. |
+| 🔍 GET | `/api/n8n/agent-discovery` | Discover agents available via n8n integration. |
+| ✏️ POST | `/api/n8n/workflows/:id/activate` | Activate n8n workflow (enable execution). |
+| ✏️ POST | `/api/n8n/workflows/:id/deactivate` | Deactivate n8n workflow (stop execution). |
 
 ---
 
 ## Audit & Monitoring
 
-**8 endpoints** — Audit logging and security
+**8 endpoints** — Audit logging and security monitoring
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/audit-log` | Get audit log entries |
-| 🔍 GET | `/api/security-considerations` | Get security considerations |
-| 🔄 PUT | `/api/admin/security-considerations` | Update security considerations |
-| 🔍 GET | `/api/admin/security-considerations` | Get admin security config |
-| 🔍 GET | `/api/admin/sso-config` | Get SSO configuration |
-| 🔄 PUT | `/api/admin/sso-config` | Update SSO configuration |
-| 🔍 GET | `/api/admin/services/health` | Check service health |
+| 🔍 GET | `/api/audit-log` | Get audit log of all user actions: login, logout, resource modifications, deletions. Query params: `?type=login&action=create&limit=100`. |
+| 🔍 GET | `/api/security-considerations` | Get current security assessment and recommendations. |
+| 🔄 PUT | `/api/admin/security-considerations` | Update security configuration. |
+| 🔍 GET | `/api/admin/security-considerations` | Admin view of all security configurations. |
+| 🔍 GET | `/api/admin/sso-config` | Get SSO (Single Sign-On) configuration: provider, endpoints, mapping. |
+| 🔄 PUT | `/api/admin/sso-config` | Update SSO settings. Body: `{provider, clientId, clientSecret, domain}`. |
+| 🔍 GET | `/api/admin/services/health` | Check health of all platform services: database, cache, message queue, search. |
 
 ---
 
 ## Health & System
 
-**5 endpoints** — System status and health checks
+**5 endpoints** — System status and version management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/health-check` | Get system health status |
-| 🔍 GET | `/api/tools-health` | Check tools health |
-| ✏️ POST | `/api/admin/docker/scan-all` | Scan all services |
-| 🔍 GET | `/api/versions/:entityType/:entityId` | Get entity versions |
-| ✏️ POST | `/api/versions/:entityType/:entityId/rollback/:versionId` | Rollback entity |
+| 🔍 GET | `/api/health-check` | Get system health status. Returns status: OK/Degraded/Down and component health. |
+| 🔍 GET | `/api/tools-health` | Check health of all available tools (custom tools, integrations). |
+| 🔍 GET | `/api/versions/:entityType/:entityId` | Get version history for entity (agent, skill, prompt). |
+| 🔍 GET | `/api/versions/detail/:versionId` | Get detailed diff of specific version including changes made. |
+| ✏️ POST | `/api/versions/:entityType/:entityId/rollback/:versionId` | Rollback entity to previous version. Restores configuration. |
 
 ---
 
 ## Database & Export
 
-**4 endpoints** — Database management and data export
+**4 endpoints** — Database management and data export/import
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/db-stats` | Get database statistics |
-| 🔍 GET | `/api/export` | Export platform data |
-| ✏️ POST | `/api/import` | Import platform data |
-| 🔍 GET | `/api/versions/detail/:versionId` | Get version details |
+| 🔍 GET | `/api/db-stats` | Get database statistics: table sizes, row counts, storage used. |
+| 🔍 GET | `/api/export` | Export all platform data as JSON/CSV. Body: `{format, include: ['agents', 'skills', 'documents']}`. |
+| ✏️ POST | `/api/import` | Import platform data from export file. Body: `multipart/form-data` with file. Validates format first. |
 
 ---
 
 ## Versioning
 
-**4 endpoints** — Version control and history
+**4 endpoints** — Configuration and entity version control
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/versions/:entityType/:entityId` | List entity versions |
-| 🔍 GET | `/api/versions/detail/:versionId` | Get version details |
-| ✏️ POST | `/api/versions/:entityType/:entityId/rollback/:versionId` | Rollback to version |
+| 🔍 GET | `/api/versions/:entityType/:entityId` | Get all versions of entity with timestamps and author. |
+| 🔍 GET | `/api/versions/detail/:versionId` | Get detailed change log for specific version. |
+| ✏️ POST | `/api/versions/:entityType/:entityId/rollback/:versionId` | Restore entity to specific version. Creates new version record. |
 
 ---
 
 ## Tools & Models
 
-**4 endpoints** — Tool and model management
+**4 endpoints** — Tool and model catalog management
 
 | Method | Path | Description |
 |--------|------|-------------|
-| 🔍 GET | `/api/tools` | List all tools |
-| 🔄 PUT | `/api/tools/:name/toggle` | Toggle tool status |
-| 🔍 GET | `/api/models` | List models |
-| ✏️ POST | `/api/models/switch` | Switch model |
+| 🔍 GET | `/api/tools` | Get complete tool catalog (built-in + custom). Includes all tool definitions. |
+| 🔄 PUT | `/api/tools/:name/toggle` | Enable/disable tool globally. Body: `{enabled: true/false}`. |
+| 🔍 GET | `/api/models` | List available LLM models with pricing and provider info. |
+| ✏️ POST | `/api/models/switch` | Switch active model. Body: `{modelId, scope}`. |
 
 ---
 
@@ -464,49 +463,44 @@
 
 ### Authentication
 
-All endpoints (except `/api/auth/*` and `/api/health-check`) require a valid session:
+All endpoints except `/api/auth/*` and `/api/health-check` require active session:
 
 ```bash
-# Login first
 curl -X POST http://localhost:3005/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"password"}' \
   -c cookies.txt
 
-# Then use the session cookie
-curl http://localhost:3005/api/users \
-  -b cookies.txt
+curl http://localhost:3005/api/agents -b cookies.txt
 ```
 
 ### Response Format
 
-All API responses are JSON:
-
 ```json
 {
-  "status": "success|error",
+  "status": "success",
   "data": {...},
   "timestamp": "2025-09-06T14:32:15Z"
 }
 ```
 
-### Error Handling
+### Error Codes
 
-- **400**: Bad Request — Invalid input parameters
-- **401**: Unauthorized — Not authenticated
-- **403**: Forbidden — Insufficient permissions
-- **404**: Not Found — Resource doesn't exist
-- **500**: Internal Server Error — Server error
+- `400` — Bad Request (invalid parameters)
+- `401` — Unauthorized (no valid session)
+- `403` — Forbidden (insufficient permissions)
+- `404` — Not Found (resource doesn't exist)
+- `409` — Conflict (resource in use, can't delete)
+- `423` — Locked (resource locked, try later)
+- `500` — Internal Server Error
 
 ### Rate Limiting
 
-- Authentication endpoints: 5 attempts per 5 minutes per IP
+- Auth endpoints: 5 attempts/5 min per IP
 - General endpoints: No limit (session-based)
-- Scan endpoints: 1 concurrent scan per resource
+- Scan endpoints: 1 concurrent per resource
 
 ### Pagination
-
-List endpoints support pagination:
 
 ```bash
 GET /api/users?page=1&limit=50
@@ -515,153 +509,11 @@ GET /api/documents?offset=100&count=25
 
 ### Filtering & Sorting
 
-Most list endpoints support filtering and sorting:
-
 ```bash
 GET /api/agents?status=active&sort=name
 GET /api/prompts?search=welcome&created_after=2025-01-01
 ```
 
-### Streaming Endpoints
-
-Streaming endpoints return Server-Sent Events (SSE):
-
-```bash
-curl -N http://localhost:3005/api/agent-run/stream \
-  -H "Content-Type: application/json" \
-  -d '{"agent":"my-agent"}'
-```
-
-### Common Patterns
-
-#### Create Resource
-```bash
-curl -X POST http://localhost:3005/api/skills \
-  -H "Content-Type: application/json" \
-  -d '{"name":"analysis","description":"Data analysis skill"}' \
-  -b cookies.txt
-```
-
-#### Read Resource
-```bash
-curl http://localhost:3005/api/skills/123 \
-  -b cookies.txt
-```
-
-#### Update Resource
-```bash
-curl -X PUT http://localhost:3005/api/skills/123 \
-  -H "Content-Type: application/json" \
-  -d '{"name":"advanced-analysis"}' \
-  -b cookies.txt
-```
-
-#### Delete Resource
-```bash
-curl -X DELETE http://localhost:3005/api/skills/123 \
-  -b cookies.txt
-```
-
 ---
 
-## Statistics
-
-**Total Endpoints**: 192
-
-### By Method
-```
-POST: 74
-GET: 93
-PUT: 18
-DELETE: 7
-```
-
-### By Category
-```
-Admin - Docker: 19
-Agents: 8
-Users & Personas: 20
-Documents: 18
-Prompts: 8
-Custom Tools: 6
-Guardrails: 6
-Pipelines: 8
-Connectors: 10
-Chat & Sessions: 10
-Models: 4
-MCP Servers: 14
-Admin - Compliance: 4
-Admin - Observability: 6
-Admin - Overviews: 12
-A2A Networking: 6
-N8N Integration: 6
-Audit & Monitoring: 8
-Health & System: 5
-Database & Export: 4
-Versioning: 4
-Tools & Models: 4
-```
-
----
-
-## Integration Patterns
-
-### Agent Execution Flow
-```
-1. POST /api/agents → Create agent
-2. POST /api/agent-run → Execute synchronously
-3. POST /api/agent-run/stream → Stream results
-4. GET /api/sessions/:id/history → Review execution
-```
-
-### Document Ingestion Flow
-```
-1. POST /api/documents/upload → Upload file
-2. POST /api/documents/:id/index → Index content
-3. POST /api/documents/search → Search indexed docs
-4. GET /api/documents/stats → Monitor indexing
-```
-
-### Skill Development Flow
-```
-1. POST /api/skills → Create skill
-2. POST /api/skills/:id/files → Upload implementation
-3. POST /api/skills/enrich → Enhance with AI
-4. POST /api/skills/decompose → Break into subtasks
-```
-
-### Security Scanning Flow
-```
-1. POST /api/admin/docker/scan → Scan container
-2. POST /api/admin/secret-scan → Detect secrets
-3. GET /api/admin/docker/security-summary → Review results
-4. GET /api/audit-log → Check compliance log
-```
-
----
-
-## Best Practices
-
-1. **Batch Operations**: Use bulk endpoints when available to reduce API calls
-2. **Caching**: Client-side cache responses to minimize server load
-3. **Error Handling**: Always check response status before processing data
-4. **Authentication**: Store session cookies securely
-5. **Versioning**: Always check API version compatibility
-6. **Logging**: Monitor audit logs for security events
-7. **Rate Limiting**: Implement exponential backoff for retries
-8. **Streaming**: Use streaming endpoints for long-running operations
-
----
-
-## Support & Documentation
-
-- **OpenAPI Schema**: Available at `/api/openapi.json` (if enabled)
-- **Admin Panel**: `/admin` for UI-based management
-- **Documentation**: See `/docs` for detailed guides
-- **Issues**: Report bugs at `/admin/issues`
-
----
-
-Generated: 2025-09-06  
-Last Updated: 2025-09-06
-
+Generated: 2025-09-06
