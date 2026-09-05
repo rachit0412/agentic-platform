@@ -23,6 +23,39 @@
       if (localStorage.getItem('sidebarExpanded') === 'true') document.documentElement.classList.add('sidebar-expanded');
     })();
   </script>
+  <script>
+    // Relax full-screen fixed overlays that accidentally block UI interactions.
+    // This is a minimal safeguard: it disables pointer-events on fixed, full-screen
+    // elements that do not contain an obvious dialog/modal child, allowing clicks
+    // to reach the underlying admin UI while keeping real modals functional.
+    (function(){
+      function relaxOverlays(){
+        try{
+          var elems = Array.from(document.querySelectorAll('body > *'));
+          elems.forEach(function(el){
+            var cs = window.getComputedStyle(el);
+            if (cs.position !== 'fixed') return;
+            var r = el.getBoundingClientRect();
+            var covers = r.width >= window.innerWidth - 2 && r.height >= window.innerHeight - 2;
+            if (!covers) return;
+            // Keep overlays that contain a dialog or explicit pointer-events autos
+            if (el.querySelector('[role="dialog"], .modal, .pointer-events-auto, [data-modal]')) return;
+            // If element already intentionally allows clicks, skip
+            if (cs.pointerEvents === 'auto' && el.dataset && el.dataset._relaxedOverlay !== 'true') {
+              // if it's a visible element with interactive children, do not touch
+              var hasInteractive = el.querySelector('button, a, input, [role="dialog"]');
+              if (hasInteractive) return;
+            }
+            el.style.pointerEvents = 'none';
+            el.dataset._relaxedOverlay = 'true';
+          });
+        }catch(e){}
+      }
+      window.addEventListener('load', relaxOverlays);
+      window.addEventListener('resize', relaxOverlays);
+      setTimeout(relaxOverlays, 300);
+    })();
+  </script>
 </head>
 <body>
   <!-- ── Icon Rail ── -->
