@@ -3352,10 +3352,90 @@ async function scanAllDockerImages() {
 function initDockerManagement() {
   const container = document.getElementById('tab-docker-images');
   if (!container || container.style.display === 'none') return;
-  
+
   loadDockerImages();
   loadDockerSecuritySummary();
 }
+
+/* ═══ ADMIN TAB INITIALIZATION ═══ */
+(function() {
+  // Handle section tab clicks
+  document.querySelectorAll('.admin-stab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var section = tab.getAttribute('data-section');
+      if (!section) return;
+
+      // Update active section tab
+      document.querySelectorAll('.admin-stab').forEach(function(t) {
+        t.classList.remove('active');
+      });
+      tab.classList.add('active');
+
+      // Update visible subtabs
+      document.querySelectorAll('.admin-subtabs').forEach(function(subtabs) {
+        subtabs.style.display = 'none';
+      });
+      var subtabsId = 'subtabs-' + section;
+      var subtabs = document.getElementById(subtabsId);
+      if (subtabs) {
+        subtabs.style.display = 'block';
+        // Activate first subtab if available
+        var firstSubtab = subtabs.querySelector('.admin-subtab');
+        if (firstSubtab) {
+          firstSubtab.click();
+        }
+      }
+    });
+  });
+
+  // Handle content tab clicks
+  document.querySelectorAll('.admin-subtab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var tabId = tab.getAttribute('data-tab');
+      if (!tabId) return;
+
+      var parentSubtabs = tab.closest('.admin-subtabs');
+      if (!parentSubtabs) return;
+
+      // Update active subtab
+      parentSubtabs.querySelectorAll('.admin-subtab').forEach(function(t) {
+        t.classList.remove('active');
+      });
+      tab.classList.add('active');
+
+      // Hide all admin-tab-content divs
+      document.querySelectorAll('.admin-tab-content').forEach(function(content) {
+        content.style.display = 'none';
+      });
+
+      // Show the selected content tab
+      var contentId = 'tab-' + tabId;
+      var content = document.getElementById(contentId);
+      if (content) {
+        content.style.display = 'block';
+
+        // Call initialization functions for specific tabs
+        if (tabId === 'health') loadServiceHealth();
+        else if (tabId === 'overview') loadMemoryStats();
+        else if (tabId === 'audit') loadAuditLog();
+        else if (tabId === 'users') loadUsers();
+        else if (tabId === 'personas') loadPersonas();
+        else if (tabId === 'llm') loadLlmConfig();
+        else if (tabId === 'config') loadLlmConfig();
+        else if (tabId === 'database') loadDbStats();
+        else if (tabId === 'docker-images') initDockerManagement();
+        else if (tabId === 'compliance-rules') loadComplianceSettings();
+        else if (tabId === 'secret-scan') loadSecretScanStatus();
+      }
+    });
+  });
+
+  // Activate first section tab on load
+  var firstSectionTab = document.querySelector('.admin-stab');
+  if (firstSectionTab) {
+    firstSectionTab.click();
+  }
+})();
 
 </script>
 ` }) %>

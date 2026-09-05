@@ -25,13 +25,12 @@
   </script>
   <script>
     // Relax full-screen fixed overlays that accidentally block UI interactions.
-    // This is a minimal safeguard: it disables pointer-events on fixed, full-screen
-    // elements that do not contain an obvious dialog/modal child, allowing clicks
-    // to reach the underlying admin UI while keeping real modals functional.
+    // Enhanced: observe DOM mutations and run periodically so overlays created
+    // after initial load are also handled.
     (function(){
       function relaxOverlays(){
         try{
-          var elems = Array.from(document.querySelectorAll('body > *'));
+          var elems = Array.from(document.querySelectorAll('body *'));
           elems.forEach(function(el){
             var cs = window.getComputedStyle(el);
             if (cs.position !== 'fixed') return;
@@ -40,19 +39,32 @@
             if (!covers) return;
             // Keep overlays that contain a dialog or explicit pointer-events autos
             if (el.querySelector('[role="dialog"], .modal, .pointer-events-auto, [data-modal]')) return;
-            // If element already intentionally allows clicks, skip
+            // If element already intentionally allows clicks, skip when it has interactive children
             if (cs.pointerEvents === 'auto' && el.dataset && el.dataset._relaxedOverlay !== 'true') {
-              // if it's a visible element with interactive children, do not touch
-              var hasInteractive = el.querySelector('button, a, input, [role="dialog"]');
+              var hasInteractive = el.querySelector('button, a, input, select, textarea, [role="dialog"]');
               if (hasInteractive) return;
             }
+            // mark and disable pointer events so clicks go through
             el.style.pointerEvents = 'none';
             el.dataset._relaxedOverlay = 'true';
           });
-        }catch(e){}
+        }catch(e){ /* ignore */ }
       }
+
+      // Throttle scheduling
+      var scheduled = false;
+      function schedule(){ if(scheduled) return; scheduled = true; setTimeout(function(){ relaxOverlays(); scheduled = false; }, 120); }
+
+      // Observe DOM changes (nodes added or attribute changes like style/class)
+      try{
+        var observer = new MutationObserver(schedule);
+        observer.observe(document.documentElement || document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class'] });
+      }catch(e){}
+
       window.addEventListener('load', relaxOverlays);
-      window.addEventListener('resize', relaxOverlays);
+      window.addEventListener('resize', schedule);
+      // Periodic safety run (covers late-added overlays)
+      setInterval(relaxOverlays, 1000);
       setTimeout(relaxOverlays, 300);
     })();
   </script>

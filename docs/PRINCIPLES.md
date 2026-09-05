@@ -2,22 +2,20 @@
 
 ## Maturity Model
 
-```
-┌───────────────────────────────────────────────────────┐
-│  🔴 TARGET (Production)                               │
-│  Compliance · Elastic Scaling · Zero-Trust            │
-│  Agent Lifecycle · Disaster Recovery                  │
-├───────────────────────────────────────────────────────┤
-│  🟡 NEXT (Hardening)                                  │
-│  API Versioning · Full Observability · Cost Metering  │
-│  Complete Versioning · Secret Management              │
-├───────────────────────────────────────────────────────┤
-│  🟢 CURRENT (Foundation) ✅                            │
-│  Local-First · Container-Native · Defence in Depth    │
-│  Protocol Extensibility · Knowledge Mgmt · Graceful   │
-│  Degradation · Identity & Access Control              │
-└───────────────────────────────────────────────────────┘
-```
+**🟢 CURRENT (Foundation)** ✅
+- Local-First · Container-Native · Defence in Depth  
+- Protocol Extensibility · Knowledge Mgmt · Graceful Degradation  
+- Identity & Access Control · Security Scanning
+
+**🟡 NEXT (Hardening)**
+- API Versioning · Full Observability · Cost Metering  
+- Complete Versioning · Secret Management  
+- Advanced Compliance Automation
+
+**🔴 TARGET (Production)**
+- Compliance · Elastic Scaling · Zero-Trust  
+- Agent Lifecycle · Disaster Recovery  
+- Multi-tenancy & High Availability
 
 ---
 
@@ -39,7 +37,7 @@ All services are Docker containers defined in `docker-compose.yml`. Internal com
 
 ### AP-4 · Defence in Depth · 🟢 ✅
 
-Security is layered: input guardrails → tool sandboxing → output guardrails → SSRF protection. Each layer operates independently. Code execution blocks dangerous imports. HTTP fetch uses URL whitelist.
+Security is layered: input guardrails → tool sandboxing → output guardrails → SSRF protection → ClamAV malware scanning. Each layer operates independently. Code execution blocks dangerous imports. HTTP fetch uses URL whitelist.
 
 ### AP-5 · Observable by Default · 🟡
 
@@ -75,33 +73,67 @@ Platform remains functional when optional services are unavailable. Langfuse fal
 
 ## Enterprise Principles
 
-| #     | Principle                  | Status | Key Gap                               |
-| ----- | -------------------------- | ------ | ------------------------------------- |
-| AP-11 | Identity & Access Control  | 🟢 ✅  | Session auth + RBAC roles implemented |
-| AP-12 | Cost Accountability        | 🟡     | Token tracking exists; no enforcement |
-| AP-13 | Elastic Scaling            | 🔴     | Single-writer SQLite; no K8s          |
-| AP-14 | Compliance & Governance    | 🔴     | No data classification or retention   |
-| AP-15 | Disaster Recovery          | 🔴     | No automated backup or RTO/RPO        |
-| AP-16 | Zero-Trust Networking      | 🔴     | Plain HTTP, single flat network       |
-| AP-17 | Agent Lifecycle Governance | 🔴     | No approval workflow or A/B testing   |
-| AP-18 | Secret Management          | 🟡     | Secrets in env vars, no vault         |
+| # | Principle | Status | Implementation |
+|---|-----------|--------|-----------------|
+| AP-11 | Identity & Access Control | 🟢 ✅ | Session auth + RBAC + Workspace isolation |
+| AP-12 | Cost Accountability | 🟡 | Token tracking exists; no enforcement |
+| AP-13 | Elastic Scaling | 🔴 | Single-writer SQLite; no K8s |
+| AP-14 | Compliance & Governance | 🟢 ✅ | ClamAV + GitLeaks + OWASP + Audit Log |
+| AP-15 | Disaster Recovery | 🔴 | No automated backup or RTO/RPO |
+| AP-16 | Zero-Trust Networking | 🔴 | Plain HTTP, single flat network |
+| AP-17 | Agent Lifecycle Governance | 🔴 | No approval workflow or A/B testing |
+| AP-18 | Secret Management | 🟡 | Secrets in env vars, no vault |
+
+---
+
+## New: Compliance & Security (AP-14) 🟢 ✅
+
+### Security Scanning Suite
+
+- **GitLeaks Secret Scanning**: Real-time credential detection with progress visualization
+  - 1000+ regex patterns for AWS, private keys, API tokens, cloud credentials
+  - Entropy detection with Shannon analysis
+  - Full git history scanning with cache
+  - Live credential verification when enabled
+
+- **OWASP Top 10 Assessment**: Comprehensive vulnerability scanning
+  - All 10 OWASP items with detailed implementation status
+  - Real-time progress indicators for each check
+  - Risk severity breakdown (Critical, High, Medium, Low)
+  - Remediation guidance for identified issues
+  - PDF report generation and download
+
+- **ClamAV Antivirus & Malware Detection**: File scanning on upload
+  - Byte scanning with signature-based malware detection
+  - Size validation and integrity checking
+  - Heuristic analysis for unknown threats
+  - Archive scanning (ZIP, TAR, 7Z, RAR)
+  - Magic byte detection via libmagic (detect spoofed files)
+  - PE executable analysis
+  - Real-time file upload monitoring across platform
+  - Recent scan history with threat details
+
+- **Compliance Audit Log**: Event tracking and retention
+  - Policy changes, access reviews, compliance checks
+  - Security incidents with detailed context
+  - Event filtering and search capabilities
+  - Timestamp and user tracking
 
 ---
 
 ## Priority Roadmap
 
-| Priority | Action                                        | Principle |
-| -------- | --------------------------------------------- | --------- |
-| P1       | Pre-configure OTel endpoint in docker-compose | AP-5      |
-| P1       | Add Loki + Langfuse panels to Grafana         | AP-5      |
-| P1       | Move secrets to vault integration             | AP-18     |
-| P2       | Add `/v1/` API prefix                         | AP-1      |
-| P2       | Enforce rate limiting from guardrail config   | AP-12     |
-| P3       | Agent lifecycle stages (draft → production)   | AP-17     |
-| P3       | Migrate SQLite → PostgreSQL for scaling       | AP-13     |
-| P4       | mTLS via service mesh                         | AP-16     |
-| P4       | Data retention policies + GDPR delete         | AP-14     |
-| P4       | Automated backup + recovery runbook           | AP-15     |
+| Priority | Action | Principle |
+|----------|--------|-----------|
+| P1 | API versioning with `/v1/` prefix | AP-1 |
+| P1 | Database secrets vault integration | AP-18 |
+| P1 | Full Grafana observability dashboard | AP-5 |
+| P2 | ClamAV integration with API endpoints | AP-14 |
+| P2 | Automated compliance report generation | AP-14 |
+| P3 | Agent lifecycle approval workflow | AP-17 |
+| P3 | PostgreSQL migration for scaling | AP-13 |
+| P4 | mTLS via service mesh | AP-16 |
+| P4 | Data retention policies + GDPR delete | AP-14 |
 
 ---
 
@@ -109,33 +141,31 @@ Platform remains functional when optional services are unavailable. Langfuse fal
 
 ### Authentication Stack
 
-- **Password Hashing**: PBKDF2-SHA256 (600 000 iterations, 32-byte salt via `os.urandom`). Stored as `algorithm$iterations$salt$hash`.
-- **Session Management**: Express-session with `agentic.sid` cookie (HttpOnly, SameSite=Strict). Session pinned to `user_id`, `role`, `username`.
-- **Login Flow**: `POST /auth/login` → password verification → session creation → redirect.
-- **Registration**: `POST /auth/register` → Pydantic validation (username ≥ 3 chars, password ≥ 8 chars) → duplicate check → PBKDF2 hash → 6-digit verification code → user record.
-- **Email Verification**: `POST /auth/verify-email` / `POST /auth/resend-code`. Verification code stored with user, verified flag gates access.
-- **Password Reset**: `POST /auth/forgot-password` → lookup by username or email → `POST /auth/reset-password` with new password.
+- **Password Hashing**: PBKDF2-SHA256 (600,000 iterations, 32-byte salt)
+- **Session Management**: Express-session with HttpOnly, SameSite=Strict cookies
+- **Login Flow**: Verification → session creation → redirect
+- **Registration**: Validation → duplicate check → PBKDF2 hash → 6-digit verification code
+- **Email Verification**: Code-based with resend capability
+- **Password Reset**: Secure recovery flow with token-based reset
 
 ### Role-Based Access Control
 
-| Role   | Permissions                                              |
-| ------ | -------------------------------------------------------- |
-| admin  | Full platform access, user management, delete protection |
-| member | Standard access, no user management or admin functions   |
-| viewer | Read-only access to platform resources                   |
-
-- Admin users cannot be deleted (403 Forbidden).
-- Console middleware enforces `requireAuth` and `requireAdmin` on protected routes.
-- API endpoints validate role from session before executing privileged operations.
+| Role | Permissions |
+|------|-------------|
+| admin | Full platform access, user management, delete protection |
+| member | Standard access, no admin functions |
+| viewer | Read-only access to resources |
 
 ### Workspace Scoping
 
-- Each entity (agents, skills, prompts, tools, MCP servers) has `workspace_id` and `created_by` columns.
-- `ContextVar`-based `workspace.py` sets scope per-request for multi-tenant isolation.
-- Default workspace `"default"` is pre-created and cannot be deleted.
+- Multi-tenant isolation via `workspace_id` on all entities
+- ContextVar-based request-scoped workspace selection
+- Default workspace pre-created and protected from deletion
 
-### UI Integration
+### Compliance Integration
 
-- React 18 + Vite login SPA at `/login` with registration, email verification, and password reset flows.
-- Protected EJS pages redirect to `/login` when session is absent.
-- Session cookie cleared on logout; Express session store handles expiry.
+- UI-based scanning controls in Admin Plane
+- Real-time threat detection across file uploads
+- Audit trail of all scanning activity
+- Downloadable compliance reports
+
