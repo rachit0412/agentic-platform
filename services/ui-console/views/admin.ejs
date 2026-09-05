@@ -1963,62 +1963,51 @@ function switchSection(section) {
 }
 
 function switchTab(tab, fromSection) {
-  try {
-    /* Sync section if needed */
-    if (!fromSection) {
-      var sec = TAB_SECTION[tab];
-      if (sec) {
-        var stabs = document.querySelectorAll('.admin-stab');
-        for (var i = 0; i < stabs.length; i++) {
-          if (stabs[i].getAttribute('data-section') === sec) {
-            stabs[i].classList.add('active');
-          } else {
-            stabs[i].classList.remove('active');
-          }
-        }
-        var subtabRows = document.querySelectorAll('.admin-subtabs');
-        for (var i = 0; i < subtabRows.length; i++) {
-          if (subtabRows[i].id === 'subtabs-' + sec) {
-            subtabRows[i].style.display = 'flex';
-          } else {
-            subtabRows[i].style.display = 'none';
-          }
-        }
-      }
-    }
-    /* Update subtab active states */
-    var subtabs = document.querySelectorAll('.admin-subtab');
-    for (var i = 0; i < subtabs.length; i++) {
-      if (subtabs[i].getAttribute('data-tab') === tab) {
-        subtabs[i].classList.add('active');
-      } else {
-        subtabs[i].classList.remove('active');
-      }
-    }
-    /* Hide all tabs first */
-    var allTabs = document.querySelectorAll('.admin-tab-content');
-    for (var i = 0; i < allTabs.length; i++) {
-      allTabs[i].style.display = 'none';
-    }
-    /* Show the selected tab */
-    var selectedTab = document.getElementById('tab-' + tab);
-    if (selectedTab) {
-      selectedTab.style.display = 'block';
-    }
-    /* Update URL */
-    history.replaceState(null, '', '#' + tab);
-    /* Load data */
-    if (tab === 'health') loadServiceHealth();
-    else if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
-    else if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
-    else if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
-    else if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
-    else if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
-    else if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
-    else if (tab === 'audit') loadAuditLog();
-  } catch (e) {
-    console.error('Error in switchTab:', e);
+  /* Hide all tabs */
+  var allTabs = document.querySelectorAll('.admin-tab-content');
+  for (var i = 0; i < allTabs.length; i++) {
+    allTabs[i].style.display = 'none';
   }
+
+  /* Show selected tab */
+  var selected = document.getElementById('tab-' + tab);
+  if (selected) {
+    selected.style.display = 'block';
+  }
+
+  /* Update button state */
+  var buttons = document.querySelectorAll('.admin-subtab');
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].getAttribute('data-tab') === tab) {
+      buttons[i].classList.add('active');
+    } else {
+      buttons[i].classList.remove('active');
+    }
+  }
+
+  /* Sync section tabs */
+  if (!fromSection && TAB_SECTION[tab]) {
+    var sec = TAB_SECTION[tab];
+    var stabs = document.querySelectorAll('.admin-stab');
+    for (var i = 0; i < stabs.length; i++) {
+      if (stabs[i].getAttribute('data-section') === sec) {
+        stabs[i].classList.add('active');
+      } else {
+        stabs[i].classList.remove('active');
+      }
+    }
+  }
+
+  /* Update URL and load data */
+  history.replaceState(null, '', '#' + tab);
+  if (tab === 'health') loadServiceHealth();
+  if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
+  if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
+  if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
+  if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
+  if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
+  if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
+  if (tab === 'audit') loadAuditLog();
 }
 
 /* Wire up nav via event delegation (avoids inline onclick in template literal) */
