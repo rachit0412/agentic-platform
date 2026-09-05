@@ -51,6 +51,7 @@
       <button class="admin-subtab" data-tab="health">Service Health</button>
       <button class="admin-subtab" data-tab="overview">Platform Overview</button>
       <button class="admin-subtab" data-tab="audit">Audit Log</button>
+      <button class="admin-subtab" data-tab="api-reference">API Reference</button>
     </div>
     <div class="admin-subtabs" id="subtabs-identity" style="display:none">
       <button class="admin-subtab" data-tab="users">Users &amp; Access</button>
@@ -619,6 +620,7 @@
 </div>
 
 <script src="/docker-management.js"><\/script>
+<script src="/js/docs-client.js"><\/script>
 <script>
 // Register Docker management tab handlers
 document.addEventListener('DOMContentLoaded', function() {
@@ -959,6 +961,21 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
     <div id="audit-log" class="mt-1" style="color:var(--text-3);font-size:0.82rem;max-height:600px;overflow-y:auto">Loading...</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB: OPERATIONS - API REFERENCE                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-api-reference" class="admin-tab-content" style="display:none">
+  <div class="card animate-fade-up">
+    <div class="section-header">
+      <h3>API Reference</h3>
+      <p style="font-size:0.75rem;color:var(--text-2);margin:0.5rem 0">Comprehensive endpoint documentation for the Agentic Platform (192 total endpoints)</p>
+    </div>
+    <div id="api-reference-content" style="margin-top:1rem;color:var(--text-2);font-size:0.82rem">
+      Loading API reference documentation...
+    </div>
   </div>
 </div>
 
@@ -1849,7 +1866,7 @@ async function loadWorkspacesAdmin() {
 
 /* ═══ NAVIGATION ═══ */
 var SECTION_TABS = {
-  operations: ['health', 'overview', 'audit'],
+  operations: ['health', 'overview', 'audit', 'api-reference'],
   identity: ['users', 'personas'],
   ai: ['llm', 'config'],
   data: ['database'],
@@ -1857,7 +1874,7 @@ var SECTION_TABS = {
   compliance: ['compliance-rules', 'compliance-audit', 'secret-scan', 'owasp-scan', 'clamav-scan']
 };
 var TAB_SECTION = {
-  health: 'operations', overview: 'operations', audit: 'operations',
+  health: 'operations', overview: 'operations', audit: 'operations', 'api-reference': 'operations',
   users: 'identity', personas: 'identity',
   llm: 'ai', config: 'ai',
   database: 'data',
@@ -1912,6 +1929,7 @@ function switchTab(tab, fromSection) {
   if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
   if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
   if (tab === 'audit') loadAuditLog();
+  if (tab === 'api-reference') loadApiReference();
 }
 
 /* Wire up nav via event delegation (avoids inline onclick in template literal) */
@@ -1957,7 +1975,7 @@ function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
   var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database' };
-  var validTabs = ['health','users','personas','overview','llm','database','config','audit'];
+  var validTabs = ['health','users','personas','overview','llm','database','config','audit','api-reference'];
   var startTab;
   if (sectionDefaults[hash]) {
     startTab = sectionDefaults[hash];
@@ -2598,6 +2616,63 @@ async function loadAuditLog() {
 
 document.getElementById('audit-filter-type').addEventListener('change', loadAuditLog);
 document.getElementById('audit-filter-action').addEventListener('change', loadAuditLog);
+
+/* ═══ API REFERENCE ═══ */
+async function loadApiReference() {
+  try {
+    var elem = document.getElementById('api-reference-content');
+    if (!elem) return;
+
+    // Use DocsClient if available to load the API-REFERENCE.md dynamically
+    if (window.DocsClient) {
+      await DocsClient.loadIntoElement('API-REFERENCE', '#api-reference-content', {
+        format: 'raw',
+        showToc: true,
+        forceRefresh: false
+      });
+    } else {
+      // Fallback: load via fetch
+      var response = await fetch('/api/docs/API-REFERENCE?format=raw&toc=true');
+      if (!response.ok) throw new Error('Failed to load API reference');
+      var data = await response.json();
+
+      // Render markdown as HTML
+      var html = renderMarkdown(data.content);
+      elem.innerHTML = html;
+    }
+  } catch(e) {
+    console.error('Error loading API reference:', e);
+    document.getElementById('api-reference-content').innerHTML =
+      '<div style="color:var(--danger);padding:1rem"><strong>Error loading API reference:</strong> ' +
+      escapeHtml(e.message) + '</div>';
+  }
+}
+
+// Simple markdown renderer for API reference
+function renderMarkdown(md) {
+  var html = md
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/_(.*?)_/g, '<em>$1</em>')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
+    .replace(/^### (.*?)$/gm, '<h3 style="margin-top:1.5rem;margin-bottom:0.75rem;color:var(--text-1)">$1</h3>')
+    .replace(/^## (.*?)$/gm, '<h2 style="margin-top:2rem;margin-bottom:1rem;color:var(--text-1)">$1</h2>')
+    .replace(/^# (.*?)$/gm, '<h1 style="margin-bottom:1rem;color:var(--text-1)">$1</h1>')
+    .replace(/\|(.+?)\|/g, function(match) {
+      if (!match.includes('---|')) return match;
+      return '<table style="border-collapse:collapse;width:100%;margin:1rem 0"><tr>' +
+        match.split('|').slice(1,-1).map(function(cell) {
+          return '<td style="border:1px solid var(--glass-border);padding:0.5rem">' + cell.trim() + '</td>';
+        }).join('') + '</tr></table>';
+    })
+    .replace(/\n\n/g, '</p><p style="margin-top:0.5rem">')
+    .replace(/^([^<])/gm, function(m) { return m.includes('<') ? m : '<p>' + m; })
+    .replace(/```(.*?)```/gs, '<pre style="background:rgba(0,0,0,0.3);padding:1rem;border-radius:4px;overflow-x:auto"><code>$1</code></pre>');
+
+  return '<div style="line-height:1.6;color:var(--text-2)">' + html + '</div>';
+}
 
 /* ═══ PERSONA MANAGEMENT ═══ */
 var _personasCache = [];
