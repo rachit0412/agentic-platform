@@ -484,6 +484,9 @@ app.get("/auth/logout", (req, res) => {
 function requireAuth(req, res, next) {
   // Allow health endpoint without auth
   if (req.path === "/health") return next();
+  // Allow public documentation pages and API
+  if (req.path === "/docs" || req.path.startsWith("/docs/")) return next();
+  if (req.path.startsWith("/api/docs")) return next();
   if (!req.session || !req.session.user) {
     if (req.path.startsWith("/api/")) {
       return res.status(401).json({ error: "Not authenticated" });
