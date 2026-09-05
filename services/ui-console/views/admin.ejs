@@ -1963,38 +1963,62 @@ function switchSection(section) {
 }
 
 function switchTab(tab, fromSection) {
-  /* Sync section if needed */
-  if (!fromSection) {
-    var sec = TAB_SECTION[tab];
-    if (sec) {
-      document.querySelectorAll('.admin-stab').forEach(function(el) {
-        el.classList.toggle('active', el.getAttribute('data-section') === sec);
-      });
-      document.querySelectorAll('.admin-subtabs').forEach(function(el) {
-        el.style.display = el.id === 'subtabs-' + sec ? 'flex' : 'none';
-      });
+  try {
+    /* Sync section if needed */
+    if (!fromSection) {
+      var sec = TAB_SECTION[tab];
+      if (sec) {
+        var stabs = document.querySelectorAll('.admin-stab');
+        for (var i = 0; i < stabs.length; i++) {
+          if (stabs[i].getAttribute('data-section') === sec) {
+            stabs[i].classList.add('active');
+          } else {
+            stabs[i].classList.remove('active');
+          }
+        }
+        var subtabRows = document.querySelectorAll('.admin-subtabs');
+        for (var i = 0; i < subtabRows.length; i++) {
+          if (subtabRows[i].id === 'subtabs-' + sec) {
+            subtabRows[i].style.display = 'flex';
+          } else {
+            subtabRows[i].style.display = 'none';
+          }
+        }
+      }
     }
+    /* Update subtab active states */
+    var subtabs = document.querySelectorAll('.admin-subtab');
+    for (var i = 0; i < subtabs.length; i++) {
+      if (subtabs[i].getAttribute('data-tab') === tab) {
+        subtabs[i].classList.add('active');
+      } else {
+        subtabs[i].classList.remove('active');
+      }
+    }
+    /* Hide all tabs first */
+    var allTabs = document.querySelectorAll('.admin-tab-content');
+    for (var i = 0; i < allTabs.length; i++) {
+      allTabs[i].style.display = 'none';
+    }
+    /* Show the selected tab */
+    var selectedTab = document.getElementById('tab-' + tab);
+    if (selectedTab) {
+      selectedTab.style.display = 'block';
+    }
+    /* Update URL */
+    history.replaceState(null, '', '#' + tab);
+    /* Load data */
+    if (tab === 'health') loadServiceHealth();
+    else if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
+    else if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
+    else if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
+    else if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
+    else if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
+    else if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
+    else if (tab === 'audit') loadAuditLog();
+  } catch (e) {
+    console.error('Error in switchTab:', e);
   }
-  /* Update subtab active states */
-  document.querySelectorAll('.admin-subtab').forEach(function(el) {
-    el.classList.toggle('active', el.getAttribute('data-tab') === tab);
-  });
-  /* Show content panel */
-  document.querySelectorAll('.admin-tab-content').forEach(function(el) {
-    el.style.display = 'none';
-  });
-  var panel = document.getElementById('tab-' + tab);
-  if (panel) panel.style.display = 'block';
-  history.replaceState(null, '', '#' + tab);
-  /* Load data */
-  if (tab === 'health') loadServiceHealth();
-  if (tab === 'users') { loadUsers(); loadWorkspacesAdmin(); }
-  if (tab === 'personas') { loadPersonas(); loadUserPersonaAssignments(); }
-  if (tab === 'overview') { loadOverviewCounts(); loadMemoryStats(); }
-  if (tab === 'llm') { loadLlmConfig(); loadModels(); loadLlmSummary(); }
-  if (tab === 'database') { loadDbStats(); loadChromaStats(); loadDocStats(); }
-  if (tab === 'config') { loadGlobalConstraints(); loadSecurityConsiderations(); loadBestPractices(); loadGuardrails(); loadN8nWorkflows(); highlightThemeCard(); }
-  if (tab === 'audit') loadAuditLog();
 }
 
 /* Wire up nav via event delegation (avoids inline onclick in template literal) */
