@@ -33,6 +33,9 @@
 | 023 | Session Auth with PBKDF2 + RBAC          | AP-11, AP-4       | 2025-05 |
 | 024 | React Login SPA                          | AP-11, AP-7       | 2025-05 |
 | 025 | Workspace-Scoped Multi-Tenancy           | AP-11, AP-7, AP-4 | 2025-05 |
+| 026 | ClamAV for Malware Detection             | AP-14, AP-4, AP-5 | 2025-09 |
+| 027 | GitLeaks for Secret Scanning             | AP-14, AP-4, AP-5 | 2025-09 |
+| 028 | OWASP Top 10 Assessment                  | AP-14, AP-9, AP-5 | 2025-09 |
 
 ---
 
@@ -358,3 +361,138 @@ Added 9 new server-side API endpoints (`/api/admin/*`) to aggregate data from ag
 - Row-level security — SQLite has no RLS; manual WHERE clause filtering
 
 **Consequence**: Queries filter by workspace. Scope column allows `global` entities visible to all workspaces. ContextVar is thread-safe for async FastAPI.
+
+---
+
+## ADR-026 · ClamAV for Malware Detection
+
+**Context**: Files uploaded to the platform could contain malware. Users need real-time protection without external scanning services.
+
+**Decision**: Integrate ClamAV 1.0.1 antivirus engine with multi-layer detection:
+- Byte-level signature scanning for known malware
+- Heuristic analysis for unknown threats
+- Archive scanning (ZIP, TAR, 7Z, RAR)
+- PE executable analysis
+- Magic byte detection via libmagic for file type spoofing
+- Size validation to prevent archive bomb attacks
+
+**Why not alternatives**:
+
+- Cloud scanning (VirusTotal, Google Safe Browsing) — requires external API, adds latency, privacy concern
+- Manual review — doesn't scale, human error
+- Disabled by default — security-by-default is non-negotiable
+
+**Implementation Details**:
+- ClamAV runs as background daemon (`clamd`) in Docker container
+- FastAPI endpoint `POST /tools/scan-file` validates uploads before storage
+- Results logged to `compliance_audit_log` for forensics
+- File metadata (name, size, scan result) stored in SQLite
+- Recent scan history displayed in Admin Plane > Compliance & Ethics > Antivirus Scan tab
+
+**Consequence**: All file uploads are protected. ~500ms-1s scan latency per file. ClamAV daemon restarts required for signature updates (done on container restart).
+
+---
+
+## ADR-027 · GitLeaks for Secret Scanning
+
+**Context**: Credentials (API keys, OAuth tokens, private keys) accidentally committed to repositories pose compliance risk. Need to detect and block before they enter the system.
+
+**Decision**: Integrate GitLeaks scanner with:
+- 1000+ credential patterns (AWS keys, Azure, GCP, OAuth, SSH keys, etc.)
+- Entropy analysis using Shannon entropy for high-entropy secret detection
+- Git history scanning for historical leaks
+- Verification mode to test if credentials are still active
+- Real-time progress visualization during scan
+
+**Detection Patterns**:
+- AWS access keys (`AKIA[0-9A-Z]{16}`)
+- RSA/PKCS private keys (`-----BEGIN.*PRIVATE KEY-----`)
+- OAuth2/Bearer tokens
+- Database connection strings
+- Cloud provider service accounts
+- Slack/GitHub/generic API tokens
+- JWT tokens with sensitive claims
+
+**Why not alternatives**:
+
+- Manual code review — doesn't scale, misses obfuscated patterns
+- TruffleHog — slower, requires more tuning
+- Commercial SaaS — external dependency, licensing cost
+
+**Implementation Details**:
+- Triggered via Admin Plane > Compliance & Ethics > Secret Scanning tab
+- Runs as background process in tools-service
+- Results cached for repeated scans of same repo
+- Severity classification (critical/high/medium/low based on pattern type)
+- PDF report generation with context and remediation guidance
+- Audit trail records scan timestamp, target, findings count
+
+**Consequence**: Real-time credential protection. ~2-5s scan for small repos. High-entropy false positives can occur (tunable via entropy threshold in config).
+
+---
+
+## ADR-028 · OWASP Top 10 Assessment
+
+**Context**: Compliance requirements mandate security posture alignment with OWASP Top 10. Need automated, auditable assessment rather than manual checklist.
+
+**Decision**: Implement continuous OWASP Top 10 2021 assessment as automated compliance check:
+- All 10 categories covered with specific controls and detection methods
+- On-demand and scheduled scan modes
+- Real-time progress indicators for each check
+- Risk severity classification (Critical/High/Medium/Low)
+- PDF report generation for compliance documentation
+- Admin dashboard showing status, findings, and trends
+
+**Coverage**:
+- **A01** Broken Access Control — RBAC, permission matrix validation
+- **A02** Cryptographic Failures — TLS enforcement, key rotation, hashing algorithms
+- **A03** Injection — SQL injection guards, prompt injection detection, XSS prevention
+- **A04** Insecure Design — Architecture review, threat modeling checklist
+- **A05** Security Misconfiguration — Secret scanning, default settings check, env var validation
+- **A06** Vulnerable & Outdated Components — Dependency audit, CVE scanning
+- **A07** Authentication Failures — Session validation, MFA policy, password strength
+- **A08** Software & Data Integrity Failures — Signing verification, integrity checks
+- **A09** Logging & Monitoring — Audit log presence, event retention, alerting
+- **A10** SSRF — URL validation, whitelist enforcement, DNS resolution safety
+
+**Why not alternatives**:
+
+- Manual assessment — error-prone, time-consuming, hard to track changes
+- Static code analysis alone — misses design and operational issues
+- Compliance checklist tool — no automation, no continuous monitoring
+
+**Implementation Details**:
+- UI-based scanner in Admin Plane > Compliance & Ethics > OWASP Assessment tab
+- Checks run in parallel with real-time progress bars
+- Results include finding descriptions, severity, affected components, remediation steps
+- All results stored in `compliance_audit_log` with timestamp and user ID
+- PDF export includes executive summary, detailed findings, trend analysis
+- Report can be downloaded for compliance audits or board presentations
+
+**Consequence**: Continuous OWASP compliance visibility. ~3-5s full assessment. False positives possible for custom implementations (manual review needed).
+
+---
+
+## Security Scanning Architecture Decision Summary
+
+The three new ADRs (026, 027, 028) implement **AP-14: Compliance & Governance** principle, completing the compliance & security scanning layer:
+
+```
+User Upload
+    │
+    ├─→ ClamAV (ADR-026) ─→ Malware Detection
+    │
+    ├─→ GitLeaks (ADR-027) ─→ Secret Detection
+    │
+    └─→ OWASP (ADR-028) ─→ Vulnerability Assessment
+    
+All Results → Audit Log → Compliance Reports
+```
+
+**Key Characteristics**:
+- **Defense in Depth**: Multiple independent scanners catch different threat classes
+- **Audit Trail**: All scanning activity logged for compliance forensics
+- **Real-time Feedback**: Progress visualization for long-running scans
+- **Downloadable Reports**: PDF exports for compliance documentation
+- **Zero External Dependencies**: All scanning runs locally (except optional cloud LLMs)
+- **Configurable Policies**: Scan frequency, severity thresholds, auto-quarantine rules
