@@ -1852,13 +1852,17 @@ var SECTION_TABS = {
   operations: ['health', 'overview', 'audit'],
   identity: ['users', 'personas'],
   ai: ['llm', 'config'],
-  data: ['database']
+  data: ['database'],
+  infrastructure: ['docker-images', 'environment-vars'],
+  compliance: ['compliance-rules', 'compliance-audit', 'secret-scan', 'owasp-scan', 'clamav-scan']
 };
 var TAB_SECTION = {
   health: 'operations', overview: 'operations', audit: 'operations',
   users: 'identity', personas: 'identity',
   llm: 'ai', config: 'ai',
-  database: 'data'
+  database: 'data',
+  'docker-images': 'infrastructure', 'environment-vars': 'infrastructure',
+  'compliance-rules': 'compliance', 'compliance-audit': 'compliance', 'secret-scan': 'compliance', 'owasp-scan': 'compliance', 'clamav-scan': 'compliance'
 };
 
 function switchSection(section) {
