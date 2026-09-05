@@ -2655,6 +2655,17 @@ function renderPage(view) {
   };
 }
 
+// Initialize dynamic documentation loader
+const createDocsRouter = require("./routes/docs-api");
+const docsPath = path.join(__dirname, "../../..", "docs");
+try {
+  const docsRouter = createDocsRouter(app, docsPath);
+  app.use(docsRouter);
+  console.log("✅ Dynamic documentation API initialized");
+} catch (e) {
+  console.warn("⚠️  Documentation API initialization failed:", e.message);
+}
+
 app.get("/", renderPage("overview"));
 app.get("/run-agent", renderPage("run-agent"));
 app.get("/agent-builder", renderPage("agent-builder"));
