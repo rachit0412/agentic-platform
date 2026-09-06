@@ -5,34 +5,45 @@
   body: `
 
 <style>
-  .docs-layout { display:grid; grid-template-columns:240px 1fr; gap:0; min-height:calc(100vh - 80px); }
-  .docs-sidebar { background:var(--glass-bg); border-right:1px solid var(--glass-border); padding:1.25rem 0; position:sticky; top:60px; height:calc(100vh - 80px); overflow-y:auto; }
-  .docs-sidebar .ds-group { margin-bottom:0.75rem; }
-  .docs-sidebar .ds-group-title { padding:0.4rem 1.25rem; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); }
-  .docs-sidebar .ds-link { display:block; padding:0.4rem 1.25rem 0.4rem 1.5rem; font-size:0.82rem; color:var(--text-2); text-decoration:none; border-left:2px solid transparent; transition:all 0.15s; cursor:pointer; }
-  .docs-sidebar .ds-link:hover { color:var(--text-1); background:rgba(6,182,212,0.05); }
-  .docs-sidebar .ds-link.active { color:#06b6d4; border-left-color:#06b6d4; background:rgba(6,182,212,0.08); font-weight:600; }
-  .docs-content { padding:2rem 2.5rem; max-width:1100px; overflow-y:auto; }
-  .docs-content h1 { font-size:1.8rem; font-weight:700; margin-bottom:0.5rem; }
-  .docs-content h2 { font-size:1.25rem; font-weight:700; margin:2rem 0 0.75rem; padding-bottom:0.5rem; border-bottom:1px solid var(--glass-border); }
-  .docs-content h3 { font-size:1rem; font-weight:600; margin:1.5rem 0 0.5rem; }
-  .docs-content p { line-height:1.7; color:var(--text-2); margin-bottom:1rem; }
-  .docs-content ul, .docs-content ol { padding-left:1.5rem; margin-bottom:1rem; color:var(--text-2); line-height:1.8; }
-  .docs-content code { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:4px; padding:0.15rem 0.4rem; font-size:0.82rem; font-family:'Fira Code',monospace; }
-  .docs-content pre { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:10px; padding:1rem 1.25rem; overflow-x:auto; margin-bottom:1rem; font-size:0.82rem; line-height:1.6; }
-  .docs-content pre code { background:none; border:none; padding:0; }
-  .docs-table { width:100%; border-collapse:collapse; margin-bottom:1rem; font-size:0.85rem; }
-  .docs-table th { text-align:left; padding:0.6rem 0.75rem; background:var(--glass-bg); border:1px solid var(--glass-border); font-weight:600; color:var(--text-1); }
-  .docs-table td { padding:0.5rem 0.75rem; border:1px solid var(--glass-border); color:var(--text-2); }
-  .docs-search { width:100%; padding:0.5rem 0.75rem; border:1px solid var(--glass-border); border-radius:8px; background:var(--glass-bg); color:var(--text-1); font-size:0.82rem; margin:0 0 0.75rem; }
-  .docs-search:focus { outline:none; border-color:#06b6d4; }
-  .docs-toc { position:sticky; top:100px; right:2rem; width:200px; font-size:0.8rem; color:var(--text-3); }
+  .docs-layout { display:grid; grid-template-columns:260px 1fr; gap:0; min-height:calc(100vh - 80px); }
+  .docs-sidebar { background:var(--glass-bg); border-right:1px solid var(--glass-border); padding:1.5rem 0; position:sticky; top:60px; height:calc(100vh - 80px); overflow-y:auto; }
+  .docs-sidebar .ds-group { margin-bottom:1rem; }
+  .docs-sidebar .ds-group-title { padding:0.5rem 1.25rem; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-3); margin-top:0.5rem; }
+  .docs-sidebar .ds-link { display:block; padding:0.5rem 1.25rem 0.5rem 1.75rem; font-size:0.85rem; color:var(--text-2); text-decoration:none; border-left:3px solid transparent; transition:all 0.2s; cursor:pointer; }
+  .docs-sidebar .ds-link:hover { color:var(--text-1); background:rgba(6,182,212,0.08); border-left-color:rgba(6,182,212,0.4); }
+  .docs-sidebar .ds-link.active { color:#06b6d4; border-left-color:#06b6d4; background:rgba(6,182,212,0.12); font-weight:600; }
+  .docs-content { padding:3rem 3.5rem; max-width:1200px; overflow-y:auto; background:linear-gradient(135deg, rgba(6,182,212,0.02) 0%, transparent 100%); }
+  .docs-content > * { margin-bottom:1.25rem; }
+  .docs-content h1 { font-size:2.2rem; font-weight:800; margin:0 0 1rem 0; color:var(--text-1); background:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .docs-content h2 { font-size:1.5rem; font-weight:700; margin:2.5rem 0 1rem 0; padding-bottom:0.75rem; border-bottom:2px solid var(--glass-border); color:var(--text-1); }
+  .docs-content h3 { font-size:1.15rem; font-weight:700; margin:1.75rem 0 0.75rem 0; color:var(--text-1); }
+  .docs-content h4 { font-size:1rem; font-weight:600; margin:1.25rem 0 0.5rem 0; color:var(--text-2); }
+  .docs-content p { line-height:1.8; color:var(--text-2); margin:1rem 0; font-size:0.95rem; }
+  .docs-content strong { color:var(--text-1); font-weight:700; }
+  .docs-content em { color:var(--text-2); font-style:italic; }
+  .docs-content blockquote { margin:1.5rem 0; padding:1rem 1.25rem; background:rgba(6,182,212,0.08); border-left:4px solid #06b6d4; border-radius:4px; color:var(--text-2); font-style:italic; }
+  .docs-content ul, .docs-content ol { padding-left:1.75rem; margin:1rem 0; color:var(--text-2); line-height:1.9; }
+  .docs-content li { margin-bottom:0.5rem; }
+  .docs-content code { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:4px; padding:0.2rem 0.5rem; font-size:0.85rem; font-family:'Fira Code','JetBrains Mono',monospace; color:#06b6d4; }
+  .docs-content pre { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:8px; padding:1.25rem; overflow-x:auto; margin:1.5rem 0; font-size:0.8rem; line-height:1.7; }
+  .docs-content pre code { background:none; border:none; padding:0; color:var(--text-2); }
+  table { width:100%; border-collapse:collapse; margin:1.5rem 0; font-size:0.9rem; }
+  table th { text-align:left; padding:0.75rem; background:var(--glass-bg); border:1px solid var(--glass-border); font-weight:700; color:var(--text-1); }
+  table td { padding:0.65rem 0.75rem; border:1px solid var(--glass-border); color:var(--text-2); }
+  table tr:nth-child(even) { background:rgba(6,182,212,0.03); }
+  .docs-search { width:calc(100% - 2.5rem); padding:0.6rem 0.8rem; margin:0 1.25rem 1rem 1.25rem; border:1px solid var(--glass-border); border-radius:6px; background:var(--glass-bg); color:var(--text-1); font-size:0.85rem; transition:all 0.2s; }
+  .docs-search:focus { outline:none; border-color:#06b6d4; box-shadow:0 0 0 2px rgba(6,182,212,0.15); }
+  .docs-toc { position:sticky; top:100px; right:2rem; width:200px; font-size:0.8rem; color:var(--text-3); background:var(--glass-bg); padding:1rem; border:1px solid var(--glass-border); border-radius:8px; }
   .docs-toc ul { list-style:none; padding:0; margin:0; }
-  .docs-toc li { padding:0.3rem 0; }
-  .docs-toc a { color:#06b6d4; text-decoration:none; }
-  .docs-loading { text-align:center; padding:3rem; color:var(--text-3); }
-  .docs-error { padding:1.5rem; background:rgba(239,68,68,0.1); border-left:3px solid #ef4444; color:#ef4444; border-radius:6px; }
-  @media (max-width:900px) { .docs-toc { display:none; } }
+  .docs-toc li { padding:0.4rem 0; }
+  .docs-toc a { color:#06b6d4; text-decoration:none; transition:all 0.2s; }
+  .docs-toc a:hover { color:var(--text-1); }
+  .docs-loading { text-align:center; padding:4rem 2rem; color:var(--text-3); }
+  .docs-error { padding:1.5rem; background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; border-radius:6px; color:#ef4444; }
+  hr { border:none; border-top:2px solid var(--glass-border); margin:2rem 0; }
+  a:not(.ds-link) { color:#06b6d4; text-decoration:none; transition:all 0.2s; }
+  a:not(.ds-link):hover { color:var(--text-1); text-decoration:underline; }
+  @media (max-width:900px) { .docs-layout { grid-template-columns:1fr; } .docs-sidebar { position:fixed; left:0; top:60px; width:260px; height:auto; max-height:100vh; z-index:100; } .docs-content { padding:2rem; } }
 </style>
 
 <div class="docs-layout">
@@ -49,35 +60,23 @@
 <script>
 const docsList = {
   'Getting Started': {
-    'Platform Overview': 'PLATFORM-OVERVIEW',
-    'Quick Start Guide': 'QUICK-START',
-    'Installation': 'INSTALLATION'
+    'README': 'README'
   },
   'Architecture': {
     'Principles': 'PRINCIPLES',
     'Building Blocks': 'BUILDING-BLOCKS',
     'Decisions (ADRs)': 'DECISIONS',
     'System Architecture': 'ARCHITECTURE',
-    'Data Flow': 'DATA-FLOW',
-    'Network Architecture': 'NETWORK-ARCHITECTURE',
-    'Service Reference': 'SERVICE-REFERENCE'
-  },
-  'Core Features': {
-    'Agent System': 'AGENT-SYSTEM',
-    'LLM Providers': 'LLM-PROVIDERS',
-    'Memory & Knowledge': 'MEMORY-KNOWLEDGE',
-    'Guardrails': 'GUARDRAILS',
-    'Tools & MCP': 'TOOLS-MCP'
+    'Network Architecture': 'NETWORK-ARCHITECTURE'
   },
   'Operations': {
-    'Observability': 'OBSERVABILITY',
-    'Workflows (n8n)': 'WORKFLOWS-N8N',
-    'Deployment': 'DEPLOYMENT'
+    'Testing': 'TESTING',
+    'Environment Variables': 'ENVIRONMENT-VARIABLES'
   },
   'Reference': {
     'API Reference': 'API-REFERENCE',
-    'Configuration': 'CONFIGURATION',
     'Security Controls': 'SECURITY-CONTROLS-INTEGRATION',
+    'OWASP Quick Reference': 'OWASP-QUICK-REFERENCE',
     'Dynamic Content Guide': 'DYNAMIC-CONTENT-GUIDE'
   }
 };
@@ -118,8 +117,8 @@ async function loadDoc(event) {
   });
 
   try {
-    await DocsClient.loadIntoElement(docName, '#docs-main', {
-      format: 'raw',
+    await window.DocsClient.loadIntoElement(docName, '#docs-main', {
+      format: 'html',
       showToc: false,
       forceRefresh: false
     });
@@ -148,8 +147,11 @@ function loadFromHash() {
     }
   }
 
-  // Default to principles
-  loadDoc({currentTarget: {getAttribute: () => 'PRINCIPLES'}});
+  // If hash doesn't map to a doc, treat it as in-document anchor.
+  // Only default to principles when no doc is loaded yet.
+  if (!currentDoc) {
+    loadDoc({currentTarget: {getAttribute: () => 'PRINCIPLES'}});
+  }
 }
 
 // Escape HTML

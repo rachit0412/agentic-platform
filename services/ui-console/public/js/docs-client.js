@@ -73,44 +73,132 @@ class DocsClient {
    * Render markdown content to HTML (client-side fallback)
    */
   renderMarkdown(markdown) {
-    let html = markdown
-      // Escape HTML
+    let html = markdown;
+
+    // Protect code blocks first
+    const codeBlocks = [];
+    html = html.replace(/```([^\n]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`);
+      return `__CODE_BLOCK_${idx}__`;
+    });
+
+    // Protect tables
+    const tables = [];
+    html = html.replace(/\|.+\n\|[-:\s|]+\n((?:\|.+\n)*)/g, (match) => {
+      const idx = tables.length;
+      const rows = match.trim().split('\n');
+      let table = '<table><tbody>';
+      rows.forEach((row, i) => {
+        table += '<tr>';
+        row.split('|').filter(c => c.trim()).forEach(cell => {
+          const tag = i === 0 ? 'th' : 'td';
+          table += `<${tag}>${cell.trim()}</${tag}>`;
+        });
+        table += '</tr>';
+        if (i === 0) table += '</tbody><tbody>';
+      });
+      table += '</tbody></table>';
+      tables.push(table);
+      return `__TABLE_${idx}__`;
+    });
+
+    // HTML escape remaining content
+    html = html
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      // Code blocks (restore HTML after escape)
-      .replace(/&lt;pre&gt;&lt;code[^&]*&gt;([\s\S]*?)&lt;\/code&gt;&lt;\/pre&gt;/g,
-        '<pre><code>$1</code></pre>')
-      // Re-allow < and > in regular content for readability
-      .replace(/&lt;(\/?[\w]+[^&]*?)&gt;/g, '<$1>')
-      // Headers
+      .replace(/>/g, '&gt;');
+
+    // Headers
+    html = html
+      .replace(/^##### (.*?)$/gm, '<h5>$1</h5>')
+      .replace(/^#### (.*?)$/gm, '<h4>$1</h4>')
       .replace(/^### (.*?)$/gm, '<h3>$1</h3>')
       .replace(/^## (.*?)$/gm, '<h2>$1</h2>')
-      .replace(/^# (.*?)$/gm, '<h1>$1</h1>')
-      // Horizontal rules
-      .replace(/^---$/gm, '<hr>')
-      // Blockquotes
-      .replace(/^> (.*?)$/gm, '<blockquote>$1</blockquote>')
-      // Unordered lists
-      .replace(/^\s*[-*+] (.*?)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*?<\/li>)/s, (match) => {
-        return match.includes('<ul>') ? match : `<ul>${match}</ul>`;
-      })
-      // Code inline
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/__(.+?)__/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/_(.+?)_/g, '<em>$1</em>')
-      // Links
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-      // Paragraphs
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/^([^<])/gm, (match) => !match.includes('<') ? '<p>' + match : match);
+      .replace(/^# (.*?)$/gm, '<h1>$1</h1>');
 
-    return html.includes('<p>') ? html : `<p>${html}</p>`;
+    // Horizontal rules
+    html = html.replace(/^---$/gm, '<hr>');
+
+    // Blockquotes
+    html = html.replace(/^&gt; (.*?)$/gm, '<blockquote>$1</blockquote>');
+
+    // Lists - ordered
+    html = html.replace(/^\d+\. (.*?)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*?<\/li>)/s, (match) => 
+      !match.includes('<ol>') && !match.includes('<ul>') && match.match(/^\d+/) ? `<ol>${match}</ol>` : match
+    );
+
+    // Lists - unordered
+    html = html.replace(/^[-*+] (.*?)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*?<\/li>)/s, (match) => {
+      if (match.includes('<ol>') || match.includes('<ul>')) return match;
+      return `<ul>${match}</ul>`;
+    });
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+    // Italic
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/_(.+?)_/g, '<em>$1</em>');
+
+    // Links
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+
+    // Paragraphs
+    html = html.replace(/\n\n+/g, '</p><p>');
+    if (!html.startsWith('<')) html = `<p>${html}`;
+    if (!html.endsWith('>')) html += '</p>';
+
+    // Restore code blocks
+    codeBlocks.forEach((block, i) => {
+      html = html.replace(`__CODE_BLOCK_${i}__`, block);
+    });
+
+    // Restore tables
+    tables.forEach((table, i) => {
+      html = html.replace(`__TABLE_${i}__`, table);
+    });
+
+    return html;
+  }
+
+  slugify(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+  }
+
+  enhanceRenderedContent(element) {
+    if (!element) return;
+
+    // Add stable ids to headings for in-page anchor links.
+    const seen = new Map();
+    element.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((h) => {
+      if (h.id) return;
+      const base = this.slugify(h.textContent);
+      if (!base) return;
+      const count = seen.get(base) || 0;
+      seen.set(base, count + 1);
+      h.id = count === 0 ? base : `${base}-${count}`;
+    });
+
+    // Rewrite markdown doc links to in-app docs route.
+    element.querySelectorAll('a[href]').forEach((a) => {
+      const href = a.getAttribute('href') || '';
+      const mdMatch = href.match(/^\.?\/?([A-Za-z0-9._-]+)\.md(#.*)?$/i);
+      if (mdMatch) {
+        const stem = mdMatch[1].replace(/\.[^.]+$/, '');
+        const slug = this.slugify(stem);
+        const suffix = mdMatch[2] || '';
+        a.setAttribute('href', `/docs#${slug}${suffix}`);
+      }
+    });
   }
 
   /**
@@ -148,6 +236,7 @@ class DocsClient {
       }
 
       element.innerHTML = tocHtml + html;
+      this.enhanceRenderedContent(element);
       this.currentDoc = docname;
 
       // Trigger mermaid rendering if available
@@ -214,3 +303,23 @@ class DocsClient {
 
 // Global instance
 window.DocsClient = window.DocsClient || new DocsClient();
+
+// Backward compatibility:
+// Some pages call DocsClient.method(...) (class-style) instead of window.DocsClient.method(...)
+// Expose static shims so both invocation styles work safely.
+if (typeof globalThis.DocsClient === 'function') {
+  const staticMethods = [
+    'fetchDoc',
+    'listDocs',
+    'getTableOfContents',
+    'renderMarkdown',
+    'loadIntoElement',
+    'refresh',
+    'setupHashListener'
+  ];
+  staticMethods.forEach((methodName) => {
+    if (typeof globalThis.DocsClient[methodName] !== 'function') {
+      globalThis.DocsClient[methodName] = (...args) => window.DocsClient[methodName](...args);
+    }
+  });
+}

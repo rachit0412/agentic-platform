@@ -2660,7 +2660,7 @@ function renderPage(view) {
 
 // Initialize dynamic documentation loader
 const createDocsRouter = require("./routes/docs-api");
-const docsPath = path.join(__dirname, "../../..", "docs");
+const docsPath = path.join(__dirname, "../../", "docs");
 try {
   const docsRouter = createDocsRouter(app, docsPath);
   app.use(docsRouter);

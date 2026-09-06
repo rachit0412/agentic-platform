@@ -12,7 +12,13 @@ const { watch } = require('fs');
 
 class DocLoader {
   constructor(docsPath) {
-    this.docsPath = docsPath || path.join(__dirname, '../../..', 'docs');
+    const candidates = [
+      docsPath,
+      path.join(__dirname, '..', 'docs'),
+      path.join(__dirname, '../../..', 'docs'),
+      path.join(process.cwd(), 'docs')
+    ].filter(Boolean);
+    this.docsPath = this.resolveDocsPath(candidates);
     this.cache = new Map();
     this.fileWatchers = new Map();
     this.mdToHtml = null;
@@ -25,6 +31,54 @@ class DocLoader {
       console.warn('marked not available, using fallback markdown parsing');
       this.mdToHtml = this.fallbackMarkdownParse;
     }
+  }
+
+  resolveDocsPath(candidates) {
+    for (const candidate of candidates) {
+      try {
+        if (!fs.existsSync(candidate)) continue;
+        const files = fs.readdirSync(candidate).filter((f) => f.endsWith('.md'));
+        if (files.length > 0) return candidate;
+      } catch (_) {}
+    }
+    // Fall back to first candidate even if empty to preserve previous behavior.
+    return candidates[0];
+  }
+
+  /**
+   * Normalize a doc identifier for tolerant matching.
+   */
+  normalizeDocId(name) {
+    return String(name || "")
+      .replace(/\.md$/i, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  /**
+   * Resolve incoming doc name (case/slug tolerant) to canonical filename stem.
+   */
+  resolveDocName(docName) {
+    const requested = this.normalizeDocId(docName);
+    const docs = this.listDocs();
+
+    // Fast path: exact stem match
+    if (docs.includes(docName)) return docName;
+
+    const byNormalized = new Map();
+    docs.forEach((d) => {
+      byNormalized.set(this.normalizeDocId(d), d);
+    });
+
+    const resolved = byNormalized.get(requested);
+    if (!resolved) {
+      throw new Error(
+        `Documentation file not found: ${docName}. Available: ${docs.join(", ")}`
+      );
+    }
+    return resolved;
   }
 
   /**
@@ -57,7 +111,8 @@ class DocLoader {
    * Load markdown file and return raw content
    */
   loadRaw(docName) {
-    const filePath = path.join(this.docsPath, `${docName}.md`);
+    const resolvedDocName = this.resolveDocName(docName);
+    const filePath = path.join(this.docsPath, `${resolvedDocName}.md`);
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
@@ -72,7 +127,8 @@ class DocLoader {
    * Load markdown file and return parsed HTML
    */
   loadParsed(docName, forceRefresh = false) {
-    const cacheKey = `parsed:${docName}`;
+    const resolvedDocName = this.resolveDocName(docName);
+    const cacheKey = `parsed:${resolvedDocName}`;
 
     // Return from cache if available
     if (!forceRefresh && this.cache.has(cacheKey)) {
@@ -80,7 +136,7 @@ class DocLoader {
     }
 
     // Load raw markdown
-    const raw = this.loadRaw(docName);
+    const raw = this.loadRaw(resolvedDocName);
 
     // Parse to HTML
     let html;
@@ -92,7 +148,7 @@ class DocLoader {
         html = this.mdToHtml.parse ? this.mdToHtml.parse(raw) : this.fallbackMarkdownParse(raw);
       }
     } catch (e) {
-      console.error(`Error parsing markdown for ${docName}:`, e);
+      console.error(`Error parsing markdown for ${resolvedDocName}:`, e);
       html = this.fallbackMarkdownParse(raw);
     }
 
@@ -100,7 +156,7 @@ class DocLoader {
     this.cache.set(cacheKey, html);
 
     // Watch for file changes and invalidate cache
-    this.watchFile(docName);
+    this.watchFile(resolvedDocName);
 
     return html;
   }
@@ -109,15 +165,16 @@ class DocLoader {
    * Get both raw and parsed content
    */
   load(docName, options = {}) {
-    const raw = this.loadRaw(docName);
-    const parsed = this.loadParsed(docName, options.forceRefresh);
+    const resolvedDocName = this.resolveDocName(docName);
+    const raw = this.loadRaw(resolvedDocName);
+    const parsed = this.loadParsed(resolvedDocName, options.forceRefresh);
 
     return {
-      name: docName,
+      name: resolvedDocName,
       raw,
       parsed,
       timestamp: new Date(),
-      path: path.join(this.docsPath, `${docName}.md`)
+      path: path.join(this.docsPath, `${resolvedDocName}.md`)
     };
   }
 
@@ -141,7 +198,8 @@ class DocLoader {
    * Watch file for changes and invalidate cache
    */
   watchFile(docName) {
-    const filePath = path.join(this.docsPath, `${docName}.md`);
+    const resolvedDocName = this.resolveDocName(docName);
+    const filePath = path.join(this.docsPath, `${resolvedDocName}.md`);
 
     // Already watching
     if (this.fileWatchers.has(filePath)) {
@@ -151,10 +209,10 @@ class DocLoader {
     // Set up file watcher
     const watcher = watch(filePath, { persistent: false }, (eventType, filename) => {
       if (eventType === 'change') {
-        console.log(`📝 Documentation changed: ${docName}`);
+        console.log(`📝 Documentation changed: ${resolvedDocName}`);
         // Invalidate cache for this document and derived caches
-        this.cache.delete(`parsed:${docName}`);
-        this.cache.delete(`raw:${docName}`);
+        this.cache.delete(`parsed:${resolvedDocName}`);
+        this.cache.delete(`raw:${resolvedDocName}`);
       }
     });
 
@@ -165,7 +223,8 @@ class DocLoader {
    * Get table of contents from markdown
    */
   getTableOfContents(docName) {
-    const raw = this.loadRaw(docName);
+    const resolvedDocName = this.resolveDocName(docName);
+    const raw = this.loadRaw(resolvedDocName);
     const lines = raw.split('\n');
     const toc = [];
 
