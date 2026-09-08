@@ -99,25 +99,105 @@
 
   <div class="resize-h" id="resize-chat"></div>
 
-  <!-- ══ PREVIEW/CODE PANEL ══ -->
+  <!-- ══ EDITOR PANEL ══ -->
   <div class="studio-editor" id="studio-editor-panel">
-    <div class="studio-tabs">
-      <div class="studio-tab active" onclick="studioSwitchView('preview')">Preview</div>
-      <div class="studio-tab" onclick="studioSwitchView('code')">Code</div>
-      <div class="studio-toolbar" style="margin-left:auto">
-        <button class="btn btn-sm" onclick="studioCopyCode()" title="Copy code" style="background:rgba(99,102,241,0.1);color:#6366f1;border:1px solid rgba(99,102,241,0.2)">Copy</button>
-        <button class="btn btn-sm" onclick="studioDownloadCode()" title="Download" style="background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.2)">Download</button>
+    <!-- Tabs -->
+    <div class="studio-tabs" id="studio-tabs"></div>
+    <!-- Toolbar -->
+    <div class="studio-toolbar">
+      <button class="btn btn-sm" onclick="studioRun()" title="Run preview" style="background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.2)">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run
+      </button>
+      <button class="btn btn-sm" onclick="studioSaveFile()" title="Save current file" style="background:rgba(99,102,241,0.1);color:#6366f1;border:1px solid rgba(99,102,241,0.2)">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Save
+      </button>
+      <button class="btn btn-sm" onclick="studioFormatCode()" title="Format code">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg> Format
+      </button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:0.5rem">
+        <span id="studio-file-lang" style="font-size:0.68rem;color:var(--text-3);text-transform:uppercase"></span>
+        <span id="studio-file-size" style="font-size:0.68rem;color:var(--text-3)"></span>
       </div>
     </div>
-    <div id="studio-preview-view" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
-      <div id="studio-preview-placeholder" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-3)">
-        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3" style="margin-right:1rem"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        <span>Describe a UI to see preview</span>
-      </div>
-      <iframe id="studio-preview-frame" style="display:none;flex:1;width:100%;border:none;background:white"></iframe>
+    <!-- Code area -->
+    <div class="studio-editor-area">
+      <textarea id="studio-code" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+        oninput="studioCodeChanged()" onkeydown="studioHandleTab(event)"></textarea>
     </div>
-    <div id="studio-code-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;padding:1rem">
-      <textarea id="studio-code" spellcheck="false" readonly style="flex:1;background:rgba(0,0,0,0.3);color:#a5f3fc;font-family:monospace;font-size:0.75rem;border:1px solid var(--glass-border);border-radius:6px;padding:1rem;resize:none"></textarea>
+    <!-- Console -->
+    <div class="studio-console" id="studio-console">
+      <div class="log-info">[AI Studio] Ready. Select a template or describe your app in the chat.</div>
+    </div>
+  </div>
+
+  <div class="resize-h" id="resize-sidebar"></div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="studio-sidebar" id="studio-sidebar-panel">
+    <div class="studio-sidebar-tabs">
+      <div class="studio-sidebar-tab active" onclick="studioSidebarTab('files')">Files</div>
+      <div class="studio-sidebar-tab" onclick="studioSidebarTab('preview')">Preview</div>
+      <div class="studio-sidebar-tab" onclick="studioSidebarTab('templates')">Templates</div>
+    </div>
+
+    <!-- Files panel -->
+    <div class="studio-sidebar-panel active" id="sidebar-files">
+      <div class="file-tree-actions">
+        <button class="btn btn-sm" onclick="studioNewFile()" title="New file">+ File</button>
+        <button class="btn btn-sm" onclick="studioNewFolder()" title="New folder">+ Folder</button>
+        <button class="btn btn-sm" onclick="studioDeleteFile()" title="Delete selected" style="color:#f43f5e">Del</button>
+        <div style="margin-left:auto">
+          <button class="btn btn-sm" onclick="studioExportProject()" title="Export project as JSON">Export</button>
+        </div>
+      </div>
+      <div class="file-tree" id="studio-file-tree"></div>
+    </div>
+
+    <!-- Preview panel -->
+    <div class="studio-sidebar-panel" id="sidebar-preview">
+      <div class="studio-preview" id="studio-preview-container">
+        <div class="studio-preview-placeholder" id="studio-preview-placeholder">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Click "Run" to preview</span>
+        </div>
+        <iframe id="studio-preview-frame" style="display:none" sandbox="allow-scripts allow-modals"></iframe>
+      </div>
+    </div>
+
+    <!-- Templates panel -->
+    <div class="studio-sidebar-panel" id="sidebar-templates">
+      <div class="template-grid">
+        <div class="template-card" onclick="studioLoadTemplate('react-app')">
+          <div class="tc-icon">\\u269B</div>
+          <div class="tc-name">React App</div>
+          <div class="tc-desc">SPA with components</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('dashboard')">
+          <div class="tc-icon">\\ud83d\\udcca</div>
+          <div class="tc-name">Dashboard</div>
+          <div class="tc-desc">Charts & metrics</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('landing')">
+          <div class="tc-icon">\\ud83c\\udfaf</div>
+          <div class="tc-name">Landing Page</div>
+          <div class="tc-desc">Hero + sections</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('form-app')">
+          <div class="tc-icon">\\ud83d\\udcdd</div>
+          <div class="tc-name">Form App</div>
+          <div class="tc-desc">CRUD with validation</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('chat-ui')">
+          <div class="tc-icon">\\ud83d\\udcac</div>
+          <div class="tc-name">Chat UI</div>
+          <div class="tc-desc">Messaging interface</div>
+        </div>
+        <div class="template-card" onclick="studioLoadTemplate('blank')">
+          <div class="tc-icon">\\ud83d\\udcc4</div>
+          <div class="tc-name">Blank</div>
+          <div class="tc-desc">Empty project</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -133,9 +213,7 @@ var studioProject = {
   activeFile: null,
   openTabs: [],
   sessionId: 'studio-' + Date.now(),
-  chatHistory: [],
-  currentCode: '',
-  currentProjectId: null
+  chatHistory: []
 };
 
 /* ── Templates ── */
@@ -173,8 +251,20 @@ var studioTemplates = {
 
 /* ── Init ── */
 function studioInit() {
+  // Load agents
+  fetch('/api/agents').then(function(r) { return r.json(); }).then(function(d) {
+    var sel = document.getElementById('studio-agent');
+    (d.agents || []).forEach(function(a) {
+      var opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.name;
+      sel.appendChild(opt);
+    });
+  }).catch(function() {});
+
+  // Load blank template by default
+  studioLoadTemplate('blank');
   setupResizeHandles();
-  studioLog('info', 'AI Studio ready. Describe a UI to generate code.');
 }
 
 /* ── Templates ── */
@@ -459,85 +549,79 @@ async function studioSend() {
   var btn = document.getElementById('studio-send-btn');
   btn.disabled = true;
 
-  studioLog('info', 'Generating UI...');
+  // Build context: include all current project files
+  var fileContext = 'Current project files:\\n';
+  Object.keys(studioProject.files).forEach(function(f) {
+    fileContext += '\\n--- ' + f + ' ---\\n' + studioProject.files[f] + '\\n';
+  });
+
+  var systemPrompt = 'You are an AI coding assistant inside an in-browser IDE called AI Studio. ' +
+    'The user is building a web application. You can generate or modify code files. ' +
+    'When you want to create or update a file, use this exact format:\\n' +
+    '===FILE: filename.ext===\\n(file content)\\n===END===\\n' +
+    'You may output multiple ===FILE=== blocks. Only use this format for code changes. ' +
+    'After the file blocks, add a brief explanation. ' +
+    'The project runs in-browser with static HTML/CSS/JS. React is available via CDN with Babel. ' +
+    'Here is the current project state:\\n' + fileContext;
+
+  studioLog('info', 'Sending prompt to agent...');
 
   try {
-    var r = await fetch('/studio/generate', {
+    var agentId = document.getElementById('studio-agent').value || undefined;
+    var r = await fetch('/api/agent-run', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ description: text })
+      body: JSON.stringify({
+        prompt: text,
+        session_id: studioProject.sessionId,
+        system_prompt: systemPrompt,
+        agent_id: agentId
+      })
     });
     var d = await r.json();
-    
-    if (d.error) {
-      studioAddMessage('Error: ' + d.error, 'ai');
-      studioLog('error', d.error);
-    } else {
-      studioProject.currentCode = d.ui_code;
-      studioProject.currentProjectId = d.project_id;
-      studioAddMessage('UI generated! Showing in preview.', 'ai');
-      studioLog('info', 'UI generated successfully');
-      studioShowPreview();
+    var response = d.response || d.output || '';
+
+    // Extract ===FILE=== blocks
+    var filePattern = /===FILE:\\s*([\\w.\\/\\-]+)===\\n([\\s\\S]*?)===END===/g;
+    var match;
+    var filesUpdated = 0;
+    while ((match = filePattern.exec(response)) !== null) {
+      var fname = match[1].trim();
+      var fcontent = match[2];
+      // Remove trailing newline
+      if (fcontent.endsWith('\\n')) fcontent = fcontent.slice(0, -1);
+      studioProject.files[fname] = fcontent;
+      filesUpdated++;
+      studioLog('info', 'Updated file: ' + fname);
+      // Open the file
+      if (studioProject.openTabs.indexOf(fname) === -1) {
+        studioProject.openTabs.push(fname);
+      }
     }
+
+    if (filesUpdated > 0) {
+      studioRenderFileTree();
+      studioRenderTabs();
+      // Show last updated file
+      var lastFile = studioProject.openTabs[studioProject.openTabs.length - 1];
+      studioProject.activeFile = lastFile;
+      studioLoadFileInEditor(lastFile);
+      studioRenderFileTree();
+      studioRenderTabs();
+    }
+
+    // Show response (strip out FILE blocks for display)
+    var displayText = response.replace(/===FILE:[\\s\\S]*?===END===/g, '').trim();
+    if (!displayText && filesUpdated > 0) {
+      displayText = 'Updated ' + filesUpdated + ' file(s). Click "Run" to preview.';
+    }
+    studioAddMessage(displayText || response, 'ai');
+    studioLog('info', 'Agent responded' + (filesUpdated > 0 ? ' \\u2014 ' + filesUpdated + ' files updated' : ''));
   } catch(e) {
     studioAddMessage('Error: ' + e.message, 'ai');
-    studioLog('error', e.message);
+    studioLog('error', 'Agent error: ' + e.message);
   }
   btn.disabled = false;
-}
-
-function studioSwitchView(view) {
-  var previewView = document.getElementById('studio-preview-view');
-  var codeView = document.getElementById('studio-code-view');
-  var tabs = document.querySelectorAll('.studio-tab');
-  
-  tabs.forEach(function(tab) { tab.classList.remove('active'); });
-  if (view === 'preview') {
-    previewView.style.display = 'flex';
-    codeView.style.display = 'none';
-    tabs[0].classList.add('active');
-  } else {
-    previewView.style.display = 'none';
-    codeView.style.display = 'flex';
-    tabs[1].classList.add('active');
-  }
-}
-
-function studioShowPreview() {
-  var frame = document.getElementById('studio-preview-frame');
-  var placeholder = document.getElementById('studio-preview-placeholder');
-  var codeDisplay = document.getElementById('studio-code');
-  
-  frame.srcdoc = studioProject.currentCode;
-  frame.style.display = 'block';
-  placeholder.style.display = 'none';
-  codeDisplay.value = studioProject.currentCode;
-}
-
-function studioCopyCode() {
-  var code = document.getElementById('studio-code').value;
-  if (!code) {
-    studioAddMessage('No code to copy', 'system');
-    return;
-  }
-  navigator.clipboard.writeText(code).then(function() {
-    studioAddMessage('Code copied!', 'system');
-  });
-}
-
-function studioDownloadCode() {
-  var code = document.getElementById('studio-code').value;
-  if (!code) {
-    studioAddMessage('No code to download', 'system');
-    return;
-  }
-  var blob = new Blob([code], { type: 'text/html' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'ui-' + (studioProject.currentProjectId || Date.now()) + '.html';
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 /* ── Resize Handles ── */

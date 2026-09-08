@@ -21,6 +21,7 @@ const PORT = process.env.PORT || 3001;
 // Service URLs (internal Docker network)
 const AGENT_URL = process.env.AGENT_URL || "http://agent-service:8000";
 const N8N_URL = process.env.N8N_URL || "http://n8n:5678";
+const AI_STUDIO_SERVER = process.env.AI_STUDIO_SERVER || "http://ai-studio-server:8020";
 const N8N_API_KEY = process.env.N8N_API_KEY || "";
 const N8N_OWNER_EMAIL = process.env.N8N_OWNER_EMAIL || "";
 const N8N_OWNER_PASSWORD = process.env.N8N_OWNER_PASSWORD || "";
@@ -34,6 +35,7 @@ const N8N_PROXY_EXTERNAL = process.env.N8N_PROXY_EXTERNAL_URL || "http://localho
 const LANGFUSE_EXTERNAL = process.env.LANGFUSE_EXTERNAL_URL || "http://localhost:3002";
 const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || "http://localhost:3013";
 const AGENT_EXTERNAL = process.env.AGENT_EXTERNAL_URL || "http://localhost:8010";
+const AI_STUDIO_EXTERNAL = process.env.AI_STUDIO_EXTERNAL_URL || "http://localhost:8020";
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -156,6 +158,45 @@ app.post("/auth/forgot-password", (req, res) => proxyToAgent(req, res, "/auth/fo
 app.post("/auth/reset-password", (req, res) => proxyToAgent(req, res, "/auth/reset-password"));
 app.post("/auth/verify-email", (req, res) => proxyToAgent(req, res, "/auth/verify-email"));
 app.post("/auth/resend-code", (req, res) => proxyToAgent(req, res, "/auth/resend-code"));
+
+// ── AI Studio API Proxy ─────────────────────────────────
+async function proxyToAIStudio(req, res, endpoint) {
+  try {
+    const url = `${AI_STUDIO_SERVER}${endpoint}`;
+    const options = {
+      method: req.method,
+      headers: { "Content-Type": "application/json" },
+    };
+    
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      options.body = JSON.stringify(req.body);
+    }
+    
+    const r = await fetch(url, options);
+    
+    // Handle streaming (SSE)
+    if (r.headers.get("content-type")?.includes("event-stream")) {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      r.body.pipe(res);
+    } else {
+      const data = await r.text();
+      res.status(r.status);
+      res.setHeader("Content-Type", r.headers.get("content-type") || "application/json");
+      res.send(data);
+    }
+  } catch (e) {
+    console.error("[AI Studio] Proxy error:", e);
+    return res.status(502).json({ error: "AI Studio service unavailable", details: e.message });
+  }
+}
+
+// AI Studio routes
+app.all("/studio/*", (req, res) => {
+  const endpoint = req.path.replace(/^\/studio/, "");
+  proxyToAIStudio(req, res, endpoint);
+});
 
 // ── SSO / OAuth 2.0 Routes ────────────────────────────
 const SSO_BASE_URL = process.env.SSO_BASE_URL || "http://localhost:3000";

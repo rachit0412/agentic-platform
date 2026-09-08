@@ -1,0 +1,14 @@
+{
+  "name": "ai-studio-ui",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "4.21.0",
+    "node-fetch": "3.3.2"
+  }
+}

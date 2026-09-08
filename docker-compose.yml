@@ -16,6 +16,7 @@ services:
       - PORT=3001
       - AGENT_URL=http://agent-service:8000
       - N8N_URL=http://n8n:5678
+      - AI_STUDIO_SERVER=http://ai-studio-server:8020
       - LANGFUSE_URL=http://langfuse:3000
       - GRAFANA_URL=http://grafana:3000
       - N8N_EXTERNAL_URL=http://localhost:${N8N_PORT:-5678}
@@ -23,6 +24,7 @@ services:
       - LANGFUSE_EXTERNAL_URL=http://localhost:${LANGFUSE_PORT:-3012}
       - GRAFANA_EXTERNAL_URL=http://localhost:${GRAFANA_PORT:-3013}
       - AGENT_EXTERNAL_URL=http://localhost:${AGENT_PORT:-8010}
+      - AI_STUDIO_EXTERNAL_URL=http://localhost:${AI_STUDIO_SERVER_PORT:-8020}
       - SESSION_SECRET=${SESSION_SECRET:-agentic-platform-dev-secret}
       - CHROMA_URL=http://chromadb:8000
       - N8N_API_KEY=${N8N_API_KEY:-}
@@ -39,6 +41,8 @@ services:
       - SSO_BASE_URL=${SSO_BASE_URL:-http://localhost:3005}
     depends_on:
       agent-service:
+        condition: service_healthy
+      ai-studio-server:
         condition: service_healthy
     volumes:
       - ./services/ui-console/views:/app/views
@@ -435,6 +439,32 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+
+  # ── AI Studio Server — Backend for UI Generation ──────────────────────────
+  ai-studio-server:
+    build:
+      context: ./services/ai-studio-server
+      dockerfile: Dockerfile
+    container_name: ai-studio-server
+    ports:
+      - "${AI_STUDIO_SERVER_PORT:-8020}:8020"
+    environment:
+      - STUDIO_PORT=8020
+      - AGENT_URL=http://agent-service:8000
+      - N8N_URL=http://n8n:5678
+    depends_on:
+      agent-service:
+        condition: service_healthy
+    volumes:
+      - ./services/ai-studio-server:/app
+    networks:
+      - platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8020/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
 volumes:
   agent-data:

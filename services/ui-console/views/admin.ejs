@@ -1699,8 +1699,8 @@ function highlightThemeCard() {
 function adminLoadAll() {
   document.getElementById('admin-last-refresh').textContent = 'Refreshed: ' + new Date().toLocaleTimeString();
   var hash = (location.hash || '').replace('#', '');
-  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database' };
-  var validTabs = ['health','users','personas','overview','llm','database','config','audit'];
+  var sectionDefaults = { operations: 'health', identity: 'users', ai: 'llm', data: 'database', infrastructure: 'docker-images', compliance: 'compliance-rules' };
+  var validTabs = ['health','users','personas','overview','llm','database','config','audit','docker-images','environment-vars','compliance-rules','compliance-audit','secret-scan','owasp-scan','clamav-scan'];
   var startTab;
   if (sectionDefaults[hash]) {
     startTab = sectionDefaults[hash];

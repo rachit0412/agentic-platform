@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Studio — Build Custom UIs with AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #06b6d4, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            min-height: calc(100vh - 60px);
+        }
+
+        .panel {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .panel h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-desc {
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            min-height: 300px;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.05);
+        }
+
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            align-self: flex-end;
+            max-width: 85%;
+            color: #7dd3fc;
+        }
+
+        .message.ai {
+            background: rgba(68, 64, 64, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            align-self: flex-start;
+            max-width: 85%;
+        }
+
+        .message.system {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            text-align: center;
+            align-self: center;
+            font-size: 0.8rem;
+            color: #fbbf24;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        textarea {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 0.875rem;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: rgba(6, 182, 212, 0.5);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .preview-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            border-bottom-color: #06b6d4;
+            color: #06b6d4;
+        }
+
+        .preview-container {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .preview-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        .editor-area {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            padding-bottom: 0.75rem;
+        }
+
+        .editor-toolbar .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+        }
+
+        .code-editor {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: #a5f3fc;
+            font-family: inherit;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            resize: none;
+            overflow: auto;
+        }
+
+        .code-editor:focus {
+            outline: none;
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .status {
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status.generating {
+            background: rgba(34, 197, 94, 0.1);
+            color: #86efac;
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(6, 182, 212, 0.3);
+            border-top-color: #06b6d4;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .projects-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .project-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .project-card:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
+        }
+
+        .project-card h3 {
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+        }
+
+        .project-card p {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 1024px) {
+            .main {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">✨ AI Studio</div>
+                <div style="font-size: 0.875rem; color: #94a3b8;">Build UIs with AI</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="main">
+            <!-- Chat Panel -->
+            <div class="panel">
+                <div>
+                    <h2>Describe Your UI</h2>
+                    <p class="panel-desc">Tell an AI agent what web interface you want to build</p>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system">
+                        Welcome to AI Studio! Describe the UI you want to build, and I'll generate the code for you.
+                    </div>
+                </div>
+
+                <div class="status" id="status">Ready</div>
+
+                <div class="chat-input-area">
+                    <textarea id="prompt" placeholder="e.g., Create a form to collect user email and subscribe them to a newsletter. Add error handling and a loading state." rows="3"></textarea>
+                    <button class="btn" id="sendBtn" onclick="sendPrompt()" title="Send">
+                        Send
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="panel">
+                <div>
+                    <h2>Preview & Code</h2>
+                    <p class="panel-desc">See the generated UI and edit the code</p>
+                </div>
+
+                <div class="preview-tabs">
+                    <button class="tab active" onclick="switchTab('preview')">Preview</button>
+                    <button class="tab" onclick="switchTab('code')">Code</button>
+                    <button class="tab" onclick="switchTab('projects')">Projects</button>
+                </div>
+
+                <!-- Preview Tab -->
+                <div id="tab-preview" class="preview-container">
+                    <div class="preview-placeholder" id="previewPlaceholder">
+                        Describe a UI above and I'll generate it here
+                    </div>
+                    <iframe id="previewFrame" class="preview-iframe" style="display: none;"></iframe>
+                </div>
+
+                <!-- Code Tab -->
+                <div id="tab-code" style="display: none; flex: 1; display: flex; flex-direction: column;">
+                    <div class="editor-toolbar">
+                        <button class="btn" onclick="copyCode()" title="Copy code">Copy</button>
+                        <button class="btn" onclick="downloadCode()" title="Download HTML">Download</button>
+                        <button class="btn" onclick="refreshPreview()" title="Refresh preview">Refresh</button>
+                    </div>
+                    <textarea id="codeEditor" class="code-editor" readonly></textarea>
+                </div>
+
+                <!-- Projects Tab -->
+                <div id="tab-projects" style="display: none; overflow-y: auto;">
+                    <div class="projects-list" id="projectsList"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = '/api';
+        let currentProjectId = null;
+        let currentCode = '';
+
+        async function sendPrompt() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) return;
+
+            const sendBtn = document.getElementById('sendBtn');
+            const status = document.getElementById('status');
+            const chatMessages = document.getElementById('chatMessages');
+
+            // Add user message to chat
+            addMessage(prompt, 'user');
+
+            // Clear input
+            document.getElementById('prompt').value = '';
+            sendBtn.disabled = true;
+            status.innerHTML = '<span class="loading-spinner"></span> Generating UI...';
+            status.className = 'status generating';
+
+            try {
+                // Use EventSource for streaming
+                const eventSource = new EventSource(
+                    `${API_URL}/studio/generate/stream?description=${encodeURIComponent(prompt)}`
+                );
+
+                let aiMessage = '';
+                const messageEl = addMessage('', 'ai');
+                const msgContent = messageEl.querySelector('.msg-content') || messageEl;
+
+                eventSource.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.error) {
+                        addMessage(`Error: ${data.error}`, 'system');
+                        eventSource.close();
+                        status.innerHTML = 'Error generating UI';
+                        status.className = 'status error';
+                    } else if (data.content) {
+                        aiMessage += data.content;
+                        msgContent.textContent = `Generated ${aiMessage.length} characters...`;
+                    } else if (data.done) {
+                        currentProjectId = data.project_id;
+                        currentCode = aiMessage;
+                        msgContent.textContent = 'UI generated! Check the preview below.';
+                        status.innerHTML = '✓ UI generated successfully';
+                        status.className = 'status';
+                        showPreview();
+                        eventSource.close();
+                    }
+                };
+
+                eventSource.onerror = (err) => {
+                    addMessage('Connection lost. Please try again.', 'system');
+                    eventSource.close();
+                    status.innerHTML = 'Error connecting to server';
+                    status.className = 'status error';
+                };
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, 'system');
+                status.innerHTML = 'Error generating UI';
+                status.className = 'status error';
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        function addMessage(text, role = 'ai') {
+            const chatMessages = document.getElementById('chatMessages');
+            const msgEl = document.createElement('div');
+            msgEl.className = `message ${role}`;
+            msgEl.innerHTML = `<div class="msg-content">${escapeHtml(text)}</div>`;
+            chatMessages.appendChild(msgEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return msgEl;
+        }
+
+        function showPreview() {
+            const frame = document.getElementById('previewFrame');
+            const placeholder = document.getElementById('previewPlaceholder');
+            const codeEditor = document.getElementById('codeEditor');
+
+            frame.srcdoc = currentCode;
+            frame.style.display = 'block';
+            placeholder.style.display = 'none';
+            codeEditor.value = currentCode;
+        }
+
+        function switchTab(tab) {
+            // Hide all tabs
+            document.getElementById('tab-preview').style.display = 'none';
+            document.getElementById('tab-code').style.display = 'none';
+            document.getElementById('tab-projects').style.display = 'none';
+
+            // Show selected tab
+            document.getElementById(`tab-${tab}`).style.display = 'flex';
+
+            // Update active tab button
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'projects') {
+                loadProjects();
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_URL}/studio/projects`);
+                const data = await response.json();
+                const projectsList = document.getElementById('projectsList');
+                
+                if (data.projects.length === 0) {
+                    projectsList.innerHTML = '<p style="color: #94a3b8;">No projects yet. Create one above!</p>';
+                    return;
+                }
+
+                projectsList.innerHTML = data.projects.map(p => `
+                    <div class="project-card" onclick="loadProject('${p.id}')">
+                        <h3>${p.name}</h3>
+                        <p>${p.description}</p>
+                        <small style="color: #64748b;">${new Date(p.created_at).toLocaleDateString()}</small>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+            }
+        }
+
+        function loadProject(projectId) {
+            currentProjectId = projectId;
+            fetch(`${API_URL}/studio/projects/${projectId}`)
+                .then(r => r.json())
+                .then(project => {
+                    currentCode = project.ui_code;
+                    showPreview();
+                    switchTab('preview');
+                });
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(currentCode);
+            alert('Code copied to clipboard!');
+        }
+
+        function downloadCode() {
+            const blob = new Blob([currentCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `studio-${currentProjectId || 'ui'}.html`;
+            a.click();
+        }
+
+        function refreshPreview() {
+            const frame = document.getElementById('previewFrame');
+            frame.srcdoc = frame.srcdoc; // Refresh iframe
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle Enter key to send prompt
+        document.getElementById('prompt').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendPrompt();
+            }
+        });
+
+        // Initialize
+        console.log('AI Studio UI ready');
+    </script>
+</body>
+</html>
