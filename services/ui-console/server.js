@@ -78,20 +78,20 @@ app.get("/login", (req, res) => {
 // OWASP A07: Authentication Failures - Rate limit login attempts
 app.post("/auth/login", authRateLimiter, async (req, res) => {
   const { username, password } = req.body;
-  
+
   // A05: Injection - Input validation
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required" });
   }
-  
+
   // Basic validation
   if (typeof username !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: "Invalid input format" });
   }
-  
+
   // Sanitize for logging purposes only
   const sanitizedUsername = InputValidator.sanitizeString(username).substring(0, 50);
-  
+
   try {
     const r = await fetch(`${AGENT_URL}/auth/login`, {
       method: "POST",
@@ -106,7 +106,7 @@ app.post("/auth/login", authRateLimiter, async (req, res) => {
         const pr = await fetch(`${AGENT_URL}/users/${data.id}/personas`);
         const pd = await pr.json();
         personas = pd.personas || [];
-      } catch (_) {}
+      } catch (_) { }
       data.personas = personas;
       // Prefer admin persona for admin users so scope/role is not accidentally downgraded
       data.active_persona = (data.role === 'admin' && personas.find(p => p.permissions && p.permissions.actions && p.permissions.actions.includes('access_admin'))) || personas[0] || null;
@@ -127,10 +127,10 @@ app.post("/auth/login", authRateLimiter, async (req, res) => {
       });
     }
     // A09: Security Logging - Log failed attempts
-    console.warn('[SECURITY] Failed login attempt', { 
-      username: sanitizedUsername, 
-      status: r.status, 
-      ip: req.ip 
+    console.warn('[SECURITY] Failed login attempt', {
+      username: sanitizedUsername,
+      status: r.status,
+      ip: req.ip
     });
     return res.status(r.status).json({ error: 'Invalid credentials' });  // Generic message
   } catch (e) {
@@ -167,13 +167,13 @@ async function proxyToAIStudio(req, res, endpoint) {
       method: req.method,
       headers: { "Content-Type": "application/json" },
     };
-    
+
     if (req.method !== "GET" && req.method !== "HEAD") {
       options.body = JSON.stringify(req.body);
     }
-    
+
     const r = await fetch(url, options);
-    
+
     // Handle streaming (SSE)
     if (r.headers.get("content-type")?.includes("event-stream")) {
       res.setHeader("Content-Type", "text/event-stream");
@@ -482,7 +482,7 @@ app.get("/auth/sso/:provider/callback", async (req, res) => {
       const pr = await fetch(`${AGENT_URL}/users/${userData.id}/personas`);
       const pd = await pr.json();
       personas = pd.personas || [];
-    } catch (_) {}
+    } catch (_) { }
     userData.personas = personas;
     userData.active_persona = (userData.role === 'admin' && personas.find(p => p.permissions && p.permissions.actions && p.permissions.actions.includes('access_admin'))) || personas[0] || null;
 
@@ -582,7 +582,7 @@ app.post("/api/update-profile", async (req, res) => {
     if (req.body.bio !== undefined) body.bio = req.body.bio;
     if (req.body.avatar_url !== undefined) body.avatar_url = req.body.avatar_url;
     if (req.body.notification_preferences !== undefined) body.notification_preferences = req.body.notification_preferences;
-    
+
     const r = await fetch(`${AGENT_URL}/users/${userId}`, {
       method: "PUT",
       headers: { ...wsHeaders(req), "Content-Type": "application/json" },
@@ -607,21 +607,21 @@ app.post("/api/setup-2fa", async (req, res) => {
   try {
     const speakeasy = require("speakeasy");
     const QRCode = require("qrcode");
-    
+
     // Generate secret
     const secret = speakeasy.generateSecret({
       name: `AgenticPlatform (${req.session.user.username})`,
       issuer: "AgenticPlatform",
       length: 32
     });
-    
+
     // Generate QR code
     const qrCode = await QRCode.toDataURL(secret.otpauth_url);
-    
+
     res.json({
       secret: secret.base32,
       qrCode: qrCode,
-      backupCodes: Array.from({length: 10}, () => Math.random().toString(36).substr(2, 8).toUpperCase())
+      backupCodes: Array.from({ length: 10 }, () => Math.random().toString(36).substr(2, 8).toUpperCase())
     });
   } catch (e) {
     return res.status(500).json({ error: "Failed to generate 2FA secret" });
@@ -632,14 +632,14 @@ app.post("/api/setup-2fa", async (req, res) => {
 app.post("/api/confirm-2fa", async (req, res) => {
   const userId = req.session.user.id;
   const { token, secret } = req.body;
-  
+
   if (!token || !secret) {
     return res.status(400).json({ error: "Token and secret are required" });
   }
-  
+
   try {
     const speakeasy = require("speakeasy");
-    
+
     // Verify token
     const verified = speakeasy.totp.verify({
       secret: secret,
@@ -647,21 +647,21 @@ app.post("/api/confirm-2fa", async (req, res) => {
       token: token,
       window: 2
     });
-    
+
     if (!verified) {
       return res.status(400).json({ error: "Invalid token" });
     }
-    
+
     // Update user to enable 2FA
     const r = await fetch(`${AGENT_URL}/users/${userId}`, {
       method: "PUT",
       headers: { ...wsHeaders(req), "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         two_factor_enabled: true,
         two_factor_secret: secret
       }),
     });
-    
+
     const data = await r.json();
     if (r.ok) {
       req.session.user.two_factor_enabled = true;
@@ -676,11 +676,11 @@ app.post("/api/confirm-2fa", async (req, res) => {
 app.post("/api/disable-2fa", async (req, res) => {
   const userId = req.session.user.id;
   const { password } = req.body;
-  
+
   if (!password) {
     return res.status(400).json({ error: "Password is required" });
   }
-  
+
   try {
     // Verify current password
     const authR = await fetch(`${AGENT_URL}/auth/login`, {
@@ -688,21 +688,21 @@ app.post("/api/disable-2fa", async (req, res) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: req.session.user.username, password }),
     });
-    
+
     if (!authR.ok) {
       return res.status(401).json({ error: "Password is incorrect" });
     }
-    
+
     // Disable 2FA
     const r = await fetch(`${AGENT_URL}/users/${userId}`, {
       method: "PUT",
       headers: { ...wsHeaders(req), "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         two_factor_enabled: false,
         two_factor_secret: null
       }),
     });
-    
+
     const data = await r.json();
     if (r.ok) {
       req.session.user.two_factor_enabled = false;
@@ -759,11 +759,11 @@ app.get("/api/workspaces", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/workspaces", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/workspaces`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/workspaces`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/workspaces/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/workspaces/:id", async (req, res) => {
@@ -775,7 +775,7 @@ app.get("/api/workspaces/:id/members", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/workspaces/:id/members", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}/members`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/workspaces/${req.params.id}/members`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/workspaces/:id/members/:userId", async (req, res) => {
@@ -812,11 +812,11 @@ app.get("/api/users/:id", requireAdmin, async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/users", requireAdmin, async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/users`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/users`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/users/:id", requireAdmin, async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/users/:id", requireAdmin, async (req, res) => {
@@ -824,7 +824,7 @@ app.delete("/api/users/:id", requireAdmin, async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/users/:id/verify", requireAdmin, async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/verify`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/verify`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
@@ -838,11 +838,11 @@ app.get("/api/personas/:id", requireAuth, async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/personas", requireAdmin, async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/personas`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/personas`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/personas/:id", requireAdmin, async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/personas/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/personas/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/personas/:id", requireAdmin, async (req, res) => {
@@ -855,7 +855,7 @@ app.get("/api/users/:id/personas", requireAdmin, async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/users/:id/personas", requireAdmin, async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/personas`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/users/${req.params.id}/personas`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/users/:id/personas/:pid", requireAdmin, async (req, res) => {
@@ -903,7 +903,7 @@ app.get("/api/export", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/import", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/import`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
@@ -913,7 +913,7 @@ app.get("/api/skills", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/skills/:id", async (req, res) => {
@@ -921,7 +921,7 @@ app.get("/api/skills/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/skills/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/skills/:id", async (req, res) => {
@@ -959,11 +959,11 @@ app.delete("/api/skills/:id/files/:category/:filename", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills/enrich", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/enrich`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/enrich`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/skills/decompose", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/skills/decompose`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(120000) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/skills/decompose`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(120000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
@@ -973,7 +973,7 @@ app.get("/api/prompts", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/prompts/:id", async (req, res) => {
@@ -981,7 +981,7 @@ app.get("/api/prompts/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/prompts/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/prompts/:id", async (req, res) => {
@@ -989,11 +989,11 @@ app.delete("/api/prompts/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts/validate", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts/validate`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts/validate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/prompts/generate", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/prompts/generate`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/prompts/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(30000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 
@@ -1003,7 +1003,7 @@ app.get("/api/agents", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/agents", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/agents/:id", async (req, res) => {
@@ -1011,7 +1011,7 @@ app.get("/api/agents/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/agents/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/agents/${req.params.id}`, { method: "PUT", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/agents/:id", async (req, res) => {
@@ -1025,7 +1025,7 @@ app.get("/api/pipelines", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/pipelines", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/pipelines`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/pipelines`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/pipelines/:id", async (req, res) => {
@@ -1033,7 +1033,7 @@ app.get("/api/pipelines/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/pipelines/:id", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.delete("/api/pipelines/:id", async (req, res) => {
@@ -1041,7 +1041,7 @@ app.delete("/api/pipelines/:id", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.post("/api/pipelines/:id/run", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}/run`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body), signal: AbortSignal.timeout(300000) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/pipelines/${req.params.id}/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(300000) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/pipelines/:id/runs", async (req, res) => {
@@ -1095,7 +1095,7 @@ app.post("/api/agent-run/stream", async (req, res) => {
       signal: abortController.signal,
     });
     if (!resp.ok) {
-      res.write(`event: error\ndata: ${JSON.stringify({error: "Agent returned " + resp.status})}\n\n`);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: "Agent returned " + resp.status })}\n\n`);
       res.end();
       return;
     }
@@ -1112,7 +1112,7 @@ app.post("/api/agent-run/stream", async (req, res) => {
       // Client disconnected — normal stop
       res.end();
     } else {
-      res.write(`event: error\ndata: ${JSON.stringify({error: e.message})}\n\n`);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: e.message })}\n\n`);
       res.end();
     }
   }
@@ -1332,7 +1332,7 @@ app.get("/api/global-constraints", async (req, res) => {
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.put("/api/global-constraints", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) }); res.json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }); res.json(await r.json()); }
   catch (e) { res.status(502).json({ error: e.message }); }
 });
 app.get("/api/guardrails", async (req, res) => {
@@ -1349,7 +1349,7 @@ app.get("/api/guardrails/:id", async (req, res) => {
 });
 app.put("/api/guardrails/:id", async (req, res) => {
   try {
-    const resp = await fetch(`${AGENT_URL}/guardrails/${req.params.id}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    const resp = await fetch(`${AGENT_URL}/guardrails/${req.params.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
@@ -1600,7 +1600,7 @@ app.get("/api/documents/folders", async (req, res) => {
 app.put("/api/documents/registry/:id/tags", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/documents/registry/${req.params.id}/tags`, {
-      method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body)
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body)
     });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
@@ -1608,7 +1608,7 @@ app.put("/api/documents/registry/:id/tags", async (req, res) => {
 app.put("/api/documents/registry/:id/folder", async (req, res) => {
   try {
     const resp = await fetch(`${AGENT_URL}/documents/registry/${req.params.id}/folder`, {
-      method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body)
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body)
     });
     res.json(await resp.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
@@ -1671,7 +1671,7 @@ app.get("/api/tools-health", async (req, res) => {
     const resp = await fetch("http://tools-service:8001/health", { signal: AbortSignal.timeout(3000) });
     const data = await resp.json();
     res.json(data);
-  } catch(e) { res.status(503).json({ status: "offline" }); }
+  } catch (e) { res.status(503).json({ status: "offline" }); }
 });
 
 // ── API: MCP Registry ─────────────────────────────────
@@ -1792,7 +1792,7 @@ async function n8nLogin() {
     if (resp.ok) {
       const cookies = resp.headers.getSetCookie();
       if (cookies && cookies.length) {
-        n8nSessionCookie = cookies.map(function(c) { return c.split(";")[0]; }).join("; ");
+        n8nSessionCookie = cookies.map(function (c) { return c.split(";")[0]; }).join("; ");
         console.log("[n8n] Session login successful");
         return true;
       }
@@ -1826,17 +1826,17 @@ async function n8nAutoSetup() {
       console.log("[n8n] Owner auto-provisioned:", N8N_OWNER_EMAIL);
       const cookies = resp.headers.getSetCookie();
       if (cookies && cookies.length) {
-        n8nSessionCookie = cookies.map(function(c) { return c.split(";")[0]; }).join("; ");
+        n8nSessionCookie = cookies.map(function (c) { return c.split(";")[0]; }).join("; ");
       }
     } else {
-      const txt = await resp.text().catch(function() { return ""; });
+      const txt = await resp.text().catch(function () { return ""; });
       console.log("[n8n] Owner setup returned", resp.status, "— complete setup manually at the n8n UI");
     }
   } catch (e) { console.log("[n8n] Auto-setup failed:", e.message, "— complete setup manually at the n8n UI"); }
 }
 
 // Auto-setup on startup (non-blocking, delayed to let n8n fully start)
-setTimeout(function() { n8nAutoSetup(); }, 5000);
+setTimeout(function () { n8nAutoSetup(); }, 5000);
 
 async function n8nFetchWithAuth(url, options) {
   options = options || {};
@@ -2144,7 +2144,7 @@ app.get("/api/admin/global-constraints", async (req, res) => {
 });
 app.put("/api/admin/global-constraints", async (req, res) => {
   try {
-    const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    const r = await fetch(`${AGENT_URL}/global-constraints`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) });
     res.json(await r.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
@@ -2190,7 +2190,7 @@ app.put("/api/admin/sso-config", (req, res) => {
 
   // Persist to file with encrypted secrets
   let saved = {};
-  try { saved = JSON.parse(fs.readFileSync(SSO_CONFIG_PATH, "utf8")); } catch (_) {}
+  try { saved = JSON.parse(fs.readFileSync(SSO_CONFIG_PATH, "utf8")); } catch (_) { }
   saved[provider] = {
     clientId: trimmedId,
     encryptedSecret: encryptSecret(trimmedSecret),
@@ -2223,7 +2223,7 @@ app.get("/api/admin/security-considerations", async (req, res) => {
 });
 app.put("/api/admin/security-considerations", async (req, res) => {
   try {
-    const r = await fetch(`${AGENT_URL}/security-considerations`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    const r = await fetch(`${AGENT_URL}/security-considerations`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) });
     res.json(await r.json());
   } catch (e) { res.json({ error: e.message }); }
 });
@@ -2240,7 +2240,7 @@ app.get("/api/admin/best-practices", async (req, res) => {
 });
 app.put("/api/admin/best-practices", async (req, res) => {
   try {
-    const r = await fetch(`${AGENT_URL}/best-practices`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(req.body) });
+    const r = await fetch(`${AGENT_URL}/best-practices`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) });
     res.json(await r.json());
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
@@ -2311,7 +2311,7 @@ app.get("/api/admin/docker/env-vars", async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.post("/api/admin/docker/update-version", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/admin/docker/update-version`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/update-version`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get("/api/admin/docker/reminder-status", async (req, res) => {
@@ -2319,7 +2319,7 @@ app.get("/api/admin/docker/reminder-status", async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.post("/api/admin/docker/provision", async (req, res) => {
-  try { const r = await fetch(`${AGENT_URL}/admin/docker/provision`, { method: "POST", headers: wsHeaders(req, {"Content-Type":"application/json"}), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
+  try { const r = await fetch(`${AGENT_URL}/admin/docker/provision`, { method: "POST", headers: wsHeaders(req, { "Content-Type": "application/json" }), body: JSON.stringify(req.body) }); res.status(r.status).json(await r.json()); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2327,15 +2327,15 @@ app.post("/api/admin/docker/provision", async (req, res) => {
 app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
   try {
     const { scanPath = "/app", format = "json" } = req.body;
-    
+
     // Log the scan initiation
-    console.log("[SECURITY] Admin initiated secret scan", { 
-      path: scanPath, 
+    console.log("[SECURITY] Admin initiated secret scan", {
+      path: scanPath,
       user: req.session.user?.username || "unknown",
       ip: req.ip,
       timestamp: new Date().toISOString()
     });
-    
+
     // Run gitleaks scan
     const cmd = `gitleaks detect --source "${scanPath}" --report-format ${format} --no-color --no-git 2>&1`;
 
@@ -2349,14 +2349,14 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
         timestamp: new Date().toISOString(),
       });
     }
-    
+
     try {
-      const output = execSync(cmd, { 
+      const output = execSync(cmd, {
         encoding: "utf-8",
         maxBuffer: 10 * 1024 * 1024,  // 10MB buffer
         timeout: 60000  // 60 second timeout
       });
-      
+
       // Parse JSON output if requested
       let results = output;
       if (format === "json") {
@@ -2367,14 +2367,14 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
           results = { raw: output, parseError: parseErr.message };
         }
       }
-      
+
       // Log successful scan
       console.log("[SECURITY] Secret scan completed", {
         user: req.session.user?.username || "unknown",
         path: scanPath,
         timestamp: new Date().toISOString()
       });
-      
+
       res.status(200).json({
         success: true,
         timestamp: new Date().toISOString(),
@@ -2399,7 +2399,7 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
       }
 
       let results = output;
-      
+
       if (format === "json") {
         try {
           results = JSON.parse(output);
@@ -2407,14 +2407,14 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
           results = { raw: output };
         }
       }
-      
+
       console.log("[SECURITY] Secret scan found issues", {
         user: req.session.user?.username || "unknown",
         path: scanPath,
         secretsFound: true,
         timestamp: new Date().toISOString()
       });
-      
+
       res.status(200).json({
         success: true,
         timestamp: new Date().toISOString(),
@@ -2429,7 +2429,7 @@ app.post("/api/admin/secret-scan", requireAdmin, async (req, res) => {
       user: req.session.user?.username || "unknown",
       ip: req.ip
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Secret scan failed",
       details: process.env.NODE_ENV === 'development' ? e.message : "An error occurred during scanning"
     });
@@ -2441,7 +2441,7 @@ app.get("/api/admin/docker/images", requireAdmin, async (req, res) => {
   try {
     const cmd = "docker images --format '{{json . }}'";
     const output = execSync(cmd, { encoding: "utf-8", maxBuffer: 10 * 1024 * 1024 });
-    
+
     const images = output
       .trim()
       .split('\n')
@@ -2462,7 +2462,7 @@ app.get("/api/admin/docker/images", requireAdmin, async (req, res) => {
         }
       })
       .filter(img => img !== null);
-    
+
     res.json({ success: true, images });
     console.log("[DOCKER] Listed images", { count: images.length, user: req.session.user?.username });
   } catch (e) {
@@ -2477,7 +2477,7 @@ app.get("/api/admin/docker/security-summary", requireAdmin, async (req, res) => 
     const cmd = "docker images --quiet | wc -l";
     const totalOutput = execSync(cmd, { encoding: "utf-8" });
     const total = parseInt(totalOutput.trim()) || 0;
-    
+
     // Simulated vulnerability counts (in production, use Trivy or similar)
     const summary = {
       total: total,
@@ -2486,13 +2486,13 @@ app.get("/api/admin/docker/security-summary", requireAdmin, async (req, res) => 
       medium: Math.floor(total * 0.2),
       low: Math.floor(total * 0.3)
     };
-    
+
     res.json({ success: true, summary });
   } catch (e) {
     console.error("[DOCKER] Error getting security summary", { error: e.message });
-    res.json({ 
-      success: true, 
-      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0 } 
+    res.json({
+      success: true,
+      summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0 }
     });
   }
 });
@@ -2503,12 +2503,12 @@ app.post("/api/admin/docker/check-updates", requireAdmin, async (req, res) => {
     const cmd = "docker images --format '{{.Repository}}:{{.Tag}}'";
     const imagesOutput = execSync(cmd, { encoding: "utf-8" });
     const localImages = imagesOutput.trim().split('\n').filter(line => line && line !== '<none>:<none>');
-    
+
     const updates = [];
-    
+
     // Check a few key images for updates (full check would be slow)
     const keyImages = localImages.slice(0, 5);
-    
+
     for (const image of keyImages) {
       try {
         const pullCmd = `docker pull ${image} 2>&1 | grep -E "Status:|Digest:" | tail -1`;
@@ -2525,14 +2525,14 @@ app.post("/api/admin/docker/check-updates", requireAdmin, async (req, res) => {
         // Skip errors for individual images
       }
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       updates,
       checked: keyImages.length,
       message: `Checked ${keyImages.length} images for updates`
     });
-    
+
     console.log("[DOCKER] Checked updates", { images: keyImages.length, updates: updates.length });
   } catch (e) {
     console.error("[DOCKER] Error checking updates", { error: e.message });
@@ -2544,28 +2544,28 @@ app.post("/api/admin/docker/scan-image", requireAdmin, async (req, res) => {
   try {
     const { image, tag } = req.body;
     if (!image) throw new Error("Image name required");
-    
+
     const fullImage = tag ? `${image}:${tag}` : image;
-    
+
     // Use Docker inspect to get image details
     const inspectCmd = `docker inspect ${fullImage}`;
     let imageData = {};
-    
+
     try {
       const inspectOutput = execSync(inspectCmd, { encoding: "utf-8" });
       imageData = JSON.parse(inspectOutput)[0];
     } catch (e) {
       // Image not available locally
     }
-    
+
     const vulnerabilities = [];
-    
+
     // Simulated vulnerability detection
     if (imageData.Config) {
       const config = imageData.Config || {};
       const age = new Date() - new Date(imageData.Created || 0);
       const daysSinceCreate = Math.floor(age / (1000 * 60 * 60 * 24));
-      
+
       if (daysSinceCreate > 365) {
         vulnerabilities.push({
           severity: 'medium',
@@ -2575,14 +2575,14 @@ app.post("/api/admin/docker/scan-image", requireAdmin, async (req, res) => {
         });
       }
     }
-    
+
     res.json({
       success: true,
       image: fullImage,
       vulnerabilities,
       scanned_at: new Date().toISOString()
     });
-    
+
     console.log("[DOCKER] Scanned image", { image: fullImage, vulns: vulnerabilities.length });
   } catch (e) {
     console.error("[DOCKER] Error scanning image", { error: e.message });
@@ -2595,20 +2595,20 @@ app.post("/api/admin/docker/scan-all", requireAdmin, async (req, res) => {
     const cmd = "docker images --quiet";
     const output = execSync(cmd, { encoding: "utf-8" });
     const imageIds = output.trim().split('\n').filter(id => id);
-    
+
     let vulnerabilities_found = 0;
     const results = [];
-    
+
     for (const id of imageIds.slice(0, 10)) {  // Limit to 10 images to avoid timeout
       try {
         const inspectCmd = `docker inspect ${id}`;
         const inspectOutput = execSync(inspectCmd, { encoding: "utf-8" });
         const imageData = JSON.parse(inspectOutput)[0];
-        
+
         // Simple vulnerability check
         const age = new Date() - new Date(imageData.Created || 0);
         const daysSinceCreate = Math.floor(age / (1000 * 60 * 60 * 24));
-        
+
         if (daysSinceCreate > 365) {
           vulnerabilities_found += 1;
           results.push({
@@ -2625,7 +2625,7 @@ app.post("/api/admin/docker/scan-all", requireAdmin, async (req, res) => {
         // Skip errors
       }
     }
-    
+
     res.json({
       success: true,
       total: imageIds.length,
@@ -2634,7 +2634,7 @@ app.post("/api/admin/docker/scan-all", requireAdmin, async (req, res) => {
       results,
       scanned_at: new Date().toISOString()
     });
-    
+
     console.log("[DOCKER] Scanned all images", { total: imageIds.length, vulns: vulnerabilities_found });
   } catch (e) {
     console.error("[DOCKER] Error scanning all images", { error: e.message });
@@ -2769,7 +2769,7 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
         messageCount: conv.messages.length
       }))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
+
     res.json({ conversations: userConvs });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -2782,12 +2782,12 @@ app.get("/api/chat/conversations/:conversationId", requireAuth, async (req, res)
     if (!conv) {
       return res.status(404).json({ error: "Conversation not found" });
     }
-    
+
     // Check access
     if (conv.userId !== (req.session.user?.id || 'default')) {
       return res.status(403).json({ error: "Unauthorized" });
     }
-    
+
     res.json({
       id: req.params.conversationId,
       title: conv.title,
@@ -2804,7 +2804,7 @@ app.post("/api/chat/message", requireAuth, async (req, res) => {
   try {
     const { message, conversationId, agentId, model, useKB, compliance } = req.body;
     const userId = req.session.user?.id || 'default';
-    
+
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: "Message cannot be empty" });
     }
@@ -2824,7 +2824,7 @@ app.post("/api/chat/message", requireAuth, async (req, res) => {
     }
 
     const conv = chatConversations.get(convId);
-    
+
     // Add user message
     conv.messages.push({
       role: 'user',
@@ -2917,7 +2917,7 @@ app.post("/api/admin/compliance/config", async (req, res) => {
 
     Object.assign(complianceRules, req.body);
     console.log('[CONFIG] Compliance rules updated:', complianceRules);
-    
+
     res.json({ success: true, config: complianceRules });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -2945,7 +2945,7 @@ function applyComplianceFilter(text, settings) {
       /instructions for (bomb|weapon|explosive)/gi,
       /(illegal|unlawful) (drug|activity|hack)/gi
     ];
-    
+
     harmfulPatterns.forEach(pattern => {
       if (pattern.test(filtered)) {
         filtered = '[Content filtered due to compliance policy]';

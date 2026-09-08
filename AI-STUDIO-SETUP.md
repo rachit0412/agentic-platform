@@ -257,8 +257,8 @@ Every generated UI includes:
 
 ```html
 <!-- Any button with these attributes auto-calls agents -->
-<button 
-  data-action="agentCall" 
+<button
+  data-action="agentCall"
   data-agent-id="my-agent"
   data-prompt="Do something">
   Call Agent

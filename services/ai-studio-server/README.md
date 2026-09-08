@@ -64,8 +64,8 @@ Open your browser:
 In the chat panel:
 
 ```
-Create a contact form with name, email, and message fields. 
-Add a send button that submits to my email-sending agent. 
+Create a contact form with name, email, and message fields.
+Add a send button that submits to my email-sending agent.
 Include validation and a loading state.
 ```
 
@@ -260,8 +260,8 @@ All generated UIs automatically include:
 
 ```html
 <!-- Any button with these data attributes auto-invokes agents -->
-<button 
-  data-action="agentCall" 
+<button
+  data-action="agentCall"
   data-agent-id="my-agent"
   data-prompt="What should I do?"
   data-session-id="session-123">
@@ -340,11 +340,11 @@ Create a newsletter signup form with:
     document.querySelector('[data-action="agentCall"]').addEventListener('click', async (e) => {
       const email = document.getElementById('email').value;
       if (!email) return alert('Enter email');
-      
+
       const btn = e.target;
       btn.disabled = true;
       const msg = document.getElementById('message');
-      
+
       try {
         const result = await invokeAgent('newsletter-signup', `Subscribe ${email}`);
         msg.textContent = result.message || 'Subscribed!';

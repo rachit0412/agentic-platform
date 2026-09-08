@@ -112,13 +112,13 @@ async def health():
 async def generate_ui(body: UIPrompt):
     """
     Generate a custom UI from a natural language description.
-    
+
     Calls the Agent Service with a system prompt to generate HTML/React code.
     """
     project_id = body.project_id or str(uuid.uuid4())
-    
+
     logger.info(f"Generating UI for project {project_id}: {body.description[:100]}")
-    
+
     # System prompt to guide the agent in generating UI code
     system_prompt = """You are an expert web UI developer. The user will describe a web application.
 Generate clean, modern, responsive HTML/CSS/JavaScript code that matches their description.
@@ -203,7 +203,7 @@ async def generate_ui_stream(body: UIPrompt):
     Stream UI generation in real-time using Server-Sent Events.
     """
     project_id = body.project_id or str(uuid.uuid4())
-    
+
     system_prompt = """You are an expert web UI developer. The user will describe a web application.
 Generate clean, modern, responsive HTML/CSS/JavaScript code that matches their description.
 
@@ -241,7 +241,7 @@ Output format: wrap everything in <html>, <head>, <body> tags."""
                                     yield f"data: {json.dumps({'content': data['content'], 'project_id': project_id})}\n\n"
                             except json.JSONDecodeError:
                                 continue
-                    
+
                     # Store final project
                     now = datetime.now().isoformat()
                     projects_db[project_id] = {
@@ -267,9 +267,9 @@ async def preview_ui(project_id: str):
     """
     if project_id not in projects_db:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     project = projects_db[project_id]
-    
+
     # Wrap generated UI with agent invocation layer
     html = f"""<!DOCTYPE html>
 <html>
@@ -287,7 +287,7 @@ async def preview_ui(project_id: str):
     <div id="studio-root">
         {project['ui_code']}
     </div>
-    
+
     <script>
         // Agent invocation proxy
         async function invokeAgent(agentId, prompt, sessionId = null) {{
@@ -316,7 +316,7 @@ async def preview_ui(project_id: str):
                 const agentId = btn.dataset.agentId || 'default';
                 const prompt = btn.dataset.prompt || btn.textContent;
                 const sessionId = btn.dataset.sessionId || null;
-                
+
                 btn.setAttribute('data-loading', '');
                 try {{
                     const result = await invokeAgent(agentId, prompt, sessionId);
@@ -330,7 +330,7 @@ async def preview_ui(project_id: str):
     </script>
 </body>
 </html>"""
-    
+
     return FileResponse(
         path=None,
         media_type="text/html",
@@ -348,7 +348,7 @@ async def invoke_agent(body: AgentInvocation):
     Proxy agent invocations from generated UIs.
     """
     logger.info(f"Invoking agent {body.agent_id}: {body.prompt[:100]}")
-    
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -374,7 +374,7 @@ async def invoke_agent_stream(body: AgentInvocation):
     Stream agent response in real-time.
     """
     logger.info(f"Streaming agent {body.agent_id}: {body.prompt[:100]}")
-    
+
     async def event_generator():
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
@@ -405,7 +405,7 @@ async def invoke_workflow(body: WorkflowInvocation):
     Invoke an n8n workflow from a generated UI.
     """
     logger.info(f"Invoking n8n workflow {body.workflow_id}")
-    
+
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             # n8n webhook format: /webhook/{workflow_id}
@@ -457,11 +457,11 @@ async def update_project_code(project_id: str, body: dict):
     """
     if project_id not in projects_db:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     if "ui_code" in body:
         projects_db[project_id]["ui_code"] = body["ui_code"]
         projects_db[project_id]["updated_at"] = datetime.now().isoformat()
-    
+
     return projects_db[project_id]
 
 
@@ -479,17 +479,17 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            
+
             if message["type"] == "update_code":
                 if project_id in projects_db:
                     projects_db[project_id]["ui_code"] = message["code"]
                     projects_db[project_id]["updated_at"] = datetime.now().isoformat()
                     await websocket.send_json({"status": "saved"})
-            
+
             elif message["type"] == "invoke_agent":
                 # Can handle real-time agent calls via WebSocket too
                 await websocket.send_json({"status": "processing"})
-    
+
     except WebSocketDisconnect:
         logger.info(f"Client disconnected from {project_id}")
 

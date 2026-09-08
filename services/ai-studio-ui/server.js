@@ -5,7 +5,7 @@
 
 const express = require('express');
 const path = require('path');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -34,7 +34,7 @@ app.all('/api/*', async (req, res) => {
         }
 
         const response = await fetch(url, options);
-        
+
         // Forward headers
         response.headers.forEach((value, name) => {
             if (name !== 'content-encoding') {
