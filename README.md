@@ -195,6 +195,74 @@ Open **http://localhost:3005** — you're running a full agent factory.
 
 > 📖 **Detailed installation** (Windows/Mac/Linux, GPU setup, troubleshooting): **[INSTALL.md](INSTALL.md)**
 
+### Docker Compose Services Overview
+
+The platform uses Docker Compose to orchestrate 16 services with automatic health checks and dependency management:
+
+**Core Services:**
+- `ui-console` (port 3005) — The main dashboard. Depends on all backend services.
+- `agent-service` (port 8010) — FastAPI backend with 157 endpoints. Depends on ollama, chromadb, postgres.
+- `tools-service` (port 8011) — Tool management and execution.
+- `ai-studio-server` (port 8020) — AI-powered UI generator backend.
+
+**Data & Infrastructure:**
+- `ollama` (port 11436) — Local LLM runtime.
+- `chromadb` (port 8200) — Vector database for RAG.
+- `datastore-db` (port 5433) — PostgreSQL metadata store.
+
+**Orchestration & Automation:**
+- `n8n` (port 5678) — Workflow engine.
+- `n8n-proxy` (port 5679) — Cross-origin proxy for n8n.
+
+**Observability (Optional):**
+- `prometheus` (port 9090) — Metrics collection.
+- `grafana` (port 3013) — Monitoring dashboards.
+- `loki` (port 3100) — Log aggregation.
+- `otel-collector` (port 4317) — OpenTelemetry pipeline.
+- `langfuse` (port 3012) — LLM tracing and cost tracking.
+
+**MCP Servers (Tool Integrations):**
+- `brave-search-mcp` — Web search integration.
+- `open-tools-mcp` — 60+ community tools.
+
+**Service Dependencies:**
+```
+ui-console
+├── ai-studio-server (depends: agent-service healthy)
+│   └── agent-service (depends: ollama, chromadb, datastore-db healthy)
+│       ├── ollama
+│       ├── chromadb
+│       └── datastore-db
+├── agent-service
+├── tools-service
+├── n8n (depends: datastore-db healthy)
+├── n8n-proxy (depends: n8n healthy)
+└── [observability stack - optional]
+    ├── prometheus
+    ├── grafana
+    ├── loki
+    └── otel-collector
+```
+
+**Start/Stop Services:**
+```bash
+# Start all services
+docker compose up -d
+
+# Start specific observability services
+docker compose up -d prometheus grafana loki otel-collector
+
+# View service status
+docker compose ps
+
+# View logs
+docker compose logs -f ui-console
+docker compose logs -f agent-service
+
+# Stop all
+docker compose down
+```
+
 ### Authentication & Personas
 
 The platform ships with enterprise-grade authentication and persona-based access control:
@@ -268,7 +336,7 @@ curl -X POST http://localhost:8010/run \
 | A2A Protocol     | Register peer agents for inter-agent delegation                                                                                                                                                                                                           |
 | MCP Registry     | Create, host, and manage MCP tool servers — config mode (no-code), code mode (Python), or register external servers                                                                                                                                       |
 | REST Console     | Interactive API console — test all 157 endpoints                                                                                                                                                                                                          |
-| Intelligence Hub | Operational intelligence — traces, LLM cost & token analytics, guardrail status, model breakdown chart, recent call table, 8-stat dashboard                                                                                                               |
+| Intelligence Hub | **Central operational intelligence hub with 7 sub-sections** — see table below                                                                                                                                                                             |
 | Traceability     | Langfuse trace timeline and deep-dive                                                                                                                                                                                                                     |
 | Evaluation       | Agent quality scoring and model comparison                                                                                                                                                                                                                |
 | Observability    | Stack health — Prometheus, Grafana, Loki status                                                                                                                                                                                                           |
@@ -278,6 +346,22 @@ curl -X POST http://localhost:8010/run \
 | Marketplace      | Browse and install templates                                                                                                                                                                                                                              |
 | Admin            | 8-tab admin plane — service health, **user & access management**, **persona definitions & user persona assignments**, platform overview, LLM management, DB & data, config (security, best practices), audit log. Role-gated: only admin users can access |
 | Documentation    | Auto-generated API & architecture docs                                                                                                                                                                                                                    |
+
+### Intelligence Hub (7 sub-sections)
+
+The Intelligence Hub is your central operational hub for managing all AI assets, knowledge, and automation:
+
+| Sub-Section    | What you do there                                                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prompts        | Manage system prompts, prompt templates, versioning, and performance analytics. Reuse prompts across agents.                                                                                    |
+| Tools          | Catalog all available tools and integrations. Tool documentation, parameter schemas, usage examples, and testing interface.                                                                     |
+| Documents      | RAG document management — upload, ingest, chunk, embed, and retrieve from knowledge base (ChromaDB). Full-text search and tagging.                                                            |
+| Workflows      | n8n workflow orchestration — visual builder, execution logs, trigger management (webhooks, schedules, events). Multi-agent pipelines.                                                          |
+| Evaluation     | Agent quality scoring and benchmarking. Performance metrics, A/B testing setup, cost analysis, quality metrics dashboard.                                                                      |
+| Guardrails     | Safety controls and compliance enforcement — input validation, output filtering, PII detection, rate limiting, cost control, jailbreak prevention.                                              |
+| Marketplace    | Browse and install agent templates, tools, and extensions. Community-contributed integrations with ratings and reviews.                                                                        |
+
+**Access Intelligence Hub:** Admin panel → Intelligence Hub section, or directly at `/prompts`, `/tools`, `/documents`, `/workflows`, `/evaluation`, `/guardrails`, `/marketplace`
 
 ---
 

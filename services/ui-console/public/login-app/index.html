@@ -1,16 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agentic Platform — Sign In</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/login-app/assets/index-BCqWYCmH.js"></script>
-    <link rel="stylesheet" crossorigin href="/login-app/assets/index-B47v1Jcw.css">
-  </head>
-  <body class="antialiased">
-    <div id="root"></div>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic Platform — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" crossorigin href="/login-app/assets/index-B47v1Jcw.css">
+  <style>
+    /* Backup CSS: hide animations as they render */
+    [style*="animation"],
+    [class*="motion"] {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* Immediate page background */
+    html,
+    body {
+      background: linear-gradient(135deg, #f5f3ff 0%, #f0f4ff 100%);
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Loading skeleton - shown OUTSIDE of React root */
+    #loading-skeleton {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f5f3ff 0%, #f0f4ff 100%);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    #loading-skeleton.hidden {
+      display: none !important;
+    }
+
+    .skeleton-card {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 30px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
+      margin: 20px;
+    }
+
+    .skeleton-item {
+      height: 20px;
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      margin: 0 auto 16px;
+    }
+
+    .skeleton-title {
+      width: 60%;
+      height: 28px;
+      margin: 0 auto 8px;
+    }
+
+    .skeleton-subtitle {
+      width: 80%;
+      height: 16px;
+      margin: 0 auto 24px;
+      background-color: #f3f4f6 !important;
+      animation: none !important;
+    }
+
+    .skeleton-input {
+      height: 44px;
+      margin-bottom: 12px;
+    }
+
+    .skeleton-button {
+      height: 48px;
+      margin-top: 8px;
+    }
+  </style>
+  <script>
+    // INTRO GATE - ENABLED BY DEFAULT (modular control via localStorage)
+    // Set flag to enable intro gate (pre-built React app checks this)
+    const isGateDisabled = localStorage.getItem('agentic_intro_gate_enabled') === 'false';
+    if (!isGateDisabled) {
+      localStorage.setItem('agentic_intro_gate_enabled', 'true');
+    }
+
+    // Function to hide the loading skeleton
+    function hideLoadingSkeleton() {
+      try {
+        const skeleton = document.getElementById('loading-skeleton');
+        if (skeleton) {
+          skeleton.classList.add('hidden');
+        }
+      } catch (e) {
+        console.error('Error hiding skeleton:', e);
+      }
+    }
+
+    // Watch for intro gate to appear and hide skeleton when it does
+    function monitorIntroGate() {
+      // Check if intro gate animation has started (look for boot sequence text or gate overlay)
+      const hasIntroGate = document.body.innerText.includes('BOOT SEQUENCE') ||
+        document.body.innerText.includes('SCANNING ENVIRONMENT') ||
+        !!document.querySelector('.fixed.inset-0.z-\\[200\\]');
+
+      if (hasIntroGate) {
+        // Intro gate is now visible - hide the skeleton to show it
+        hideLoadingSkeleton();
+        clearInterval(gateMonitor);
+
+        // Now monitor when intro gate finishes and login form appears
+        monitorLoginFormAppearance();
+      }
+    }
+
+    function monitorLoginFormAppearance() {
+      const formCheck = setInterval(() => {
+        const passwordInput = document.querySelector('input[type="password"]');
+        const signInButton = Array.from(document.querySelectorAll('button'))
+          .find(b => b.textContent.includes('Sign in'));
+
+        if (passwordInput && signInButton) {
+          // Form has appeared after intro gate finished
+          clearInterval(formCheck);
+        }
+      }, 200);
+
+      setTimeout(() => clearInterval(formCheck), 5000);
+    }
+
+    // Start monitoring for intro gate
+    const gateMonitor = setInterval(monitorIntroGate, 100);
+    setTimeout(() => clearInterval(gateMonitor), 5000);
+  </script>
+</head>
+
+<body class="antialiased" style="background: linear-gradient(135deg, #f5f3ff 0%, #f0f4ff 100%); margin: 0; padding: 0;">
+  <!-- Loading skeleton - OUTSIDE React root so it's not replaced -->
+  <div id="loading-skeleton"
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f5f3ff 0%, #f0f4ff 100%); z-index: 1000; pointer-events: none;">
+    <div class="skeleton-card">
+      <div class="skeleton-item skeleton-logo"></div>
+      <div class="skeleton-item skeleton-title"></div>
+      <div class="skeleton-item skeleton-subtitle"></div>
+      <div class="skeleton-item skeleton-input"></div>
+      <div class="skeleton-item skeleton-input"></div>
+      <div class="skeleton-item skeleton-button"></div>
+    </div>
+  </div>
+
+  <div id="root"></div>
+
+  <script>
+    // Dynamically hide skeleton when React renders the login form
+    function detectReactReady() {
+      // Check if login form has been rendered by React
+      const passwordInput = document.querySelector('input[type="password"]');
+      const signInButton = Array.from(document.querySelectorAll('button'))
+        .find(b => b.textContent.includes('Sign in'));
+
+      if (passwordInput && signInButton) {
+        // React has rendered! Hide skeleton
+        hideLoadingSkeleton();
+        return true;
+      }
+      return false;
+    }
+
+    // Check immediately
+    if (detectReactReady()) {
+      // Already loaded (cached)
+    } else {
+      // Start polling - React should render within 2-3 seconds
+      const maxAttempts = 50; // up to 5 seconds (50 × 100ms)
+      let attempts = 0;
+      const interval = setInterval(() => {
+        if (detectReactReady() || attempts++ > maxAttempts) {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+  </script>
+  </script>
+
+  <script type="module" crossorigin src="/login-app/assets/index-BCqWYCmH.js"></script>
+</body>
+
 </html>

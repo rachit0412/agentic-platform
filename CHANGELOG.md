@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaced backtick template literals with string concatenation in `admin.ejs`
   - Error was: "Unexpected identifier 'HTTP' while compiling ejs"
   - All admin sections now accessible without 500 errors
-  
+
 - **Intro Gate Animation Gate-Lock** - Intro gate animation was showing on all visits
   - Now disabled by default (users see login form directly)
   - Requires explicit enable in admin settings to show animation
@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reduced panel fly-out duration: 1.4s → 1.0s
   - Reduced total redirect time: 2.2s → 1.2s
   - **45% faster overall sign-in experience**
-  
+
 - **Admin Panel UI/UX Settings Section**
   - Location: Config → System Config → UI/UX Settings
   - Intro gate animation toggle (enable/disable)
@@ -66,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - IntroGate panel fly-out: 700ms delay, 700ms animation → 450ms delay, 550ms animation
   - Overall boot sequence: ~3.2s → ~2.5s when enabled
   - Sign-in gate: 2.2s → 1.2s to redirect
-  
+
 - **Application Startup Logic**
   - Gate animation now requires explicit localStorage flag: `agentic_intro_gate_enabled === 'true'`
   - Default behavior: show login form immediately (no animation)

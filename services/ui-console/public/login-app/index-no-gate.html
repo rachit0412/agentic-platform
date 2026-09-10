@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agentic Platform — Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" crossorigin href="/login-app/assets/index-B47v1Jcw.css">
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+        }
+
+        #root {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Completely prevent intro gate from rendering */
+        [class*="motion"],
+        [class*="framer"],
+        [class*="intro"],
+        [class*="gate"],
+        [class*="boot"] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+    <div id="root"></div>
+
+    <script>
+        // CRITICAL: Disable intro gate BEFORE React renders
+        window.__SKIP_INTRO_GATE__ = true;
+        sessionStorage.setItem('skipLoginGate', 'true');
+        localStorage.removeItem('agentic_intro_gate_enabled');
+        localStorage.setItem('agentic_intro_shown', 'true');
+
+        // Create a simple login page if React doesn't load
+        document.addEventListener('DOMContentLoaded', function () {
+            // Give React a moment to render
+            setTimeout(function () {
+                // If React app hasn't fully rendered, show fallback login
+                var root = document.getElementById('root');
+                if (!root.innerHTML || root.innerHTML.trim().length < 100) {
+                    root.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: linear-gradient(135deg, #0a0a0f 0%, #0f0f1e 100%);">
+              <div style="width: 100%; max-width: 400px; padding: 40px; text-align: center;">
+                <div style="margin-bottom: 30px;">
+                  <div style="width: 60px; height: 60px; margin: 0 auto 15px; border-radius: 12px; background: linear-gradient(135deg,#6366f1,#8b5cf6); display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                  <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #fff;">Agentic Platform</h1>
+                  <p style="margin: 8px 0 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 2px;">AI Operations</p>
+                </div>
+                <form action="/login-app/auth" method="POST" style="display: flex; flex-direction: column; gap: 12px;">
+                  <input type="email" name="email" placeholder="Email" required style="padding: 12px; border: 1px solid #333; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; font-family: inherit; font-size: 14px;">
+                  <input type="password" name="password" placeholder="Password" required style="padding: 12px; border: 1px solid #333; border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; font-family: inherit; font-size: 14px;">
+                  <button type="submit" style="padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s;">
+                    Sign In
+                  </button>
+                </form>
+                <p style="font-size: 12px; color: #666; margin-top: 20px;">
+                  <a href="#" onclick="location.reload(); return false;" style="color: #6366f1; text-decoration: none;">Reload</a>
+                </p>
+              </div>
+            </div>
+          `;
+                }
+            }, 2000);
+        });
+    </script>
+
+    <script type="module" crossorigin src="/login-app/assets/index-BCqWYCmH.js"></script>
+</body>
+
+</html>

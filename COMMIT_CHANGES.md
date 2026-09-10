@@ -1,7 +1,7 @@
 # Commit Summary: Grafana Dashboard & Intelligence Hub Updates
 
-**Date**: 2026-09-10  
-**Type**: Bug Fix + Feature Verification  
+**Date**: 2026-09-10
+**Type**: Bug Fix + Feature Verification
 **Impact**: Observability features now fully functional
 
 ---
@@ -10,7 +10,7 @@
 
 ### 1. Fixed Grafana Dashboard in Observability Page
 
-**File**: `/services/ui-console/server.js`  
+**File**: `/services/ui-console/server.js`
 **Line**: 36
 
 **Change**:
@@ -28,7 +28,7 @@ const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || `http://localhost:$
 
 ### 2. Fixed Observability Dashboard Embedding
 
-**File**: `/services/ui-console/views/observability.ejs`  
+**File**: `/services/ui-console/views/observability.ejs`
 **Line**: 87
 
 **Change**:
@@ -46,7 +46,7 @@ src="${urls.grafana}/d-solo/agentic-platform-health/agentic-platform-health?orgI
 
 ### 3. Updated Changelog
 
-**File**: `/CHANGELOG.md`  
+**File**: `/CHANGELOG.md`
 **Added**: New section for current build (2026-09-10)
 
 **Content**:
@@ -64,7 +64,7 @@ src="${urls.grafana}/d-solo/agentic-platform-health/agentic-platform-health?orgI
 
 ### 4. Updated Environment Variables Documentation
 
-**File**: `/docs/ENVIRONMENT-VARIABLES.md`  
+**File**: `/docs/ENVIRONMENT-VARIABLES.md`
 **Section**: Grafana Dashboard
 
 **Changes**:

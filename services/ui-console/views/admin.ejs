@@ -948,6 +948,30 @@
     </div>
   </div>
 
+  <!-- Intro Gateway Control -->
+  <div class="card animate-fade-up" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <h3>Login Gateway Animation</h3>
+      <span style="font-size:0.72rem;color:var(--text-3)">Futuristic boot animation before login form</span>
+    </div>
+    <div style="margin-top:1rem;padding:1rem;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:600;color:var(--text-1);margin-bottom:0.35rem">AI Operations Gateway</div>
+        <p style="font-size:0.78rem;color:var(--text-3);margin:0;line-height:1.5">Shows a 3-second futuristic boot sequence with system initialization phases. <strong>Currently:</strong> <span id="gateway-status" style="color:var(--success);font-weight:600">Enabled (boot animation shows before login)</span></p>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-shrink:0;margin-left:2rem">
+        <button id="gateway-btn-disable" class="btn btn-secondary btn-sm" onclick="toggleIntroGateway(false)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.25rem;vertical-align:-2px"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          Disable
+        </button>
+        <button id="gateway-btn-enable" class="btn btn-primary btn-sm" style="display:none" onclick="toggleIntroGateway(true)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.25rem;vertical-align:-2px"><polyline points="20 6 9 17 4 12"/></svg>
+          Enable
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- SSO / OAuth Configuration -->
   <div class="card animate-fade-up" style="margin-bottom:1.5rem">
     <div class="section-header">
@@ -1550,6 +1574,35 @@
   </div>
 </div>
 
+<!-- Intelligence Hub Tabs -->
+<div id="tab-prompts" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-prompts" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/prompts"></iframe>
+</div>
+
+<div id="tab-tools" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-tools" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/tools"></iframe>
+</div>
+
+<div id="tab-documents" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-documents" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/documents"></iframe>
+</div>
+
+<div id="tab-workflows" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-workflows" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/workflows"></iframe>
+</div>
+
+<div id="tab-evaluation" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-evaluation" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/evaluation"></iframe>
+</div>
+
+<div id="tab-guardrails" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-guardrails" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/guardrails"></iframe>
+</div>
+
+<div id="tab-marketplace" class="admin-tab-content" style="display:none">
+  <iframe id="iframe-marketplace" style="width:100%;height:calc(100vh - 200px);border:none;border-radius:8px" src="/marketplace"></iframe>
+</div>
+
 </div ><!-- /admin-content -->
 
 <style>
@@ -1849,7 +1902,8 @@ function editUser(userId) {
         data: ['database'],
         infrastructure: ['docker-images', 'environment-vars'],
         compliance: ['compliance-rules', 'compliance-audit', 'secret-scan', 'owasp-scan', 'clamav-scan'],
-        observability: ['observability', 'llm-activity', 'traceability']
+        observability: ['observability', 'llm-activity', 'traceability'],
+        'intelligence-hub': ['prompts', 'tools', 'documents', 'workflows', 'evaluation', 'guardrails', 'marketplace']
       };
       var TAB_SECTION = {
         health: 'operations', overview: 'operations', audit: 'operations', 'api-reference': 'operations',
@@ -1858,7 +1912,8 @@ function editUser(userId) {
         database: 'data',
         'docker-images': 'infrastructure', 'environment-vars': 'infrastructure',
         'compliance-rules': 'compliance', 'compliance-audit': 'compliance', 'secret-scan': 'compliance', 'owasp-scan': 'compliance', 'clamav-scan': 'compliance',
-        observability: 'observability', 'llm-activity': 'observability', traceability: 'observability'
+        observability: 'observability', 'llm-activity': 'observability', traceability: 'observability',
+        prompts: 'intelligence-hub', tools: 'intelligence-hub', documents: 'intelligence-hub', workflows: 'intelligence-hub', evaluation: 'intelligence-hub', guardrails: 'intelligence-hub', marketplace: 'intelligence-hub'
       };
 
       function switchSection(section) {
@@ -1917,6 +1972,14 @@ function editUser(userId) {
         if (tab === 'observability') loadObservabilityContent();
         if (tab === 'llm-activity') loadLlmActivityContent();
         if (tab === 'traceability') loadTraceabilityContent();
+        if (tab === 'prompts') loadIntelligenceHubTab('prompts');
+        if (tab === 'tools') loadIntelligenceHubTab('tools');
+        if (tab === 'documents') loadIntelligenceHubTab('documents');
+        if (tab === 'workflows') loadIntelligenceHubTab('workflows');
+        if (tab === 'evaluation') loadIntelligenceHubTab('evaluation');
+        if (tab === 'guardrails') loadIntelligenceHubTab('guardrails');
+        if (tab === 'marketplace') loadIntelligenceHubTab('marketplace');
+        if (tab === 'config') loadIntroGatewayStatus();
       }
 
       /* Wire up nav via event delegation (avoids inline onclick in template literal) */
@@ -1955,6 +2018,35 @@ function editUser(userId) {
             el.style.boxShadow = 'none';
           }
         }
+      }
+
+      /* ═══ INTRO GATEWAY CONTROL ═══ */
+      async function loadIntroGatewayStatus() {
+        var disabled = localStorage.getItem('agentic_intro_gate_enabled') === 'false';
+        var statusEl = document.getElementById('gateway-status');
+        var btnEnable = document.getElementById('gateway-btn-enable');
+        var btnDisable = document.getElementById('gateway-btn-disable');
+        if (disabled) {
+          if (statusEl) statusEl.innerHTML = 'Disabled (login page shown directly)';
+          if (statusEl) statusEl.style.color = 'var(--accent)';
+          if (btnEnable) btnEnable.style.display = 'inline-flex';
+          if (btnDisable) btnDisable.style.display = 'none';
+        } else {
+          if (statusEl) statusEl.innerHTML = 'Enabled (boot animation shows before login)';
+          if (statusEl) statusEl.style.color = 'var(--success)';
+          if (btnEnable) btnEnable.style.display = 'none';
+          if (btnDisable) btnDisable.style.display = 'inline-flex';
+        }
+      }
+      async function toggleIntroGateway(enable) {
+        if (enable) {
+          localStorage.removeItem('agentic_intro_gate_enabled');
+          showToast('✓ Intro gateway enabled. It will show on next login.', 'success');
+        } else {
+          localStorage.setItem('agentic_intro_gate_enabled', 'false');
+          showToast('✓ Intro gateway disabled. Login page will show directly.', 'success');
+        }
+        loadIntroGatewayStatus();
       }
 
       /* ═══ LOAD ALL ═══ */
@@ -3281,7 +3373,7 @@ function editUser(userId) {
           var html = '<div class="card animate-fade-up" style="margin-bottom:1rem">';
           html += '<h3 style="margin:0 0 0.75rem 0;color:var(--accent-text)">📊 Observability Stack</h3>';
           html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem">';
-          (data.services || []).filter(function(s) { return s.type === 'observability'; }).forEach(function(svc) {
+          (data.services || []).filter(function (s) { return s.type === 'observability'; }).forEach(function (svc) {
             var healthColor = svc.status === 'healthy' ? '#10b981' : '#f43f5e';
             html += '<div style="padding:0.75rem;background:var(--glass-bg);border-radius:8px;border-left:3px solid ' + healthColor + '">';
             html += '<div style="font-weight:600;color:var(--text-1);font-size:0.85rem">' + svc.name + '</div>';
@@ -3295,7 +3387,7 @@ function editUser(userId) {
           html += '📝 <strong>Loki:</strong> Log aggregation via OTLP<br/>';
           html += '📊 <strong>Grafana:</strong> Visualization & dashboards</p></div>';
           container.innerHTML = html;
-        } catch(e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Failed to load observability data: ' + e.message + '</div>'; }
+        } catch (e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Failed to load observability data: ' + e.message + '</div>'; }
       }
 
       async function loadLlmActivityContent() {
@@ -3311,7 +3403,7 @@ function editUser(userId) {
           container.innerHTML += '<li>📈 Model performance metrics</li>';
           container.innerHTML += '</ul></div></div>';
           // Note: Langfuse integration would require SDK setup in agent-service
-        } catch(e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Error: ' + e.message + '</div>'; }
+        } catch (e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Error: ' + e.message + '</div>'; }
       }
 
       async function loadTraceabilityContent() {
@@ -3329,7 +3421,51 @@ function editUser(userId) {
           container.innerHTML += '<strong>📊 Telemetry Signals:</strong><br/>';
           container.innerHTML += '<div style="font-size:0.9rem;color:var(--text-2);margin-top:0.5rem">Traces (spans) | Metrics (gauges/counters) | Logs (structured)</div>';
           container.innerHTML += '</div></div></div>';
-        } catch(e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Error: ' + e.message + '</div>'; }
+        } catch (e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Error: ' + e.message + '</div>'; }
+      }
+
+      /* ─ Intro Gateway Control ─ */
+      async function loadIntroGatewayStatus() {
+        var disabled = localStorage.getItem('agentic_intro_gate_enabled') === 'false';
+        var statusEl = document.getElementById('gateway-status');
+        var btnEnable = document.getElementById('gateway-btn-enable');
+        var btnDisable = document.getElementById('gateway-btn-disable');
+        if (disabled) {
+          statusEl.innerHTML = 'Disabled (login page shown directly)';
+          statusEl.style.color = 'var(--accent)';
+          btnEnable.style.display = 'inline-flex';
+          btnDisable.style.display = 'none';
+        } else {
+          statusEl.innerHTML = 'Enabled (boot animation shows before login)';
+          statusEl.style.color = 'var(--success)';
+          btnEnable.style.display = 'none';
+          btnDisable.style.display = 'inline-flex';
+        }
+      }
+      async function toggleIntroGateway(enable) {
+        if (enable) {
+          localStorage.removeItem('agentic_intro_gate_enabled');
+          showToast('Intro gateway enabled. It will show on next login.', 'success');
+        } else {
+          localStorage.setItem('agentic_intro_gate_enabled', 'false');
+          showToast('Intro gateway disabled. Login page will show directly.', 'success');
+        }
+        loadIntroGatewayStatus();
+      }
+
+      /* ─ Intelligence Hub Loader ─ */
+      async function loadIntelligenceHubTab(tabName) {
+        var iframe = document.getElementById('iframe-' + tabName);
+        if (iframe) {
+          iframe.onload = function () {
+            try {
+              // Inject dark mode compatibility if needed
+              iframe.contentDocument.documentElement.setAttribute('data-theme', 'dark');
+            } catch (e) { /* Cross-origin, can't inject */ }
+          };
+          // Force reload to ensure fresh content
+          iframe.src = '/' + tabName + '?t=' + Date.now();
+        }
       }
 
       /* ═══ INIT ═══ */

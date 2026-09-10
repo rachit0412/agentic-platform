@@ -64,12 +64,12 @@ function NeuralCanvas() {
 
 /* ── Boot phases ──────────────────────────────────────────── */
 const PHASES = [
-  { id: 'scan',    label: 'SCANNING ENVIRONMENT',     icon: Wifi,     color: '#6366f1', ms: 0 },
-  { id: 'init',    label: 'INITIALIZING AGENTS',       icon: Cpu,      color: '#8b5cf6', ms: 380 },
-  { id: 'auth',    label: 'LOADING AUTH MODULES',      icon: Lock,     color: '#06b6d4', ms: 760 },
-  { id: 'data',    label: 'CONNECTING DATA LAYER',     icon: Database, color: '#22d3ee', ms: 1100 },
-  { id: 'sec',     label: 'VERIFYING INTEGRITY',       icon: Shield,   color: '#10b981', ms: 1440 },
-  { id: 'online',  label: 'AGENTIC PLATFORM ONLINE',   icon: Zap,      color: '#f59e0b', ms: 1780 },
+  { id: 'scan', label: 'SCANNING ENVIRONMENT', icon: Wifi, color: '#6366f1', ms: 0 },
+  { id: 'init', label: 'INITIALIZING AGENTS', icon: Cpu, color: '#8b5cf6', ms: 380 },
+  { id: 'auth', label: 'LOADING AUTH MODULES', icon: Lock, color: '#06b6d4', ms: 760 },
+  { id: 'data', label: 'CONNECTING DATA LAYER', icon: Database, color: '#22d3ee', ms: 1100 },
+  { id: 'sec', label: 'VERIFYING INTEGRITY', icon: Shield, color: '#10b981', ms: 1440 },
+  { id: 'online', label: 'AGENTIC PLATFORM ONLINE', icon: Zap, color: '#f59e0b', ms: 1780 },
 ];
 
 /* ── Pre-login Intro Gate ─────────────────────────────────── */
@@ -84,9 +84,9 @@ function IntroGate({ onComplete }) {
     // Smooth progress bar
     const progInterval = setInterval(() => setProgress(p => Math.min(p + 1.4, 100)), 28);
     // Stage transitions
-    const readyT  = setTimeout(() => setStage('ready'), 2100);
-    const splitT  = setTimeout(() => setStage('split'), 2500);
-    const doneT   = setTimeout(onComplete,              3200);
+    const readyT = setTimeout(() => setStage('ready'), 2100);
+    const splitT = setTimeout(() => setStage('split'), 2500);
+    const doneT = setTimeout(onComplete, 3200);
     return () => {
       timers.forEach(clearTimeout);
       clearInterval(progInterval);
@@ -98,7 +98,7 @@ function IntroGate({ onComplete }) {
 
   const panelVariants = {
     closed: { scaleX: 1 },
-    open:   { scaleX: 0, transition: { duration: 0.55, ease: [0.76, 0, 0.24, 1] } },
+    open: { scaleX: 0, transition: { duration: 0.55, ease: [0.76, 0, 0.24, 1] } },
   };
 
   return (
@@ -140,8 +140,8 @@ function IntroGate({ onComplete }) {
         <div className="absolute top-0 left-0 right-0 h-5" style={{ background: 'repeating-linear-gradient(135deg,transparent 0,transparent 8px,rgba(245,158,11,0.07) 8px,rgba(245,158,11,0.07) 16px)' }} />
         <div className="absolute bottom-0 left-0 right-0 h-5" style={{ background: 'repeating-linear-gradient(135deg,transparent 0,transparent 8px,rgba(245,158,11,0.07) 8px,rgba(245,158,11,0.07) 16px)' }} />
         {/* Corner bolts */}
-        {[[16,16],[16,'auto'],['auto',16],['auto','auto']].map(([t,b],i)=>(
-          <div key={i} className="absolute w-4 h-4" style={{ top: typeof t==='number'?t:'auto', bottom: typeof b==='number'?b:'auto', left: i<2?16:'auto', right: i>=2?16:'auto' }}>
+        {[[16, 16], [16, 'auto'], ['auto', 16], ['auto', 'auto']].map(([t, b], i) => (
+          <div key={i} className="absolute w-4 h-4" style={{ top: typeof t === 'number' ? t : 'auto', bottom: typeof b === 'number' ? b : 'auto', left: i < 2 ? 16 : 'auto', right: i >= 2 ? 16 : 'auto' }}>
             <div className="w-full h-full rounded-full border border-indigo-500/20 flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/30" />
             </div>
@@ -169,8 +169,8 @@ function IntroGate({ onComplete }) {
         <div className="absolute top-0 left-0 w-[2px] h-full" style={{ background: 'linear-gradient(to bottom,transparent,rgba(6,182,212,0.7) 30%,rgba(99,102,241,0.9) 50%,rgba(6,182,212,0.7) 70%,transparent)', boxShadow: '0 0 16px rgba(6,182,212,0.4)' }} />
         <div className="absolute top-0 left-0 right-0 h-5" style={{ background: 'repeating-linear-gradient(45deg,transparent 0,transparent 8px,rgba(245,158,11,0.07) 8px,rgba(245,158,11,0.07) 16px)' }} />
         <div className="absolute bottom-0 left-0 right-0 h-5" style={{ background: 'repeating-linear-gradient(45deg,transparent 0,transparent 8px,rgba(245,158,11,0.07) 8px,rgba(245,158,11,0.07) 16px)' }} />
-        {[[16,16],[16,'auto'],['auto',16],['auto','auto']].map(([t,b],i)=>(
-          <div key={i} className="absolute w-4 h-4" style={{ top: typeof t==='number'?t:'auto', bottom: typeof b==='number'?b:'auto', left: i<2?16:'auto', right: i>=2?16:'auto' }}>
+        {[[16, 16], [16, 'auto'], ['auto', 16], ['auto', 'auto']].map(([t, b], i) => (
+          <div key={i} className="absolute w-4 h-4" style={{ top: typeof t === 'number' ? t : 'auto', bottom: typeof b === 'number' ? b : 'auto', left: i < 2 ? 16 : 'auto', right: i >= 2 ? 16 : 'auto' }}>
             <div className="w-full h-full rounded-full border border-cyan-500/20 flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30" />
             </div>
@@ -192,10 +192,10 @@ function IntroGate({ onComplete }) {
                 style={{
                   width: size, height: size,
                   top: '50%', left: '50%',
-                  marginTop: -size/2, marginLeft: -size/2,
-                  borderColor: i===0 ? 'rgba(99,102,241,0.5)' : i===1 ? 'rgba(6,182,212,0.3)' : 'rgba(139,92,246,0.2)',
-                  borderStyle: i===1 ? 'dashed' : 'solid',
-                  boxShadow: i===0 ? '0 0 20px rgba(99,102,241,0.2)' : 'none',
+                  marginTop: -size / 2, marginLeft: -size / 2,
+                  borderColor: i === 0 ? 'rgba(99,102,241,0.5)' : i === 1 ? 'rgba(6,182,212,0.3)' : 'rgba(139,92,246,0.2)',
+                  borderStyle: i === 1 ? 'dashed' : 'solid',
+                  boxShadow: i === 0 ? '0 0 20px rgba(99,102,241,0.2)' : 'none',
                 }}
                 animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
                 transition={{ duration: 4 + i * 2, repeat: Infinity, ease: 'linear' }}
@@ -241,7 +241,7 @@ function IntroGate({ onComplete }) {
             <div className="px-4 py-3 space-y-2">
               {PHASES.map((p, i) => {
                 const Icon = p.icon;
-                const done  = i < activePhase;
+                const done = i < activePhase;
                 const active = i === activePhase;
                 return (
                   <motion.div key={p.id} className="flex items-center gap-2.5"
@@ -319,19 +319,19 @@ export default function App() {
       sessionStorage.removeItem('skipLoginGate');
       return false;
     }
-    
+
     // Skip gate if coming from logout (URL param as fallback)
     const params = new URLSearchParams(window.location.search);
     if (params.has('logout')) return false;
-    
-    // GATE IS DISABLED BY DEFAULT - only show if explicitly enabled
-    // Check if intro gate is explicitly enabled in admin settings
-    const gateEnabled = localStorage.getItem('agentic_intro_gate_enabled');
-    if (gateEnabled !== 'true') {
-      return false; // Default: disabled
+
+    // GATE IS ENABLED BY DEFAULT - only disable if explicitly set to 'false'
+    // This allows the intro gate to show during the loading period
+    const gateDisabled = localStorage.getItem('agentic_intro_gate_enabled') === 'false';
+    if (gateDisabled) {
+      return false; // Explicitly disabled via admin panel
     }
-    
-    // Only show intro gate on first-ever visit (if enabled), not after logout
+
+    // Show intro gate on first-ever visit (default behavior), not after logout
     const hasSeenIntro = localStorage.getItem('agentic_intro_shown');
     return !hasSeenIntro;
   });
