@@ -1519,6 +1519,37 @@
   </div>
 </div>
 
+<!-- Observability Tabs -->
+<div id="tab-observability" class="admin-tab-content" style="display:none">
+  <div id="observability-container" style="min-height:600px">
+    <div style="text-align:center;padding:2rem;color:var(--text-3)">
+      <div style="font-size:1.2rem;margin-bottom:1rem">📊 Observability Dashboard</div>
+      <div style="font-size:0.9rem;margin-bottom:1.5rem">Loading telemetry pipeline...</div>
+      <div class="spinner" style="width:40px;height:40px;margin:0 auto"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-llm-activity" class="admin-tab-content" style="display:none">
+  <div id="llm-activity-container" style="min-height:600px">
+    <div style="text-align:center;padding:2rem;color:var(--text-3)">
+      <div style="font-size:1.2rem;margin-bottom:1rem">🧠 LLM Activity Traces</div>
+      <div style="font-size:0.9rem;margin-bottom:1.5rem">Loading language model traces...</div>
+      <div class="spinner" style="width:40px;height:40px;margin:0 auto"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-traceability" class="admin-tab-content" style="display:none">
+  <div id="traceability-container" style="min-height:600px">
+    <div style="text-align:center;padding:2rem;color:var(--text-3)">
+      <div style="font-size:1.2rem;margin-bottom:1rem">🔍 Request Traceability</div>
+      <div style="font-size:0.9rem;margin-bottom:1.5rem">Loading distributed traces...</div>
+      <div class="spinner" style="width:40px;height:40px;margin:0 auto"></div>
+    </div>
+  </div>
+</div>
+
 </div ><!-- /admin-content -->
 
 <style>
@@ -1817,7 +1848,8 @@ function editUser(userId) {
         ai: ['llm', 'config'],
         data: ['database'],
         infrastructure: ['docker-images', 'environment-vars'],
-        compliance: ['compliance-rules', 'compliance-audit', 'secret-scan', 'owasp-scan', 'clamav-scan']
+        compliance: ['compliance-rules', 'compliance-audit', 'secret-scan', 'owasp-scan', 'clamav-scan'],
+        observability: ['observability', 'llm-activity', 'traceability']
       };
       var TAB_SECTION = {
         health: 'operations', overview: 'operations', audit: 'operations', 'api-reference': 'operations',
@@ -1825,7 +1857,8 @@ function editUser(userId) {
         llm: 'ai', config: 'ai',
         database: 'data',
         'docker-images': 'infrastructure', 'environment-vars': 'infrastructure',
-        'compliance-rules': 'compliance', 'compliance-audit': 'compliance', 'secret-scan': 'compliance', 'owasp-scan': 'compliance', 'clamav-scan': 'compliance'
+        'compliance-rules': 'compliance', 'compliance-audit': 'compliance', 'secret-scan': 'compliance', 'owasp-scan': 'compliance', 'clamav-scan': 'compliance',
+        observability: 'observability', 'llm-activity': 'observability', traceability: 'observability'
       };
 
       function switchSection(section) {
@@ -1881,6 +1914,9 @@ function editUser(userId) {
         if (tab === 'secret-scan') { } /* Static content, no loading needed */
         if (tab === 'owasp-scan') { } /* Static content, no loading needed */
         if (tab === 'clamav-scan') { } /* Static content, no loading needed */
+        if (tab === 'observability') loadObservabilityContent();
+        if (tab === 'llm-activity') loadLlmActivityContent();
+        if (tab === 'traceability') loadTraceabilityContent();
       }
 
       /* Wire up nav via event delegation (avoids inline onclick in template literal) */
@@ -3234,6 +3270,66 @@ function editUser(userId) {
         } finally {
           btn.disabled = false;
         }
+      }
+
+      /* ─ Observability Loaders ─ */
+      async function loadObservabilityContent() {
+        var container = document.getElementById('observability-container');
+        try {
+          var r = await fetch('/api/observability/health');
+          var data = await r.json();
+          var html = '<div class="card animate-fade-up" style="margin-bottom:1rem">';
+          html += '<h3 style="margin:0 0 0.75rem 0;color:var(--accent-text)">📊 Observability Stack</h3>';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem">';
+          (data.services || []).filter(function(s) { return s.type === 'observability'; }).forEach(function(svc) {
+            var healthColor = svc.status === 'healthy' ? '#10b981' : '#f43f5e';
+            html += '<div style="padding:0.75rem;background:var(--glass-bg);border-radius:8px;border-left:3px solid ' + healthColor + '">';
+            html += '<div style="font-weight:600;color:var(--text-1);font-size:0.85rem">' + svc.name + '</div>';
+            html += '<div style="font-size:0.72rem;color:var(--text-3);margin-top:0.25rem">' + svc.url + '</div>';
+            html += '<div style="font-size:0.72rem;margin-top:0.3rem;color:' + healthColor + '">● ' + svc.status + '</div>';
+            html += '</div>';
+          });
+          html += '</div></div>';
+          html += '<div class="card"><p style="color:var(--text-3);margin:0"><strong>Paths:</strong><br/>';
+          html += '📈 <strong>Prometheus:</strong> Metrics collection & alerting<br/>';
+          html += '📝 <strong>Loki:</strong> Log aggregation via OTLP<br/>';
+          html += '📊 <strong>Grafana:</strong> Visualization & dashboards</p></div>';
+          container.innerHTML = html;
+        } catch(e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Failed to load observability data: ' + e.message + '</div>'; }
+      }
+
+      async function loadLlmActivityContent() {
+        var container = document.getElementById('llm-activity-container');
+        try {
+          container.innerHTML = '<div class="card animate-fade-up"><h3 style="margin:0 0 1rem 0">🧠 LLM Activity Tracing</h3>';
+          container.innerHTML += '<p style="color:var(--text-3);margin:0">Powered by <strong>Langfuse</strong> - Dedicated LLM tracing & observability</p>';
+          container.innerHTML += '<div style="margin-top:1rem;padding:1rem;background:var(--glass-bg);border-radius:8px;border-left:3px solid #a78bfa">';
+          container.innerHTML += '<strong>Features:</strong><br/><ul style="margin:0.5rem 0;color:var(--text-2);font-size:0.9rem">';
+          container.innerHTML += '<li>🎯 Token tracking & cost analysis</li>';
+          container.innerHTML += '<li>⏱️ Latency profiling</li>';
+          container.innerHTML += '<li>💾 Input/output logging</li>';
+          container.innerHTML += '<li>📈 Model performance metrics</li>';
+          container.innerHTML += '</ul></div></div>';
+          // Note: Langfuse integration would require SDK setup in agent-service
+        } catch(e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Error: ' + e.message + '</div>'; }
+      }
+
+      async function loadTraceabilityContent() {
+        var container = document.getElementById('traceability-container');
+        try {
+          container.innerHTML = '<div class="card animate-fade-up"><h3 style="margin:0 0 1rem 0">🔍 Request Traceability</h3>';
+          container.innerHTML += '<p style="color:var(--text-3);margin:0 0 1rem 0">End-to-end distributed tracing across all services</p>';
+          container.innerHTML += '<div style="display:grid;gap:0.75rem">';
+          container.innerHTML += '<div style="padding:1rem;background:var(--glass-bg);border-radius:8px;border-left:3px solid #06b6d4">';
+          container.innerHTML += '<strong>🔗 Trace Flow:</strong><br/>';
+          container.innerHTML += '<div style="font-size:0.9rem;color:var(--text-2);margin-top:0.5rem">User Request → UI Console → Agent Service → Tools Service → Dependencies</div>';
+          container.innerHTML += '<div style="font-size:0.85rem;color:var(--text-3);margin-top:0.5rem;font-style:italic">Automatic context propagation across service boundaries</div>';
+          container.innerHTML += '</div>';
+          container.innerHTML += '<div style="padding:1rem;background:var(--glass-bg);border-radius:8px;border-left:3px solid #f59e0b">';
+          container.innerHTML += '<strong>📊 Telemetry Signals:</strong><br/>';
+          container.innerHTML += '<div style="font-size:0.9rem;color:var(--text-2);margin-top:0.5rem">Traces (spans) | Metrics (gauges/counters) | Logs (structured)</div>';
+          container.innerHTML += '</div></div></div>';
+        } catch(e) { container.innerHTML = '<div style="color:var(--danger);padding:1rem">Error: ' + e.message + '</div>'; }
       }
 
       /* ═══ INIT ═══ */
