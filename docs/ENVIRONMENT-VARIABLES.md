@@ -154,10 +154,16 @@ OTEL_GRPC_PORT=4317
 GRAFANA_PORT=3013
 GRAFANA_USER=admin
 GRAFANA_PASSWORD=admin
+GRAFANA_EXTERNAL_URL=http://localhost:3013  # Optional: browser-accessible URL
 ```
-- **Access**: http://localhost:3013
-- **Data Sources**: Prometheus, Loki
+- **Access**: http://localhost:3013 (or `${GRAFANA_EXTERNAL_URL}`)
+- **GRAFANA_PORT**: Used both for container port mapping and default external URL
+  - Server automatically reads this to construct external URL: `http://localhost:${GRAFANA_PORT}`
+  - Override with GRAFANA_EXTERNAL_URL for custom hostname/port (e.g., production domain)
+- **Data Sources**: Prometheus (http://prometheus:9090), Loki (http://loki:3100)
 - **Dashboards**: Auto-provisioned from `./observability/grafana/dashboards/`
+  - Platform Health dashboard UID: `agentic-platform-health`
+  - Embedded in observability page via iframe
 - **⚠️ Security**: Change default password in production
 
 ### Prometheus Metrics

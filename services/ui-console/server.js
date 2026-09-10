@@ -33,7 +33,7 @@ const CHROMA_URL = process.env.CHROMA_URL || "http://chromadb:8000";
 const N8N_EXTERNAL = process.env.N8N_EXTERNAL_URL || "http://localhost:5678";
 const N8N_PROXY_EXTERNAL = process.env.N8N_PROXY_EXTERNAL_URL || "http://localhost:5679";
 const LANGFUSE_EXTERNAL = process.env.LANGFUSE_EXTERNAL_URL || "http://localhost:3002";
-const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || "http://localhost:3013";
+const GRAFANA_EXTERNAL = process.env.GRAFANA_EXTERNAL_URL || `http://localhost:${process.env.GRAFANA_PORT || 3013}`;
 const AGENT_EXTERNAL = process.env.AGENT_EXTERNAL_URL || "http://localhost:8010";
 const AI_STUDIO_EXTERNAL = process.env.AI_STUDIO_EXTERNAL_URL || "http://localhost:8020";
 

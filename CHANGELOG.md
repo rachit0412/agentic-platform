@@ -5,6 +5,26 @@ All notable changes to the Agentic Platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Current Build] - 2026-09-10
+
+### 🐛 Fixed
+- **Grafana Dashboard Not Loading in Observability Page**
+  - Fixed GRAFANA_EXTERNAL URL to respect GRAFANA_PORT environment variable
+  - Changed from hardcoded `http://localhost:3013` to dynamic `http://localhost:${GRAFANA_PORT || 3013}`
+  - Fixed observability.ejs dashboard URL to use correct UID: `agentic-platform-health`
+  - Grafana dashboard now properly embedded in observability page iframe
+  - Resolves issue: "grafana view is missing from embedded part"
+
+### ✨ Added
+- **Observability Dashboard Verification** - All intelligence hub pages tested and working
+  - Observability: Grafana Platform Health dashboard now displays correctly
+  - LLM Activity: Token usage, cost analytics dashboard
+  - Traceability: LLM trace analytics with Langfuse integration
+  - Evaluation: Quality scoring & responsible AI controls
+  - Intelligence Hub: Cross-platform insights dashboard
+  - Agent Hub: Agent factory with skills and tools management
+  - Data Ingestion: ETL pipeline for knowledge base
+
 ## [Current Build] - 2026-09-04
 
 ### 🐛 Fixed
