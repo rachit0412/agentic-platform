@@ -118,14 +118,26 @@
   <div class="card animate-fade-up delay-200" style="margin-bottom:1.25rem">
     <div class="section-header mb-1">
       <h3 style="font-size:0.95rem">Grafana &mdash; Platform Health</h3>
-      <a href="${urls.grafana}" target="_blank" class="btn btn-primary btn-sm">Open Grafana</a>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <button class="btn btn-secondary btn-sm" type="button" onclick="obsRefreshGrafana()" title="Reload embedded dashboard">Reload</button>
+        <a id="grafana-open-link" href="${urls.grafana}/d/agentic-platform-health/agentic-platform-health?orgId=1" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Open Grafana</a>
+      </div>
     </div>
-    <div id="grafana-container" style="position:relative;min-height:500px">
+    <div id="grafana-dashboard-meta" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.6rem;margin:0.75rem 0">
+      <div style="color:var(--text-3);font-size:0.78rem">Loading dashboard details...</div>
+    </div>
+    <details style="margin:0.5rem 0 0.75rem">
+      <summary id="grafana-panels-summary" style="cursor:pointer;color:var(--text-2);font-size:0.78rem">Dashboard panels</summary>
+      <div id="grafana-panels-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.4rem;margin-top:0.6rem"></div>
+    </details>
+    <div id="grafana-embed-status" role="status" aria-live="polite" style="font-size:0.72rem;color:var(--text-3);margin-bottom:0.5rem">Waiting for Grafana dashboard...</div>
+    <div id="grafana-container" style="position:relative;min-height:620px">
       <iframe id="grafana-iframe"
-        src="${urls.grafana}/d-solo/agentic-platform-health/agentic-platform-health?orgId=1&panelId=1&kiosk&refresh=30s"
-        width="100%" height="500"
-        style="background:var(--surface-1);border-radius:10px;border:1px solid var(--glass-border)" loading="lazy"
-        allow="fullscreen"></iframe>
+        src="${urls.grafana}/d/agentic-platform-health/agentic-platform-health?orgId=1&kiosk&refresh=30s"
+        title="Grafana Agentic Platform Health dashboard"
+        width="100%" height="760"
+        style="height:min(78vh,900px);min-height:620px;background:var(--surface-1);border-radius:10px;border:1px solid var(--glass-border)" loading="lazy"
+        onload="obsGrafanaLoaded()" allow="fullscreen"></iframe>
     </div>
   </div>
 
@@ -320,6 +332,55 @@
       obsRefreshHealth();
       obsLoadTargets();
       obsLoadMetrics();
+      obsLoadGrafanaDashboard();
+    }
+
+    function obsLoadGrafanaDashboard() {
+      var meta = document.getElementById('grafana-dashboard-meta');
+      var panelsList = document.getElementById('grafana-panels-list');
+      var status = document.getElementById('grafana-embed-status');
+      fetch('/api/observability/grafana/dashboard')
+        .then(function(r) { return r.json().then(function(data) { return { response: r, data: data }; }); })
+        .then(function(result) {
+          if (!result.response.ok) throw new Error(result.data.error || 'Grafana returned HTTP ' + result.response.status);
+          var data = result.data;
+          var cards = [
+            ['Dashboard', data.title],
+            ['UID', data.uid],
+            ['Version', data.version],
+            ['Panels', (data.panels || []).length]
+          ];
+          meta.innerHTML = cards.map(function(item) {
+            return '<div style="padding:0.6rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">' +
+              '<div style="font-size:0.64rem;color:var(--text-3);text-transform:uppercase">' + escapeHtml(item[0]) + '</div>' +
+              '<div style="font-size:0.8rem;color:var(--text-1);font-weight:600;overflow-wrap:anywhere;margin-top:0.2rem">' + escapeHtml(String(item[1])) + '</div></div>';
+          }).join('');
+          document.getElementById('grafana-panels-summary').textContent = 'Dashboard panels (' + (data.panels || []).length + ')';
+          panelsList.innerHTML = (data.panels || []).map(function(panel) {
+            return '<div style="padding:0.45rem 0.6rem;border-left:2px solid var(--accent);background:var(--glass-bg);font-size:0.74rem;color:var(--text-2)">' +
+              escapeHtml(panel.title) + '<span style="color:var(--text-3);margin-left:0.4rem">' + escapeHtml(panel.type) + '</span></div>';
+          }).join('');
+          status.textContent = 'Dashboard metadata loaded from Grafana. The embedded view refreshes every 30 seconds.';
+          status.style.color = 'var(--success)';
+        })
+        .catch(function(error) {
+          meta.innerHTML = '<div style="color:var(--danger);font-size:0.78rem">Grafana details unavailable: ' + escapeHtml(error.message) + '</div>';
+          panelsList.innerHTML = '';
+          status.textContent = 'The dashboard could not be loaded. Use Open Grafana to inspect the service directly.';
+          status.style.color = 'var(--danger)';
+        });
+    }
+
+    function obsGrafanaLoaded() {
+      var status = document.getElementById('grafana-embed-status');
+      if (status.textContent.indexOf('unavailable') === -1) status.textContent = 'Grafana dashboard frame loaded.';
+    }
+
+    function obsRefreshGrafana() {
+      var frame = document.getElementById('grafana-iframe');
+      var status = document.getElementById('grafana-embed-status');
+      status.textContent = 'Reloading Grafana dashboard...';
+      frame.src = frame.src;
     }
 
     function obsRefreshHealth() {

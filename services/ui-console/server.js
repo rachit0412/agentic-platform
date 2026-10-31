@@ -1950,6 +1950,33 @@ app.get("/api/observability/health", async (req, res) => {
   res.json({ services: results });
 });
 
+app.get("/api/observability/grafana/dashboard", async (req, res) => {
+  try {
+    const response = await fetch(`${GRAFANA_URL}/api/dashboards/uid/agentic-platform-health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.message || "Grafana dashboard unavailable" });
+    }
+    const dashboard = data.dashboard || {};
+    const panels = Array.isArray(dashboard.panels) ? dashboard.panels : [];
+    return res.json({
+      status: "success",
+      title: dashboard.title || "Agentic Platform Health",
+      uid: dashboard.uid || "agentic-platform-health",
+      version: dashboard.version || 1,
+      panels: panels.map((panel) => ({
+        id: panel.id,
+        title: panel.title || "Untitled panel",
+        type: panel.type || "unknown",
+      })),
+    });
+  } catch (e) {
+    return res.status(502).json({ error: e.message || "Grafana unavailable" });
+  }
+});
+
 // ── API: Prometheus query proxy ───────────────────────
 app.get("/api/observability/prometheus/query", async (req, res) => {
   try {
