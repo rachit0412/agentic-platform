@@ -1118,6 +1118,29 @@ app.post("/api/agent-run/stream", async (req, res) => {
   }
 });
 
+app.post("/api/response-feedback", async (req, res) => {
+  const { request_id, session_id, rating, trace_id, agent_id } = req.body || {};
+  if (
+    typeof request_id !== "string" || request_id.length < 1 || request_id.length > 128 ||
+    typeof session_id !== "string" || session_id.length < 1 || session_id.length > 128 ||
+    (rating !== -1 && rating !== 1)
+  ) {
+    return res.status(400).json({ error: "A request, session, and valid rating are required" });
+  }
+
+  try {
+    const response = await fetch(`${AGENT_URL}/feedback/response`, {
+      method: "POST",
+      headers: wsHeaders(req, { "Content-Type": "application/json" }),
+      body: JSON.stringify({ request_id, session_id, rating, trace_id, agent_id }),
+    });
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (e) {
+    return res.status(502).json({ error: "Agent service unavailable" });
+  }
+});
+
 // ── API: Langfuse traces proxy ─────────────────────────
 app.get("/api/traces", async (req, res) => {
   const publicKey = process.env.LANGFUSE_PUBLIC_KEY || "";

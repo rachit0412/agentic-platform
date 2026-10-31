@@ -10,6 +10,7 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Literal
 
 from agent.connectors import (CONNECTOR_CATALOG, generate_connector_id,
                               generate_job_id)
@@ -52,7 +53,7 @@ from agent.memory import (add_workspace_member, assign_persona,
                           list_versions, list_workspace_members,
                           list_workspaces, log_audit, remove_workspace_member,
                           resend_verification_code, reset_user_password,
-                          save_version, set_disabled_tools,
+                          save_response_feedback, save_version, set_disabled_tools,
                           tag_document_to_agent, unassign_persona,
                           untag_all_for_agent, untag_document_from_agent,
                           update_a2a_peer, update_agent, update_connector,
@@ -3774,6 +3775,31 @@ async def query_schema_endpoint(body: SchemaRequest):
 
 
 # ── LlamaIndex: RAG Evaluation ─────────────────────────────────────────────
+
+
+class ResponseFeedbackRequest(BaseModel):
+    request_id: str = Field(..., min_length=1, max_length=128)
+    session_id: str = Field(..., min_length=1, max_length=128)
+    rating: Literal[-1, 1]
+    trace_id: str | None = Field(default=None, max_length=128)
+    agent_id: str | None = Field(default=None, max_length=128)
+
+
+@app.post("/feedback/response")
+async def response_feedback(body: ResponseFeedbackRequest):
+    """Persist the authenticated user's rating for an agent response."""
+    try:
+        return save_response_feedback(
+            request_id=body.request_id,
+            session_id=body.session_id,
+            rating=body.rating,
+            user_id=current_user_id.get(),
+            workspace_id=current_workspace_id.get(),
+            trace_id=body.trace_id or "",
+            agent_id=body.agent_id or "",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 class RAGEvalRequest(BaseModel):

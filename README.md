@@ -120,6 +120,7 @@ Most agent repos give you a chatbot. This gives you a **factory**.
 - **Managed MCP Servers** — Create and host MCP servers from the UI: config mode (HTTP endpoint proxies) or code mode (Python functions). Each deploys as an isolated Docker container
 - **Per-Agent Knowledge Base** — Each agent gets its own isolated ChromaDB collection; documents don't cross-contaminate
 - **Evaluation Matrix** — Quality scoring (faithfulness, relevance, coherence) across models and agents
+- **Response Feedback** — Rate completed agent responses; ratings are scoped to the signed-in user and workspace
 - **Workflow Orchestration** — n8n workflows for scheduled tasks, webhooks, web research, RAG ingestion, multi-agent pipelines
 - **Full Observability** — Prometheus + Grafana dashboards + Loki logs + OpenTelemetry pipeline
 - **Security Hardening** — XSS protection, input validation, SSRF protection, path traversal prevention
@@ -543,7 +544,7 @@ Have ideas? [Open an issue](https://github.com/rachit0412/agentic-platform/issue
 - [ ] Google A2A interoperability standard
 - [ ] MCP 1.x Streamable HTTP transport
 - [ ] Hybrid Search (BM25 + vector) + Re-ranking
-- [ ] Response Feedback UI (thumbs up/down)
+- [x] Response Feedback UI (thumbs up/down with persistent storage)
 - [ ] Prompt Auto-Optimizer
 - [ ] Azure AI Content Safety + Jailbreak Detection
 - [ ] LLM-as-Judge evaluation

@@ -195,6 +195,16 @@
   </div>
   <div id="response" style="white-space:pre-wrap;line-height:1.7;margin-top:0.75rem;color:var(--text-1)"></div>
   <div id="meta" class="mono mt-1" style="font-size:0.72rem"></div>
+  <div id="response-feedback" style="display:none;align-items:center;gap:0.5rem;margin-top:0.85rem;padding-top:0.75rem;border-top:1px solid var(--divider)">
+    <span style="font-size:0.75rem;color:var(--text-3)">Was this response useful?</span>
+    <button class="btn btn-secondary btn-sm" type="button" data-rating="1" aria-label="Good response" aria-pressed="false" title="Good response" onclick="submitResponseFeedback(1)" style="padding:0.35rem 0.5rem">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3.17a2 2 0 0 0 1.65-.87L12 6a2 2 0 0 1 3 0z"/></svg>
+    </button>
+    <button class="btn btn-secondary btn-sm" type="button" data-rating="-1" aria-label="Needs improvement" aria-pressed="false" title="Needs improvement" onclick="submitResponseFeedback(-1)" style="padding:0.35rem 0.5rem">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3.17a2 2 0 0 0-1.65.87L12 18a2 2 0 0 1-3 0z"/></svg>
+    </button>
+    <span id="feedback-status" role="status" aria-live="polite" style="font-size:0.72rem;color:var(--text-3)"></span>
+  </div>
   <!-- Inline Skill Inputs Panel (appears after run, only if skills have params) -->
   <div id="inline-skill-inputs" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--divider)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
@@ -312,6 +322,8 @@
     }
   }
 
+  var responseFeedbackContext = null;
+
   async function runAgent(overridePrompt) {
     const prompt = (typeof overridePrompt === 'string') ? overridePrompt.trim() : document.getElementById('prompt').value.trim();
     if (!prompt) return;
@@ -339,6 +351,9 @@
     document.getElementById('response').textContent = '';
     document.getElementById('response').style.color = 'var(--text-1)';
     document.getElementById('meta').textContent = '';
+    responseFeedbackContext = null;
+    document.getElementById('response-feedback').style.display = 'none';
+    document.getElementById('feedback-status').textContent = '';
 
     // Show activity panel
     document.getElementById('activity-steps').innerHTML = '';
@@ -433,6 +448,10 @@
       metaParts.push('Request: ' + requestId);
       if (traceId) metaParts.push('Trace: ' + traceId);
       document.getElementById('meta').textContent = metaParts.join('  \u00B7  ');
+      if (requestId && fullResponse.trim()) {
+        responseFeedbackContext = { request_id: requestId, session_id: session, trace_id: traceId, agent_id: agentId };
+        document.getElementById('response-feedback').style.display = 'flex';
+      }
 
       // Render LLM Execution Details card
       _renderExecDetail(usageData, modelInfo, startTime, toolsUsed, traceId, requestId, estimatedCost, latencyMs);
@@ -475,6 +494,31 @@
       document.querySelectorAll('#activity-steps div').forEach(el => {
         if (el._timerInterval) clearInterval(el._timerInterval);
       });
+    }
+  }
+
+  async function submitResponseFeedback(rating) {
+    if (!responseFeedbackContext) return;
+    var status = document.getElementById('feedback-status');
+    var buttons = document.querySelectorAll('#response-feedback button[data-rating]');
+    buttons.forEach(function(button) { button.disabled = true; });
+    status.textContent = 'Saving...';
+    try {
+      var response = await fetch('/api/response-feedback', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(Object.assign({}, responseFeedbackContext, { rating: rating }))
+      });
+      var result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to save feedback');
+      buttons.forEach(function(button) {
+        button.setAttribute('aria-pressed', Number(button.dataset.rating) === rating ? 'true' : 'false');
+      });
+      status.textContent = 'Thanks for your feedback';
+    } catch (error) {
+      status.textContent = 'Could not save feedback. Try again.';
+    } finally {
+      buttons.forEach(function(button) { button.disabled = false; });
     }
   }
 

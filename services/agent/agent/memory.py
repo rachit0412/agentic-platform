@@ -68,6 +68,90 @@ def _reset_conn():
         _local.conn = None
 
 
+def _init_response_feedback_table(conn):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS response_feedback (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id   TEXT NOT NULL,
+            session_id   TEXT NOT NULL,
+            trace_id     TEXT DEFAULT '',
+            agent_id     TEXT DEFAULT '',
+            user_id      TEXT NOT NULL,
+            workspace_id TEXT NOT NULL,
+            rating       INTEGER NOT NULL CHECK (rating IN (-1, 1)),
+            created_at   TEXT NOT NULL,
+            updated_at   TEXT NOT NULL,
+            UNIQUE (request_id, user_id, workspace_id)
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_response_feedback_workspace "
+        "ON response_feedback(workspace_id, created_at)"
+    )
+    conn.commit()
+
+
+def save_response_feedback(
+    request_id: str,
+    session_id: str,
+    rating: int,
+    user_id: str,
+    workspace_id: str,
+    trace_id: str = "",
+    agent_id: str = "",
+) -> dict:
+    """Save or revise a user's rating for one agent response."""
+    if type(rating) is not int or rating not in (-1, 1):
+        raise ValueError("rating must be -1 or 1")
+    for field, value in (
+        ("request_id", request_id),
+        ("session_id", session_id),
+        ("user_id", user_id),
+        ("workspace_id", workspace_id),
+    ):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{field} is required")
+
+    now = datetime.now(timezone.utc).isoformat()
+    conn = _get_conn()
+    conn.execute(
+        """
+        INSERT INTO response_feedback (
+            request_id, session_id, trace_id, agent_id, user_id, workspace_id,
+            rating, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(request_id, user_id, workspace_id) DO UPDATE SET
+            session_id = excluded.session_id,
+            trace_id = excluded.trace_id,
+            agent_id = excluded.agent_id,
+            rating = excluded.rating,
+            updated_at = excluded.updated_at
+        """,
+        (
+            request_id,
+            session_id,
+            trace_id,
+            agent_id,
+            user_id,
+            workspace_id,
+            rating,
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    row = conn.execute(
+        """
+        SELECT request_id, session_id, trace_id, agent_id, user_id, workspace_id,
+               rating, created_at, updated_at
+        FROM response_feedback
+        WHERE request_id = ? AND user_id = ? AND workspace_id = ?
+        """,
+        (request_id, user_id, workspace_id),
+    ).fetchone()
+    return dict(row)
+
+
 # ── Datastore (PostgreSQL) connection pool ──────────────────────────────────
 
 
@@ -95,6 +179,7 @@ def _release_datastore_conn(conn):
 
 def init_db():
     conn = _get_conn()
+    _init_response_feedback_table(conn)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
