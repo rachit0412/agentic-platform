@@ -629,7 +629,16 @@ export default function LoginPage() {
       /* Trigger dramatic gate animation, then redirect */
       setLoading(false);
       setGateOpen(true);
-      setTimeout(() => { window.location.href = '/'; }, 1200);
+      const requestedPath = new URLSearchParams(window.location.search).get('next');
+      let destination = '/';
+      if (requestedPath && requestedPath.startsWith('/') && !requestedPath.startsWith('//') && !requestedPath.includes('\\')) {
+        const target = new URL(requestedPath, window.location.origin);
+        if (target.origin === window.location.origin) {
+          if (!target.hash && window.location.hash) target.hash = window.location.hash;
+          destination = target.pathname + target.search + target.hash;
+        }
+      }
+      setTimeout(() => { window.location.href = destination; }, 1200);
     } catch (err) {
       setError(err.message);
     } finally {

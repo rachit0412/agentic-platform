@@ -63,6 +63,20 @@ _PII_PATTERNS = {
     "iban": _re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b"),
 }
 
+_SECRET_PATTERNS = {
+    "private key": _re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"),
+    "AWS access key": _re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
+    "GitHub token": _re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,})\b"),
+    "Slack token": _re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),
+    "Google API key": _re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"),
+    "OpenAI-style key": _re.compile(r"\bsk-(?:proj-|org-)?[A-Za-z0-9_-]{20,}\b"),
+    "Groq API key": _re.compile(r"\bgsk_[A-Za-z0-9]{32,}\b"),
+    "Hugging Face token": _re.compile(r"\bhf_[A-Za-z0-9]{30,}\b"),
+    "credential assignment": _re.compile(
+        r"(?i)\b(?:api[_-]?key|secret|access[_-]?token|password)\s*[:=]\s*['\"]?[A-Za-z0-9_./+=-]{16,}"
+    ),
+}
+
 _INJECTION_PATTERNS = [
     "ignore previous",
     "ignore all previous",
@@ -225,6 +239,14 @@ def _regex_injection_check(text: str) -> str | None:
     return None
 
 
+def _regex_secret_check(text: str) -> str | None:
+    """Detect common credential formats without relying on model judgment."""
+    for label, pattern in _SECRET_PATTERNS.items():
+        if pattern.search(text):
+            return label
+    return None
+
+
 def _regex_fallback(gid: str, text: str, gr: dict) -> dict:
     """Regex/heuristic fallback for a single guardrail when LLM is unavailable."""
     name = gr["name"]
@@ -240,6 +262,10 @@ def _regex_fallback(gid: str, text: str, gr: dict) -> dict:
             if matched
             else "No injection detected"
         )
+    elif gid == "gr-secret-detection":
+        hit = _regex_secret_check(text)
+        status = "blocked" if hit else "passed"
+        detail = f"Credential pattern detected ({hit})" if hit else "No known secret pattern detected"
     elif gid == "gr-toxicity":
         toxic_words = [
             "kill yourself",
@@ -358,6 +384,10 @@ async def _check_guardrails_input_async(
         name = gr["name"]
         severity = gr.get("severity", "medium")
 
+        if gid == "gr-secret-detection":
+            results.append(_regex_fallback(gid, text, gr))
+            continue
+
         if llm_result is not None and gid in llm_result:
             verdict = llm_result[gid]
             if verdict.get("triggered"):
@@ -424,6 +454,10 @@ async def _check_guardrails_output_async(
         gid = gr["id"]
         name = gr["name"]
         severity = gr.get("severity", "medium")
+
+        if gid == "gr-secret-detection":
+            results.append(_regex_fallback(gid, text, gr))
+            continue
 
         if llm_result is not None and gid in llm_result:
             verdict = llm_result[gid]

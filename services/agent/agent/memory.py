@@ -2431,9 +2431,6 @@ def _init_guardrails_table():
 
 def _ensure_default_guardrails():
     conn = _get_conn()
-    existing = conn.execute("SELECT COUNT(*) as cnt FROM guardrails").fetchone()
-    if existing["cnt"] > 0:
-        return
     now = datetime.now(timezone.utc).isoformat()
     defaults = [
         (
@@ -2548,6 +2545,30 @@ def _ensure_default_guardrails():
             ),
         ),
         (
+            "gr-secret-detection",
+            "Credential & Secret Detection",
+            "content_safety",
+            "Deterministically detects and blocks common API keys, access tokens, and private-key material in prompts and agent responses",
+            1,
+            "critical",
+            json.dumps(
+                {
+                    "action": "block",
+                    "patterns": [
+                        "private_key",
+                        "aws_access_key",
+                        "github_token",
+                        "slack_token",
+                        "google_api_key",
+                        "openai_key",
+                        "groq_key",
+                        "hugging_face_token",
+                        "credential_assignment",
+                    ],
+                }
+            ),
+        ),
+        (
             "gr-citation",
             "Source Citation Required",
             "quality",
@@ -2574,7 +2595,7 @@ def _ensure_default_guardrails():
     ]
     for d in defaults:
         conn.execute(
-            "INSERT INTO guardrails (id, name, category, description, enabled, severity, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO guardrails (id, name, category, description, enabled, severity, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (*d, now, now),
         )
     conn.commit()

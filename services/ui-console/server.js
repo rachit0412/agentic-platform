@@ -72,7 +72,11 @@ app.use(session({
 // ── Auth Routes (before auth middleware) ────────────────
 app.get("/login", (req, res) => {
   if (req.session && req.session.user) return res.redirect("/");
-  res.redirect("/login-app/");
+  const requestedPath = typeof req.query.next === "string" ? req.query.next : "";
+  const safePath = requestedPath.startsWith("/") && !requestedPath.startsWith("//") && !requestedPath.includes("\\")
+    ? requestedPath
+    : "";
+  res.redirect(safePath ? `/login-app/?next=${encodeURIComponent(safePath)}` : "/login-app/");
 });
 
 // OWASP A07: Authentication Failures - Rate limit login attempts
@@ -532,7 +536,10 @@ function requireAuth(req, res, next) {
     if (req.path.startsWith("/api/")) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    return res.redirect("/login");
+    const requestedPath = req.originalUrl.startsWith("/") && !req.originalUrl.startsWith("//")
+      ? req.originalUrl
+      : req.path;
+    return res.redirect(`/login?next=${encodeURIComponent(requestedPath)}`);
   }
   next();
 }
