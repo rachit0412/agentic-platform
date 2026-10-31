@@ -1656,8 +1656,10 @@ async function loadUsers() {
   try {
     var r = await fetch('/api/users');
     if (r.status === 403) { document.getElementById('users-table-container').innerHTML = '<p style="color:var(--danger)">Access denied. Admin role required.</p>'; return; }
-    var data = await r.json();
+    var data = await r.json().catch(function() { return {}; });
+    if (!r.ok) throw new Error(data.error || data.detail || 'Users request failed (' + r.status + ')');
     var users = Array.isArray(data) ? data : (data.users || []);
+    if (!Array.isArray(users)) throw new Error('Users API returned an invalid response');
     _usersCache = users;
     renderUsersTable(users);
     /* Update stats bar */
@@ -2672,7 +2674,9 @@ function editUser(userId) {
           if (typeFilter) params.set('entity_type', typeFilter);
           if (actionFilter) params.set('action', actionFilter);
           var r = await fetch('/api/audit-log?' + params.toString());
-          var d = await r.json();
+          var d = await r.json().catch(function() { return {}; });
+          if (!r.ok) throw new Error(d.error || d.detail || 'Audit log request failed (' + r.status + ')');
+          if (!Array.isArray(d.entries)) throw new Error('Audit log API returned an invalid response');
           var el = document.getElementById('audit-log');
           if (!d.entries || d.entries.length === 0) {
             el.innerHTML = '<p style="color:var(--text-3)">No audit log entries yet. Changes to agents, skills, prompts, and other entities will appear here.</p>';
@@ -2690,7 +2694,7 @@ function editUser(userId) {
                 '<td style="font-size:0.78rem">' + escapeHtml(e.entity_name || e.entity_id) + '</td>' +
                 '<td class="mono" style="font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + details + '">' + details + '</td></tr>';
             }).join('') + '</table>';
-        } catch (e) { document.getElementById('audit-log').innerHTML = '<p style="color:var(--danger)">Failed to load audit log</p>'; }
+        } catch (e) { document.getElementById('audit-log').innerHTML = '<p style="color:var(--danger)">Failed to load audit log: ' + escapeHtml(e.message) + '</p>'; }
       }
 
       document.getElementById('audit-filter-type').addEventListener('change', loadAuditLog);

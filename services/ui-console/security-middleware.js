@@ -10,6 +10,20 @@ const crypto = require('crypto');
  * Adds critical HTTP security headers
  */
 function securityHeaders(req, res, next) {
+  const frameSources = ["'self'"];
+  [
+    'GRAFANA_EXTERNAL_URL',
+    'N8N_PROXY_EXTERNAL_URL',
+    'LANGFUSE_EXTERNAL_URL',
+  ].forEach((name) => {
+    try {
+      const origin = new URL(process.env[name]).origin;
+      if (origin !== 'null' && !frameSources.includes(origin)) frameSources.push(origin);
+    } catch (_) {
+      // Ignore unset or invalid optional embed URLs.
+    }
+  });
+
   // Prevent MIME type sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
   
@@ -27,7 +41,7 @@ function securityHeaders(req, res, next) {
     "img-src 'self' data: https:; " +
     "font-src 'self' data:; " +
     "connect-src 'self' localhost:* http://localhost:* http://host.docker.internal:*; " +
-    "frame-src 'none'; " +
+    `frame-src ${frameSources.join(' ')}; ` +
     "object-src 'none'; " +
     "base-uri 'self'; " +
     "form-action 'self';"

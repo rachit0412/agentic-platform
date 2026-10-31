@@ -346,11 +346,10 @@
         <span class="pulse-dot-emerald"></span>
         <span class="rail-tooltip">System Healthy</span>
       </div>
+      <button class="rail-toggle" onclick="toggleSidebar()" title="Expand sidebar" aria-label="Expand sidebar" aria-expanded="false">
+        <svg class="rail-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
-    <!-- Sidebar Toggle -->
-    <button class="rail-toggle" onclick="toggleSidebar()" title="Expand sidebar">
-      <svg class="rail-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
   </aside>
 
   <!-- ── Main Area ── -->
@@ -896,11 +895,23 @@
     updateThemeIcons();
 
     // ── Sidebar Toggle ──
+    function syncSidebarToggle() {
+      var expanded = document.documentElement.classList.contains('sidebar-expanded');
+      var toggle = document.querySelector('.rail-toggle');
+      if (!toggle) return;
+      var label = expanded ? 'Collapse sidebar' : 'Expand sidebar';
+      toggle.title = label;
+      toggle.setAttribute('aria-label', label);
+      toggle.setAttribute('aria-expanded', String(expanded));
+    }
+
     function toggleSidebar() {
       var html = document.documentElement;
       html.classList.toggle('sidebar-expanded');
       localStorage.setItem('sidebarExpanded', html.classList.contains('sidebar-expanded'));
+      syncSidebarToggle();
     }
+    syncSidebarToggle();
 
     // ── Expandable Rail Groups (collapsed by default in expanded sidebar) ──
     document.querySelectorAll('.rail-group > .rail-item').forEach(function(item) {
