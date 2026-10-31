@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Eye, EyeOff, Info, Loader2, X, Zap } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 /* ── In production the login app is served from the console itself,
    so all API calls are same-origin.  In dev (Vite) we proxy to the
@@ -72,14 +72,16 @@ function Toast({ message, show, onDone }) {
 
 /* ── Glass input ───────────────────────────────────────── */
 function GlassInput({ label, type = 'text', value, onChange, placeholder, required, children }) {
+  const inputId = useId();
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+      <label htmlFor={inputId} className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
         {label}
       </label>
       <div className="neon-ring rounded-xl">
         <div className="relative">
           <input
+            id={inputId}
             type={type}
             value={value}
             onChange={onChange}
